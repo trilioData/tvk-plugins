@@ -1,0 +1,84 @@
+# CI WorkFlow for kubectl-plugins
+name: CI
+on:
+  push:
+    paths-ignore:
+      - 'plugins/**'
+    branches:
+      - 'master'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.15
+
+    - name: Run yamllint
+      uses: reviewdog/action-yamllint@v1
+      with:
+        fail_on_error: true
+        reporter: local
+        filter_mode: nofilter
+
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v2
+      with:
+        version: v1.29
+
+    - name: Run Shell lint
+      run: hack/run-lint.sh
+
+    - name: Verify code patterns
+      run: hack/verify-code-patterns.sh
+
+    - name: Ensure go.mod is already tidied
+      run: go mod tidy && git diff --no-patch --exit-code
+
+    #- name: Run unit tests
+    #  run: go test -v ./...
+
+    #- name: Upload code coverage
+    #  uses: codecov/codecov-action@v1
+    #  with:
+    #    file: ./coverage.txt
+
+    - name: Build Preflight Package
+      run: hack/build-preflight-artifacts.sh
+
+    - name: Build Log-Collector Packages
+      uses: goreleaser/goreleaser-action@v2
+      with:
+        version: latest
+        args: release --snapshot --skip-publish --rm-dist
+
+    - name: Generate Plugin Manifests for Local Testing
+      run: hack/generate-test-plugin-manifests.sh
+
+    - name: Ensure kubectl, helm and krew installed
+      run: hack/ensure-kubectl-helm-krew-installed.sh
+
+    - name: Verify installation
+      run: hack/verify-installation.sh
+
+    #- name: Run integration tests
+    #  run: hack/run-integration-tests.sh
+
+    - name: Release with GoReleaser
+      uses: goreleaser/goreleaser-action@v2
+      if: success() && startsWith(github.ref, 'refs/tags/')
+      with:
+        version: latest
+        args: release --rm-dist
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

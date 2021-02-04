@@ -1,0 +1,63 @@
+apiVersion: krew.googlecontainertools.github.com/v1alpha2
+kind: Plugin
+metadata:
+  name: tvk-log-collector
+spec:
+  homepage: https://github.com/trilioData/tvk-plugins/blob/master/tools/log-collector/README.md
+  shortDescription: TVK Log-Collector to collect logs of TVK Resources
+  version: v2.1.0
+  caveats: |
+    Curl and Git neeed to be installed on system for Krew to work properly
+  platforms:
+    - selector:
+        matchLabels:
+          os: linux
+          arch: amd64
+      uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.1.0/log-collector_v0.2_linux_amd64.tar.gz
+      sha256: LOG_COLLECTOR_LINUX_TAR_CHECKSUM
+      bin: log-collector
+      files:
+        - from: log-collector
+          to: .
+
+    - selector:
+        matchLabels:
+          os: darwin
+          arch: amd64
+      uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.1.0/log-collector_v0.2_darwin_amd64.tar.gz
+      sha256: LOG_COLLECTOR_DARWIN_TAR_CHECKSUM
+      bin: log-collector
+      files:
+        - from: log-collector
+          to: .
+
+    - selector:
+          matchLabels:
+            os: windows
+            arch: amd64
+      uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.1.0/log-collector_v0.2_windows_amd64.zip
+      sha256: LOG_COLLECTOR_WINDOWS_TAR_CHECKSUM
+      bin: log-collector.exe
+      files:
+        - from: log-collector.exe
+          to: .
+
+  description: |
+    tvk-log-collector is a kubectl plugin which collects the information mainly yaml configuration and logs from k8s cluster for
+    debugging TVK application.
+
+    This plugin will generate triliovault-<date-time>.zip file containing cluster debugging information.
+
+    > Check available flags for tvk-log-collector plugin with :-
+    kubectl tvk-log-collector --help
+
+    Parameter   	Default     	Description
+    --clustered 	false       	whether clustered installtion of trilio application
+    --namespaces 	[]          	list of namespaces to look for resources
+    --kube_config 	~/.kube/config 	path to the kubernetes config
+    --no-clean 	    false 	        don't clean output directory after zip
+    --log-level 	INFO 	        log level for debugging
+
+    > Usage :-
+
+    kubectl tvk-log-collector --clustered --log-level INFO --kubeconfig /home/usr/kubeconfig

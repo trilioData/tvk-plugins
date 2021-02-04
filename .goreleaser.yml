@@ -1,0 +1,50 @@
+before:
+  hooks:
+    - go mod download
+
+builds:
+- id: log-collector
+  main: ./cmd/
+  binary: log-collector
+  env:
+  - CGO_ENABLED=0
+  goos:
+    - linux
+    - darwin
+    - windows
+  goarch:
+    - amd64
+
+archives:
+- id: log-collector-archive
+  name_template: |-
+    log-collector_{{ .Tag }}_{{ .Os }}_{{ .Arch -}}
+    {{- with .Arm -}}
+      {{- if (eq . "6") -}}hf
+      {{- else -}}v{{- . -}}
+      {{- end -}}
+    {{- end -}}
+  builds:
+    - log-collector
+  format_overrides:
+    - goos: windows
+      format: zip
+
+checksum:
+  name_template: "log-collector-sha256.txt"
+  algorithm: sha256
+
+release:
+  # If set to auto, will mark the release as not ready for production
+  # in case there is an indicator for this in the tag e.g. v1.0.0-rc1
+  # If set to true, will mark the release as not ready for production.
+  # Default is false.
+  prerelease: auto
+
+  # You can add extra pre-existing files to the release.
+  # The filename on the release will be the last part of the path (base). If
+  # another file with the same name exists, the latest one found will be used.
+  # Defaults to empty.
+  extra_files:
+    - glob: build/preflight.tar.gz
+    - glob: build/preflight-sha256.txt
