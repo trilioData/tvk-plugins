@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+# ensures kubectl, helm, krew utilities are installed on host machine
+
 install_kubectl_if_needed() {
   if hash kubectl 2>/dev/null; then
     echo >&2 "using kubectl from the host system and not reinstalling"
@@ -42,7 +44,7 @@ install_helm_if_needed() {
 
 install_krew_if_needed() {
   if hash kubectl krew 2>/dev/null; then
-    echo >&2 "using kew from the host system and not reinstalling"
+    echo >&2 "using krew from the host system and not reinstalling"
   else
     set -x
     cd "$(mktemp -d)" &&

@@ -21,12 +21,8 @@ vendor/**/*_test.go
 
 **/coverage.out
 
-**/.classpath
-
 **/.project
 
 **/.settings
 
 .vscode/*
-
-*_.yaml

@@ -5,26 +5,26 @@ metadata:
 spec:
   homepage: https://github.com/trilioData/tvk-plugins/blob/main/tools/preflight/README.md
   shortDescription: TVK application preflight check for k8s cluster
-  version: v2.1.0
+  version: v1.0.0
   caveats: |
-    Curl and Git neeed to be installed on system for Krew to work properly
+    Curl and Git neeed to be installed on system for Krew index update to work properly
   platforms:
-    - selector:
-        matchExpressions:
-          - key: os
-            operator: In
-            values:
-              - darwin
-              - linux
-      uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.1.0/preflight.tar.gz
-      sha256: PREFLIGHT_TAR_CHECKSUM
-      bin: preflight
-      files:
-        - from: preflight/preflight
-          to: .
+  - selector:
+      matchExpressions:
+      - key: os
+        operator: In
+        values:
+        - darwin
+        - linux
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0/preflight.tar.gz
+    sha256: fb72b6c903b4b9abe8e429833a652ee3280883236ff1f22d5ff51beb59ea6045
+    bin: preflight
+    files:
+    - from: preflight/preflight
+      to: .
 
   description: |
-    preflight is a kubectl plugin which checks whether all the pre-requisites are met before installing Triliovault
+    tvk-preflight is a kubectl plugin which checks whether all the pre-requisites are met before installing Triliovault
     for Kubernetes(TVK) application in a Kubernetes cluster.
 
     > Check available flags for preflight plugin with :-
@@ -36,4 +36,4 @@ spec:
 
     > Usage :-
 
-    kubectl preflight --storageclass my-hostpath-sc --snapshotclass default-snapclass --kubeconfig /home/usr/kubeconfig
+    kubectl tvk-preflight --storageclass my-hostpath-sc --snapshotclass default-snapclass --kubeconfig /home/usr/kubeconfig

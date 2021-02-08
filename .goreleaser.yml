@@ -29,6 +29,7 @@ archives:
   format_overrides:
     - goos: windows
       format: zip
+  files: ["LICENSE.md"]
 
 checksum:
   name_template: "log-collector-sha256.txt"
@@ -39,7 +40,7 @@ release:
   # in case there is an indicator for this in the tag e.g. v1.0.0-rc1
   # If set to true, will mark the release as not ready for production.
   # Default is false.
-  prerelease: auto
+  prerelease: true
 
   # You can add extra pre-existing files to the release.
   # The filename on the release will be the last part of the path (base). If

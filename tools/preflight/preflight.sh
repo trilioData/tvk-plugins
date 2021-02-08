@@ -27,7 +27,7 @@ UNUSED_VOLUME_SNAP_SRC="unused-source-pvc"
 
 print_help() {
   echo "Usage:
-preflight --storageclass <storage_class_name>
+kubectl tvk-preflight --storageclass <storage_class_name>
 Params:
 	--storageclass	name of storage class being used in k8s cluster
 	--snapshotclass name of volume snapshot class being used in k8s cluster
