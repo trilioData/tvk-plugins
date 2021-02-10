@@ -3,7 +3,7 @@ kind: Plugin
 metadata:
   name: tvk-log-collector
 spec:
-  homepage: https://github.com/trilioData/tvk-plugins/blob/master/tools/log-collector/README.md
+  homepage: https://github.com/trilioData/tvk-plugins/blob/master/docs/log-collector/README.md
   shortDescription: TVK Log-Collector to collect logs of TVK Resources
   version: LOG_COLLECTOR_VERSION
   caveats: |

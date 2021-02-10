@@ -135,25 +135,10 @@ issues:
     - dupl
     - gosec
     - gocritic
-  - path: api/
-    linters:
-    - dupl
-
-  - linters:
-    - lll
-    source: '^//go:generate '
-
-  - linters:
-    - lll
-    source: '^//+kubebuilder:'
 
   - linters:
     - golint
     source: ^type .*List struct \{
-
-  - path: v1alpha1
-    linters:
-    - maligned
 
   exclude-use-default: true
 

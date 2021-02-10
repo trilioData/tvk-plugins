@@ -1,0 +1,33 @@
+# CI WorkFlow for testing Plugin Manifests
+name: Plugin Manifests CI
+on:
+  pull_request:
+    branches:
+      - 'main'
+    paths:
+      - 'plugins/**'
+      - 'hack/validate-plugin-manifests.sh'
+      - 'hack/install-required-utilities.sh'
+      - '.github/workflows/plugin-manifests.yml'
+
+jobs:
+  # validate-plugin-manifests job validates plugin manifests which are under 'plugins' dir
+  # (Checks structural schema, version semantics, install & uninstall of plugins using plugin manifests yaml)
+  validate-plugin-manifests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Run yaml lint
+      uses: reviewdog/action-yamllint@v1
+      with:
+        fail_on_error: true
+        reporter: local
+        filter_mode: nofilter
+
+    - name: Ensure Required Utilities Installed
+      run: make install-required-utilities
+
+    - name: Validate Updated Plugin Manifests
+      run: make validate-plugin-manifests

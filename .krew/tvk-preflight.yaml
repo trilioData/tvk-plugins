@@ -3,7 +3,7 @@ kind: Plugin
 metadata:
   name: tvk-preflight
 spec:
-  homepage: https://github.com/trilioData/tvk-plugins/blob/main/tools/preflight/README.md
+  homepage: https://github.com/trilioData/tvk-plugins/blob/main/docs/preflight/README.md
   shortDescription: TVK application preflight check for k8s cluster
   version: PREFLIGHT_VERSION
   caveats: |

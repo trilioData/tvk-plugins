@@ -1,19 +1,16 @@
 build/
 dist/
 .idea/
+files.txt
 
 *.out
 *.swp
 *.swo
 *~
 
-*.dll
-*.so
-*.dylib
-
 # Test binary, build with `go test -c`
 *.test
-tests/*junit.xml
+*junit.xml
 
 vendor/**/PROJECT
 

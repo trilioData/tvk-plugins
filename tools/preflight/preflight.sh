@@ -27,7 +27,7 @@ UNUSED_VOLUME_SNAP_SRC="unused-source-pvc"
 
 print_help() {
   echo "Usage:
-kubectl tvk-preflight --storageclass <storage_class_name>
+kubectl tvk-preflight --storageclass <storage_class_name> --snapshotclass <volume_snapshot_class>
 Params:
 	--storageclass	name of storage class being used in k8s cluster
 	--snapshotclass name of volume snapshot class being used in k8s cluster
@@ -37,7 +37,7 @@ Params:
 
 take_input() {
   if [[ -z "${1}" ]]; then
-    echo "Error: Storage class and volume snapshot class params are needed to run pre flight checks!"
+    echo "Error: --storageclass and --snapshotclass flags are needed to run pre flight checks!"
     print_help
     exit 1
   fi
@@ -81,7 +81,7 @@ take_input() {
     esac
   done
   if [[ -z "${STORAGE_CLASS}" || -z "${SNAPSHOT_CLASS}" ]]; then
-    echo "Error: Storage class and volume snapshot class, both params are needed to run pre flight checks!"
+    echo "Error: --storageclass and --snapshotclass, both flags are needed to run pre flight checks!"
     print_help
     exit 1
   fi
