@@ -1,0 +1,25 @@
+build/
+dist/
+.idea/
+files.txt
+
+*.out
+*.swp
+*.swo
+*~
+
+# Test binary, build with `go test -c`
+*.test
+*junit.xml
+
+vendor/**/PROJECT
+
+vendor/**/*_test.go
+
+**/coverage.out
+
+**/.project
+
+**/.settings
+
+.vscode/*
