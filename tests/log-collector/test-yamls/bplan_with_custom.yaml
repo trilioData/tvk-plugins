@@ -1,0 +1,21 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  name: sample-application-custom
+spec:
+  backupConfig:
+    target:
+      name: sample-target
+    retentionPolicy:
+      name: sample-policy
+  backupPlanComponents:
+    custom:
+      - matchLabels:
+          triliobackupall: all
+#        app: my-ss-nginx
+#  hooks:
+#    - hookAction:
+#        name: sample-hookaction
+#      matchPatterns:
+#        - podRegexPattern: "TestOnePodRegex"
+#          containerRegexPattern: "TestOneContainerReges"
