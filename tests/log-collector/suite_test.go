@@ -18,9 +18,12 @@ package logcollectortest
 import (
 	"context"
 	"fmt"
+
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
@@ -28,10 +31,12 @@ import (
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientGoScheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	utilretry "k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
@@ -39,11 +44,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	v1 "github.com/trilioData/k8s-triliovault/api/v1"
-	"github.com/trilioData/k8s-triliovault/tests/e2e"
 	"github.com/trilioData/k8s-triliovault/tests/integration/common"
-	com "github.com/trilioData/tvk-plugins/tests/common"
-	"github.com/trilioData/tvk-plugins/tests/common/kube"
-	"github.com/trilioData/tvk-plugins/tests/logprinter"
+	com "github.com/trilioData/tvk-plugins/internal/common"
+	"github.com/trilioData/tvk-plugins/internal/logprinter"
+	"github.com/trilioData/tvk-plugins/internal/shell"
+	"github.com/trilioData/tvk-plugins/tests/helper/kube"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -78,17 +83,20 @@ var (
 	trilioWebSvcLabel    = "k8s-triliovault-web-svc"
 	trilioBackedSvcLabel = "k8s-triliovault-backend-svc"
 
-	suiteName = "log-collector"
-
-	uniqueID = common.GetUniqueID(suiteName)
+	uniqueID = "log-collector"
 
 	currentDir, _ = os.Getwd()
 	projectRoot   = filepath.Dir(filepath.Dir(currentDir))
 
-	testYamls = "tests/tools/log-collector/test-yamls"
+	testYamls = "tests/test-data/test-yamls"
 
-	mySQLOperatorCRFile     = filepath.Join(projectRoot, "test-data/mysql-operator/mysqlCluster.yaml")
-	mySQLOperatorSecretFile = filepath.Join(projectRoot, "test-data/mysql-operator/mysqlCluster-secret.yaml")
+	mySQLOperatorCRFile     = filepath.Join(projectRoot, "tests/test-data/mysql-operator/mysqlCluster.yaml")
+	mySQLOperatorSecretFile = filepath.Join(projectRoot, "tests/test-data/mysql-operator/mysqlCluster-secret.yaml")
+
+	mySQLOperatorScript = filepath.Join(projectRoot, "tests/test-data/mysql-operator/mysqlOperator.sh")
+	mySQLCRDFile        = filepath.Join(projectRoot, "tests/test-data/mysql-operator/crd.yaml")
+	mySQLCRFile         = filepath.Join(projectRoot, "tests/test-data/mysql-operator/mysqlCluster.yaml")
+	mySQLCRSecFile      = filepath.Join(projectRoot, "tests/test-data/mysql-operator/mysqlCluster-secret.yaml")
 
 	customAppFile         = "bplan_with_custom.yaml"
 	customOperatorAppFile = "bplan_custom_and_operator.yaml"
@@ -99,7 +107,7 @@ var (
 
 	logCollectorFilePath = "tools/log-collector/log_collector.go"
 
-	testDataDir      = "test-data"
+	testDataDir      = "tests"
 	allCleanupScript = "cleanup.sh"
 
 	uniqueMySQLOperator = uniqueID + "-" + "mysql-operator"
@@ -111,6 +119,12 @@ var (
 	customOperatorAvailableBackup = "sample-backup-custom-operator"
 
 	customOperatorFailedBackup = "sample-backup-custom-op-failed"
+
+	timeout    = time.Second * 130
+	interval   = time.Second * 1
+	installArg = "install"
+	deleteArg  = "delete"
+	Space      = " "
 )
 
 func TestAPIs(t *testing.T) {
@@ -145,7 +159,7 @@ var _ = BeforeSuite(func() {
 	}
 
 	stopControlPlane()
-	cleanup()
+	//cleanup()
 
 	// set MySqlOperator CR name
 	Expect(common.UpdateYAMLs(map[string]string{common.UniqueID: uniqueID}, mySQLOperatorCRFile)).To(BeNil())
@@ -153,12 +167,12 @@ var _ = BeforeSuite(func() {
 	Expect(common.UpdateYAMLs(map[string]string{common.UniqueID: uniqueID}, mySQLOperatorSecretFile)).To(BeNil())
 
 	deployCustomApp()
-	e2e.InstallMysqlOperator(backupNamespace, uniqueMySQLOperator)
+	InstallMysqlOperator(backupNamespace, uniqueMySQLOperator)
 
 	startControlPlane()
 	setupForApplication()
 
-	license, err := common.SetupLicense(ctx, k8sClient, namespace, projectRoot)
+	license, err := com.SetupLicense(ctx, k8sClient, namespace, projectRoot)
 	Expect(err).ShouldNot(HaveOccurred())
 	common.WaitForLicenseToState(ctx, k8sClient, types.NamespacedName{Name: license.Name, Namespace: license.Namespace},
 		v1.LicenseActive)
@@ -184,13 +198,13 @@ var _ = AfterSuite(func() {
 
 	log.Info("Deleting installed application")
 	deleteCustomApp()
-	e2e.DeleteMysqlOperator(backupNamespace, uniqueMySQLOperator)
-
-	// reset MySqlOperator CR name
+	DeleteMysqlOperator(backupNamespace, uniqueMySQLOperator)
+	//
+	//// reset MySqlOperator CR name
 	Expect(common.UpdateYAMLs(map[string]string{uniqueID: common.UniqueID}, mySQLOperatorCRFile)).To(BeNil())
-	// reset MySqlOperator secret name
+	//// reset MySqlOperator secret name
 	Expect(common.UpdateYAMLs(map[string]string{uniqueID: common.UniqueID}, mySQLOperatorSecretFile)).To(BeNil())
-
+	//
 	log.Info("Deleting backup")
 	deleteBackup(customOperatorAvailableBackup)
 	deleteBackup(customAvailableBackup)
@@ -233,11 +247,13 @@ func cleanup() {
 	By("tearing down the test environment")
 	if skipCleanup != common.True {
 		log.Infof("Cleaning up everything before tearing down suite from %s namespace", backupNamespace)
-		_, err := com.RunCmd(fmt.Sprintf("%s %s", filepath.Join(projectRoot, testDataDir, allCleanupScript),
+		k := fmt.Sprintf("%s %s", filepath.Join(projectRoot, testDataDir, allCleanupScript), backupNamespace)
+		log.Info(k)
+		_, err := shell.RunCmd(fmt.Sprintf("%s %s", filepath.Join(projectRoot, testDataDir, allCleanupScript),
 			backupNamespace))
 		Expect(err).To(BeNil())
 		log.Infof("Cleaning up everything before tearing down suite from %s namespace", restoreNamespace)
-		_, err = com.RunCmd(fmt.Sprintf("%s %s", filepath.Join(projectRoot, testDataDir, allCleanupScript),
+		_, err = shell.RunCmd(fmt.Sprintf("%s %s", filepath.Join(projectRoot, testDataDir, allCleanupScript),
 			restoreNamespace))
 		Expect(err).To(BeNil())
 	}
@@ -271,3 +287,97 @@ func GetRestoreJobLabels(restore *v1.Restore) map[string]string {
 
 	return labels
 }
+
+func WaitForRestoreToDelete(acc *kube.Accessor, restoreName, ns string) {
+	Eventually(func() bool {
+		_, err := acc.GetRestore(restoreName, ns)
+		if err != nil && apierrors.IsNotFound(err) {
+			return true
+		}
+		if err == nil {
+			_ = acc.DeleteRestore(types.NamespacedName{Name: restoreName, Namespace: ns})
+		}
+		return false
+	}, "120s", "2s").Should(BeTrue())
+}
+
+func SetBackupPlanStatus(KubeAccessor *kube.Accessor, appName, namespace string, reqStatus v1.Status) error {
+	var appCr *v1.BackupPlan
+	var err error
+	log.Infof("Updating %s status to %s", appName, reqStatus)
+	Eventually(func() error {
+		retErr := utilretry.RetryOnConflict(utilretry.DefaultRetry, func() error {
+
+			appCr, err = KubeAccessor.GetBackupPlan(appName, namespace)
+			if err != nil {
+				log.Errorf(err.Error())
+				return err
+			}
+			log.Infof("requested backupPlan status %v, actual status: %v",
+				reqStatus, appCr.Status.Status)
+			appCr.Status.Status = reqStatus
+			err = KubeAccessor.StatusUpdate(appCr)
+			if err != nil {
+				log.Errorf("Failed to update application status:%+v", err)
+				return err
+			}
+
+			return nil
+		})
+		appCr, err = KubeAccessor.GetBackupPlan(appName, namespace)
+		if err != nil {
+			log.Errorf(err.Error())
+			return err
+		}
+		if appCr.Status.Status != reqStatus {
+			log.Errorf("failed to update backupplan status reqStatus: %v, "+
+				"actualStatus: %v", reqStatus, appCr.Status.Status)
+			return fmt.Errorf("failed to update backupplan status")
+		}
+		log.Infof("Updated %s  requestedStatus %v to %s", appName,
+			reqStatus, appCr.Status.Status)
+		return retErr
+	}, timeout, interval).ShouldNot(HaveOccurred())
+
+	return nil
+}
+
+func InstallMysqlOperator(ns, releaseName string) {
+	log.Infof("Installing mysql operator: [%s]", releaseName)
+	out, err := shell.RunCmd(strings.Join([]string{filepath.Join(mySQLOperatorScript), installArg, releaseName, ns}, Space))
+	log.Info(out.Out)
+	Expect(err).To(BeNil())
+
+	// install MysqlCluster crd, it will be required
+	Expect(KubeAccessor.Apply(ns, filepath.Join(mySQLCRDFile))).NotTo(HaveOccurred())
+	Expect(KubeAccessor.Apply(ns, mySQLCRFile)).To(BeNil())
+	Expect(KubeAccessor.Apply(ns, mySQLCRSecFile)).To(BeNil())
+
+	time.Sleep(30 * time.Second) // -> giving it 30 sec to start all pods
+
+	Eventually(func() error {
+		_, err = KubeAccessor.WaitUntilPodsAreReady(func() (pods []corev1.Pod, lErr error) {
+			pods, lErr = KubeAccessor.GetPods(ns, "app.kubernetes.io/managed-by=mysql.presslabs.org", "app.kubernetes.io/name=mysql")
+			otherPods, _ := KubeAccessor.GetPods(ns, "app=mysql-operator", fmt.Sprintf("release=%s", releaseName))
+			pods = append(pods, otherPods...)
+			return pods, lErr
+		})
+		return err
+	}, common.ResourceDeploymentTimeout, common.ResourceDeploymentInterval).Should(BeNil())
+	log.Info("Installed mysql operator")
+
+}
+
+func DeleteMysqlOperator(ns, operatorName string) {
+	out, err := shell.RunCmd(strings.Join([]string{filepath.Join(mySQLOperatorScript), deleteArg, operatorName, ns}, Space))
+	log.Info(out.Out)
+
+	if err != nil {
+		log.Errorf("Mysql Opearator deletion failed - %s", err)
+	}
+	err = KubeAccessor.Delete(ns, filepath.Join(mySQLCRSecFile))
+	if err != nil {
+		log.Info(err)
+	}
+}
+

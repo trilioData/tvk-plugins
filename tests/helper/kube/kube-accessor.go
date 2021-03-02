@@ -3,17 +3,14 @@ package kube
 import (
 	"context"
 	"fmt"
-	"github.com/trilioData/tvk-plugins/tests/common"
-	"github.com/trilioData/tvk-plugins/tests/common/retry"
+	"github.com/trilioData/tvk-plugins/internal/common"
 	"os"
 	"os/signal"
 	"strings"
 	"time"
 
-	//"github.com/trilioData/k8s-triliovault/internal"
-	//"github.com/trilioData/k8s-triliovault/internal/utils/retry"
-	"k8s.io/apimachinery/pkg/api/meta"
-
+	"github.com/hashicorp/go-multierror"
+	log "github.com/sirupsen/logrus"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -23,17 +20,16 @@ import (
 	v1 "k8s.io/api/rbac/v1"
 	storageV1 "k8s.io/api/storage/v1"
 	extv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	client "k8s.io/client-go/kubernetes"
-
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-
-	"github.com/hashicorp/go-multierror"
-	log "github.com/sirupsen/logrus"
+	client "k8s.io/client-go/kubernetes"
 	ctrlRuntime "sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/trilioData/tvk-plugins/tests/helper/retry"
 )
 
 func (a *Accessor) CreateStorageClass(storageClass *storageV1.StorageClass) error {
@@ -1044,8 +1040,6 @@ func GetPodsOfAppKind(ctx context.Context, cl ctrlRuntime.Client, ns string,
 		}
 	}
 
-	// ownerRef = *metav1.NewControllerRef(obj, batchv1beta1.SchemeGroupVersion.WithKind(internal.CronJobKind))
-
 	selectors, _ = metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 		MatchLabels:      matchLabels,
 		MatchExpressions: matchExp,
@@ -1059,25 +1053,6 @@ func GetPodsOfAppKind(ctx context.Context, cl ctrlRuntime.Client, ns string,
 			return &tmpPodList, err
 		}
 	}
-
-	// TODO Add support to verify the owner ref
-	// for i := 0; i < len(podList.Items); i++ {
-	//	pod := podList.Items[i]
-	//	// check if owner ref UID is same as that of this object to be parsed
-	//	podOwners := pod.GetOwnerReferences()
-	//	for j := 0; j < len(podOwners); j++ {
-	//		po := podOwners[j]
-	//		if strings.Compare(po.Kind, ownerRef.Kind) == 0 && strings.Compare(po.APIVersion, ownerRef.APIVersion) == 0 &&
-	//			strings.Compare(po.Name, ownerRef.Name) == 0 {
-	//			// TODO In some cases the owner UID is coming nil that's why following check is failing
-	//			// TODO Check why this is failing?
-	//			//strings.Compare(string(po.UID), string(ownerRef.UID)) == 0 {
-	//			tmpPodList.Items = append(tmpPodList.Items, pod)
-	//			break
-	//		}
-	//	}
-	//}
-
 	return &podList, nil
 }
 

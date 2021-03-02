@@ -2,10 +2,11 @@ package kube
 
 import (
 	log "github.com/sirupsen/logrus"
-	v1 "github.com/trilioData/k8s-triliovault/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	v1 "github.com/trilioData/k8s-triliovault/api/v1"
 )
 
 func (a *Accessor) CreateTarget(target *v1.Target) error {

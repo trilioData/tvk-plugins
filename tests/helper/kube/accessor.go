@@ -3,23 +3,21 @@ package kube
 import (
 	"context"
 	"fmt"
-	retry2 "github.com/trilioData/tvk-plugins/tests/common/retry"
 	"os"
 	"path"
 	"time"
 
-	//"github.com/trilioData/k8s-triliovault/internal/utils/retry"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/selection"
-
 	extClient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	client "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	ctrlRuntime "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/rest"
+	retry2 "github.com/trilioData/tvk-plugins/tests/helper/retry"
 )
 
 var (

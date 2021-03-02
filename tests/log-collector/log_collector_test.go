@@ -29,7 +29,8 @@ import (
 	controllerHelpers "github.com/trilioData/k8s-triliovault/controllers/helpers"
 	"github.com/trilioData/k8s-triliovault/tests/integration/common"
 	"github.com/trilioData/k8s-triliovault/tests/tools/logprinter"
-	com "github.com/trilioData/tvk-plugins/tests/common"
+	common2 "github.com/trilioData/tvk-plugins/internal/common"
+	"github.com/trilioData/tvk-plugins/internal/shell"
 )
 
 var _ = Describe("Log Collector Tests", func() {
@@ -128,7 +129,7 @@ var _ = Describe("Log Collector Tests", func() {
 				logprinter.PrintDebugLogs()
 			}
 			deleteRestore(sampleRestoreName)
-			com.WaitForRestoreToDelete(KubeAccessor, sampleRestoreName, namespace)
+			WaitForRestoreToDelete(KubeAccessor, sampleRestoreName, namespace)
 		})
 
 		It("Should collect restore and related CR yaml with logs", func() {
@@ -211,7 +212,7 @@ var _ = Describe("Log Collector Tests", func() {
 			var updatedEnvs []corev1.EnvVar
 			for envIndex := range envs {
 				env := envs[envIndex]
-				if env.Name == com.DataStoreAttacherImage {
+				if env.Name == common2.DataStoreAttacherImage {
 					dataStoreAttacherImage = env.Value
 					updatedEnvs = append(envs[:envIndex], envs[envIndex+1:]...)
 					break
@@ -233,14 +234,14 @@ var _ = Describe("Log Collector Tests", func() {
 
 			envs := controlPlane.Spec.Template.Spec.Containers[0].Env
 			controlPlane.Spec.Template.Spec.Containers[0].Env = append(envs,
-				corev1.EnvVar{Name: com.DataStoreAttacherImage, Value: dataStoreAttacherImage})
+				corev1.EnvVar{Name: common2.DataStoreAttacherImage, Value: dataStoreAttacherImage})
 			err = KubeAccessor.UpdateDeployment(controlPlaneDeploymentKey.Namespace, controlPlane)
 			Expect(err).ShouldNot(HaveOccurred())
 		})
 
 		It("Should collect Trilio Application Pod yaml-logs", func() {
 
-			targetNS := types.NamespacedName{Name: sampleTargetName + com.GenerateRandomString(6, true), Namespace: namespace}
+			targetNS := types.NamespacedName{Name: sampleTargetName + common2.GenerateRandomString(6, true), Namespace: namespace}
 			target := common.CreateTarget(targetNS, false, "")
 			Expect(k8sClient.Create(ctx, target)).ShouldNot(HaveOccurred())
 
@@ -268,10 +269,10 @@ var _ = Describe("Log Collector Tests", func() {
 		It("Should fail if invalid namespace passed to log collector", func() {
 
 			filePath := filepath.Join(projectRoot, logCollectorFilePath)
-			flags := "--namespaces " + com.GenerateRandomString(6, true)
+			flags := "--namespaces " + common2.GenerateRandomString(6, true)
 			cmd := fmt.Sprintf("go run %s %s", filePath, flags)
 			log.Infof("Log Collector CMD [%s]", cmd)
-			cmdOut, err := com.RunCmd(cmd)
+			cmdOut, err := shell.RunCmd(cmd)
 			Expect(err).To(BeNil())
 			Expect(cmdOut.Out).To(ContainSubstring("namespaces doesn't exists"))
 
@@ -308,7 +309,7 @@ func getJobYaml(fileName, namespace, job string) *unstructured.Unstructured {
 	j["Kind"] = "Job"
 
 	jobStruct := &unstructured.Unstructured{}
-	jobStruct.SetGroupVersionKind(batchv1.SchemeGroupVersion.WithKind(com.JobKind))
+	jobStruct.SetGroupVersionKind(batchv1.SchemeGroupVersion.WithKind(common2.JobKind))
 
 	jobStruct.Object = j
 
@@ -318,9 +319,9 @@ func getJobYaml(fileName, namespace, job string) *unstructured.Unstructured {
 func isRestoreResource(job *unstructured.Unstructured, restore *v1.Restore) bool {
 	labels := job.GetLabels()
 	annotations := job.GetAnnotations()
-	if labels[com.ControllerOwnerUID] == string(restore.UID) &&
-		annotations[com.ControllerOwnerName] == restore.Name &&
-		annotations[com.ControllerOwnerNamespace] == restore.Namespace {
+	if labels[common2.ControllerOwnerUID] == string(restore.UID) &&
+		annotations[common2.ControllerOwnerName] == restore.Name &&
+		annotations[common2.ControllerOwnerNamespace] == restore.Namespace {
 		return true
 	}
 	return false
@@ -337,12 +338,12 @@ func getRestoreJobYamls(fileName string, restore *v1.Restore, nRes map[string][]
 		job := getJobYaml(fileName, restoreNs, jobName)
 		if isRestoreResource(job, restore) {
 			annotations := job.GetAnnotations()
-			if annotations[com.Operation] == com.MetadataRestoreValidationOperation {
+			if annotations[common2.Operation] == common2.MetadataRestoreValidationOperation {
 				validation = jobName
-			} else if annotations[com.Operation] == com.MetadataRestoreOperation {
+			} else if annotations[common2.Operation] == common2.MetadataRestoreOperation {
 				metadataRestore = jobName
-			} else if annotations[com.Operation] == com.DataRestoreOperation {
-				dataRestoreMap[annotations[com.RestorePVCName]] = jobName
+			} else if annotations[common2.Operation] == common2.DataRestoreOperation {
+				dataRestoreMap[annotations[common2.RestorePVCName]] = jobName
 			}
 		}
 	}
@@ -359,14 +360,14 @@ func getBackupJobYamls(fileName, backupNamespace string, backup *v1.Backup, nRes
 		job := getJobYaml(fileName, backupNamespace, jobName)
 		if metav1.IsControlledBy(job, backup) {
 			annotations := job.GetAnnotations()
-			if annotations[com.Operation] == com.SnapshotterOperation {
+			if annotations[common2.Operation] == common2.SnapshotterOperation {
 				snapshotter = jobName
-			} else if annotations[com.Operation] == com.RetentionOperation {
+			} else if annotations[common2.Operation] == common2.RetentionOperation {
 				retention = jobName
-			} else if annotations[com.Operation] == com.MetadataUploadOperation {
+			} else if annotations[common2.Operation] == common2.MetadataUploadOperation {
 				metadataUpload = jobName
-			} else if annotations[com.Operation] == com.DataUploadOperation {
-				datauploadMap[annotations[com.UploadPVCName]] = jobName
+			} else if annotations[common2.Operation] == common2.DataUploadOperation {
+				datauploadMap[annotations[common2.UploadPVCName]] = jobName
 			}
 		}
 	}
@@ -383,7 +384,7 @@ func stringInSlice(a string, list []string) bool {
 	return false
 }
 
-func verifyBackupVolumeSnapshot(dataSnapshots []com.ApplicationDataSnapshot, volumeSnapshot []string) {
+func verifyBackupVolumeSnapshot(dataSnapshots []common2.ApplicationDataSnapshot, volumeSnapshot []string) {
 
 	for index := range dataSnapshots {
 		dataSnapshot := dataSnapshots[index].DataComponent
@@ -404,13 +405,13 @@ func verifyRestoreLogs(restoreName, fileName string, cRes map[string][]string, n
 
 	restore, err := KubeAccessor.GetRestore(restoreName, namespace)
 	Expect(err).Should(BeNil())
-	verifyResourceYaml(cRes, nRes, fileName, com.RestoreKind, restore)
+	verifyResourceYaml(cRes, nRes, fileName, common2.RestoreKind, restore)
 
 	if restore.Spec.Source.Backup != nil {
 		backupRef := restore.Spec.Source.Backup
 		backup, err := KubeAccessor.GetBackup(backupRef.Name, backupRef.Namespace)
 		Expect(err).Should(BeNil())
-		verifyResourceYaml(cRes, nRes, fileName, com.BackupKind, backup)
+		verifyResourceYaml(cRes, nRes, fileName, common2.BackupKind, backup)
 	}
 
 	validation, dataRestoreMap, metadataRestore := getRestoreJobYamls(fileName, restore, nRes[Jobs])
@@ -463,7 +464,7 @@ func verifyResourceYaml(cRes map[string][]string, nRes map[string]map[string][]s
 			Fail("Yaml not found")
 		}
 
-		if kind == com.PodKind {
+		if kind == common2.PodKind {
 			pod := getPodObject(object)
 			Expect(pod).ShouldNot(BeNil())
 
@@ -489,16 +490,16 @@ func verifyBackupLogs(backupName, fileName string, cRes map[string][]string, nRe
 
 	backup, err := KubeAccessor.GetBackup(backupName, namespace)
 	Expect(err).Should(BeNil())
-	verifyResourceYaml(cRes, nRes, fileName, com.BackupKind, backup)
+	verifyResourceYaml(cRes, nRes, fileName, common2.BackupKind, backup)
 
 	backupPlan, _ := KubeAccessor.GetBackupPlan(backup.Spec.BackupPlan.Name, backup.Namespace)
-	verifyResourceYaml(cRes, nRes, fileName, com.BackupplanKind, backupPlan)
+	verifyResourceYaml(cRes, nRes, fileName, common2.BackupplanKind, backupPlan)
 
 	backupNamespace := backupPlan.Namespace
 	snapshotter, datauploadMap, retention, metadataUpload := getBackupJobYamls(fileName, backupNamespace,
 		backup, nRes[Jobs])
 
-	dataComponents, totalDataComponents := com.GetBackupDataComponents(backup.Status.Snapshot, false)
+	dataComponents, totalDataComponents := common2.GetBackupDataComponents(backup.Status.Snapshot, false)
 
 	if backup.Status.Status == v1.Failed {
 
@@ -628,7 +629,7 @@ func deleteTarget(targetName string) {
 func createApplication(appCRFilePath, applicationName string) {
 	log.Infof("Creating application: %s", applicationName)
 	Expect(KubeAccessor.Apply(namespace, filepath.Join(projectRoot, testYamls, appCRFilePath))).To(BeNil())
-	Expect(com.SetBackupPlanStatus(KubeAccessor, applicationName, namespace, v1.Available)).ShouldNot(HaveOccurred())
+	Expect(SetBackupPlanStatus(KubeAccessor, applicationName, namespace, v1.Available)).ShouldNot(HaveOccurred())
 
 }
 
@@ -667,7 +668,7 @@ func verifyTrilioResources(cRes map[string][]string, nRes map[string]map[string]
 	Expect(err).ShouldNot(HaveOccurred())
 
 	ctrlPlane, webhook, exporter := segregateTrilioPods(pods)
-	verifyResourceYaml(cRes, nRes, fileName, com.PodKind, ctrlPlane, webhook, exporter)
+	verifyResourceYaml(cRes, nRes, fileName, common2.PodKind, ctrlPlane, webhook, exporter)
 }
 
 func verifyTargetWebAndBackendResources(cRes map[string][]string, nRes map[string]map[string][]string, fileName string) {
@@ -728,9 +729,9 @@ func verifyTargetWebAndBackendResources(cRes map[string][]string, nRes map[strin
 		}
 	}
 
-	verifyResourceYaml(cRes, nRes, fileName, com.PodKind, targetBrowserPod, webPod, backendPod)
-	verifyResourceYaml(cRes, nRes, fileName, com.ServiceKind, targetBrowserSvc, webSvc, backendSvc)
-	verifyResourceYaml(cRes, nRes, fileName, com.DeploymentKind, targetBrowserDeploy, webDeploy, backendDeploy)
+	verifyResourceYaml(cRes, nRes, fileName, common2.PodKind, targetBrowserPod, webPod, backendPod)
+	verifyResourceYaml(cRes, nRes, fileName, common2.ServiceKind, targetBrowserSvc, webSvc, backendSvc)
+	verifyResourceYaml(cRes, nRes, fileName, common2.DeploymentKind, targetBrowserDeploy, webDeploy, backendDeploy)
 }
 
 func verifyResources(cRes map[string][]string, resourceNames []string) {
@@ -823,9 +824,9 @@ func runLogCollector(isClustered bool, namespaces ...string) (string, error) {
 	}
 	cmd := fmt.Sprintf("go run %s %s", filePath, flags)
 	log.Infof("Log Collector CMD [%s]", cmd)
-	var cmdOut *com.CmdOut
+	var cmdOut *shell.CmdOut
 	Eventually(func() error {
-		cmdOut, err = com.RunCmd(cmd)
+		cmdOut, err = shell.RunCmd(cmd)
 		log.Infof("Log Collector Output: %s", cmdOut.Out)
 		return err
 	}, common.Timeout*6, common.Interval).ShouldNot(HaveOccurred())
@@ -843,17 +844,17 @@ func runLogCollector(isClustered bool, namespaces ...string) (string, error) {
 
 func getRetentionJobAnnotations(backup *v1.Backup) map[string]string {
 	return map[string]string{
-		com.ControllerOwnerName:      backup.Name,
-		com.ControllerOwnerNamespace: backup.Namespace,
-		com.Operation:                com.RetentionOperation,
+		common2.ControllerOwnerName:      backup.Name,
+		common2.ControllerOwnerNamespace: backup.Namespace,
+		common2.Operation:                common2.RetentionOperation,
 	}
 }
 
 func getMetadataJobAnnotations(restore *v1.Restore) map[string]string {
 	return map[string]string{
-		com.ControllerOwnerName:      restore.Name,
-		com.ControllerOwnerNamespace: restore.Namespace,
-		com.Operation:                com.MetadataRestoreOperation,
+		common2.ControllerOwnerName:      restore.Name,
+		common2.ControllerOwnerNamespace: restore.Namespace,
+		common2.Operation:                common2.MetadataRestoreOperation,
 	}
 }
 
@@ -867,10 +868,10 @@ func getBackupJobTemplate(backup *v1.Backup, annotations map[string]string, isSu
 		exitStatus = 0
 	}
 	command := fmt.Sprintf("sleep %v && exit %v", sleep, exitStatus)
-	container := controllerHelpers.GetContainer("container", com.AlpineImage, command, false,
-		com.NonDMJobResource, com.MountCapability)
+	container := controllerHelpers.GetContainer("container", common2.AlpineImage, command, false,
+		common2.NonDMJobResource, common2.MountCapability)
 	job := controllerHelpers.GetJob(backup.Name, backup.Namespace, container, []corev1.Volume{},
-		controllerHelpers.GetAuthResourceName(backup.UID, com.BackupKind))
+		controllerHelpers.GetAuthResourceName(backup.UID, common2.BackupKind))
 	job.SetAnnotations(annotations)
 	_ = ctrl.SetControllerReference(backup, job, scheme)
 
@@ -887,10 +888,10 @@ func getRestoreJobTemplate(restore *v1.Restore, annotations map[string]string, i
 		exitStatus = 0
 	}
 	command := fmt.Sprintf("sleep %v && exit %v", sleep, exitStatus)
-	container := controllerHelpers.GetContainer("container", com.AlpineImage, command, false,
-		com.NonDMJobResource, com.MountCapability)
+	container := controllerHelpers.GetContainer("container", common2.AlpineImage, command, false,
+		common2.NonDMJobResource, common2.MountCapability)
 	job := controllerHelpers.GetJob(restore.Name, restore.Spec.RestoreNamespace, container, []corev1.Volume{},
-		controllerHelpers.GetAuthResourceName(restore.UID, com.RestoreKind))
+		controllerHelpers.GetAuthResourceName(restore.UID, common2.RestoreKind))
 	job.SetAnnotations(annotations)
 	ownerLabels := GetRestoreJobLabels(restore)
 	for k, v := range ownerLabels {

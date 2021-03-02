@@ -15,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/mergepatch"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
-
 	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 	kScheme "k8s.io/kubectl/pkg/scheme"
 	"k8s.io/kubectl/pkg/util"
@@ -25,7 +24,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	utilretry "k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	//"github.com/trilioData/k8s-triliovault/internal"
 )
 
 // CreateUnstructuredObject creates the given Unstructured object in the passed namespace.

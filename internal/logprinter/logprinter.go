@@ -4,14 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/trilioData/tvk-plugins/internal/common"
 	"io"
 	"os"
 
 	"github.com/ghodss/yaml"
 	v1 "github.com/trilioData/k8s-triliovault/api/v1"
-	"github.com/trilioData/k8s-triliovault/internal"
-	"github.com/trilioData/k8s-triliovault/internal/helpers"
-	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -63,8 +61,8 @@ func PrintCR(crds, ns string) {
 	conditions := []string{"Error", "Failed", "Unavailable", "InProgress"}
 	crdGvk := schema.GroupVersionKind{
 		Kind:    crds,
-		Version: internal.CrdVersionV1,
-		Group:   internal.TrilioVaultGroup,
+		Version: common.CrdVersionV1,
+		Group:   common.TrilioVaultGroup,
 	}
 
 	controlPlaneLabelSelector := metav1.LabelSelector{MatchLabels: map[string]string{"app": "k8s-triliovault-control-plane"}}
@@ -91,7 +89,7 @@ func PrintCR(crds, ns string) {
 		for _, con := range conditions {
 			if status == con {
 				fmt.Printf("Printing Debug Logs on %s with status %s\n\n", u.GetName(), status)
-				if u.GetKind() == internal.BackupKind || u.GetKind() == internal.RestoreKind || u.GetKind() == internal.TargetKind {
+				if u.GetKind() == common.BackupKind || u.GetKind() == common.RestoreKind || u.GetKind() == common.TargetKind {
 					if len(cpPods.Items) > 0 {
 						PrintLogs(cpPods.Items[0].Name, cpPods.Items[0].Namespace, 200)
 					}
@@ -115,12 +113,12 @@ func PrintChildObjects(owner *unstructured.Unstructured, ns string, cl client.Cl
 	var restore v1.Restore
 	var target v1.Target
 	var backupPlan v1.BackupPlan
-	var childJobs helpers.UnstructuredResourceList
+	var childJobs common.UnstructuredResourceList
 
-	resList := getResourceList(internal.JobKind, ns)
+	resList := getResourceList(common.JobKind, ns)
 
 	switch owner.GetKind() {
-	case internal.BackupKind:
+	case common.BackupKind:
 		err := cl.Get(context.Background(), types.NamespacedName{
 			Namespace: ns,
 			Name:      owner.GetName(),
@@ -130,7 +128,7 @@ func PrintChildObjects(owner *unstructured.Unstructured, ns string, cl client.Cl
 		} else {
 			fmt.Println(err)
 		}
-	case internal.RestoreKind:
+	case common.RestoreKind:
 		err := cl.Get(context.Background(), types.NamespacedName{
 			Namespace: ns,
 			Name:      owner.GetName(),
@@ -140,8 +138,8 @@ func PrintChildObjects(owner *unstructured.Unstructured, ns string, cl client.Cl
 		} else {
 			fmt.Println(err)
 		}
-	case internal.TargetKind:
-		podList := getResourceList(internal.JobKind, ns)
+	case common.TargetKind:
+		podList := getResourceList(common.JobKind, ns)
 		err := cl.Get(context.Background(), types.NamespacedName{
 			Namespace: ns,
 			Name:      owner.GetName(),
@@ -151,7 +149,7 @@ func PrintChildObjects(owner *unstructured.Unstructured, ns string, cl client.Cl
 		} else {
 			fmt.Println(err)
 		}
-	case internal.BackupplanKind:
+	case common.BackupplanKind:
 		err := cl.Get(context.Background(), types.NamespacedName{
 			Namespace: ns,
 			Name:      owner.GetName(),
@@ -165,7 +163,7 @@ func PrintChildObjects(owner *unstructured.Unstructured, ns string, cl client.Cl
 
 	for i, job := range childJobs.Items {
 		PrettyPrintObj(&childJobs.Items[i])
-		podList := getResourceList(internal.PodKind, job.GetNamespace())
+		podList := getResourceList(common.PodKind, job.GetNamespace())
 		childPods := podList.GetChildrenForOwner(&childJobs.Items[i])
 
 		for _, pod := range childPods.Items {
@@ -214,19 +212,19 @@ func PrettyPrintObj(u *unstructured.Unstructured) {
 	fmt.Println("*******************************************************************************************")
 }
 
-func getResourceList(objType, ns string) helpers.UnstructuredResourceList {
+func getResourceList(objType, ns string) common.UnstructuredResourceList {
 	uPodList := &unstructured.UnstructuredList{}
-	if objType == internal.PodKind {
+	if objType == common.PodKind {
 		uPodList.SetGroupVersionKind(schema.GroupVersionKind{
 			Group:   "",
 			Version: "v1",
-			Kind:    internal.PodKind,
+			Kind:    common.PodKind,
 		})
-	} else if objType == internal.JobKind {
+	} else if objType == common.JobKind {
 		uPodList.SetGroupVersionKind(schema.GroupVersionKind{
 			Group:   "batch",
 			Version: "v1",
-			Kind:    internal.JobKind,
+			Kind:    common.JobKind,
 		})
 	}
 
@@ -235,13 +233,13 @@ func getResourceList(objType, ns string) helpers.UnstructuredResourceList {
 		fmt.Println("Error listing pods")
 	}
 
-	podList := helpers.UnstructuredResourceList(*uPodList)
+	podList := common.UnstructuredResourceList(*uPodList)
 	return podList
 }
 
-func getRestoreReference(owner runtime.Object) helpers.UnstructuredResourceList {
-	children := helpers.UnstructuredResourceList{}
-	restoreList := getResourceList(internal.JobKind, RestoreNs)
+func getRestoreReference(owner runtime.Object) common.UnstructuredResourceList {
+	children := common.UnstructuredResourceList{}
+	restoreList := getResourceList(common.JobKind, RestoreNs)
 	metaOwner, err := meta.Accessor(owner)
 	if err != nil {
 		fmt.Printf("Error while converting the owner to meta accessor format %s\n", err)
@@ -253,33 +251,4 @@ func getRestoreReference(owner runtime.Object) helpers.UnstructuredResourceList 
 		}
 	}
 	return children
-}
-
-func GetPodLogsFromJob(jobs *batchv1.Job) {
-	podList := getResourceList(internal.PodKind, jobs.GetNamespace())
-	childPods := podList.GetChildrenForOwner(jobs)
-
-	for _, pod := range childPods.Items {
-		PrintLogs(pod.GetName(), pod.GetNamespace(), 400)
-	}
-}
-
-func PrintAvailableCR(crd string) {
-	crdGvk := schema.GroupVersionKind{
-		Kind:    crd,
-		Version: internal.CrdVersionV1,
-		Group:   internal.TrilioVaultGroup,
-	}
-
-	uList := &unstructured.UnstructuredList{}
-	uList.SetGroupVersionKind(crdGvk)
-
-	err := cl.List(context.Background(), uList, &client.ListOptions{Namespace: InstallNs})
-	if err != nil {
-		panic(err)
-	}
-
-	for i := range uList.Items {
-		PrettyPrintObj(&uList.Items[i])
-	}
 }

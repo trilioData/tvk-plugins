@@ -12,3 +12,10 @@ spec:
     custom:
       - matchLabels:
           triliobackupall: all
+#        app: my-ss-nginx
+#  hooks:
+#    - hookAction:
+#        name: sample-hookaction
+#      matchPatterns:
+#        - podRegexPattern: "TestOnePodRegex"
+#          containerRegexPattern: "TestOneContainerReges"

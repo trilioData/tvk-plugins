@@ -1,28 +1,33 @@
 package common
 
 import (
+	"context"
 	"crypto/md5"
 	"fmt"
+	"github.com/sirupsen/logrus"
+	"github.com/trilioData/tvk-plugins/internal/shell"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"math/big"
 	"math/rand"
 	"os"
-	"os/exec"
+	"path/filepath"
 	"reflect"
 	"regexp"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
+
+	cryptorand "crypto/rand"
 	"strings"
 	"time"
 
-	cryptorand "crypto/rand"
-	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 
-	. "github.com/onsi/gomega"
-	crd "github.com/trilioData/k8s-triliovault/api/v1"
 	v1 "github.com/trilioData/k8s-triliovault/api/v1"
-	"github.com/trilioData/tvk-plugins/tests/common/kube"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-	utilretry "k8s.io/client-go/util/retry"
 )
 
 const (
@@ -31,10 +36,14 @@ const (
 	DeploymentKind = "Deployment"
 	PodKind        = "Pod"
 	ServiceKind    = "Service"
+	TargetKind     = "Target"
 	BackupKind     = "Backup"
 	RestoreKind    = "Restore"
 	BackupplanKind = "BackupPlan"
 	JobKind        = "Job"
+
+	LicenseKey  = "LICENSE_KEY"
+	LicenseName = "license-sample"
 
 	// Fixed image names via env vars
 	DataStoreAttacherImage = "RELATED_IMAGE_DATASTORE_ATTACHER"
@@ -63,12 +72,16 @@ const (
 
 	NonDMJobResource = "non-datamover"
 
+	KubeSystemNamespace = "kube-system"
+
+	// CRD
+	CrdVersionV1 = "v1"
+
+	TrilioVaultGroup = "triliovault.trilio.io"
+
 	// DataMover images
 	AlpineImage   = "alpine:latest"
 	joinSeparator = "\n---\n"
-
-	timeout  = time.Second * 130
-	interval = time.Second * 1
 )
 
 // Required Capabilities
@@ -88,6 +101,24 @@ const (
 	Operator SnapshotType = "operators"
 )
 
+type KeyGenArgKey string
+
+const (
+	Organization    KeyGenArgKey = "--organization"
+	KubeUID         KeyGenArgKey = "--kube_uid"
+	ServerID        KeyGenArgKey = "--server_id"
+	KubeScope       KeyGenArgKey = "--kube_scope"
+	LicenseEdition  KeyGenArgKey = "--license_edition"
+	LicenseTypeName KeyGenArgKey = "--license_type_name"
+	PurchaseDate    KeyGenArgKey = "--purchase_date"
+	ExpirationDate  KeyGenArgKey = "--expiration_date"
+	LicensedFor     KeyGenArgKey = "--licensed_for"
+)
+
+type KeyGenArgs map[KeyGenArgKey]string
+
+type UnstructuredResourceList unstructured.UnstructuredList
+
 // Data Component Functions
 type ApplicationDataSnapshot struct {
 	AppComponent        SnapshotType
@@ -96,10 +127,30 @@ type ApplicationDataSnapshot struct {
 	Status              v1.Status
 }
 
-// CmdOut structure contains command output & exitcode
-type CmdOut struct {
-	Out      string
-	ExitCode int
+func (u *UnstructuredResourceList) GetChildrenForOwner(owner runtime.Object) UnstructuredResourceList {
+	children := UnstructuredResourceList{}
+	logger := ctrl.Log.WithName("UnstructResource Utility").WithName("GetChildrenForOwner")
+
+	if owner == nil || len(u.Items) == 0 {
+		return children
+	}
+	metaOwner, err := meta.Accessor(owner)
+	if err != nil {
+		logger.Error(err, "Error while converting the owner to meta accessor format")
+		return children
+	}
+	matchUID := metaOwner.GetUID()
+	for _, item := range u.Items {
+		refs := item.GetOwnerReferences()
+		for i := 0; i < len(refs); i++ {
+			or := refs[i]
+			if or.UID == matchUID {
+				children.Items = append(children.Items, item)
+			}
+		}
+	}
+
+	return children
 }
 
 func GenerateRandomString(n int, isOnlyAlphabetic bool) string {
@@ -116,72 +167,6 @@ func GenerateRandomString(n int, isOnlyAlphabetic bool) string {
 		b[i] = letterRunes[randNum.Int64()]
 	}
 	return string(b)
-}
-
-// RunCmd Execute given shell commands
-// params:
-// input=>cmd: formatted command string which needs to be executed.
-// output=>*cmdOut: command output struct returned after command execution.
-//			error: non-nil error if command execution failed.
-func RunCmd(cmd string, env ...string) (*CmdOut, error) {
-	outStruct, err := Execute(env, true, "%s", cmd)
-	if err != nil {
-		return outStruct, err
-	}
-	return outStruct, nil
-}
-
-// Execute the given command.
-func Execute(env []string, combinedOutput bool, format string, args ...interface{}) (*CmdOut, error) {
-	s := fmt.Sprintf(format, args...)
-	// TODO: escape handling
-	parts := strings.Split(s, " ")
-
-	var p []string
-	for i := 0; i < len(parts); i++ {
-		if parts[i] != "" {
-			p = append(p, parts[i])
-		}
-	}
-
-	var argStrings []string
-	if len(p) > 0 {
-		argStrings = p[1:]
-	}
-	return ExecuteArgs(env, combinedOutput, parts[0], argStrings...)
-}
-
-// ExecuteArgs execute given command
-func ExecuteArgs(env []string, combinedOutput bool, name string, args ...string) (*CmdOut, error) {
-	if log.IsLevelEnabled(log.DebugLevel) {
-		cmd := strings.Join(args, " ")
-		cmd = name + " " + cmd
-		log.Debugf("Executing command: %s", cmd)
-	}
-
-	c := exec.Command(name, args...)
-	c.Env = append(os.Environ(), env...)
-
-	var b []byte
-	var err error
-	if combinedOutput {
-		// Combine stderr and stdout in b.
-		b, err = c.CombinedOutput()
-	} else {
-		// Just return stdout in b.
-		b, err = c.Output()
-	}
-
-	if err != nil || !c.ProcessState.Success() {
-		log.Debugf("Command[%s] => (FAILED) %s", name, string(b))
-	} else {
-		log.Debugf("Command[%s] => %s", name, string(b))
-	}
-
-	return &CmdOut{
-		Out:      string(b),
-		ExitCode: c.ProcessState.ExitCode(),
-	}, err
 }
 
 func (a *ApplicationDataSnapshot) GetHash() string {
@@ -211,24 +196,6 @@ func JoinString(parts ...string) string {
 	}
 
 	return strings.Join(toJoin, joinSeparator)
-}
-
-func RunCmdWithOutput(command string) error {
-	parts := strings.Split(command, " ")
-	var argStrings []string
-	if len(parts) > 0 {
-		argStrings = parts[1:]
-	}
-
-	// suppress linter here issue -> G204: Subprocess launched with function call as argument or cmd arguments
-	cmd := exec.Command(parts[0], argStrings...) //nolint:gosec // no other options here
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-	return nil
 }
 
 func GetHash(appComponent, componentIdentifier, pvcName string) string {
@@ -324,56 +291,66 @@ func GetOperatorHelmIdentifier(operatorID, helmRelease string) string {
 	return strings.Join([]string{operatorID, helmRelease}, "-")
 }
 
-func WaitForRestoreToDelete(acc *kube.Accessor, restoreName, ns string) {
-	Eventually(func() bool {
-		_, err := acc.GetRestore(restoreName, ns)
-		if err != nil && apierrors.IsNotFound(err) {
-			return true
-		}
-		if err == nil {
-			_ = acc.DeleteRestore(types.NamespacedName{Name: restoreName, Namespace: ns})
-		}
-		return false
-	}, "120s", "2s").Should(BeTrue())
+func CreateLicenseKey(projectPath string, args KeyGenArgs) (string, error) {
+	argString := ""
+	keygenFilePath := "internal/keygen.py"
+	for key, value := range args {
+		arg := fmt.Sprintf(" %s %s", string(key), value)
+		argString += arg
+	}
+
+	filePath := filepath.Join(projectPath, keygenFilePath)
+	cmd := fmt.Sprintf("python3 %s %s", filePath, argString)
+	logrus.Infof("License Creator CMD [%s]", cmd)
+	cmdOut, err := shell.RunCmd(cmd)
+	logrus.Infof("License Creator Output- [%s]", cmdOut.Out)
+	return cmdOut.Out, err
 }
 
-func SetBackupPlanStatus(KubeAccessor *kube.Accessor, appName, namespace string, reqStatus crd.Status) error {
-	var appCr *crd.BackupPlan
-	var err error
-	log.Infof("Updating %s status to %s", appName, reqStatus)
-	Eventually(func() error {
-		retErr := utilretry.RetryOnConflict(utilretry.DefaultRetry, func() error {
-
-			appCr, err = KubeAccessor.GetBackupPlan(appName, namespace)
-			if err != nil {
-				log.Errorf(err.Error())
-				return err
-			}
-			log.Infof("requested backupPlan status %v, actual status: %v",
-				reqStatus, appCr.Status.Status)
-			appCr.Status.Status = reqStatus
-			err = KubeAccessor.StatusUpdate(appCr)
-			if err != nil {
-				log.Errorf("Failed to update application status:%+v", err)
-				return err
-			}
-
-			return nil
-		})
-		appCr, err = KubeAccessor.GetBackupPlan(appName, namespace)
+func SetupLicense(ctx context.Context, cli client.Client, namespace string, projectRoot string) (*v1.License, error) {
+	var (
+		key             string
+		isEnvKeyPresent bool
+		err             error
+	)
+	log := logrus.WithFields(logrus.Fields{"namespace": namespace})
+	key, isEnvKeyPresent = os.LookupEnv(LicenseKey)
+	if !isEnvKeyPresent {
+		log.Infof("License Key not found in env, creating new one")
+		ns := &corev1.Namespace{}
+		if err = cli.Get(ctx, types.NamespacedName{Name: KubeSystemNamespace}, ns); err != nil {
+			return nil, err
+		}
+		args := KeyGenArgs{LicenseEdition: string(v1.FreeEdition), KubeUID: string(ns.GetUID()), LicensedFor: strconv.Itoa(20)}
+		key, err = CreateLicenseKey(projectRoot, args)
 		if err != nil {
-			log.Errorf(err.Error())
-			return err
+			log.Errorf("Error while creating license key: %s", err.Error())
+			return nil, err
 		}
-		if appCr.Status.Status != reqStatus {
-			log.Errorf("failed to update backupplan status reqStatus: %v, "+
-				"actualStatus: %v", reqStatus, appCr.Status.Status)
-			return fmt.Errorf("failed to update backupplan status")
-		}
-		log.Infof("Updated %s  requestedStatus %v to %s", appName,
-			reqStatus, appCr.Status.Status)
-		return retErr
-	}, timeout, interval).ShouldNot(HaveOccurred())
+	}
 
-	return nil
+	licenses := &v1.LicenseList{}
+	if err = cli.List(ctx, licenses, client.InNamespace(namespace)); err != nil {
+		log.Errorf("Error while listing license: %s", err.Error())
+		return nil, err
+	}
+	if len(licenses.Items) != 0 {
+		license := licenses.Items[0]
+		log.Infof("Found existing license: %s", license.Name)
+		if license.Status.Status != v1.LicenseActive {
+			license.Spec.Key = key
+			if err = cli.Update(ctx, &license); err != nil {
+				log.Errorf("Error while updating key in existing license: %s, %s", license.Name, err.Error())
+				return nil, err
+			}
+		}
+		return &license, nil
+	}
+	license := &v1.License{ObjectMeta: metav1.ObjectMeta{Name: LicenseName, Namespace: namespace}, Spec: v1.LicenseSpec{Key: key}}
+	err = cli.Create(ctx, license)
+	if err != nil {
+		log.Errorf("Error while creating new license: %s", err.Error())
+		return nil, err
+	}
+	return license, nil
 }

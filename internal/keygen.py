@@ -61,7 +61,7 @@ def keymaker(organization, kube_uid, kubescope, server_id, license_edition, lice
 
     cwd = os.path.dirname(os.path.realpath(__file__))
     project_root = os.path.dirname(os.path.dirname(cwd))
-    key_path = os.path.join(project_root, 'triliodata')
+    key_path = os.path.join(os.path.dirname(cwd), 'internal/triliodata')
 
     dsa = DSA.load_key(key_path)
     assert dsa.check_key()

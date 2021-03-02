@@ -2,17 +2,18 @@ package kube
 
 import (
 	"fmt"
+	"github.com/trilioData/tvk-plugins/internal/common"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/trilioData/tvk-plugins/tests/common"
-
 	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
+
+	"github.com/trilioData/tvk-plugins/internal/shell"
 )
 
 type kubectl struct {
@@ -23,7 +24,7 @@ func (c *kubectl) createSecretFromFile(namespace, secretName, filename string) e
 	cmd := fmt.Sprintf("kubectl create secret generic %s --from-file=%s=%s %s %s",
 		secretName, secretName, filename, c.configArg(), namespaceArg(namespace))
 	log.Infof("Creating secret:[%s]", cmd)
-	cmdOutStruct, err := common.RunCmd(cmd)
+	cmdOutStruct, err := shell.RunCmd(cmd)
 	if err != nil {
 		log.Errorf("(FAILED) Executing kubectl: %s (err: %v): %s", cmd, err, cmdOutStruct.Out)
 		return err
@@ -59,7 +60,7 @@ func (c *kubectl) applyInternal(namespace string, files []string) error {
 	for _, f := range files {
 		command := fmt.Sprintf("kubectl apply %s %s -f %s", c.configArg(), namespaceArg(namespace), f)
 		log.Infof("Applying YAML: %s", command)
-		s, err := common.RunCmd(command)
+		s, err := shell.RunCmd(command)
 		if err != nil {
 			log.Infof("(FAILED) Executing kubectl: %s (err: %v): %s", command, err, s.Out)
 			return fmt.Errorf("%v: %s", err, s.Out)
@@ -91,7 +92,7 @@ func (c *kubectl) delete(namespace, filename string) error {
 func (c *kubectl) deleteInternal(namespace string, files []string) (err error) {
 	for i := len(files) - 1; i >= 0; i-- {
 		log.Infof("Deleting YAML file: %s", files[i])
-		s, e := common.Execute(nil, true, "kubectl delete --ignore-not-found %s %s -f %s", c.configArg(), namespaceArg(namespace), files[i])
+		s, e := shell.Execute(nil, true, "kubectl delete --ignore-not-found %s %s -f %s", c.configArg(), namespaceArg(namespace), files[i])
 		if e != nil {
 			return multierror.Append(err, fmt.Errorf("%v: %s", e, s.Out))
 		}
@@ -104,7 +105,7 @@ func (c *kubectl) logs(namespace, pod, container string, previousLog bool) (stri
 	cmd := fmt.Sprintf("kubectl logs %s %s %s %s %s",
 		c.configArg(), namespaceArg(namespace), pod, containerArg(container), previousLogArg(previousLog))
 
-	s, err := common.Execute(nil, true, cmd)
+	s, err := shell.Execute(nil, true, cmd)
 
 	if err == nil {
 		return s.Out, nil
@@ -118,7 +119,7 @@ func (c *kubectl) get(namespace, object string) (string, error) {
 	cmd := fmt.Sprintf("kubectl get %s %s %s",
 		c.configArg(), namespaceArg(namespace), object)
 
-	s, err := common.Execute(nil, true, cmd)
+	s, err := shell.Execute(nil, true, cmd)
 
 	if err == nil {
 		return s.Out, nil
@@ -130,7 +131,7 @@ func (c *kubectl) get(namespace, object string) (string, error) {
 func (c *kubectl) exec(namespace, pod, container, command string) (string, error) {
 	// Don't use combined output. The stderr and stdout streams are updated asynchronously and stderr can
 	// corrupt the JSON output.
-	s, err := common.Execute(nil, false, "kubectl exec %s %s %s %s -- %s ", pod,
+	s, err := shell.Execute(nil, false, "kubectl exec %s %s %s %s -- %s ", pod,
 		namespaceArg(namespace), containerArg(container), c.configArg(), command)
 	if err == nil {
 		return s.Out, nil
@@ -142,7 +143,7 @@ func (c *kubectl) exec(namespace, pod, container, command string) (string, error
 func (c *kubectl) cp(namespace, podName, containerName, srcPath, destPath string) error {
 	cmd := fmt.Sprintf("kubectl cp %s %s/%s:%s -c %s", srcPath, namespace, podName, destPath, containerName)
 	log.Infof("running kubectl cp command %s", cmd)
-	return common.RunCmdWithOutput(cmd)
+	return shell.RunCmdWithOutput(cmd)
 }
 
 func (c *kubectl) configArg() string {

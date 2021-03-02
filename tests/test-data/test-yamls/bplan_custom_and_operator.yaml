@@ -13,23 +13,30 @@ spec:
       - matchLabels:
           triliobackupall: all
     operators:
-      - operatorId: log-collector-mysql-operator
+      - operatorId: UNIQUE_ID-mysql-operator
         customResources:
           - groupVersionKind:
-              group: mysql.presslabs.org
-              version: v1alpha1
-              kind: MysqlCluster
+              group: "mysql.presslabs.org"
+              version: "v1alpha1"
+              kind: "MysqlCluster"
             objects:
-              - log-collector-sample-mysqlcluster
+              - UNIQUE_ID-sample-mysqlcluster
           - groupVersionKind:
-              group: mysql.presslabs.org
-              version: v1alpha1
-              kind: MysqlBackup
+              group: "mysql.presslabs.org"
+              version: "v1alpha1"
+              kind: "MysqlBackup"
         operatorResourceSelector:
           - matchLabels:
               app: mysql-operator
-              release: log-collector-mysql-operator
+              release: UNIQUE_ID-mysql-operator
         applicationResourceSelector:
           - matchLabels:
               app.kubernetes.io/managed-by: mysql.presslabs.org
               app.kubernetes.io/name: mysql
+#        app: my-ss-nginx
+#  hooks:
+#    - hookAction:
+#        name: sample-hookaction
+#      matchPatterns:
+#        - podRegexPattern: "TestOnePodRegex"
+#          containerRegexPattern: "TestOneContainerReges"
