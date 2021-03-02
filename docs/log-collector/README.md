@@ -1,7 +1,6 @@
 # k8s-triliovault Log Collector
-This is a go binary that collects the information mainly yaml configuration and logs from k8s cluster for debugging k8s-triliovault application.
 
-Log collector let you define what you need to log and how to log it by collecting the the logs and events of Pod alongside the metadata of all resources related to TVK as either namespaced by providing namespaces name separated by comma or clustered. It also collects the CRDs related to TVK and zip them on the path you specify
+Log collector let you define what you need to log and how to log it by collecting the the logs and events of Pod. Pod Logs can help you understand what is happening inside your application. The logs are particularly useful for debugging problems and monitoring cluster activity, alongside the metadata of all resources related to TrilioVault as either namespaced by providing namespaces name separated by comma or clustered from k8s cluster for debugging k8s-triliovault application. It also collects the CRDs yaml related to TVK and zip them.
 
 ## Requirements
 1. GoLang >= 1.15
