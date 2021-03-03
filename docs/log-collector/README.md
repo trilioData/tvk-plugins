@@ -38,7 +38,7 @@ Log collector let you define what you need to log and how to log it by collectin
 - Usage:
 
   
-    kubectl log-collector [flags]
+    kubectl tvk-log-collector [flags]
 
 - Flags:
 
