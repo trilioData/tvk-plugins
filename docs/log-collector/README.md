@@ -2,16 +2,45 @@
 
 Log collector let you define what you need to log and how to log it by collecting the the logs and events of Pod. Pod Logs can help you understand what is happening inside your application. The logs are particularly useful for debugging problems and monitoring cluster activity, alongside the metadata of all resources related to TrilioVault as either namespaced by providing namespaces name separated by comma or clustered from k8s cluster for debugging k8s-triliovault application. It also collects the CRDs yaml related to TVK and zip them.
 
-## Requirements
-1. GoLang >= 1.15
+## Pre-requisites:
 
-## How to use
-1. ```go build -o <binary-name> cmd/log-collector/main.go && chmod +x <binary-name>```
+1. krew - kubectl-plugin manager. Install from [here](https://krew.sigs.k8s.io/docs/user-guide/setup/install/)
+2. kubectl - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
-2. ```mv <binary-name> /usr/local/bin```
-3.  ```<binary-name> [flags]```
 
-Optional arguments:
+**Installation, Upgrade, Removal of Plugins**:
+
+
+- Add TVK custom plugin index of krew:
+
+
+    kubectl krew index add tvk-plugins https://github.com/trilioData/tvk-plugins.git
+
+
+- Installation:
+
+
+    kubectl krew install tvk-plugins/tvk-log-collector
+
+
+- Upgrade:
+
+
+    kubectl krew upgrade
+
+
+- Removal:
+
+
+    kubectl krew uninstall tvk-log-collector
+
+
+- Usage:
+
+  
+    kubectl log-collector [flags]
+
+- Flags:
 
 | Parameter                 | Default       | Description   |	
 | :------------------------ |:-------------:| :-------------|
@@ -22,7 +51,7 @@ Optional arguments:
 | --log-level  		       | INFO	           | log level for debugging
 
 ## Output
-This binary will create `triliovault-<date-time>.zip` zip file containing cluster debugging information.
+This command will create `triliovault-<date-time>.zip` zip file containing cluster debugging information.
 
 ## Resources
 ```
