@@ -7,23 +7,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	status = "status"
-)
-
-func GetIntegrationListRequest(cManager api.ClientManager, request *restful.Request) ListRequest {
+func GetIntegrationListRequest(cManager api.ClientManager, request *restful.Request, listRequestParams *ListRequestParams) ListRequest {
 	clientInterface := request.Attribute(common.AuthClient)
 	k8sClient := clientInterface.(client.Client)
 
-	// Init remaining params
-	requestParams := ListRequestParams{}
-	requestParams.Paginator, _ = common.InitRequestParams(request)
-	requestParams.Status = request.QueryParameter(status)
+	// Init paginator params
+	listRequestParams.Paginator, _ = common.InitRequestParams(request)
 
 	// initialize  ListRequest object with request params
 	return ListRequest{
 		AuthClient:        k8sClient,
 		ClientManager:     cManager,
-		ListRequestParams: requestParams,
+		ListRequestParams: *listRequestParams,
 	}
 }

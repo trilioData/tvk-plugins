@@ -211,12 +211,15 @@ func GetPolicyByName(ctx context.Context, apiClient client.Client, name, namespa
 }
 
 // function for getting Restore lists from BackupName
-func GetRestoreListByBackupName(ctx context.Context, apiClient client.Client, name string) (*v1.RestoreList, error) {
+func GetRestoreListByBackupName(ctx context.Context, apiClient client.Client, name, namespace string) (*v1.RestoreList, error) {
 	log := ctrl.Log.WithName("function").WithName("common:GetRestoreListByBackupName")
 	restoreList := &v1.RestoreList{}
 
+	opts := &client.ListOptions{}
+	client.InNamespace(namespace).ApplyToList(opts)
+
 	restoreFilter := client.MatchingFields{internal.BackupToRestoreFieldSelector: name}
-	if err := apiClient.List(ctx, restoreList, internal.GetTrilioResourcesDefaultListOpts(), restoreFilter); err != nil {
+	if err := apiClient.List(ctx, restoreList, opts, restoreFilter); err != nil {
 		log.Error(err, "failed to get restoreList from apiServer cache")
 		return restoreList, err
 	}
@@ -230,6 +233,9 @@ func GetBackupPlanBackupListMap(backupList *v1.BackupList, isAvailableOnly bool)
 		backup := backupList.Items[index]
 		backupPlanName := backup.Spec.BackupPlan.Name
 		backupPlanNamespace := backup.Spec.BackupPlan.Namespace
+		if _, exists := backupPlanBackupMap[backupPlanNamespace]; !exists {
+			backupPlanBackupMap[backupPlanNamespace] = make(map[string][]v1.Backup)
+		}
 		if _, exists := backupPlanBackupMap[backupPlanNamespace][backupPlanName]; !exists {
 			if isAvailableOnly && backup.Status.Status != v1.Available {
 				continue

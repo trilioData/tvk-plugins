@@ -120,8 +120,8 @@ func (request *ListRequest) List() (*Info, error) {
 		// Retrieving BackupPlan for Backup
 		backupPlan = namespaceBackupPlanMap[backup.Spec.BackupPlan.Namespace][backup.Spec.BackupPlan.Name]
 
-		if !request.ApplicationFilter.IsEmpty() &&
-			!common.IsBackupPlanApplicationFilter(namespaceBackupPlanMap, &backupPlan, request.ApplicationFilter) {
+		if !request.Filter.ApplicationFilter.IsEmpty() &&
+			!common.IsBackupPlanApplicationFilter(namespaceBackupPlanMap, &backupPlan, &request.Filter.ApplicationFilter) {
 			continue
 		}
 
@@ -139,17 +139,20 @@ func (request *ListRequest) List() (*Info, error) {
 		}
 
 		// Filter Backups which have TargetName in List of TargetNames given in request
-		if len(request.TargetName) != 0 && !internal.ContainsString(request.TargetName, detailHelper.Target.Name) {
+		if len(request.Filter.Targets) != 0 && backup.Status.Stats != nil && backup.Status.Stats.Target != nil &&
+			!common.IsNamespacedNameExists(request.Filter.Targets, internal.GetObjectRefNamespacedName(backup.Status.Stats.Target)) {
 			continue
 		}
 
 		// Filter Backups which have BackupPlan Name in List of BackupPlan Names given in request
-		if len(request.BackupPlanName) != 0 && !internal.ContainsString(request.BackupPlanName, detailHelper.BackupPlan.Name) {
+		if len(request.Filter.BackupPlans) != 0 && !common.IsNamespacedNameExists(request.Filter.BackupPlans,
+			internal.GetObjectRefNamespacedName(backup.Spec.BackupPlan)) {
 			continue
 		}
 
-		// Filter Backups which have Backup Name in List of Names given in request
-		if len(request.BackupName) != 0 && !internal.ContainsString(request.BackupName, backup.Name) {
+		// Filter Backups
+		if len(request.Filter.Backups) != 0 && !common.IsNamespacedNameExists(request.Filter.Backups,
+			internal.GetObjectNamespacedName(&backupList.Items[idx])) {
 			continue
 		}
 

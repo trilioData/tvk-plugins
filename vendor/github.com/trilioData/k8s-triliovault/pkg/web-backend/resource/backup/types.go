@@ -66,11 +66,8 @@ type Info struct {
 
 // GeneratedField Struct
 type GeneratedField struct {
-	BackupNamespace   string             `json:"backupNamespace"`
-	ApplicationType   v1.ApplicationType `json:"applicationType,omitempty"`
-	Target            *metav1.ObjectMeta `json:"target,omitempty"`
-	InProgressRestore *v1.Restore        `json:"inProgressRestore,omitempty"`
-	ScheduleType      Mode               `json:"scheduleType,omitempty"`
+	ApplicationType v1.ApplicationType `json:"applicationType,omitempty"`
+	ScheduleType    Mode               `json:"scheduleType,omitempty"`
 }
 
 // QueryParameters specifies parameters to filter backups.
@@ -78,9 +75,6 @@ type QueryParameters string
 
 const (
 	BackupNamespaceQueryParam QueryParameters = "backupNamespace"
-	BackupNameQueryParam      QueryParameters = "backupName"
-	BackupPlanNameQueryParam  QueryParameters = "backupPlanName"
-	TargetNameQueryParam      QueryParameters = "targetName"
 	StatusQueryParam          QueryParameters = "status"
 	TypeQueryParam            QueryParameters = "type"
 	ScopeQueryParam           QueryParameters = "scope"
@@ -108,7 +102,9 @@ const (
 // GetRequestParams for storing user input for Single Backup Detail
 type GetRequestParams struct {
 	// Name specifies the name of the Backup for which details requested
-	Name      string
+	Name string
+
+	// Namespace specifies the namespace from which Backup is requested
 	Namespace string
 }
 
@@ -135,28 +131,27 @@ type AdvancedTimeFilter struct {
 	TimeMatchOperator
 }
 
+// BodyParams
+type BodyParams struct {
+	ApplicationFilter common.ApplicationSelectorSearchFilter `json:"applicationSelectorSearchFilter,omitempty"`
+	Targets           []common.NamespacedName                `json:"targets,omitempty"`
+	BackupPlans       []common.NamespacedName                `json:"backupplans,omitempty"`
+	Backups           []common.NamespacedName                `json:"backups,omitempty"`
+}
+
 // ListRequestParams for storing user input for InfoFilter Object
 type ListRequestParams struct {
 	// Pagination Parameters
 	Paginator *common.Paginator
 
-	// The body params request for ApplicationFilter
-	ApplicationFilter *common.ApplicationSelectorSearchFilter
+	// The body params request for Filter
+	Filter *BodyParams
 
 	// Ordering Parameters
 	Ordering *OrderingField
 
-	// TargetName specifies, The backup's BackupPlan should have these TargetNames
-	TargetName []string
-
 	// BackupNamespaces will specifies if the Backup's BackupPlan have this backupNamespace
 	BackupNamespace []string
-
-	// BackupPlanName will specifies if the Backup have this backupPlan
-	BackupPlanName []string
-
-	// BackupName will specifies if the Backup have this name
-	BackupName []string
 
 	// Status specifies the status of Backup (InProgress, Available OR Failed)
 	Status []v1.Status
@@ -347,12 +342,10 @@ func (in *Backup) populateGeneratedField(helper *DetailHelper) {
 	if in.GetAnnotations()[internal.ScheduleType] == string(v1.Periodic) {
 		scheduleType = PolicyBased
 	}
+
 	in.GeneratedField = &GeneratedField{
-		BackupNamespace:   helper.BackupPlan.GetNamespace(),
-		ApplicationType:   helper.ApplicationType,
-		Target:            &helper.Target.ObjectMeta,
-		InProgressRestore: helper.InProgressResotre,
-		ScheduleType:      scheduleType,
+		ApplicationType: helper.ApplicationType,
+		ScheduleType:    scheduleType,
 	}
 }
 

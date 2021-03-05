@@ -113,6 +113,17 @@ func IgnoreNotFound(err error) error {
 	return err
 }
 
+func GetControllerOwner(obj client.Object) (*types.NamespacedName, bool) {
+	annotations := obj.GetAnnotations()
+	controllerName, controllerNamePresent := annotations[internal.ControllerOwnerName]
+	controllerNamespace, controllerNamespacePresent := annotations[internal.ControllerOwnerNamespace]
+	if controllerNamePresent && controllerNamespacePresent {
+		return &types.NamespacedName{Namespace: controllerNamespace, Name: controllerName}, true
+	}
+
+	return nil, false
+}
+
 // ImplementDataComponentConditions will add current phase conditions for restore data components
 func ImplementDataComponentConditions(objectType interface{}, status v1.Status, pvcName string, phase v1.OperationType) {
 

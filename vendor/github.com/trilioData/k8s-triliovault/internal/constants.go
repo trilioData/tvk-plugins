@@ -496,6 +496,8 @@ const (
 	ControlPlane          = "control-plane"
 	TargetBrowser         = "target-browser"
 	ProfilingTickInterval = 2
+
+	DRPlanAnnotationKey = TrilioVaultGroup + "/" + "drplan"
 )
 
 var DeleteRetry = wait.Backoff{

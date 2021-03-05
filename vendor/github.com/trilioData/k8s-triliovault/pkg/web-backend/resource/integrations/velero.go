@@ -19,6 +19,7 @@ import (
 	"github.com/trilioData/k8s-triliovault/internal"
 	clientapi "github.com/trilioData/k8s-triliovault/pkg/web-backend/client/api"
 	backup2 "github.com/trilioData/k8s-triliovault/pkg/web-backend/resource/backup"
+	"github.com/trilioData/k8s-triliovault/pkg/web-backend/resource/common"
 )
 
 type VeleroKind string
@@ -53,7 +54,7 @@ type VeleroIntegration struct {
 	kinds        sets.String
 }
 
-func (v VeleroIntegration) BackupList(requiredStatus string) (BackupList, error) {
+func (v VeleroIntegration) BackupList(listRequestParams *ListRequestParams) (BackupList, error) {
 
 	ctrl.Log.WithName("function").WithName("integrationBackup:getIntegrationBackupList")
 
@@ -73,8 +74,13 @@ func (v VeleroIntegration) BackupList(requiredStatus string) (BackupList, error)
 		Kind:    string(VeleroBackupKind),
 	})
 
-	if err := v.authClient.List(context.Background(), &veleroBackupList); err != nil {
-		log.Error(err, "failed to get integrationBackupList from apiServer cache")
+	listOps := &client.ListOptions{}
+	if listRequestParams.Namespace != nil {
+		listOps = &client.ListOptions{Namespace: *listRequestParams.Namespace}
+	}
+	if err := v.authClient.List(context.Background(), &veleroBackupList,
+		listOps); err != nil {
+		log.Error(err, "failed to get integrationRestoreList from apiServer cache")
 		return BackupList{}, err
 	}
 
@@ -83,12 +89,19 @@ func (v VeleroIntegration) BackupList(requiredStatus string) (BackupList, error)
 
 	for _, backup := range veleroBackupList.Items {
 
+		// filter by Time Range Requested
+		if !listRequestParams.TimeRangeFilter.IsEmpty() && !common.IsTimestampInRange(backup.GetCreationTimestamp(),
+			*listRequestParams.TimeRangeFilter) {
+			continue
+		}
+
 		status := GetStringFromUnstructured(backup.Object, "status", "phase")
 		status = covertToTrilioStatus(status, internal.BackupKind)
 
 		integrationBackupList.Summary.Result[status]++
 
-		if requiredStatus != "" && status != requiredStatus {
+		// filter by status
+		if listRequestParams.Status != nil && status != *listRequestParams.Status {
 			continue
 		}
 
@@ -114,14 +127,60 @@ func (v VeleroIntegration) BackupList(requiredStatus string) (BackupList, error)
 		index++
 	}
 
-	sort.SliceStable(integrationBackupList.Results, func(i, j int) bool {
-		return integrationBackupList.Results[i].Metadata.Name < integrationBackupList.Results[j].Metadata.Name
-	})
+	// nolint:dupl // added to get rid of lint errors of duplicate code
+	if listRequestParams.OrderingField != nil {
+		switch listRequestParams.OrderingField.Field {
+		case string(ExpirationTimestamp):
+			if listRequestParams.OrderingField.Ascending {
+				sort.SliceStable(integrationBackupList.Results, func(i, j int) bool {
+					return integrationBackupList.Results[i].Details.ExpirationTimestamp < integrationBackupList.Results[j].Details.ExpirationTimestamp
+				})
+			} else {
+				sort.SliceStable(integrationBackupList.Results, func(i, j int) bool {
+					return integrationBackupList.Results[i].Details.ExpirationTimestamp > integrationBackupList.Results[j].Details.ExpirationTimestamp
+				})
+			}
+		case string(CreationTimestamp):
+			if listRequestParams.OrderingField.Ascending {
+				sort.SliceStable(integrationBackupList.Results, func(i, j int) bool {
+					return integrationBackupList.Results[i].Details.StartTimestamp < integrationBackupList.Results[j].Details.StartTimestamp
+				})
+			} else {
+				sort.SliceStable(integrationBackupList.Results, func(i, j int) bool {
+					return integrationBackupList.Results[i].Details.StartTimestamp > integrationBackupList.Results[j].Details.StartTimestamp
+				})
+			}
+		case string(Status):
+			if listRequestParams.OrderingField.Ascending {
+				sort.SliceStable(integrationBackupList.Results, func(i, j int) bool {
+					return integrationBackupList.Results[i].Details.Status < integrationBackupList.Results[j].Details.Status
+				})
+			} else {
+				sort.SliceStable(integrationBackupList.Results, func(i, j int) bool {
+					return integrationBackupList.Results[i].Details.Status > integrationBackupList.Results[j].Details.Status
+				})
+			}
+		case string(Name):
+			if listRequestParams.OrderingField.Ascending {
+				sort.SliceStable(integrationBackupList.Results, func(i, j int) bool {
+					return integrationBackupList.Results[i].Metadata.Name < integrationBackupList.Results[j].Metadata.Name
+				})
+			} else {
+				sort.SliceStable(integrationBackupList.Results, func(i, j int) bool {
+					return integrationBackupList.Results[i].Metadata.Name > integrationBackupList.Results[j].Metadata.Name
+				})
+			}
+		default:
+			sort.SliceStable(integrationBackupList.Results, func(i, j int) bool {
+				return integrationBackupList.Results[i].Metadata.Name < integrationBackupList.Results[j].Metadata.Name
+			})
+		}
+	}
 
 	return integrationBackupList, nil
 }
 
-func (v VeleroIntegration) RestoreList(requiredStatus string) (RestoreList, error) {
+func (v VeleroIntegration) RestoreList(listRequestParams *ListRequestParams) (RestoreList, error) {
 	ctrl.Log.WithName("function").WithName("integrationBackup:getIntegrationRestoreList")
 
 	var integrationRestoreList RestoreList
@@ -140,7 +199,12 @@ func (v VeleroIntegration) RestoreList(requiredStatus string) (RestoreList, erro
 		Kind:    string(VeleroRestoreKind),
 	})
 
-	if err := v.authClient.List(context.Background(), &veleroRestoreList); err != nil {
+	listOps := &client.ListOptions{}
+	if listRequestParams.Namespace != nil {
+		listOps = &client.ListOptions{Namespace: *listRequestParams.Namespace}
+	}
+	if err := v.authClient.List(context.Background(), &veleroRestoreList,
+		listOps); err != nil {
 		log.Error(err, "failed to get integrationRestoreList from apiServer cache")
 		return RestoreList{}, err
 	}
@@ -150,12 +214,19 @@ func (v VeleroIntegration) RestoreList(requiredStatus string) (RestoreList, erro
 
 	for _, restore := range veleroRestoreList.Items {
 
+		// filter by Time Range Requested
+		if !listRequestParams.TimeRangeFilter.IsEmpty() && !common.IsTimestampInRange(restore.GetCreationTimestamp(),
+			*listRequestParams.TimeRangeFilter) {
+			continue
+		}
+
 		status := GetStringFromUnstructured(restore.Object, "status", "phase")
 		status = covertToTrilioStatus(status, internal.RestoreKind)
 
 		integrationRestoreList.Summary.Result[status]++
 
-		if requiredStatus != "" && status != requiredStatus {
+		// filter by status
+		if listRequestParams.Status != nil && status != *listRequestParams.Status {
 			continue
 		}
 
@@ -176,14 +247,60 @@ func (v VeleroIntegration) RestoreList(requiredStatus string) (RestoreList, erro
 
 	}
 
-	sort.SliceStable(integrationRestoreList.Results, func(i, j int) bool {
-		return integrationRestoreList.Results[i].Metadata.Name < integrationRestoreList.Results[j].Metadata.Name
-	})
+	// nolint:dupl // added to get rid of lint errors of duplicate code
+	if listRequestParams.OrderingField != nil {
+		switch listRequestParams.OrderingField.Field {
+		case string(RestoreTimestamp):
+			if listRequestParams.OrderingField.Ascending {
+				sort.SliceStable(integrationRestoreList.Results, func(i, j int) bool {
+					return integrationRestoreList.Results[i].Details.RestoreTimestamp < integrationRestoreList.Results[j].Details.RestoreTimestamp
+				})
+			} else {
+				sort.SliceStable(integrationRestoreList.Results, func(i, j int) bool {
+					return integrationRestoreList.Results[i].Details.RestoreTimestamp > integrationRestoreList.Results[j].Details.RestoreTimestamp
+				})
+			}
+		case string(CreationTimestamp):
+			if listRequestParams.OrderingField.Ascending {
+				sort.SliceStable(integrationRestoreList.Results, func(i, j int) bool {
+					return integrationRestoreList.Results[i].Details.RestoreTimestamp < integrationRestoreList.Results[j].Details.RestoreTimestamp
+				})
+			} else {
+				sort.SliceStable(integrationRestoreList.Results, func(i, j int) bool {
+					return integrationRestoreList.Results[i].Details.RestoreTimestamp > integrationRestoreList.Results[j].Details.RestoreTimestamp
+				})
+			}
+		case string(Status):
+			if listRequestParams.OrderingField.Ascending {
+				sort.SliceStable(integrationRestoreList.Results, func(i, j int) bool {
+					return integrationRestoreList.Results[i].Details.Status < integrationRestoreList.Results[j].Details.Status
+				})
+			} else {
+				sort.SliceStable(integrationRestoreList.Results, func(i, j int) bool {
+					return integrationRestoreList.Results[i].Details.Status > integrationRestoreList.Results[j].Details.Status
+				})
+			}
+		case string(Name):
+			if listRequestParams.OrderingField.Ascending {
+				sort.SliceStable(integrationRestoreList.Results, func(i, j int) bool {
+					return integrationRestoreList.Results[i].Metadata.Name < integrationRestoreList.Results[j].Metadata.Name
+				})
+			} else {
+				sort.SliceStable(integrationRestoreList.Results, func(i, j int) bool {
+					return integrationRestoreList.Results[i].Metadata.Name > integrationRestoreList.Results[j].Metadata.Name
+				})
+			}
+		default:
+			sort.SliceStable(integrationRestoreList.Results, func(i, j int) bool {
+				return integrationRestoreList.Results[i].Metadata.Name < integrationRestoreList.Results[j].Metadata.Name
+			})
+		}
+	}
 
 	return integrationRestoreList, nil
 }
 
-func (v VeleroIntegration) TargetList(requiredStatus string) (TargetList, error) {
+func (v VeleroIntegration) TargetList(listRequestParams *ListRequestParams) (TargetList, error) {
 	ctrl.Log.WithName("function").WithName("integrationTarget:getIntegrationTargetList")
 
 	var index int
@@ -198,28 +315,84 @@ func (v VeleroIntegration) TargetList(requiredStatus string) (TargetList, error)
 		return TargetList{}, err
 	}
 
-	integrationTargetList, err := veleroBackupLocationList(&index, v, &TargetList{}, requiredStatus)
+	integrationTargetList, err := veleroBackupLocationList(&index, v, &TargetList{}, listRequestParams)
 	if err != nil {
 		log.Error(err, "error while getting backupStorageLocation list")
 		return TargetList{}, err
 	}
 
-	integrationTargetList, err = veleroSnapshotLocationList(&index, v, integrationTargetList, requiredStatus)
+	integrationTargetList, err = veleroSnapshotLocationList(&index, v, integrationTargetList, listRequestParams)
 	if err != nil {
 		log.Error(err, "error while getting backupSnapshotLocation list")
 		return TargetList{}, err
 	}
 
-	sort.SliceStable(integrationTargetList.Results, func(i, j int) bool {
-		return integrationTargetList.Results[i].Metadata.Name < integrationTargetList.Results[j].Metadata.Name
-	})
+	// nolint:dupl // added to get rid of lint errors of duplicate code
+	if listRequestParams.OrderingField != nil {
+		switch listRequestParams.OrderingField.Field {
+		case string(ProviderName):
+			if listRequestParams.OrderingField.Ascending {
+				sort.SliceStable(integrationTargetList.Results, func(i, j int) bool {
+					return integrationTargetList.Results[i].Details.Vendor < integrationTargetList.Results[j].Details.Vendor
+				})
+			} else {
+				sort.SliceStable(integrationTargetList.Results, func(i, j int) bool {
+					return integrationTargetList.Results[i].Details.Vendor > integrationTargetList.Results[j].Details.Vendor
+				})
+			}
+		case string(StorageType):
+			if listRequestParams.OrderingField.Ascending {
+				sort.SliceStable(integrationTargetList.Results, func(i, j int) bool {
+					return integrationTargetList.Results[i].Details.Type < integrationTargetList.Results[j].Details.Type
+				})
+			} else {
+				sort.SliceStable(integrationTargetList.Results, func(i, j int) bool {
+					return integrationTargetList.Results[i].Details.Type > integrationTargetList.Results[j].Details.Type
+				})
+			}
+		case string(CreationTimestamp):
+			if listRequestParams.OrderingField.Ascending {
+				sort.SliceStable(integrationTargetList.Results, func(i, j int) bool {
+					return integrationTargetList.Results[i].Details.CreationTimestamp < integrationTargetList.Results[j].Details.CreationTimestamp
+				})
+			} else {
+				sort.SliceStable(integrationTargetList.Results, func(i, j int) bool {
+					return integrationTargetList.Results[i].Details.CreationTimestamp > integrationTargetList.Results[j].Details.CreationTimestamp
+				})
+			}
+		case string(Status):
+			if listRequestParams.OrderingField.Ascending {
+				sort.SliceStable(integrationTargetList.Results, func(i, j int) bool {
+					return integrationTargetList.Results[i].Details.Status < integrationTargetList.Results[j].Details.Status
+				})
+			} else {
+				sort.SliceStable(integrationTargetList.Results, func(i, j int) bool {
+					return integrationTargetList.Results[i].Details.Status > integrationTargetList.Results[j].Details.Status
+				})
+			}
+		case string(Name):
+			if listRequestParams.OrderingField.Ascending {
+				sort.SliceStable(integrationTargetList.Results, func(i, j int) bool {
+					return integrationTargetList.Results[i].Metadata.Name < integrationTargetList.Results[j].Metadata.Name
+				})
+			} else {
+				sort.SliceStable(integrationTargetList.Results, func(i, j int) bool {
+					return integrationTargetList.Results[i].Metadata.Name > integrationTargetList.Results[j].Metadata.Name
+				})
+			}
+		default:
+			sort.SliceStable(integrationTargetList.Results, func(i, j int) bool {
+				return integrationTargetList.Results[i].Metadata.Name < integrationTargetList.Results[j].Metadata.Name
+			})
+		}
+	}
 
 	return *integrationTargetList, nil
 
 }
 
 func veleroBackupLocationList(index *int, veleroIntegration VeleroIntegration, targetList *TargetList,
-	requiredStatus string) (*TargetList, error) {
+	listRequestParams *ListRequestParams) (*TargetList, error) {
 
 	var veleroBackupLocList unstructured.UnstructuredList
 
@@ -229,8 +402,13 @@ func veleroBackupLocationList(index *int, veleroIntegration VeleroIntegration, t
 		Kind:    string(VeleroBackupStorageLocationKind),
 	})
 
-	if err := veleroIntegration.authClient.List(context.Background(), &veleroBackupLocList); err != nil {
-		log.Error(err, "failed to get BackupLocationList from apiServer cache")
+	listOps := &client.ListOptions{}
+	if listRequestParams.Namespace != nil {
+		listOps = &client.ListOptions{Namespace: *listRequestParams.Namespace}
+	}
+	if err := veleroIntegration.authClient.List(context.Background(), &veleroBackupLocList,
+		listOps); err != nil {
+		log.Error(err, "failed to get integrationRestoreList from apiServer cache")
 		return targetList, err
 	}
 
@@ -239,10 +417,17 @@ func veleroBackupLocationList(index *int, veleroIntegration VeleroIntegration, t
 
 	for _, location := range veleroBackupLocList.Items {
 
+		// filter by Time Range Requested
+		if !listRequestParams.TimeRangeFilter.IsEmpty() && !common.IsTimestampInRange(location.GetCreationTimestamp(),
+			*listRequestParams.TimeRangeFilter) {
+			continue
+		}
+
 		status := GetStringFromUnstructured(location.Object, "status", "phase")
 		status = covertToTrilioStatus(status, internal.TargetKind)
 
-		if requiredStatus != "" && status != requiredStatus {
+		// filter by status
+		if listRequestParams.Status != nil && status != *listRequestParams.Status {
 			continue
 		}
 
@@ -264,7 +449,7 @@ func veleroBackupLocationList(index *int, veleroIntegration VeleroIntegration, t
 }
 
 func veleroSnapshotLocationList(index *int, veleroIntegration VeleroIntegration, targetList *TargetList,
-	requiredStatus string) (*TargetList, error) {
+	listRequestParams *ListRequestParams) (*TargetList, error) {
 
 	var veleroSnapshotLocList unstructured.UnstructuredList
 
@@ -274,8 +459,13 @@ func veleroSnapshotLocationList(index *int, veleroIntegration VeleroIntegration,
 		Kind:    string(VeleroVolumeSnapshotLocationKind),
 	})
 
-	if err := veleroIntegration.authClient.List(context.Background(), &veleroSnapshotLocList); err != nil {
-		log.Error(err, "failed to get SnapshotLocationList from apiServer cache")
+	listOps := &client.ListOptions{}
+	if listRequestParams.Namespace != nil {
+		listOps = &client.ListOptions{Namespace: *listRequestParams.Namespace}
+	}
+	if err := veleroIntegration.authClient.List(context.Background(), &veleroSnapshotLocList,
+		listOps); err != nil {
+		log.Error(err, "failed to get integrationRestoreList from apiServer cache")
 		return targetList, err
 	}
 
@@ -286,14 +476,20 @@ func veleroSnapshotLocationList(index *int, veleroIntegration VeleroIntegration,
 
 	for _, location := range veleroSnapshotLocList.Items {
 
-		status := GetStringFromUnstructured(location.Object, "status", "phase")
+		// filter by Time Range Requested
+		if !listRequestParams.TimeRangeFilter.IsEmpty() && !common.IsTimestampInRange(location.GetCreationTimestamp(),
+			*listRequestParams.TimeRangeFilter) {
+			continue
+		}
 
+		status := GetStringFromUnstructured(location.Object, "status", "phase")
 		if status == "" {
 			status = string(v1.Unavailable)
 		}
 		status = covertToTrilioStatus(status, internal.TargetKind)
 
-		if requiredStatus != "" && status != requiredStatus {
+		// filter by status
+		if listRequestParams.Status != nil && status != *listRequestParams.Status {
 			continue
 		}
 
@@ -314,6 +510,7 @@ func veleroSnapshotLocationList(index *int, veleroIntegration VeleroIntegration,
 	return targetList, nil
 }
 
+// covertToTrilioStatus convert velero status to trilio status (for making filtering easy)
 func covertToTrilioStatus(veleroStatus, kind string) (trilioStatus string) {
 
 	switch kind {
@@ -354,7 +551,6 @@ func getResourceMetadata(v VeleroIntegration, obj unstructured.Unstructured, kin
 }
 
 func NewVeleroIntegration(clientManager clientapi.ClientManager, authClient client.Client) (Other, error) {
-
 	cachedDiscoveryClient := clientManager.CachedDiscoveryClient()
 	allServerResources, err := cachedDiscoveryClient.ServerPreferredResources()
 	if err != nil {
@@ -401,6 +597,7 @@ func NewVeleroIntegration(clientManager clientapi.ClientManager, authClient clie
 	}, nil
 }
 
+// GetStringFromUnstructured to get value from Unstructured.Object
 func GetStringFromUnstructured(object map[string]interface{}, fields ...string) string {
 	result, present, err := unstructured.NestedString(object, fields...)
 	if !present || err != nil {

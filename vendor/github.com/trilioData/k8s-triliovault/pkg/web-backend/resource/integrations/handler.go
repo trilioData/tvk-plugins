@@ -2,6 +2,7 @@ package integrations
 
 import (
 	log "github.com/sirupsen/logrus"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	clientapi "github.com/trilioData/k8s-triliovault/pkg/web-backend/client/api"
@@ -9,9 +10,12 @@ import (
 )
 
 type ListRequestParams struct {
-	Paginator *common.Paginator
-	Type      []Type
-	Status    string
+	Paginator       *common.Paginator
+	Type            []Type
+	Status          *string
+	OrderingField   *OrderingParam
+	TimeRangeFilter *common.TimeRangeFilter
+	Namespace       *string
 }
 
 type ListRequest struct {
@@ -34,7 +38,7 @@ func (request *ListRequest) BackupList() (BackupList, error) {
 	}
 
 	var filteredList BackupList
-	filteredList, err = veleroIntegration.BackupList(request.Status)
+	filteredList, err = veleroIntegration.BackupList(&request.ListRequestParams)
 	if err != nil {
 		log.Error(err, "error while getting backup list")
 		return BackupList{}, err
@@ -57,7 +61,7 @@ func (request *ListRequest) RestoreList() (RestoreList, error) {
 	}
 
 	var filteredList RestoreList
-	filteredList, err = veleroIntegration.RestoreList(request.Status)
+	filteredList, err = veleroIntegration.RestoreList(&request.ListRequestParams)
 	if err != nil {
 		log.Error(err, "error while getting restore list")
 		return RestoreList{}, err
@@ -80,7 +84,7 @@ func (request *ListRequest) TargetList() (TargetList, error) {
 	}
 
 	var filteredList TargetList
-	filteredList, err = veleroIntegration.TargetList(request.Status)
+	filteredList, err = veleroIntegration.TargetList(&request.ListRequestParams)
 	if err != nil {
 		log.Error(err, "error while getting target list")
 		return TargetList{}, err

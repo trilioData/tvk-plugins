@@ -6,6 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/trilioData/k8s-triliovault/internal"
@@ -42,7 +43,10 @@ func IsMatchExactExpression(expression metav1.LabelSelectorRequirement, key, val
 func CheckLabelMatches(selectorList []metav1.LabelSelector, label map[string]string) bool {
 	for index := range selectorList {
 		selector := selectorList[index]
-		labelSelector, _ := metav1.LabelSelectorAsSelector(&selector)
+		labelSelector, err := metav1.LabelSelectorAsSelector(&selector)
+		if err != nil {
+			continue
+		}
 		if labelSelector.Matches(labels.Set(label)) {
 			return true
 		}
@@ -80,4 +84,14 @@ func FilterNamespaceByScope(namespaceList *corev1.NamespaceList) []corev1.Namesp
 	}
 
 	return nsList
+}
+
+func IsNamespacedNameExists(namespacedNames []NamespacedName, namespacedName types.NamespacedName) bool {
+	for index := range namespacedNames {
+		if namespacedNames[index].Namespace == namespacedName.Namespace &&
+			namespacedNames[index].Name == namespacedName.Name {
+			return true
+		}
+	}
+	return false
 }

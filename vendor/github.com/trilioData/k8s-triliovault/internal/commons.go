@@ -23,9 +23,6 @@ import (
 	"time"
 
 	"github.com/profefe/profefe/agent"
-
-	crd "github.com/trilioData/k8s-triliovault/api/v1"
-
 	log "github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -35,8 +32,11 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	crd "github.com/trilioData/k8s-triliovault/api/v1"
 )
 
 var (
@@ -120,6 +120,14 @@ func GetTrilioResourcesDefaultListOpts() *client.ListOptions {
 	}
 
 	return opts
+}
+
+func GetObjectNamespacedName(object client.Object) types.NamespacedName {
+	return types.NamespacedName{Name: object.GetName(), Namespace: object.GetNamespace()}
+}
+
+func GetObjectRefNamespacedName(objectRef *corev1.ObjectReference) types.NamespacedName {
+	return types.NamespacedName{Name: objectRef.Name, Namespace: objectRef.Namespace}
 }
 
 func GenerateRandomString(n int, isOnlyAlphabetic bool) string {

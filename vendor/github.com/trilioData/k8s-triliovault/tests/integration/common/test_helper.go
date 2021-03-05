@@ -120,7 +120,7 @@ const (
 )
 
 func init() {
-	log.Info("initializing comman tests package")
+	log.Info("initializing common tests package")
 	kubeAccessor = GetAccessor()
 }
 
@@ -4109,7 +4109,7 @@ func CreateVeleroBackup(namespace, storageLocation, ttl, formatVersion, phase, b
 			matchExpressions[i] = metav1.LabelSelectorRequirement{
 				Key:      internal.GenerateRandomString(rand.Intn(20)+3, true),
 				Operator: op,
-				Values: matchExpressionValues,
+				Values:   matchExpressionValues,
 			}
 		} else {
 			matchExpressions[i] = metav1.LabelSelectorRequirement{
@@ -4322,7 +4322,7 @@ func CreateVeleroRestore(namespace, phase string, backupsNames *[]string) *unstr
 			matchExpressions[i] = metav1.LabelSelectorRequirement{
 				Key:      internal.GenerateRandomString(rand.Intn(20)+3, true),
 				Operator: op,
-				Values: matchExpressionValues,
+				Values:   matchExpressionValues,
 			}
 		} else {
 			matchExpressions[i] = metav1.LabelSelectorRequirement{
@@ -4511,7 +4511,7 @@ func CreateVeleroBSL(namespace, phase string) *unstructured.Unstructured {
 	// Create object
 	bsl.Object = map[string]interface{}{
 		"metadata": map[string]interface{}{
-			"name":      "sample-velero-bsl-" + internal.GenerateRandomString(rand.Intn(6)+3, true),
+			"name":      "sample-velero-target-" + internal.GenerateRandomString(rand.Intn(6)+3, true),
 			"namespace": namespace,
 		},
 		"spec":   spec,
@@ -4560,7 +4560,7 @@ func CreateVeleroVSL(namespace, phase string) *unstructured.Unstructured {
 	// Create object
 	vsl.Object = map[string]interface{}{
 		"metadata": map[string]interface{}{
-			"name":      "sample-velero-vsl-" + internal.GenerateRandomString(rand.Intn(6)+3, true),
+			"name":      "sample-velero-target-" + internal.GenerateRandomString(rand.Intn(6)+3, true),
 			"namespace": namespace,
 		},
 		"spec":   spec,

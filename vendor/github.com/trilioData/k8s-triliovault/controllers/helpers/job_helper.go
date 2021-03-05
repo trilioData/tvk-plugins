@@ -11,8 +11,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	v1 "github.com/trilioData/k8s-triliovault/api/v1"
 	"github.com/trilioData/k8s-triliovault/internal"
@@ -304,11 +306,11 @@ func GetBackupCleanupContainer(namespace, backupPath, targetName string) *corev1
 		command, true, internal.NonDMJobResource, internal.MountCapability)
 }
 
-func GetBackupSnapshotterContainer(namespace, backupName, targetName string) *corev1.Container {
+func GetBackupSnapshotterContainer(backup, target types.NamespacedName) *corev1.Container {
 
-	dataAttacherCommand := GetDataAttacherCommand(namespace, targetName)
+	dataAttacherCommand := GetDataAttacherCommand(target.Namespace, target.Name)
 	metaSnapshotCommand := fmt.Sprintf("/opt/tvk/metamover %s --backup-name %s --namespace %s",
-		internal.SnapshotAction, backupName, namespace)
+		internal.SnapshotAction, backup.Name, backup.Namespace)
 
 	command := fmt.Sprintf("%s && %s", dataAttacherCommand, metaSnapshotCommand)
 
@@ -326,22 +328,22 @@ func GetBackupSnapshotterContainer(namespace, backupName, targetName string) *co
 	return backupSnapContainer
 }
 
-func GetBackupMetadataUploadContainer(namespace, backupName, targetName string) *corev1.Container {
+func GetBackupMetadataUploadContainer(backup, target types.NamespacedName) *corev1.Container {
 
-	dataAttacherCommand := GetDataAttacherCommand(namespace, targetName)
+	dataAttacherCommand := GetDataAttacherCommand(target.Namespace, target.Name)
 	metaSnapshotCommand := fmt.Sprintf("/opt/tvk/metamover %s --backup-name %s --namespace %s",
-		internal.MetadataUploadAction, backupName, namespace)
+		internal.MetadataUploadAction, backup.Name, backup.Namespace)
 
 	command := fmt.Sprintf("%s && %s", dataAttacherCommand, metaSnapshotCommand)
 
 	return getMetaMoverContainer(command)
 }
 
-func GetBackupRetentionContainer(namespace, backupName, targetName string) *corev1.Container {
+func GetBackupRetentionContainer(backup, target types.NamespacedName) *corev1.Container {
 
-	dataAttacherCommand := GetDataAttacherCommand(namespace, targetName)
+	dataAttacherCommand := GetDataAttacherCommand(target.Namespace, target.Name)
 	retentionCommand := fmt.Sprintf("/opt/tvk/retention --backup-name %s --namespace %s",
-		backupName, namespace)
+		backup.Name, backup.Namespace)
 	command := fmt.Sprintf("%s && %s", dataAttacherCommand, retentionCommand)
 
 	return GetContainer(internal.RetentionOperation, GetBackupRetentionImage(), command, true,
@@ -368,10 +370,10 @@ func GetHookContainer(namespace, action, crName, kind string) *corev1.Container 
 }
 
 // Restore Job Containers
-func GetMetaValidationContainer(namespace, restoreName, targetName string) *corev1.Container {
-	dataAttacherCommand := GetDataAttacherCommand(namespace, targetName)
+func GetMetaValidationContainer(restore, target types.NamespacedName) *corev1.Container {
+	dataAttacherCommand := GetDataAttacherCommand(target.Namespace, target.Name)
 	metaValidationCommand := fmt.Sprintf("/opt/tvk/metamover %s --name %s --run-primitive-restore --namespace %s",
-		internal.ValidateAction, restoreName, namespace)
+		internal.ValidateAction, restore.Name, restore.Namespace)
 
 	command := fmt.Sprintf("%s && %s", dataAttacherCommand, metaValidationCommand)
 
@@ -379,17 +381,17 @@ func GetMetaValidationContainer(namespace, restoreName, targetName string) *core
 }
 
 // GetMetaRestoreContainer returns the container with the images and commands spec
-func GetMetaRestoreContainer(namespace, restoreName, targetName string) *corev1.Container {
-	dataAttacherCommand := GetDataAttacherCommand(namespace, targetName)
+func GetMetaRestoreContainer(restore, target types.NamespacedName) *corev1.Container {
+	dataAttacherCommand := GetDataAttacherCommand(target.Namespace, target.Name)
 	metaRestoreCommmand := fmt.Sprintf("/opt/tvk/metamover %s --name %s --namespace %s",
-		internal.RestoreAction, restoreName, namespace)
+		internal.RestoreAction, restore.Name, restore.Namespace)
 
 	command := fmt.Sprintf("%s && %s", dataAttacherCommand, metaRestoreCommmand)
 
 	return getMetaMoverContainer(command)
 }
 
-func GetRestoreDatamoverContainer(namespace, restoreName, targetName string, pvc *corev1.PersistentVolumeClaim,
+func GetRestoreDatamoverContainer(namespace, restoreName string, target types.NamespacedName, pvc *corev1.PersistentVolumeClaim,
 	appDs *helpers.ApplicationDataSnapshot) *corev1.Container {
 	var (
 		volumeMode corev1.PersistentVolumeMode
@@ -406,10 +408,10 @@ func GetRestoreDatamoverContainer(namespace, restoreName, targetName string, pvc
 		volumePath = internal.PseudoBlockDevicePath
 		blockDeviceDetect = DetectBlockDeviceCommand
 	}
-	dataAttacherCommmand := GetDataAttacherCommand(namespace, targetName)
+	dataAttacherCommmand := GetDataAttacherCommand(target.Namespace, target.Name)
 	dataMoverCommmand := fmt.Sprintf("/opt/tvk/datamover --action=%s --namespace=%s --restore-name=%s"+
 		" --target-name=%s --app-component=%s --component-identifier=%s --pvc-name=%s --volume-path=%s",
-		internal.RestoreDataAction, namespace, restoreName, targetName, appDs.AppComponent, appDs.ComponentIdentifier,
+		internal.RestoreDataAction, namespace, restoreName, target.Name, appDs.AppComponent, appDs.ComponentIdentifier,
 		pvc.Name, volumePath)
 	command := fmt.Sprintf("%s %s && %s", blockDeviceDetect, dataAttacherCommmand, dataMoverCommmand)
 
@@ -418,7 +420,7 @@ func GetRestoreDatamoverContainer(namespace, restoreName, targetName string, pvc
 
 // Upload Job Container
 
-func GetDataUploadContainer(namespace, backupName, previousBackupName, targetName string,
+func GetDataUploadContainer(namespace, backupName, previousBackupName string, target types.NamespacedName,
 	pvc *corev1.PersistentVolumeClaim, dataSnapshot *helpers.ApplicationDataSnapshot) *corev1.Container {
 	var (
 		volumeMode corev1.PersistentVolumeMode
@@ -435,10 +437,10 @@ func GetDataUploadContainer(namespace, backupName, previousBackupName, targetNam
 		volumePath = internal.PseudoBlockDevicePath
 		blockDeviceDetect = DetectBlockDeviceCommand
 	}
-	dataAttacherCommand := GetDataAttacherCommand(namespace, targetName)
+	dataAttacherCommand := GetDataAttacherCommand(target.Namespace, target.Name)
 	dataMoverCommand := fmt.Sprintf("/opt/tvk/datamover --action=%s --namespace=%s --backup-name=%s --previous-backup-name=%s"+
 		" --target-name=%s --app-component=%s --component-identifier=%s --pvc-name=%s --volume-path=%s",
-		internal.BackupDataAction, namespace, backupName, previousBackupName, targetName, string(dataSnapshot.AppComponent),
+		internal.BackupDataAction, namespace, backupName, previousBackupName, target.Name, string(dataSnapshot.AppComponent),
 		dataSnapshot.ComponentIdentifier, pvc.Name, volumePath)
 	command := fmt.Sprintf("%s %s && %s", blockDeviceDetect, dataAttacherCommand, dataMoverCommand)
 
@@ -494,8 +496,13 @@ func IsJobListCompleted(jobList *batchv1.JobList, status JobListStatus) bool {
 	return len(jobList.Items) == completedCount
 }
 
+// nolint:interfacer // Need to use object as we don't know the type of object to be generic
+func ControllerChildResourceAnnotations(object client.Object) map[string]string {
+	return map[string]string{internal.ControllerOwnerName: object.GetName(), internal.ControllerOwnerNamespace: object.GetNamespace()}
+}
+
 // GetTargetValidatorJob creates a job spec to validate if the target can be mounted in a pod
-func GetTargetValidatorJob(target *v1.Target) *batchv1.Job {
+func GetTargetValidatorJob(installNamespace string, target *v1.Target) *batchv1.Job {
 
 	validationCmd := fmt.Sprintf("python %s --target-name=%s --namespace=%s", path.Join(internal.BasePath,
 		internal.DatastoreValidatorUtil), target.GetName(), target.GetNamespace())
@@ -506,7 +513,8 @@ func GetTargetValidatorJob(target *v1.Target) *batchv1.Job {
 		validationCmd,
 	)
 
-	annotations := map[string]string{internal.Operation: internal.TargetValidationOperation}
+	annotations := ControllerChildResourceAnnotations(target)
+	annotations[internal.Operation] = internal.TargetValidationOperation
 
 	validationContainer := GetContainer(
 		"validator",
@@ -517,7 +525,7 @@ func GetTargetValidatorJob(target *v1.Target) *batchv1.Job {
 		internal.MountCapability,
 	)
 
-	job := GetJob(target.Name, target.Namespace, validationContainer, []corev1.Volume{}, internal.ServiceAccountName)
+	job := GetJob(target.Name, installNamespace, validationContainer, []corev1.Volume{}, internal.ServiceAccountName)
 
 	job.ObjectMeta.Annotations = annotations
 	job.ObjectMeta.Labels["owner-gen-id"] = fmt.Sprintf("%d", target.GetGeneration())

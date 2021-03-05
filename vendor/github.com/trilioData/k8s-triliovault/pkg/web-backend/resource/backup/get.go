@@ -54,14 +54,8 @@ func GetBackupByName(ctx context.Context, apiClient client.Client, name, namespa
 func GetBackupList(ctx context.Context, apiClient client.Client) (*v1.BackupList, error) {
 	log := ctrl.Log.WithName("function").WithName("backup:getBackupList")
 
-	opts := &client.ListOptions{}
-	// For Namespace scoped installation Trilio resources only from installation namespace retrieved.
-	if internal.GetAppScope() == internal.NamespacedScope {
-		client.InNamespace(internal.GetInstallNamespace()).ApplyToList(opts)
-	}
-
 	backupList := &v1.BackupList{}
-	if err := apiClient.List(ctx, backupList, opts); err != nil {
+	if err := apiClient.List(ctx, backupList, internal.GetTrilioResourcesDefaultListOpts()); err != nil {
 		log.Error(err, "failed to get backupList from apiServer cache")
 		return nil, err
 	}
