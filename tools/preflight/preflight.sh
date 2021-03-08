@@ -637,6 +637,22 @@ exit_trap() {
   exit ${rc}
 }
 
+export -f check_kubectl
+export -f check_kubectl_access
+export -f check_helm_tiller_version
+export -f check_kubernetes_version
+export -f check_kubernetes_rbac
+export -f check_feature_gates
+export -f check_storage_snapshot_class
+export -f check_csi
+export -f check_dns_resolution
+export -f check_volume_snapshot
+
+# --- End Definitions Section ---
+# check if we are being sourced by another script or shell
+[[ "${#BASH_SOURCE[@]}" -gt "1" ]] && { return 0; }
+# --- Begin Code Execution Section ---
+
 take_input "$@"
 
 echo
