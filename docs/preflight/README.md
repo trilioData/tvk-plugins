@@ -1,11 +1,11 @@
 # Kubernetes Triliovault Preflight Checks
 
-**preflight** is a standalone executable which checks if all the pre-requisites are
+**tvk-preflight** is a kubectl plugin which checks if all the pre-requisites are  
 met before installing Triliovault for Kubernetes application in a Kubernetes cluster.
 
 ## Checks Performed during Preflight
 
-Some checks are performed on system from where the application is installed and some are performed on the K8s cluster.
+Some checks are performed on system from where the application is installed and some are performed on the K8s cluster.  
 The following checks included in preflight:
 
 - Ensure *kubectl* utility is present on system
@@ -39,16 +39,47 @@ The following checks included in preflight:
   - Ensure data in restored pod/pvc
 - Cleanup of all the intermediate resources created
 
-## Running Preflight checks
+## Pre-requisites:
 
-- Getting preflight.sh
-  - `wget https://raw.githubusercontent.com/triliovault-k8s-issues/triliovault-k8s-issues/master/tools/preflight/preflight.sh`
-  - `chmod +x ./preflight.sh`
+1. krew - kubectl-plugin manager. Install from [here](https://krew.sigs.k8s.io/docs/user-guide/setup/install/)
+2. kubectl - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
-- Available parametes for script `./preflight.sh --help`
-  - `--storageclass` - Name of storage class being used in k8s cluster (Needed)
-  - `--snapshotclass` Name of volume snapshot class being used in k8s cluster (Needed)
-  - `--kubeconfig` - Kubeconfig path, if not given default is used by kubectl (Optional)
+**Supported OS/Arch**:
 
-- Running preflight checks
-  - `./preflight.sh --storageclass my-hostpath-sc --snapshotclass default-snapclass --kubeconfig /home/usr/kubeconfig`
+- Linux based x86/x64
+- macOS
+- Windows
+
+
+## Installation, Upgrade, Removal of Plugins :
+
+- Add TVK custom plugin index of krew:
+
+  ```kubectl krew index add tvk-plugins https://github.com/trilioData/tvk-plugins.git  ```
+
+- Installation:
+
+
+	 ```kubectl krew install tvk-plugins/tvk-preflight```  
+
+- Upgrade:
+
+
+	 ```kubectl krew upgrade tvk-preflight```  
+
+- Removal:
+
+
+ 	```kubectl krew uninstall tvk-preflight```  
+
+- Usage:
+
+
+	 ```kubectl tvk-preflight [flags]```  
+- Flags:
+
+| Parameter                 | Default       | Description   |    
+| :------------------------ |:-------------:| :-------------|  
+| --storageclass          |             |Name of storage class being used in k8s cluster (Needed)
+| --snapshotclass          |            |Name of volume snapshot class being used in k8s cluster (Needed)
+| --kubeconfig            |   ~/.kube/config             |Kubeconfig path, if not given default is used by kubectl (Optional)
