@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth lib for GKE
-
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/trilioData/tvk-plugins/tools/log-collector"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth lib for GKE
+
+	logcollector "github.com/trilioData/tvk-plugins/tools/log-collector"
 )
 
 const (

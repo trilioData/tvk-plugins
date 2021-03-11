@@ -71,7 +71,6 @@ jobs:
               - '.krew/tvk-log-collector.yaml'
               - 'tools/log-collector/**'
               - '.goreleaser.yml'
-              - 'tests/log-collector/**'
               - 'tests/common/**'
             testPreflight:
               - 'tools/preflight/**'
@@ -79,7 +78,6 @@ jobs:
             testLogCollector:
               - 'cmd/**'
               - 'tools/log-collector/**'
-              - 'tests/log-collector/**'
               - 'tests/common/**'
 
   # build_test_preflight job build preflight packages, runs integration tests and tests packages for plugin creation(install, uninstall)
@@ -170,13 +168,6 @@ jobs:
           cluster_name: ${{ env.GKE_CLUSTER }}
           location: ${{ env.GKE_ZONE }}
           credentials: ${{ secrets.GKE_SA_KEY }}
-
-      - name: Run Log-collector Integration Tests
-        if: (needs.pre-build.outputs.testLogCollector == 'true') || startsWith(github.ref, 'refs/tags/')
-        run: hack/run-integration-tests.sh tests/log-collector/
-        env:
-          job_name: log-collector
-          build_id: logcollector-${{ github.run_id }}
 
       - name: Ensure Required Utilities Installed for Plugin Testing
         run: make install-required-utilities
