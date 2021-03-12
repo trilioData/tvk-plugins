@@ -7,11 +7,16 @@ tvk-log-collector collects the logs, config and events of resources. Pod Logs ca
 1. krew - kubectl-plugin manager. Install from [here](https://krew.sigs.k8s.io/docs/user-guide/setup/install/)
 2. kubectl - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
-**Supported OS/Arch**:
+**Supported OS and Architectures**:
 
-- Linux based x86/x64
-- macOS
+OS:
+- Linux
+- darwin
 - Windows
+
+Arch:
+- amd64
+- x86
 
 
 ## Installation, Upgrade, Removal of Plugins:
@@ -19,23 +24,32 @@ tvk-log-collector collects the logs, config and events of resources. Pod Logs ca
 
 - Add TVK custom plugin index of krew:
 
-  ``` kubectl krew index add tvk-plugins https://github.com/trilioData/tvk-plugins.git```
+  ```
+  kubectl krew index add tvk-plugins https://github.com/trilioData/tvk-plugins.git
+  ```
 
 - Installation:
 
-  ```kubectl krew install tvk-plugins/tvk-log-collector```
+  ```
+  kubectl krew install tvk-plugins/tvk-log-collector
+  ```
 
 - Upgrade:
 
-  ```kubectl krew upgrade tvk-log-collector```
+  ```
+  kubectl krew upgrade tvk-log-collector
+  ```
 
 - Removal:
 
-  ```kubectl krew uninstall tvk-log-collector```
+  ```
+  kubectl krew uninstall tvk-log-collector
+  ```
 
-- Usage:
+## Usage:
 
-  ```kubectl tvk-log-collector [flags]```
+    kubectl tvk-log-collector [flags]
+  
 - Flags:
 
 | Parameter                 | Default       | Description   |    
@@ -49,7 +63,7 @@ tvk-log-collector collects the logs, config and events of resources. Pod Logs ca
 ## Output
 This command will create `triliovault-<date-time>.zip` zip file containing cluster debugging information.
 
-## Resources
+## Resources Considered for Log Collection:
 ```  
 CustomResourceDefinition  
 VolumeSnapshots  

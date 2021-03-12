@@ -3,6 +3,22 @@
 **tvk-preflight** is a kubectl plugin which checks if all the pre-requisites are  
 met before installing Triliovault for Kubernetes application in a Kubernetes cluster.
 
+## Pre-requisites:
+
+1. krew - kubectl-plugin manager. Install from [here](https://krew.sigs.k8s.io/docs/user-guide/setup/install/)
+2. kubectl - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+
+**Supported OS and Architectures**:
+
+OS:
+- Linux
+- darwin
+
+Arch:
+- amd64
+- x86
+
+
 ## Checks Performed during Preflight
 
 Some checks are performed on system from where the application is installed and some are performed on the K8s cluster.  
@@ -39,43 +55,37 @@ The following checks included in preflight:
   - Ensure data in restored pod/pvc
 - Cleanup of all the intermediate resources created
 
-## Pre-requisites:
-
-1. krew - kubectl-plugin manager. Install from [here](https://krew.sigs.k8s.io/docs/user-guide/setup/install/)
-2. kubectl - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-
-**Supported OS/Arch**:
-
-- Linux based x86/x64
-- macOS
-- Windows
-
 
 ## Installation, Upgrade, Removal of Plugins :
 
 - Add TVK custom plugin index of krew:
 
-  ```kubectl krew index add tvk-plugins https://github.com/trilioData/tvk-plugins.git  ```
+  ```
+  kubectl krew index add tvk-plugins https://github.com/trilioData/tvk-plugins.git
+  ```
 
 - Installation:
 
-
-	 ```kubectl krew install tvk-plugins/tvk-preflight```  
+    ```
+    kubectl krew install tvk-plugins/tvk-preflight
+  ```  
 
 - Upgrade:
 
-
-	 ```kubectl krew upgrade tvk-preflight```  
+    ```
+    kubectl krew upgrade tvk-preflight
+  ```  
 
 - Removal:
 
+ 	```
+ 	kubectl krew uninstall tvk-preflight
+  ```  
 
- 	```kubectl krew uninstall tvk-preflight```  
+## Usage:
 
-- Usage:
-
-
-	 ```kubectl tvk-preflight [flags]```  
+    kubectl tvk-preflight [flags]
+	
 - Flags:
 
 | Parameter                 | Default       | Description   |    
