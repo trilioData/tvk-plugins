@@ -1,17 +1,4 @@
 #! /bin/sh
-# $Id: shunit2 335 2011-05-01 20:10:33Z kate.ward@forestent.com $
-# vim:et:ft=sh:sts=2:sw=2
-#
-# Copyright 2008 Kate Ward. All Rights Reserved.
-# Released under the LGPL (GNU Lesser General Public License)
-#
-# shUnit2 -- Unit testing framework for Unix shell scripts.
-# http://code.google.com/p/shunit2/
-#
-# Author: kate.ward@forestent.com (Kate Ward)
-#
-# shUnit2 is a xUnit based unit test framework for Bourne shell scripts. It is
-# based on the popular JUnit unit testing framework for Java.
 
 # return if shunit already loaded
 [ -n "${SHUNIT_VERSION:-}" ] && exit 0
