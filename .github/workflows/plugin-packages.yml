@@ -62,7 +62,6 @@ jobs:
               - 'tools/preflight/**'
               - '.goreleaser.yml'
               - 'tests/preflight/**'
-              - 'tests/common/**'
             logCollector:
               - 'Makefile'
               - 'cmd/**'
@@ -73,9 +72,6 @@ jobs:
             testPreflight:
               - 'tools/preflight/**'
               - 'tests/preflight/**'
-            testLogCollector:
-              - 'cmd/**'
-              - 'tools/log-collector/**'
 
   # build_test_preflight job build preflight packages, runs integration tests and tests packages for plugin creation(install, uninstall)
   # upload preflight packages to github artifacts if tags('/ref/tags') are pushed
@@ -92,14 +88,8 @@ jobs:
     - name: Build Preflight Package
       run: make build-preflight
 
-    - name: Setup Go
-      if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.15
-
     - name: Authenticate and Connect to GKE cluster
-      if: startsWith(github.ref, 'refs/tags/')
+      if: startsWith(needs.pre-build.outputs.testPreflight == 'true') || github.ref, 'refs/tags/')
       uses: google-github-actions/get-gke-credentials@v0.2.1
       with:
         cluster_name: ${{ env.GKE_CLUSTER }}
@@ -108,7 +98,7 @@ jobs:
 
     - name: Run Preflight Integration Tests
       if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
-      run: make test-preflight-intregation
+      run: make test-preflight-integration
 
     - name: Ensure Required Utilities Installed
       run: make install-required-utilities
