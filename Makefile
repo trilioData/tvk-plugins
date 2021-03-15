@@ -25,16 +25,11 @@ go-lint-fix:
 
 lint: yaml-lint shell-lint go-lint
 
-go-test:
-	GOFLAGS=-mod=vendor ginkgo -v -r -keepGoing ./tests/ -coverprofile coverage.out
-
-test: build go-test
-
 build-log-collector:
 	goreleaser release --snapshot --skip-publish --rm-dist
 
 run-log-collector:
-	go run ./cmd/main.go
+	go run ./cmd/log-collector/main.go
 
 install-required-utilities:
 	./hack/install-required-utilities.sh
@@ -56,6 +51,9 @@ test-preflight-plugin-locally:
 test-log-collector-plugin-locally:
 	./hack/generate-test-log-collector-plugin-manifest.sh
 	./hack/test-log-collector-plugin-locally.sh
+
+test-preflight-integration:
+	./test/preflight/preflight_test.sh
 
 test-preflight: clean build-preflight test-preflight-plugin-locally
 

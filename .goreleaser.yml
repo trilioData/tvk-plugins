@@ -1,7 +1,7 @@
 # goreleaser build and release config
 builds:
 - id: log-collector
-  main: ./cmd/
+  main: ./cmd/log-collector/
   binary: log-collector
   env:
   - CGO_ENABLED=0
