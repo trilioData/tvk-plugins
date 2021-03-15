@@ -75,6 +75,8 @@ testVolumeSnapshot() {
 
 }
 
+cleanup
+
 # Load shUnit2.
 . tests/preflight/shunit2
 
