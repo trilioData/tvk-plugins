@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-source ../../tools/preflight/preflight.sh --source-only
+# shellcheck source=/dev/null
+source tools/preflight/preflight.sh --source-only
 
 take_input --storageclass csi-gce-pd --snapshotclass default-snapshot-class
-assertEquals 0 $?
 
 testKubectl() {
  
@@ -76,5 +76,5 @@ testVolumeSnapshot() {
 }
 
 # Load shUnit2.
-. shunit2
+. tests/preflight/shunit2
 

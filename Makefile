@@ -52,9 +52,6 @@ test-log-collector-plugin-locally:
 	./hack/generate-test-log-collector-plugin-manifest.sh
 	./hack/test-log-collector-plugin-locally.sh
 
-test-preflight-integration:
-	./test/preflight/preflight_test.sh
-
 test-preflight: clean build-preflight test-preflight-plugin-locally
 
 test-log-collector: clean build-log-collector test-log-collector-plugin-locally
