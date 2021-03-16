@@ -16,14 +16,19 @@ CROSS='\xE2\x9D\x8C'
 MIN_HELM_VERSION="2.11.0"
 MIN_K8S_VERSION="1.13.0"
 
-SOURCE_POD="source-pod"
-SOURCE_PVC="source-pvc"
-RESTORE_POD="restored-pod"
-RESTORE_PVC="restored-pvc"
-VOLUME_SNAP_SRC="snapshot-source-pvc"
-UNUSED_RESTORE_POD="unused-restored-pod"
-UNUSED_RESTORE_PVC="unused-restored-pvc"
-UNUSED_VOLUME_SNAP_SRC="unused-source-pvc"
+# shellcheck disable=SC2018
+RANDOM_STRING=$(
+  tr -dc a-z </dev/urandom | head -c 6
+  echo ''
+)
+SOURCE_POD="source-pod-${RANDOM_STRING}"
+SOURCE_PVC="source-pvc-${RANDOM_STRING}"
+RESTORE_POD="restored-pod-${RANDOM_STRING}"
+RESTORE_PVC="restored-pvc-${RANDOM_STRING}"
+VOLUME_SNAP_SRC="snapshot-source-pvc-${RANDOM_STRING}"
+UNUSED_RESTORE_POD="unused-restored-pod-${RANDOM_STRING}"
+UNUSED_RESTORE_PVC="unused-restored-pvc-${RANDOM_STRING}"
+UNUSED_VOLUME_SNAP_SRC="unused-source-pvc-${RANDOM_STRING}"
 
 print_help() {
   echo "Usage:
@@ -381,7 +386,7 @@ spec:
       readOnly: false
 EOF
 
-  kubectl wait --for=condition=ready --timeout=2m pod/source-pod &>/dev/null
+  kubectl wait --for=condition=ready --timeout=2m pod/"${SOURCE_POD}" &>/dev/null
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
     echo -e "${GREEN} ${CHECK} Created source pod and pvc${NC}\n"

@@ -75,7 +75,11 @@ testVolumeSnapshot() {
 
 }
 
-cleanup
+cleanAll() {
+
+  cleanup
+  assertEquals 0 $?
+}
 
 # Load shUnit2.
 . tests/preflight/shunit2
