@@ -189,12 +189,7 @@ func (l *LogCollector) getAPIGVResources(apiGroupVersion string) (gVResources []
 	var gVResourcesList *apiv1.APIResourceList
 	gVResourcesList, err = l.disClient.ServerResourcesForGroupVersion(apiGroupVersion)
 	if err != nil {
-		if !discovery.IsGroupDiscoveryFailedError(err) {
-			log.Error(err, "Error while getting the resource list from discovery client")
-			return gVResources, err
-		}
-		log.Warnf("The Kubernetes server has an orphaned API service. Server reports: %s", err.Error())
-		log.Warn("To fix this, kubectl delete apiservice <service-name>")
+		return gVResources, err
 	}
 
 	for index := range gVResourcesList.APIResources {
