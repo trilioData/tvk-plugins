@@ -55,7 +55,10 @@ func (l *LogCollector) CollectLogsAndDump() error {
 		return lErr
 	}
 	log.Info("Checking Namespaces")
-	coreGV := l.getAPIGVResources(CoreGv)
+	coreGV, cgErr := l.getAPIGVResources(CoreGv)
+	if cgErr != nil {
+		return cgErr
+	}
 	namespaceResource := getResourceByName(coreGV, Namespaces)
 	namespaceObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(CoreGv), &namespaceResource)
 	allNamespaces := getObjectsNames(namespaceObjects)
@@ -71,11 +74,9 @@ func (l *LogCollector) CollectLogsAndDump() error {
 		l.Namespaces = append(l.Namespaces, ConversionNamespace)
 	}
 
-	log.Info("Fetching API Group version list")
-	apiGroups, _, err := l.disClient.ServerGroupsAndResources()
-	if err != nil {
-		log.Errorf("Unable to fetch API group version : %v", err)
-		return err
+	apiGroups, apiErr := l.fetchAPIGroups()
+	if apiErr != nil {
+		return apiErr
 	}
 
 	cErr := l.clusterServiceVersion(apiGroups)
@@ -104,7 +105,10 @@ func (l *LogCollector) CollectLogsAndDump() error {
 	}
 
 	log.Info("Checking Storage Group")
-	storageGVResources := l.getAPIGVResources(StorageGv)
+	storageGVResources, stErr := l.getAPIGVResources(StorageGv)
+	if stErr != nil {
+		return stErr
+	}
 	scResource := getResourceByName(storageGVResources, StorageClass)
 	scObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(StorageGv), &scResource)
 
@@ -119,15 +123,24 @@ func (l *LogCollector) CollectLogsAndDump() error {
 	resourceGroup := make(map[string][]apiv1.APIResource)
 
 	log.Info("Checking Batch Group")
-	batchGV := l.getAPIGVResources(BatchGv)
+	batchGV, bgErr := l.getAPIGVResources(BatchGv)
+	if bgErr != nil {
+		return bgErr
+	}
 	resourceGroup[BatchGv] = batchGV
 
 	log.Info("Checking Apps Group")
-	appsGv := l.getAPIGVResources(AppsGv)
+	appsGv, agErr := l.getAPIGVResources(AppsGv)
+	if agErr != nil {
+		return agErr
+	}
 	resourceGroup[AppsGv] = appsGv
 
 	log.Info("Checking Core Group")
-	coreGVResources := l.getAPIGVResources(CoreGv)
+	coreGVResources, cgvErr := l.getAPIGVResources(CoreGv)
+	if cgvErr != nil {
+		return cgvErr
+	}
 	resourceGroup[CoreGv] = coreGVResources
 
 	log.Info("Writing and Filtering Logs")
@@ -171,10 +184,19 @@ func (l *LogCollector) CollectLogsAndDump() error {
 }
 
 // getApiGVResources returns list of resources for given group version
-func (l *LogCollector) getAPIGVResources(apiGroupVersion string) (gVResources []apiv1.APIResource) {
+func (l *LogCollector) getAPIGVResources(apiGroupVersion string) (gVResources []apiv1.APIResource, err error) {
 
 	var gVResourcesList *apiv1.APIResourceList
-	gVResourcesList, _ = l.disClient.ServerResourcesForGroupVersion(apiGroupVersion)
+	gVResourcesList, err = l.disClient.ServerResourcesForGroupVersion(apiGroupVersion)
+	if err != nil {
+		if !discovery.IsGroupDiscoveryFailedError(err) {
+			log.Error(err, "Error while getting the resource list from discovery client")
+			return gVResources, err
+		}
+		log.Warnf("The Kubernetes server has an orphaned API service. Server reports: %s", err.Error())
+		log.Warn("To fix this, kubectl delete apiservice <service-name>")
+	}
+
 	for index := range gVResourcesList.APIResources {
 		for in := range gVResourcesList.APIResources[index].Verbs {
 			if gVResourcesList.APIResources[index].Verbs[in] == "list" {
@@ -182,18 +204,21 @@ func (l *LogCollector) getAPIGVResources(apiGroupVersion string) (gVResources []
 			}
 		}
 	}
-	return gVResources
+	return gVResources, nil
 }
 
 // getApiGVResourcesMap returns list of resources for given group version
-func (l *LogCollector) getAPIGVResourcesMap(gvList []string) map[string][]apiv1.APIResource {
+func (l *LogCollector) getAPIGVResourcesMap(gvList []string) (map[string][]apiv1.APIResource, error) {
 
 	resourceMap := make(map[string][]apiv1.APIResource)
 	for index := range gvList {
-		resources := l.getAPIGVResources(gvList[index])
+		resources, err := l.getAPIGVResources(gvList[index])
+		if err != nil {
+			return resourceMap, err
+		}
 		resourceMap[gvList[index]] = resources
 	}
-	return resourceMap
+	return resourceMap, nil
 }
 
 // TODO()
@@ -523,7 +548,10 @@ func (l *LogCollector) admissionRegistrationGroup(apiGroups []*apiv1.APIGroup) e
 	log.Info("Checking Admission Registration Group")
 	admissionGV := getGVByGroup(apiGroups, AdmissionRegistrationGroup, true)
 	if len(admissionGV) != 0 {
-		admissionGVResources := l.getAPIGVResources(admissionGV[0])
+		admissionGVResources, agErr := l.getAPIGVResources(admissionGV[0])
+		if agErr != nil {
+			return agErr
+		}
 		for index := range admissionGVResources {
 			objectList := l.getResourceObjects(getAPIGroupVersionResourcePath(admissionGV[0]), &admissionGVResources[index])
 			resourceDir := filepath.Join(admissionGVResources[index].Kind)
@@ -545,7 +573,10 @@ func (l *LogCollector) snapshotStorageGroup(apiGroups []*apiv1.APIGroup) error {
 	log.Info("Checking Snapshot Storage Group")
 	snapGV := getGVByGroup(apiGroups, SnapshotStorageGroup, true)
 	if snapGV[0] != "" {
-		snapGVResources := l.getAPIGVResources(snapGV[0])
+		snapGVResources, err := l.getAPIGVResources(snapGV[0])
+		if err != nil {
+			return err
+		}
 		volSnapResource := getResourceByName(snapGVResources, VolumeSnapshot)
 		volSnapObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(snapGV[0]), &volSnapResource)
 		for _, obj := range volSnapObjects.Items {
@@ -573,7 +604,10 @@ func (l *LogCollector) clusterServiceVersion(apiGroups []*apiv1.APIGroup) error 
 
 	log.Info("Checking Cluster Service Version")
 	operatorGVList := getGVByGroup(apiGroups, OperatorGroup, false)
-	operatorGVResourceMap := l.getAPIGVResourcesMap(operatorGVList)
+	operatorGVResourceMap, oErr := l.getAPIGVResourcesMap(operatorGVList)
+	if oErr != nil {
+		return oErr
+	}
 	csvResourceMap := getResourcesGVByName(operatorGVResourceMap, ClusterServiceVersion)
 	csvObjects := l.getGVResourceObjects(csvResourceMap)
 	csvObjects = filterCSV(csvObjects)
@@ -593,7 +627,10 @@ func (l *LogCollector) apiExtensionGroup(apiGroups []*apiv1.APIGroup) error {
 	log.Info("Checking API Extension Group")
 	apiExtGV := getGVByGroup(apiGroups, APIExtensionsGroup, true)
 	if len(apiExtGV) != 0 {
-		apiExtGVResources := l.getAPIGVResources(apiExtGV[0])
+		apiExtGVResources, apErr := l.getAPIGVResources(apiExtGV[0])
+		if apErr != nil {
+			return apErr
+		}
 		crdResource := getResourceByName(apiExtGVResources, CRD)
 		crdObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(apiExtGV[0]), &crdResource)
 		crdObjects, cErr := filterCRD(crdObjects)
@@ -617,7 +654,10 @@ func (l *LogCollector) trilioGroup(apiGroups []*apiv1.APIGroup) error {
 	trilioGV := getGVByGroup(apiGroups, TriliovaultGroup, true)
 
 	if len(trilioGV) != 0 {
-		trilioGVResources := l.getAPIGVResources(trilioGV[0])
+		trilioGVResources, err := l.getAPIGVResources(trilioGV[0])
+		if err != nil {
+			return err
+		}
 
 		for index := range trilioGVResources {
 			objectList := l.getResourceObjects(getAPIGroupVersionResourcePath(trilioGV[0]), &trilioGVResources[index])
@@ -631,4 +671,20 @@ func (l *LogCollector) trilioGroup(apiGroups []*apiv1.APIGroup) error {
 		}
 	}
 	return nil
+}
+
+func (l *LogCollector) fetchAPIGroups() (apiGroups []*apiv1.APIGroup, err error) {
+
+	log.Info("Fetching API Group version list")
+	apiGroups, _, err = l.disClient.ServerGroupsAndResources()
+	if err != nil {
+		log.Errorf("Unable to fetch API group version : %v", err)
+		if !discovery.IsGroupDiscoveryFailedError(err) {
+			log.Error(err, "Error while getting the resource list from discovery client")
+			return apiGroups, err
+		}
+		log.Warnf("The Kubernetes server has an orphaned API service. Server reports: %s", err.Error())
+		log.Warn("To fix this, kubectl delete apiservice <service-name>")
+	}
+	return apiGroups, nil
 }
