@@ -76,10 +76,14 @@ testVolumeSnapshot() {
 }
 
 cleanAll() {
-
   cleanup
   assertEquals 0 $?
 }
+
+set -o errexit
+set -o pipefail
+
+trap "cleanAll" EXIT
 
 # Load shUnit2.
 . tests/preflight/shunit2

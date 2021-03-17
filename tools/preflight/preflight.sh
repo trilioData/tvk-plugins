@@ -29,6 +29,7 @@ VOLUME_SNAP_SRC="snapshot-source-pvc-${RANDOM_STRING}"
 UNUSED_RESTORE_POD="unused-restored-pod-${RANDOM_STRING}"
 UNUSED_RESTORE_PVC="unused-restored-pvc-${RANDOM_STRING}"
 UNUSED_VOLUME_SNAP_SRC="unused-source-pvc-${RANDOM_STRING}"
+DNS_UTILS="dnsutils-${RANDOM_STRING}"
 
 print_help() {
   echo "Usage:
@@ -318,7 +319,7 @@ check_dns_resolution() {
 apiVersion: v1
 kind: Pod
 metadata:
-  name: dnsutils
+  name: ${DNS_UTILS}
 spec:
   containers:
   - name: dnsutils
@@ -331,8 +332,8 @@ spec:
 EOF
 
   set +o errexit
-  kubectl wait --for=condition=ready --timeout=2m pod/dnsutils &>/dev/null
-  kubectl exec -it dnsutils -- nslookup kubernetes.default &>/dev/null
+  kubectl wait --for=condition=ready --timeout=2m pod/"${DNS_UTILS}" &>/dev/null
+  kubectl exec -it "${DNS_UTILS}" -- nslookup kubernetes.default &>/dev/null
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
     echo -e "${GREEN} ${CHECK} Able to resolve DNS \"kubernetes.default\" service inside pods${NC}\n"
@@ -340,7 +341,7 @@ EOF
     echo -e "${RED} ${CROSS} Could not resolve DNS \"kubernetes.default\" service inside pod${NC}\n"
     exit_status=1
   fi
-  kubectl delete pod dnsutils &>/dev/null
+  kubectl delete pod "${DNS_UTILS}" &>/dev/null
   set -o errexit
   return ${exit_status}
 }
@@ -652,6 +653,7 @@ export -f check_storage_snapshot_class
 export -f check_csi
 export -f check_dns_resolution
 export -f check_volume_snapshot
+export -f cleanup
 
 # --- End Definitions Section ---
 # check if we are being sourced by another script or shell
