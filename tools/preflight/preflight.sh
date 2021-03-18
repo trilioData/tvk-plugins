@@ -16,14 +16,20 @@ CROSS='\xE2\x9D\x8C'
 MIN_HELM_VERSION="2.11.0"
 MIN_K8S_VERSION="1.13.0"
 
-SOURCE_POD="source-pod"
-SOURCE_PVC="source-pvc"
-RESTORE_POD="restored-pod"
-RESTORE_PVC="restored-pvc"
-VOLUME_SNAP_SRC="snapshot-source-pvc"
-UNUSED_RESTORE_POD="unused-restored-pod"
-UNUSED_RESTORE_PVC="unused-restored-pvc"
-UNUSED_VOLUME_SNAP_SRC="unused-source-pvc"
+# shellcheck disable=SC2018
+RANDOM_STRING=$(
+  tr -dc a-z </dev/urandom | head -c 6
+  echo ''
+)
+SOURCE_POD="source-pod-${RANDOM_STRING}"
+SOURCE_PVC="source-pvc-${RANDOM_STRING}"
+RESTORE_POD="restored-pod-${RANDOM_STRING}"
+RESTORE_PVC="restored-pvc-${RANDOM_STRING}"
+VOLUME_SNAP_SRC="snapshot-source-pvc-${RANDOM_STRING}"
+UNUSED_RESTORE_POD="unused-restored-pod-${RANDOM_STRING}"
+UNUSED_RESTORE_PVC="unused-restored-pvc-${RANDOM_STRING}"
+UNUSED_VOLUME_SNAP_SRC="unused-source-pvc-${RANDOM_STRING}"
+DNS_UTILS="dnsutils-${RANDOM_STRING}"
 
 print_help() {
   echo "Usage:
@@ -75,7 +81,6 @@ take_input() {
       exit
       ;;
     *)
-      shift
       break
       ;;
     esac
@@ -313,7 +318,7 @@ check_dns_resolution() {
 apiVersion: v1
 kind: Pod
 metadata:
-  name: dnsutils
+  name: ${DNS_UTILS}
 spec:
   containers:
   - name: dnsutils
@@ -326,8 +331,8 @@ spec:
 EOF
 
   set +o errexit
-  kubectl wait --for=condition=ready --timeout=2m pod/dnsutils &>/dev/null
-  kubectl exec -it dnsutils -- nslookup kubernetes.default &>/dev/null
+  kubectl wait --for=condition=ready --timeout=2m pod/"${DNS_UTILS}" &>/dev/null
+  kubectl exec -it "${DNS_UTILS}" -- nslookup kubernetes.default &>/dev/null
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
     echo -e "${GREEN} ${CHECK} Able to resolve DNS \"kubernetes.default\" service inside pods${NC}\n"
@@ -335,7 +340,7 @@ EOF
     echo -e "${RED} ${CROSS} Could not resolve DNS \"kubernetes.default\" service inside pod${NC}\n"
     exit_status=1
   fi
-  kubectl delete pod dnsutils &>/dev/null
+  kubectl delete pod "${DNS_UTILS}" &>/dev/null
   set -o errexit
   return ${exit_status}
 }
@@ -381,7 +386,7 @@ spec:
       readOnly: false
 EOF
 
-  kubectl wait --for=condition=ready --timeout=2m pod/source-pod &>/dev/null
+  kubectl wait --for=condition=ready --timeout=2m pod/"${SOURCE_POD}" &>/dev/null
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
     echo -e "${GREEN} ${CHECK} Created source pod and pvc${NC}\n"
@@ -634,8 +639,26 @@ exit_trap() {
   else
     echo -e "\n${RED_BOLD}Pre-flight checks failed!${NC}\n"
   fi
+  cleanup
   exit ${rc}
 }
+
+export -f check_kubectl
+export -f check_kubectl_access
+export -f check_helm_tiller_version
+export -f check_kubernetes_version
+export -f check_kubernetes_rbac
+export -f check_feature_gates
+export -f check_storage_snapshot_class
+export -f check_csi
+export -f check_dns_resolution
+export -f check_volume_snapshot
+export -f cleanup
+
+# --- End Definitions Section ---
+# check if we are being sourced by another script or shell
+[[ "${#BASH_SOURCE[@]}" -gt "1" ]] && { return 0; }
+# --- Begin Code Execution Section ---
 
 take_input "$@"
 
