@@ -81,7 +81,6 @@ take_input() {
       exit
       ;;
     *)
-      shift
       break
       ;;
     esac
@@ -640,6 +639,7 @@ exit_trap() {
   else
     echo -e "\n${RED_BOLD}Pre-flight checks failed!${NC}\n"
   fi
+  cleanup
   exit ${rc}
 }
 
