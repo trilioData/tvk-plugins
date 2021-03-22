@@ -27,8 +27,7 @@ based on file changes between current tag and previous tag([`refer`](hack/check-
 3.  Tag the Release:
 
      ```
-     git checkout release/$TAG
-     git tag -a "${TAG:?TAG required}"
+     git tag -a -m "msg" "${TAG:?TAG required}"  
      ```
 4. Push the release branch & tag:
 
