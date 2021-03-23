@@ -12,7 +12,7 @@ git describe --exact-match --tags --match "$current_tag"
 # TODO: remove this fallback logic one first tag/release is published
 # Fallback logic for first tag push, as there'll be no previous tag to compare against
 echo "Creating release with both preflight and log-collector packages"
-echo "::set-output name=create_release::false"
+echo "::set-output name=create_release::true"
 echo "::set-output name=release_preflight::true"
 echo "::set-output name=release_log_collector::true"
 exit 0
