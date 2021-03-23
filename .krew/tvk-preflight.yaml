@@ -20,7 +20,7 @@ spec:
     sha256: PREFLIGHT_TAR_CHECKSUM
     bin: preflight
     files:
-    - from: preflight/preflight
+    - from: preflight/*
       to: .
 
   description: |
