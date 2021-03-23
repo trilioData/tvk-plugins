@@ -17,7 +17,7 @@ spec:
     sha256: LOG_COLLECTOR_LINUX_TAR_CHECKSUM
     bin: log-collector
     files:
-    - from: log-collector
+    - from: '*'
       to: .
 
   - selector:
@@ -28,7 +28,7 @@ spec:
     sha256: LOG_COLLECTOR_DARWIN_TAR_CHECKSUM
     bin: log-collector
     files:
-    - from: log-collector
+    - from: '*'
       to: .
 
   - selector:
@@ -39,7 +39,7 @@ spec:
     sha256: LOG_COLLECTOR_WINDOWS_TAR_CHECKSUM
     bin: log-collector.exe
     files:
-    - from: log-collector.exe
+    - from: '*'
       to: .
 
   description: |
