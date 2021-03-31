@@ -2,6 +2,9 @@
 
 # Purpose: Helper script for running pre-flight checks before installing K8s-Triliovault application.
 
+set -o errexit
+set -o pipefail
+
 # COLOUR CONSTANTS
 GREEN='\033[0;32m'
 GREEN_BOLD='\033[0;32m\e[1m'
@@ -13,8 +16,8 @@ NC='\033[0m'
 CHECK='\xE2\x9C\x94'
 CROSS='\xE2\x9D\x8C'
 
-MIN_HELM_VERSION="2.11.0"
-MIN_K8S_VERSION="1.13.0"
+MIN_HELM_VERSION="3.0.0"
+MIN_K8S_VERSION="1.17.0"
 
 # shellcheck disable=SC2018
 RANDOM_STRING=$(
@@ -32,12 +35,15 @@ UNUSED_VOLUME_SNAP_SRC="unused-source-pvc-${RANDOM_STRING}"
 DNS_UTILS="dnsutils-${RANDOM_STRING}"
 
 print_help() {
-  echo "Usage:
+  echo "
+--------------------------------------------------------------
+Usage:
 kubectl tvk-preflight --storageclass <storage_class_name> --snapshotclass <volume_snapshot_class>
 Params:
 	--storageclass	name of storage class being used in k8s cluster
 	--snapshotclass name of volume snapshot class being used in k8s cluster
 	--kubeconfig	path to kube config (OPTIONAL)
+--------------------------------------------------------------
 "
 }
 
@@ -47,33 +53,35 @@ take_input() {
     print_help
     exit 1
   fi
-  while true; do
+  while [ -n "$1" ]; do
     case "$1" in
     --storageclass)
-      if [[ "$2" =~ -- ]]; then
-        STORAGE_CLASS=""
-        shift
-      else
+      if [[ -n "$2" ]]; then
         STORAGE_CLASS=$2
         shift 2
+      else
+        echo "Error: flag --storageclass value may not be empty!"
+        print_help
+        exit 1
       fi
       ;;
     --snapshotclass)
-      if [[ "$2" =~ -- ]]; then
-        SNAPSHOT_CLASS=""
-        shift
-      else
+      if [[ -n "$2" ]]; then
         SNAPSHOT_CLASS=$2
         shift 2
+      else
+        echo "Error: flag --snapshotclass value may not be empty!"
+        print_help
+        exit 1
       fi
       ;;
     --kubeconfig)
-      if [[ "$2" =~ -- ]]; then
-        KUBECONFIG_PATH=""
-        shift
-      else
+      if [[ -n "$2" ]]; then
         KUBECONFIG_PATH=$2
         shift 2
+      else
+        KUBECONFIG_PATH=""
+        shift
       fi
       ;;
     -h | --help)
@@ -81,7 +89,9 @@ take_input() {
       exit
       ;;
     *)
-      break
+      echo "Error: wrong parameter $1 passed. Check Usage!"
+      print_help
+      exit 1
       ;;
     esac
   done
@@ -124,7 +134,7 @@ check_kubectl_access() {
 version_gt_eq() {
   local sorted_version
   sorted_version=$(echo -e '%s\n' "$@" | sort -V | head -n 1)
-  if [[ "${sorted_version}" != "$1" || "${sorted_version}" = "$2" ]]; then
+  if [[ "${sorted_version}" != "$1" || "${sorted_version}" == "$2" ]]; then
     return 0
   fi
   return 1
@@ -140,8 +150,8 @@ check_if_ocp() {
   echo "${is_ocp}"
 }
 
-check_helm_tiller_version() {
-  echo -e "${LIGHT_BLUE}Checking for required Helm Tiller version (>= v${MIN_HELM_VERSION})...${NC}\n"
+check_helm_version() {
+  echo -e "${LIGHT_BLUE}Checking for required Helm version (>= v${MIN_HELM_VERSION})...${NC}\n"
   local exit_status=0
 
   # Abort successfully in case of OCP setup
@@ -157,20 +167,12 @@ check_helm_tiller_version() {
     echo -e "${GREEN} ${CHECK} Found helm${NC}\n"
   fi
 
-  # Abort if Helm 3
   local helm_version
   helm_version=$(helm version --template "{{ .Version }}")
   if [[ ${helm_version} != "<no value>" ]]; then
-    echo -e "${GREEN} ${CHECK} No Tiller needed with Helm ${helm_version}${NC}\n"
-    return ${exit_status}
+    echo -e "${GREEN} ${CHECK} Helm version ${helm_version} meets minimum required version v${MIN_HELM_VERSION}${NC}\n"
   fi
-  helm_version=$(helm version --template "{{ .Server.SemVer }}")
-  if version_gt_eq "${helm_version:1}" "${MIN_HELM_VERSION}"; then
-    echo -e "${GREEN} ${CHECK} Tiller version (${helm_version}) meets minimum requirements${NC}\n"
-  else
-    echo -e "${RED} ${CROSS} Tiller version (${helm_version}) does not meet minimum requirements${NC}\n"
-    exit_status=1
-  fi
+
   return ${exit_status}
 }
 
@@ -221,8 +223,8 @@ check_storage_snapshot_class() {
     exit_status=1
   fi
   # shellcheck disable=SC2143
-  if [[ $(kubectl get apiservices | grep "v1beta1.snapshot.storage.k8s.io") ]]; then
-    echo -e "${GREEN} ${CHECK} Snapshot api is in beta. No need to have default class annotation on volume snapshot class${NC}\n"
+  if [[ $(kubectl get apiservices | grep -e "v1beta1.snapshot.storage.k8s.io" -e "v1.snapshot.storage.k8s.io") ]]; then
+    echo -e "${GREEN} ${CHECK} Snapshot api is not in alpha. No need to have default class annotation on volume snapshot class${NC}\n"
   else
     # shellcheck disable=SC2143
     if [[ $(kubectl get volumesnapshotclass -o yaml | grep "is-default-class: \"true\"") ]]; then
@@ -232,51 +234,6 @@ check_storage_snapshot_class() {
       exit_status=1
     fi
   fi
-  return ${exit_status}
-}
-
-check_feature_gates() {
-  local exit_status=0
-  local k8s_version
-  local features=()
-
-  # specially handle this for GKE alpha clusters
-  gke_all_alpha_feature="AllAlpha=true"
-
-  k8s_version=$(kubectl version --short | grep Server | awk '{print $3}')
-  echo -e "${LIGHT_BLUE}Checking if needed features are available in k8s cluster for version ${k8s_version}...${NC}\n"
-
-  k8s_version=$(echo "${k8s_version}" | cut -d '.' -f2)
-  if [[ "${k8s_version}" == "13" ]]; then
-    features=("CSIBlockVolume" "CSIDriverRegistry" "CSINodeInfo" "VolumeSnapshotDataSource")
-  else
-    features=("VolumeSnapshotDataSource")
-  fi
-
-  if [[ "${k8s_version}" -lt "15" ]]; then
-    features+=("CustomResourceWebhookConversion")
-  fi
-
-  if [[ ${k8s_version} -ge "17" ]]; then
-    echo -e "${GREEN} ${CHECK} No feature gates needed${NC}\n"
-    return ${exit_status}
-  fi
-
-  if [[ $(check_if_ocp) == "Y" ]]; then
-    features_enabled=$(kubectl get cm -n openshift-kube-apiserver -oyaml | grep feature)
-  else
-    features_enabled=$(kubectl get po -n kube-system -oyaml | grep feature)
-  fi
-
-  for feat in "${features[@]}"; do
-    # shellcheck disable=SC2143
-    if [[ $(echo "${features_enabled}" | grep "${feat}") || $(echo "${features_enabled}" | grep "${gke_all_alpha_feature}") ]]; then
-      echo -e "${GREEN} ${CHECK} Found ${feat}${NC}\n"
-    else
-      echo -e "${RED} ${CROSS} Not found ${feat}${NC}\n"
-      exit_status=1
-    fi
-  done
   return ${exit_status}
 }
 
@@ -319,6 +276,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: ${DNS_UTILS}
+  labels:
+    trilio: tvk-preflight
 spec:
   containers:
   - name: dnsutils
@@ -358,6 +317,8 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: ${SOURCE_PVC}
+  labels:
+    trilio: tvk-preflight
 spec:
   accessModes:
     - ReadWriteOnce
@@ -370,6 +331,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: ${SOURCE_POD}
+  labels:
+    trilio: tvk-preflight
 spec:
   containers:
   - name: busybox
@@ -395,13 +358,30 @@ EOF
     return ${err_status}
   fi
 
+  api_service=$(kubectl get apiservices)
   # shellcheck disable=SC2143
-  if [[ $(kubectl get apiservices | grep "v1beta1.snapshot.storage.k8s.io") ]]; then
+  # shellcheck disable=SC2006
+  if [[ $(echo "$api_service" | grep "v1.snapshot.storage.k8s.io") ]]; then
+    cat <<EOF | kubectl apply -f - &>/dev/null
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: ${VOLUME_SNAP_SRC}
+  labels:
+    trilio: tvk-preflight
+spec:
+  volumeSnapshotClassName: ${SNAPSHOT_CLASS}
+  source:
+    persistentVolumeClaimName: ${SOURCE_PVC}
+EOF
+  elif [[ $(echo "$api_service" | grep "v1beta1.snapshot.storage.k8s.io") ]]; then
     cat <<EOF | kubectl apply -f - &>/dev/null
 apiVersion: snapshot.storage.k8s.io/v1beta1
 kind: VolumeSnapshot
 metadata:
   name: ${VOLUME_SNAP_SRC}
+  labels:
+    trilio: tvk-preflight
 spec:
   volumeSnapshotClassName: ${SNAPSHOT_CLASS}
   source:
@@ -413,6 +393,8 @@ apiVersion: snapshot.storage.k8s.io/v1alpha1
 kind: VolumeSnapshot
 metadata:
   name: ${VOLUME_SNAP_SRC}
+  labels:
+    trilio: tvk-preflight
 spec:
   snapshotClassName: ${SNAPSHOT_CLASS}
   source:
@@ -447,6 +429,8 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: ${RESTORE_PVC}
+  labels:
+    trilio: tvk-preflight
 spec:
   accessModes:
     - ReadWriteOnce
@@ -463,6 +447,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: ${RESTORE_POD}
+  labels:
+    trilio: tvk-preflight
 spec:
   containers:
   - name: busybox
@@ -507,13 +493,29 @@ EOF
     exit_status=1
   fi
 
+  api_service=$(kubectl get apiservices)
   # shellcheck disable=SC2143
-  if [[ $(kubectl get apiservices | grep "v1beta1.snapshot.storage.k8s.io") ]]; then
+  if [[ $(echo "$api_service" | grep "v1.snapshot.storage.k8s.io") ]]; then
+    cat <<EOF | kubectl apply -f - &>/dev/null
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: ${UNUSED_VOLUME_SNAP_SRC}
+  labels:
+    trilio: tvk-preflight
+spec:
+  volumeSnapshotClassName: ${SNAPSHOT_CLASS}
+  source:
+    persistentVolumeClaimName: ${SOURCE_PVC}
+EOF
+  elif [[ $(echo "$api_service" | grep "v1beta1.snapshot.storage.k8s.io") ]]; then
     cat <<EOF | kubectl apply -f - &>/dev/null
 apiVersion: snapshot.storage.k8s.io/v1beta1
 kind: VolumeSnapshot
 metadata:
   name: ${UNUSED_VOLUME_SNAP_SRC}
+  labels:
+    trilio: tvk-preflight
 spec:
   volumeSnapshotClassName: ${SNAPSHOT_CLASS}
   source:
@@ -525,6 +527,8 @@ apiVersion: snapshot.storage.k8s.io/v1alpha1
 kind: VolumeSnapshot
 metadata:
   name: ${UNUSED_VOLUME_SNAP_SRC}
+  labels:
+    trilio: tvk-preflight
 spec:
   snapshotClassName: ${SNAPSHOT_CLASS}
   source:
@@ -559,6 +563,8 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: ${UNUSED_RESTORE_PVC}
+  labels:
+    trilio: tvk-preflight
 spec:
   accessModes:
     - ReadWriteOnce
@@ -575,6 +581,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: ${UNUSED_RESTORE_POD}
+  labels:
+    trilio: tvk-preflight
 spec:
   containers:
   - name: busybox
@@ -619,15 +627,23 @@ cleanup() {
 
   echo -e "${LIGHT_BLUE}Cleaning up...${NC}\n"
 
-  kubectl delete --ignore-not-found=true pod/"${SOURCE_POD}" pod/"${RESTORE_POD}" pod/"${UNUSED_RESTORE_POD}" pvc/"${SOURCE_PVC}" \
-    pvc/"${RESTORE_PVC}" pvc/"${UNUSED_RESTORE_PVC}" volumesnapshot/"${VOLUME_SNAP_SRC}" volumesnapshot/"${UNUSED_VOLUME_SNAP_SRC}" &>/dev/null
-  # shellcheck disable=SC2181
-  if [[ $? -eq 0 ]]; then
-    echo -e "\n${GREEN} ${CHECK} Cleaned up all the resources${NC}\n"
-  else
-    echo -e "${RED_BOLD} ${CROSS} Error cleaning up intermediate resources${NC}\n"
-    exit_status=1
-  fi
+  declare -a pvc=("${SOURCE_PVC}" "${RESTORE_PVC}" "${UNUSED_RESTORE_PVC}")
+  for res in "${pvc[@]}"; do
+    kubectl delete pvc -n "${NAMESPACE}" "${res}" --force --grace-period=0 --timeout=5s &>/dev/null || true
+    kubectl patch pvc -n "${NAMESPACE}" "${res}" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' &>/dev/null || true
+  done
+
+  declare -a vsnaps=("${VOLUME_SNAP_SRC}" "${UNUSED_VOLUME_SNAP_SRC}")
+  for res in "${vsnaps[@]}"; do
+    kubectl delete volumesnapshot -n "${NAMESPACE}" "${res}" --force --grace-period=0 --timeout=5s &>/dev/null || true
+    kubectl patch volumesnapshot -n "${NAMESPACE}" "${res}" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' &>/dev/null || true
+  done
+
+  kubectl delete --force --grace-period=0 pod "${SOURCE_POD}" "${RESTORE_POD}" "${UNUSED_RESTORE_POD}" &>/dev/null || true
+
+  kubectl delete all -l trilio=tvk-preflight --force --grace-period=0 &>/dev/null || true
+
+  echo -e "\n${GREEN} ${CHECK} Cleaned up all the resources${NC}\n"
 
   return ${exit_status}
 }
@@ -645,10 +661,9 @@ exit_trap() {
 
 export -f check_kubectl
 export -f check_kubectl_access
-export -f check_helm_tiller_version
+export -f check_helm_version
 export -f check_kubernetes_version
 export -f check_kubernetes_rbac
-export -f check_feature_gates
 export -f check_storage_snapshot_class
 export -f check_csi
 export -f check_dns_resolution
@@ -665,19 +680,14 @@ take_input "$@"
 echo
 echo -e "${GREEN_BOLD}Running pre-flight checks before installing K8s Triliovault. Might take a few minutes...${NC}\n"
 
-set -o errexit
-set -o pipefail
-
 trap "exit_trap" EXIT
 
 check_kubectl
 check_kubectl_access
-check_helm_tiller_version
+check_helm_version
 check_kubernetes_version
 check_kubernetes_rbac
-check_feature_gates
 check_storage_snapshot_class
 check_csi
 check_dns_resolution
 check_volume_snapshot
-cleanup
