@@ -1,117 +1,181 @@
 #!/usr/bin/env bash
 
-set -o errexit
-set -eo pipefail
+set -o pipefail
+
+PREFLIGHT_TESTS_SUCCESS=true
 
 # shellcheck source=/dev/null
 source tools/preflight/preflight.sh --source-only
 
-catch() {
-  if [ "$1" != "0" ]; then
-    echo "Error - return code $1 occurred on line no. $2"
-  fi
-  cleanup
-}
-
-trap 'catch $? $LINENO' EXIT
+trap 'cleanup' EXIT
 
 take_input --storageclass csi-gce-pd --snapshotclass default-snapshot-class
 
 testKubectl() {
   check_kubectl
+    rc=$?
   # shellcheck disable=SC2181
-  if [ "$?" != "0" ]; then
+  if [ $rc != "0" ]; then
     # shellcheck disable=SC2082
-    echo "Error - checking kubectl, Expected 0 got ${$?}"
+    echo "Failed - test check_kubectl, Expected 0 got $rc"
   fi
+  return $rc
 }
 
 testKubectlAccess() {
 
   check_kubectl_access
+    rc=$?
   # shellcheck disable=SC2181
-  if [ "$?" != "0" ]; then
+  if [ $rc != "0" ]; then
     # shellcheck disable=SC2082
-    echo "Error - checking kubectl access, Expected 0 got ${$?}"
+    echo "Failed - test check_kubectl_access, Expected 0 got $rc"
   fi
+  return $rc
 }
 
 testHelmVersion() {
 
   check_helm_version
+    rc=$?
   # shellcheck disable=SC2181
-  if [ "$?" != "0" ]; then
+  if [ $rc != "0" ]; then
     # shellcheck disable=SC2082
-    echo "Error - checking helm tiller version, Expected 0 got ${$?}"
+    echo "Failed - test check_helm_version, Expected 0 got $rc"
   fi
+  return $rc
 }
 
 testK8sVersion() {
 
   check_kubernetes_version
+    rc=$?
   # shellcheck disable=SC2181
-  if [ "$?" != "0" ]; then
+  if [ $rc != "0" ]; then
     # shellcheck disable=SC2082
-    echo "Error - checking kubernetes version, Expected 0 got ${$?}"
+    echo "Failed - test check_kubernetes_version, Expected 0 got $rc"
   fi
+  return $rc
 }
 
 testK8sRBAC() {
 
   check_kubernetes_rbac
+  rc=$?
   # shellcheck disable=SC2181
-  if [ "$?" != "0" ]; then
+  if [ $rc != "0" ]; then
     # shellcheck disable=SC2082
-    echo "Error - checking kubernetes RBAC, Expected 0 got ${$?}"
+    echo "Failed - test check_kubernetes_rbac, Expected 0 got ${rc}"
   fi
+  return $rc
 }
 
 testStorageSnapshotClass() {
 
   check_storage_snapshot_class
+    rc=$?
   # shellcheck disable=SC2181
-  if [ "$?" != "0" ]; then
+  if [ $rc != "0" ]; then
     # shellcheck disable=SC2082
-    echo "Error - checking storage snapshot class, Expected 0 got ${$?}"
+    echo "Failed - test check_storage_snapshot_class, Expected 0 got $rc"
   fi
+  return $rc
 }
 
 testCSI() {
 
   check_csi
+    rc=$?
   # shellcheck disable=SC2181
-  if [ "$?" != "0" ]; then
+  if [ $rc != "0" ]; then
     # shellcheck disable=SC2082
-    echo "Error - checking CSI Expected 0 got ${$?}"
+    echo "Failed - test check_csi, Expected 0 got $rc"
   fi
+  return $rc
 }
 
 testDNSResolution() {
 
   check_dns_resolution
+    rc=$?
   # shellcheck disable=SC2181
-  if [ "$?" != "0" ]; then
+  if [ $rc != "0" ]; then
     # shellcheck disable=SC2082
-    echo "Error - checking DNS resolution, Expected 0 got ${$?}"
+    echo "Failed - test check_dns_resolution, Expected 0 got $rc"
   fi
+  return $rc
 }
 
 testVolumeSnapshot() {
 
   check_volume_snapshot
+    rc=$?
   # shellcheck disable=SC2181
-  if [ "$?" != "0" ]; then
+  if [ $rc != "0" ]; then
     # shellcheck disable=SC2082
-    echo "Error - checking volume snapshot, Expected 0 got ${$?}"
+    echo "Failed - test testVolumeSnapshot, Expected 0 got $rc"
   fi
+  return $rc
 }
 
 testKubectl
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_TESTS_SUCCESS=false
+fi
+
 testKubectlAccess
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_TESTS_SUCCESS=false
+fi
+
 testHelmVersion
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_TESTS_SUCCESS=false
+fi
+
 testK8sVersion
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_TESTS_SUCCESS=false
+fi
+
 testK8sRBAC
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_TESTS_SUCCESS=false
+fi
+
 testStorageSnapshotClass
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_TESTS_SUCCESS=false
+fi
+
 testCSI
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_TESTS_SUCCESS=false
+fi
+
 testDNSResolution
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_TESTS_SUCCESS=false
+fi
+
 testVolumeSnapshot
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_TESTS_SUCCESS=false
+fi
+
+# Check status of Pre-flight test-cases
+if [ $PREFLIGHT_TESTS_SUCCESS == "true" ]; then
+  echo -e "All Pre-flight tests Passed!"
+else
+  echo -e "Some Pre-flight Checks Failed!"
+  exit 1
+fi

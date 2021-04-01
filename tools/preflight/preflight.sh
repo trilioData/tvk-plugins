@@ -2,7 +2,6 @@
 
 # Purpose: Helper script for running pre-flight checks before installing K8s-Triliovault application.
 
-set -o errexit
 set -o pipefail
 
 # COLOUR CONSTANTS
@@ -18,6 +17,7 @@ CROSS='\xE2\x9D\x8C'
 
 MIN_HELM_VERSION="3.0.0"
 MIN_K8S_VERSION="1.17.0"
+PREFLIGHT_RUN_SUCCESS=true
 
 # shellcheck disable=SC2018
 RANDOM_STRING=$(
@@ -225,14 +225,6 @@ check_storage_snapshot_class() {
   # shellcheck disable=SC2143
   if [[ $(kubectl get apiservices | grep -e "v1beta1.snapshot.storage.k8s.io" -e "v1.snapshot.storage.k8s.io") ]]; then
     echo -e "${GREEN} ${CHECK} Snapshot api is not in alpha. No need to have default class annotation on volume snapshot class${NC}\n"
-  else
-    # shellcheck disable=SC2143
-    if [[ $(kubectl get volumesnapshotclass -o yaml | grep "is-default-class: \"true\"") ]]; then
-      echo -e "${GREEN} ${CHECK} Snapshot api is in alpha. Found a snapshot class marked as default${NC}\n"
-    else
-      echo -e "${RED} ${CROSS} Snapshot api is in alpha. No snapshot class is marked default${NC}\n"
-      exit_status=1
-    fi
   fi
   return ${exit_status}
 }
@@ -289,7 +281,6 @@ spec:
   restartPolicy: Always
 EOF
 
-  set +o errexit
   kubectl wait --for=condition=ready --timeout=2m pod/"${DNS_UTILS}" &>/dev/null
   kubectl exec -it "${DNS_UTILS}" -- nslookup kubernetes.default &>/dev/null
   # shellcheck disable=SC2181
@@ -300,7 +291,6 @@ EOF
     exit_status=1
   fi
   kubectl delete pod "${DNS_UTILS}" &>/dev/null
-  set -o errexit
   return ${exit_status}
 }
 
@@ -310,7 +300,6 @@ check_volume_snapshot() {
   local success_status=0
   local retries=30
   local sleep=5
-  set +o errexit
 
   cat <<EOF | kubectl apply -f - &>/dev/null
 kind: PersistentVolumeClaim
@@ -386,20 +375,6 @@ spec:
   volumeSnapshotClassName: ${SNAPSHOT_CLASS}
   source:
     persistentVolumeClaimName: ${SOURCE_PVC}
-EOF
-  else
-    cat <<EOF | kubectl apply -f - &>/dev/null
-apiVersion: snapshot.storage.k8s.io/v1alpha1
-kind: VolumeSnapshot
-metadata:
-  name: ${VOLUME_SNAP_SRC}
-  labels:
-    trilio: tvk-preflight
-spec:
-  snapshotClassName: ${SNAPSHOT_CLASS}
-  source:
-    kind: PersistentVolumeClaim
-    name: ${SOURCE_PVC}
 EOF
   fi
   # shellcheck disable=SC2181
@@ -521,20 +496,6 @@ spec:
   source:
     persistentVolumeClaimName: ${SOURCE_PVC}
 EOF
-  else
-    cat <<EOF | kubectl apply -f - &>/dev/null
-apiVersion: snapshot.storage.k8s.io/v1alpha1
-kind: VolumeSnapshot
-metadata:
-  name: ${UNUSED_VOLUME_SNAP_SRC}
-  labels:
-    trilio: tvk-preflight
-spec:
-  snapshotClassName: ${SNAPSHOT_CLASS}
-  source:
-    kind: PersistentVolumeClaim
-    name: ${SOURCE_PVC}
-EOF
   fi
   # shellcheck disable=SC2181
   if [[ $? -ne 0 ]]; then
@@ -618,14 +579,13 @@ EOF
     return ${err_status}
   fi
 
-  set -o errexit
   return ${success_status}
 }
 
 cleanup() {
   local exit_status=0
 
-  echo -e "${LIGHT_BLUE}Cleaning up...${NC}\n"
+  echo -e "${LIGHT_BLUE} Cleaning up residual resources...${NC}\n"
 
   declare -a pvc=("${SOURCE_PVC}" "${RESTORE_PVC}" "${UNUSED_RESTORE_PVC}")
   for res in "${pvc[@]}"; do
@@ -648,17 +608,6 @@ cleanup() {
   return ${exit_status}
 }
 
-exit_trap() {
-  local rc=$?
-  if [ ${rc} -eq 0 ]; then
-    echo -e "\n${GREEN_BOLD}All pre-flight checks succeeded!${NC}\n"
-  else
-    echo -e "\n${RED_BOLD}Pre-flight checks failed!${NC}\n"
-  fi
-  cleanup
-  exit ${rc}
-}
-
 export -f check_kubectl
 export -f check_kubectl_access
 export -f check_helm_version
@@ -678,16 +627,68 @@ export -f cleanup
 take_input "$@"
 
 echo
-echo -e "${GREEN_BOLD}Running pre-flight checks before installing K8s Triliovault. Might take a few minutes...${NC}\n"
+echo -e "${GREEN_BOLD}--- Running Pre-flight Checks Before Installing Triliovault for Kubernetes ---${NC}\n"
+echo -e "${GREEN}Might take a few minutes...${NC}\n"
 
-trap "exit_trap" EXIT
+trap "cleanup" EXIT
 
 check_kubectl
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
 check_kubectl_access
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
 check_helm_version
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
 check_kubernetes_version
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
 check_kubernetes_rbac
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
 check_storage_snapshot_class
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
 check_csi
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
 check_dns_resolution
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
 check_volume_snapshot
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
+# Print status of Pre-flight checks
+if [ $PREFLIGHT_RUN_SUCCESS == "true" ]; then
+  echo -e "\n${GREEN_BOLD}All Pre-flight Checks Succeeded!${NC}\n"
+else
+  echo -e "\n${RED_BOLD}Some Pre-flight Checks Failed!${NC}\n"
+fi
