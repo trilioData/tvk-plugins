@@ -33,7 +33,7 @@ const (
 	kubeconfigUsage   = "specifies the custom path for your kubeconfig"
 	kubeconfigDefault = "~/.kube/config"
 	kubeconfigShort   = "k"
-	noCleanUsage      = "no Clean Directory"
+	noCleanUsage      = "Do not Clean the Directory ( Keep both directory and Zip )"
 	nocleanDefault    = false
 	nocleanShort      = "e"
 	logLevelUsage     = "LogLevel specify the logging level the logger should log at. This is typically info " +
@@ -87,7 +87,7 @@ func runLogCollector(*cobra.Command, []string) error {
 
 	logCollector := logcollector.LogCollector{
 		OutputDir:   "triliovault-" + formatted,
-		CleanOutput: noClean,
+		CleanOutput: !noClean,
 		Clustered:   clustered,
 		Namespaces:  namespaces,
 		Loglevel:    logLevel,
