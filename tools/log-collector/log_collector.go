@@ -270,7 +270,7 @@ func (l *LogCollector) writeEvents(events map[string]map[string]interface{}) err
 			}
 		}
 		for key, value := range v {
-			key = strings.Replace(key, "/", "-", 1)
+			key = strings.Replace(key, "/", ".", 1)
 			objectFilePath := filepath.Join(resourceDir, key)
 			fp, err := os.Create(objectFilePath + ".yaml")
 			if err != nil {
@@ -423,6 +423,7 @@ func (l *LogCollector) writeLog(resourceDir, objNs, objName, container string, i
 func (l *LogCollector) zipDir() error {
 
 	file, err := os.Create(l.OutputDir + ".zip")
+	log.Infof("Creating Zip : %v.zip\n", l.OutputDir)
 
 	if err != nil {
 		log.Errorf("Error Creating zip File : %v", err)
@@ -434,7 +435,7 @@ func (l *LogCollector) zipDir() error {
 	defer w.Close()
 
 	walker := func(path string, info os.FileInfo, err error) error {
-		fmt.Printf("Crawling: %#v\n", path)
+		log.Debugf("Crawling: %#v\n", path)
 		if err != nil {
 			return err
 		}
