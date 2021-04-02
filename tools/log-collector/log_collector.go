@@ -270,7 +270,7 @@ func (l *LogCollector) writeEvents(events map[string]map[string]interface{}) err
 			}
 		}
 		for key, value := range v {
-			key = strings.Replace(key, "/", "|", 1)
+			key = strings.Replace(key, "/", "-", 1)
 			objectFilePath := filepath.Join(resourceDir, key)
 			fp, err := os.Create(objectFilePath + ".yaml")
 			if err != nil {
