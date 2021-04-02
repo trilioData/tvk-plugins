@@ -57,7 +57,7 @@ Arch:
 | --clustered         |   false           |whether clustered installation of trilio application
 | --namespaces          | []           |list of namespaces to look for resources separated by commas
 | --kubeconfig            |   ~/.kube/config             |path to the kubernetes config
-| --no-clean             | false            | don\'t clean output directory after zip
+| --keep-source-folder            | false            | Keep source directory and Zip both
 | --log-level                | INFO             | log level for debugging
 
 ## Output

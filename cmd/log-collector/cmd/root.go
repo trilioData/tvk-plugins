@@ -16,7 +16,7 @@ const (
 	clusteredFlag  = "clustered"
 	namespacesFlag = "namespaces"
 	kubeConfigFlag = "kubeconfig"
-	noCleanFlag    = "no-clean"
+	keepSourceFlag = "keep-source-folder"
 	logLevelFlag   = "log-level"
 
 	shortUsage = "log-collector collects the information of resources such as yaml configuration and logs from k8s cluster."
@@ -33,9 +33,9 @@ const (
 	kubeconfigUsage   = "specifies the custom path for your kubeconfig"
 	kubeconfigDefault = "~/.kube/config"
 	kubeconfigShort   = "k"
-	noCleanUsage      = "Do not Clean the Directory ( Keep both directory and Zip )"
-	nocleanDefault    = false
-	nocleanShort      = "e"
+	keepSourceUsage   = "Keep source directory and Zip both"
+	keepSourceDefault = false
+	keepSourceShort   = "s"
 	logLevelUsage     = "LogLevel specify the logging level the logger should log at. This is typically info " +
 		", error, fatal."
 	loglevelDefault = "INFO"
@@ -47,7 +47,7 @@ var (
 	clustered         bool
 	namespaces        []string
 	kubeConfig        string
-	noClean           bool
+	keepSource        bool
 	logLevel          string
 	namespacesDefault []string
 )
@@ -67,7 +67,7 @@ func logCollectorCommand() *cobra.Command {
 	cmd.Flags().StringSliceVarP(&namespaces, namespacesFlag, namespacesShort, namespacesDefault, namespacesUsage)
 	cmd.Flags().BoolVarP(&clustered, clusteredFlag, clusteredShort, clusteredDefault, clusteredUsage)
 	cmd.Flags().StringVarP(&kubeConfig, kubeConfigFlag, kubeconfigShort, kubeconfigDefault, kubeconfigUsage)
-	cmd.Flags().BoolVarP(&noClean, noCleanFlag, nocleanShort, nocleanDefault, noCleanUsage)
+	cmd.Flags().BoolVarP(&keepSource, keepSourceFlag, keepSourceShort, keepSourceDefault, keepSourceUsage)
 	cmd.Flags().StringVarP(&logLevel, logLevelFlag, loglevelShort, loglevelDefault, logLevelUsage)
 
 	return cmd
@@ -87,7 +87,7 @@ func runLogCollector(*cobra.Command, []string) error {
 
 	logCollector := logcollector.LogCollector{
 		OutputDir:   "triliovault-" + formatted,
-		CleanOutput: !noClean,
+		CleanOutput: !keepSource,
 		Clustered:   clustered,
 		Namespaces:  namespaces,
 		Loglevel:    logLevel,
@@ -96,6 +96,8 @@ func runLogCollector(*cobra.Command, []string) error {
 	if err != nil {
 		return err
 	}
+
+	log.Info("---------    FINISHED COLLECTING LOGS    --------- ")
 	return nil
 }
 
