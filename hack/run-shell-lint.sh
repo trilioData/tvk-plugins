@@ -14,7 +14,7 @@ fi
 SRC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
 
 # run shell fmt
-shfmt_out="$(shfmt -l -i=2 "${SRC_ROOT}/hack" "${SRC_ROOT}/tools/preflight")"
+shfmt_out="$(shfmt -l -i=2 "${SRC_ROOT}/hack" "${SRC_ROOT}/tools/preflight" "${SRC_ROOT}/tests/preflight")"
 if [[ -n "${shfmt_out}" ]]; then
   echo >&2 "The following shell scripts need to be formatted, run: 'shfmt -w -i=2 ${SRC_ROOT}/hack ${SRC_ROOT}/tools/preflight'"
   echo >&2 "${shfmt_out}"

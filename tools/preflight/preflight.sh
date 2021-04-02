@@ -2,6 +2,8 @@
 
 # Purpose: Helper script for running pre-flight checks before installing K8s-Triliovault application.
 
+set -o pipefail
+
 # COLOUR CONSTANTS
 GREEN='\033[0;32m'
 GREEN_BOLD='\033[0;32m\e[1m'
@@ -13,8 +15,9 @@ NC='\033[0m'
 CHECK='\xE2\x9C\x94'
 CROSS='\xE2\x9D\x8C'
 
-MIN_HELM_VERSION="2.11.0"
-MIN_K8S_VERSION="1.13.0"
+MIN_HELM_VERSION="3.0.0"
+MIN_K8S_VERSION="1.17.0"
+PREFLIGHT_RUN_SUCCESS=true
 
 # shellcheck disable=SC2018
 RANDOM_STRING=$(
@@ -32,48 +35,54 @@ UNUSED_VOLUME_SNAP_SRC="unused-source-pvc-${RANDOM_STRING}"
 DNS_UTILS="dnsutils-${RANDOM_STRING}"
 
 print_help() {
-  echo "Usage:
+  echo "
+--------------------------------------------------------------
+Usage:
 kubectl tvk-preflight --storageclass <storage_class_name> --snapshotclass <volume_snapshot_class>
 Params:
 	--storageclass	name of storage class being used in k8s cluster
-	--snapshotclass name of volume snapshot class being used in k8s cluster
+	--snapshotclass name of volume snapshot class being used in k8s cluster (OPTIONAL)
 	--kubeconfig	path to kube config (OPTIONAL)
+--------------------------------------------------------------
 "
 }
 
 take_input() {
   if [[ -z "${1}" ]]; then
-    echo "Error: --storageclass and --snapshotclass flags are needed to run pre flight checks!"
+    echo "Error: --storageclass needed to run pre flight checks!"
     print_help
     exit 1
   fi
-  while true; do
+  while [ -n "$1" ]; do
     case "$1" in
     --storageclass)
-      if [[ "$2" =~ -- ]]; then
-        STORAGE_CLASS=""
-        shift
-      else
+      if [[ -n "$2" ]]; then
         STORAGE_CLASS=$2
         shift 2
+      else
+        echo "Error: flag --storageclass value may not be empty!"
+        print_help
+        exit 1
       fi
       ;;
     --snapshotclass)
-      if [[ "$2" =~ -- ]]; then
-        SNAPSHOT_CLASS=""
-        shift
-      else
+      if [[ -n "$2" ]]; then
         SNAPSHOT_CLASS=$2
         shift 2
+      else
+        echo "Error: flag --snapshotclass value may not be empty. Either set the value or skip this flag!"
+        print_help
+        exit 1
       fi
       ;;
     --kubeconfig)
-      if [[ "$2" =~ -- ]]; then
-        KUBECONFIG_PATH=""
-        shift
-      else
+      if [[ -n "$2" ]]; then
         KUBECONFIG_PATH=$2
         shift 2
+      else
+        echo "Error: flag --kubeconfig value may not be empty. Either set the value or skip this flag!"
+        print_help
+        exit 1
       fi
       ;;
     -h | --help)
@@ -81,12 +90,14 @@ take_input() {
       exit
       ;;
     *)
-      break
+      echo "Error: wrong input parameter $1 passed. Check Usage!"
+      print_help
+      exit 1
       ;;
     esac
   done
-  if [[ -z "${STORAGE_CLASS}" || -z "${SNAPSHOT_CLASS}" ]]; then
-    echo "Error: --storageclass and --snapshotclass, both flags are needed to run pre flight checks!"
+  if [[ -z "${STORAGE_CLASS}" ]]; then
+    echo "Error: --storageclass flag needed to run pre flight checks!"
     print_help
     exit 1
   fi
@@ -124,7 +135,7 @@ check_kubectl_access() {
 version_gt_eq() {
   local sorted_version
   sorted_version=$(echo -e '%s\n' "$@" | sort -V | head -n 1)
-  if [[ "${sorted_version}" != "$1" || "${sorted_version}" = "$2" ]]; then
+  if [[ "${sorted_version}" != "$1" || "${sorted_version}" == "$2" ]]; then
     return 0
   fi
   return 1
@@ -140,8 +151,8 @@ check_if_ocp() {
   echo "${is_ocp}"
 }
 
-check_helm_tiller_version() {
-  echo -e "${LIGHT_BLUE}Checking for required Helm Tiller version (>= v${MIN_HELM_VERSION})...${NC}\n"
+check_helm_version() {
+  echo -e "${LIGHT_BLUE}Checking for required Helm version (>= v${MIN_HELM_VERSION})...${NC}\n"
   local exit_status=0
 
   # Abort successfully in case of OCP setup
@@ -157,20 +168,12 @@ check_helm_tiller_version() {
     echo -e "${GREEN} ${CHECK} Found helm${NC}\n"
   fi
 
-  # Abort if Helm 3
   local helm_version
   helm_version=$(helm version --template "{{ .Version }}")
   if [[ ${helm_version} != "<no value>" ]]; then
-    echo -e "${GREEN} ${CHECK} No Tiller needed with Helm ${helm_version}${NC}\n"
-    return ${exit_status}
+    echo -e "${GREEN} ${CHECK} Helm version ${helm_version} meets minimum required version v${MIN_HELM_VERSION}${NC}\n"
   fi
-  helm_version=$(helm version --template "{{ .Server.SemVer }}")
-  if version_gt_eq "${helm_version:1}" "${MIN_HELM_VERSION}"; then
-    echo -e "${GREEN} ${CHECK} Tiller version (${helm_version}) meets minimum requirements${NC}\n"
-  else
-    echo -e "${RED} ${CROSS} Tiller version (${helm_version}) does not meet minimum requirements${NC}\n"
-    exit_status=1
-  fi
+
   return ${exit_status}
 }
 
@@ -213,70 +216,55 @@ check_storage_snapshot_class() {
     echo -e "${RED} ${CROSS} Storage class \"${STORAGE_CLASS}\" not found${NC}\n"
     exit_status=1
   fi
+
+  # shellcheck disable=SC1083
+  provisioner=$(kubectl get sc "${STORAGE_CLASS}" | grep -E "(^|\s)${STORAGE_CLASS}($|\s)" | awk {'print $2'})
+
+  if [[ -z "${SNAPSHOT_CLASS}" ]]; then
+    # shellcheck disable=SC1083
+    vsList=$(kubectl get volumesnapshotclass | awk '{if(NR>1)print $1}')
+    if [[ -n "${vsList}" ]]; then
+      # shellcheck disable=SC2162
+      while read -r vs; do
+        vsMeta=$(kubectl get volumesnapshotclass "$vs" -o yaml)
+        # shellcheck disable=SC2143
+        if [[ $(echo "$vsMeta" | grep -e "driver: ${provisioner}") ]]; then
+          # shellcheck disable=SC2143
+          if [[ $(kubectl get volumesnapshotclass "$vs" -o yaml | grep "is-default-class: \"true\"") ]]; then
+            SNAPSHOT_CLASS=$vs
+            break
+          fi
+          SNAPSHOT_CLASS=$vs
+        fi
+      done <<<"$vsList"
+    fi
+
+    if [[ -z "${SNAPSHOT_CLASS}" ]]; then
+      echo -e "${RED} ${CROSS} Volume snapshot class having same driver as StorageClass's provisioner not found in cluster${NC}\n"
+      exit_status=1
+      return ${exit_status}
+    else
+      echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" found in cluster${NC}\n"
+      echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" driver matches with given StorageClass's provisioner${NC}\n"
+      return
+    fi
+  fi
+
   # shellcheck disable=SC2143
   if [[ $(kubectl get volumesnapshotclass | grep -E "(^|\s)${SNAPSHOT_CLASS}($|\s)") ]]; then
-    echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" found${NC}\n"
+    echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" found in cluster${NC}\n"
+    # shellcheck disable=SC1009
+    if [[ $(kubectl get volumesnapshotclass "${SNAPSHOT_CLASS}" -oyaml | grep -e "driver: ${provisioner}") ]]; then
+      echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" driver matches with given StorageClass's provisioner${NC}\n"
+    else
+      echo -e "${RED} ${CROSS} Volume snapshot class \"${SNAPSHOT_CLASS}\" driver does not match with given StorageClass's provisioner${NC}\n"
+      exit_status=1
+    fi
   else
-    echo -e "${RED} ${CROSS} Volume snapshot class \"${SNAPSHOT_CLASS}\" not found${NC}\n"
+    echo -e "${RED} ${CROSS} Volume snapshot class \"${SNAPSHOT_CLASS}\" not found in cluster${NC}\n"
     exit_status=1
   fi
-  # shellcheck disable=SC2143
-  if [[ $(kubectl get apiservices | grep "v1beta1.snapshot.storage.k8s.io") ]]; then
-    echo -e "${GREEN} ${CHECK} Snapshot api is in beta. No need to have default class annotation on volume snapshot class${NC}\n"
-  else
-    # shellcheck disable=SC2143
-    if [[ $(kubectl get volumesnapshotclass -o yaml | grep "is-default-class: \"true\"") ]]; then
-      echo -e "${GREEN} ${CHECK} Snapshot api is in alpha. Found a snapshot class marked as default${NC}\n"
-    else
-      echo -e "${RED} ${CROSS} Snapshot api is in alpha. No snapshot class is marked default${NC}\n"
-      exit_status=1
-    fi
-  fi
-  return ${exit_status}
-}
 
-check_feature_gates() {
-  local exit_status=0
-  local k8s_version
-  local features=()
-
-  # specially handle this for GKE alpha clusters
-  gke_all_alpha_feature="AllAlpha=true"
-
-  k8s_version=$(kubectl version --short | grep Server | awk '{print $3}')
-  echo -e "${LIGHT_BLUE}Checking if needed features are available in k8s cluster for version ${k8s_version}...${NC}\n"
-
-  k8s_version=$(echo "${k8s_version}" | cut -d '.' -f2)
-  if [[ "${k8s_version}" == "13" ]]; then
-    features=("CSIBlockVolume" "CSIDriverRegistry" "CSINodeInfo" "VolumeSnapshotDataSource")
-  else
-    features=("VolumeSnapshotDataSource")
-  fi
-
-  if [[ "${k8s_version}" -lt "15" ]]; then
-    features+=("CustomResourceWebhookConversion")
-  fi
-
-  if [[ ${k8s_version} -ge "17" ]]; then
-    echo -e "${GREEN} ${CHECK} No feature gates needed${NC}\n"
-    return ${exit_status}
-  fi
-
-  if [[ $(check_if_ocp) == "Y" ]]; then
-    features_enabled=$(kubectl get cm -n openshift-kube-apiserver -oyaml | grep feature)
-  else
-    features_enabled=$(kubectl get po -n kube-system -oyaml | grep feature)
-  fi
-
-  for feat in "${features[@]}"; do
-    # shellcheck disable=SC2143
-    if [[ $(echo "${features_enabled}" | grep "${feat}") || $(echo "${features_enabled}" | grep "${gke_all_alpha_feature}") ]]; then
-      echo -e "${GREEN} ${CHECK} Found ${feat}${NC}\n"
-    else
-      echo -e "${RED} ${CROSS} Not found ${feat}${NC}\n"
-      exit_status=1
-    fi
-  done
   return ${exit_status}
 }
 
@@ -319,6 +307,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: ${DNS_UTILS}
+  labels:
+    trilio: tvk-preflight
 spec:
   containers:
   - name: dnsutils
@@ -330,7 +320,6 @@ spec:
   restartPolicy: Always
 EOF
 
-  set +o errexit
   kubectl wait --for=condition=ready --timeout=2m pod/"${DNS_UTILS}" &>/dev/null
   kubectl exec -it "${DNS_UTILS}" -- nslookup kubernetes.default &>/dev/null
   # shellcheck disable=SC2181
@@ -341,7 +330,6 @@ EOF
     exit_status=1
   fi
   kubectl delete pod "${DNS_UTILS}" &>/dev/null
-  set -o errexit
   return ${exit_status}
 }
 
@@ -349,15 +337,22 @@ check_volume_snapshot() {
   echo -e "${LIGHT_BLUE}Checking if volume snapshot and restore enabled in K8s cluster...${NC}\n"
   local err_status=1
   local success_status=0
-  local retries=30
+  local retries=45
   local sleep=5
-  set +o errexit
+
+  # shellcheck disable=SC2143
+  if [[ -z "${SNAPSHOT_CLASS}" ]]; then
+    echo -e "${RED} ${CROSS} Volume snapshot class having same driver as StorageClass's provisioner not found in cluster${NC}\n"
+    return ${err_status}
+  fi
 
   cat <<EOF | kubectl apply -f - &>/dev/null
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: ${SOURCE_PVC}
+  labels:
+    trilio: tvk-preflight
 spec:
   accessModes:
     - ReadWriteOnce
@@ -370,6 +365,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: ${SOURCE_POD}
+  labels:
+    trilio: tvk-preflight
 spec:
   containers:
   - name: busybox
@@ -395,31 +392,32 @@ EOF
     return ${err_status}
   fi
 
+  api_service=$(kubectl get apiservices)
+  snapshotVersion=""
   # shellcheck disable=SC2143
-  if [[ $(kubectl get apiservices | grep "v1beta1.snapshot.storage.k8s.io") ]]; then
-    cat <<EOF | kubectl apply -f - &>/dev/null
-apiVersion: snapshot.storage.k8s.io/v1beta1
+  if [[ $(echo "$api_service" | grep "v1.snapshot.storage.k8s.io") ]]; then
+    snapshotVersion="v1"
+  elif [[ $(echo "$api_service" | grep "v1beta1.snapshot.storage.k8s.io") ]]; then
+    snapshotVersion="v1beta1"
+  else
+    echo -e "${RED} ${CROSS} Volume snapshot crd version [v1 or v1beta1] not found in cluster${NC}\n"
+    return ${err_status}
+  fi
+
+  # shellcheck disable=SC2006
+  cat <<EOF | kubectl apply -f - &>/dev/null
+apiVersion: snapshot.storage.k8s.io/${snapshotVersion}
 kind: VolumeSnapshot
 metadata:
   name: ${VOLUME_SNAP_SRC}
+  labels:
+    trilio: tvk-preflight
 spec:
   volumeSnapshotClassName: ${SNAPSHOT_CLASS}
   source:
     persistentVolumeClaimName: ${SOURCE_PVC}
 EOF
-  else
-    cat <<EOF | kubectl apply -f - &>/dev/null
-apiVersion: snapshot.storage.k8s.io/v1alpha1
-kind: VolumeSnapshot
-metadata:
-  name: ${VOLUME_SNAP_SRC}
-spec:
-  snapshotClassName: ${SNAPSHOT_CLASS}
-  source:
-    kind: PersistentVolumeClaim
-    name: ${SOURCE_PVC}
-EOF
-  fi
+
   # shellcheck disable=SC2181
   if [[ $? -ne 0 ]]; then
     echo -e "${RED_BOLD} ${CROSS} Error creating volume snapshot from source pvc${NC}\n"
@@ -447,6 +445,8 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: ${RESTORE_PVC}
+  labels:
+    trilio: tvk-preflight
 spec:
   accessModes:
     - ReadWriteOnce
@@ -463,6 +463,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: ${RESTORE_POD}
+  labels:
+    trilio: tvk-preflight
 spec:
   containers:
   - name: busybox
@@ -508,30 +510,19 @@ EOF
   fi
 
   # shellcheck disable=SC2143
-  if [[ $(kubectl get apiservices | grep "v1beta1.snapshot.storage.k8s.io") ]]; then
-    cat <<EOF | kubectl apply -f - &>/dev/null
-apiVersion: snapshot.storage.k8s.io/v1beta1
+  cat <<EOF | kubectl apply -f - &>/dev/null
+apiVersion: snapshot.storage.k8s.io/${snapshotVersion}
 kind: VolumeSnapshot
 metadata:
   name: ${UNUSED_VOLUME_SNAP_SRC}
+  labels:
+    trilio: tvk-preflight
 spec:
   volumeSnapshotClassName: ${SNAPSHOT_CLASS}
   source:
     persistentVolumeClaimName: ${SOURCE_PVC}
 EOF
-  else
-    cat <<EOF | kubectl apply -f - &>/dev/null
-apiVersion: snapshot.storage.k8s.io/v1alpha1
-kind: VolumeSnapshot
-metadata:
-  name: ${UNUSED_VOLUME_SNAP_SRC}
-spec:
-  snapshotClassName: ${SNAPSHOT_CLASS}
-  source:
-    kind: PersistentVolumeClaim
-    name: ${SOURCE_PVC}
-EOF
-  fi
+
   # shellcheck disable=SC2181
   if [[ $? -ne 0 ]]; then
     echo -e "${RED_BOLD} ${CROSS} Error creating volume snapshot from unused source pvc${NC}\n"
@@ -559,6 +550,8 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: ${UNUSED_RESTORE_PVC}
+  labels:
+    trilio: tvk-preflight
 spec:
   accessModes:
     - ReadWriteOnce
@@ -575,6 +568,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: ${UNUSED_RESTORE_POD}
+  labels:
+    trilio: tvk-preflight
 spec:
   containers:
   - name: busybox
@@ -610,45 +605,40 @@ EOF
     return ${err_status}
   fi
 
-  set -o errexit
   return ${success_status}
 }
 
 cleanup() {
   local exit_status=0
 
-  echo -e "${LIGHT_BLUE}Cleaning up...${NC}\n"
+  echo -e "${LIGHT_BLUE} Cleaning up residual resources...${NC}\n"
 
-  kubectl delete --ignore-not-found=true pod/"${SOURCE_POD}" pod/"${RESTORE_POD}" pod/"${UNUSED_RESTORE_POD}" pvc/"${SOURCE_PVC}" \
-    pvc/"${RESTORE_PVC}" pvc/"${UNUSED_RESTORE_PVC}" volumesnapshot/"${VOLUME_SNAP_SRC}" volumesnapshot/"${UNUSED_VOLUME_SNAP_SRC}" &>/dev/null
-  # shellcheck disable=SC2181
-  if [[ $? -eq 0 ]]; then
-    echo -e "\n${GREEN} ${CHECK} Cleaned up all the resources${NC}\n"
-  else
-    echo -e "${RED_BOLD} ${CROSS} Error cleaning up intermediate resources${NC}\n"
-    exit_status=1
-  fi
+  declare -a pvc=("${SOURCE_PVC}" "${RESTORE_PVC}" "${UNUSED_RESTORE_PVC}")
+  for res in "${pvc[@]}"; do
+    kubectl delete pvc -n "${NAMESPACE}" "${res}" --force --grace-period=0 --timeout=5s &>/dev/null || true
+    kubectl patch pvc -n "${NAMESPACE}" "${res}" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' &>/dev/null || true
+  done
+
+  declare -a vsnaps=("${VOLUME_SNAP_SRC}" "${UNUSED_VOLUME_SNAP_SRC}")
+  for res in "${vsnaps[@]}"; do
+    kubectl delete volumesnapshot -n "${NAMESPACE}" "${res}" --force --grace-period=0 --timeout=5s &>/dev/null || true
+    kubectl patch volumesnapshot -n "${NAMESPACE}" "${res}" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' &>/dev/null || true
+  done
+
+  kubectl delete --force --grace-period=0 pod "${SOURCE_POD}" "${RESTORE_POD}" "${UNUSED_RESTORE_POD}" &>/dev/null || true
+
+  kubectl delete all -l trilio=tvk-preflight --force --grace-period=0 &>/dev/null || true
+
+  echo -e "\n${GREEN} ${CHECK} Cleaned up all the resources${NC}\n"
 
   return ${exit_status}
 }
 
-exit_trap() {
-  local rc=$?
-  if [ ${rc} -eq 0 ]; then
-    echo -e "\n${GREEN_BOLD}All pre-flight checks succeeded!${NC}\n"
-  else
-    echo -e "\n${RED_BOLD}Pre-flight checks failed!${NC}\n"
-  fi
-  cleanup
-  exit ${rc}
-}
-
 export -f check_kubectl
 export -f check_kubectl_access
-export -f check_helm_tiller_version
+export -f check_helm_version
 export -f check_kubernetes_version
 export -f check_kubernetes_rbac
-export -f check_feature_gates
 export -f check_storage_snapshot_class
 export -f check_csi
 export -f check_dns_resolution
@@ -663,21 +653,69 @@ export -f cleanup
 take_input "$@"
 
 echo
-echo -e "${GREEN_BOLD}Running pre-flight checks before installing K8s Triliovault. Might take a few minutes...${NC}\n"
+echo -e "${GREEN_BOLD}--- Running Pre-flight Checks Before Installing Triliovault for Kubernetes ---${NC}\n"
+echo -e "${GREEN}Might take a few minutes...${NC}\n"
 
-set -o errexit
-set -o pipefail
-
-trap "exit_trap" EXIT
+trap "cleanup" EXIT
 
 check_kubectl
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
 check_kubectl_access
-check_helm_tiller_version
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
+check_helm_version
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
 check_kubernetes_version
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
 check_kubernetes_rbac
-check_feature_gates
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
 check_storage_snapshot_class
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
 check_csi
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
 check_dns_resolution
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
 check_volume_snapshot
-cleanup
+retCode=$?
+if [[ retCode -ne 0 ]]; then
+  PREFLIGHT_RUN_SUCCESS=false
+fi
+
+# Print status of Pre-flight checks
+if [ $PREFLIGHT_RUN_SUCCESS == "true" ]; then
+  echo -e "\n${GREEN_BOLD}All Pre-flight Checks Succeeded!${NC}\n"
+else
+  echo -e "\n${RED_BOLD}Some Pre-flight Checks Failed!${NC}\n"
+  exit 1
+fi
