@@ -222,32 +222,39 @@ check_storage_snapshot_class() {
 
   if [[ -z "${SNAPSHOT_CLASS}" ]]; then
     # shellcheck disable=SC1083
-    vsList=$(kubectl get volumesnapshotclass | grep "$provisioner" | awk {'print $1'})
-
+    vsList=$(kubectl get volumesnapshotclass | awk '{if(NR>1)print $1}')
     if [[ -n "${vsList}" ]]; then
       # shellcheck disable=SC2162
       while read -r vs; do
+        vsMeta=$(kubectl get volumesnapshotclass "$vs" -o yaml)
         # shellcheck disable=SC2143
-        if [[ $(kubectl get volumesnapshotclass "$vs" -o yaml | grep "is-default-class: \"true\"") ]]; then
+        if [[ $(echo "$vsMeta" | grep -e "driver: ${provisioner}") ]]; then
+          # shellcheck disable=SC2143
+          if [[ $(kubectl get volumesnapshotclass "$vs" -o yaml | grep "is-default-class: \"true\"") ]]; then
+            SNAPSHOT_CLASS=$vs
+            break
+          fi
           SNAPSHOT_CLASS=$vs
-          break
         fi
-        SNAPSHOT_CLASS=$vs
       done <<<"$vsList"
     fi
-  fi
 
-  if [[ -z "${SNAPSHOT_CLASS}" ]]; then
-    echo -e "${RED} ${CROSS} Volume snapshot class having same driver as StorageClass's provisioner not found in cluster${NC}\n"
-    exit_status=1
-    return ${exit_status}
+    if [[ -z "${SNAPSHOT_CLASS}" ]]; then
+      echo -e "${RED} ${CROSS} Volume snapshot class having same driver as StorageClass's provisioner not found in cluster${NC}\n"
+      exit_status=1
+      return ${exit_status}
+    else
+      echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" found in cluster${NC}\n"
+      echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" driver matches with given StorageClass's provisioner${NC}\n"
+      return
+    fi
   fi
 
   # shellcheck disable=SC2143
   if [[ $(kubectl get volumesnapshotclass | grep -E "(^|\s)${SNAPSHOT_CLASS}($|\s)") ]]; then
     echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" found in cluster${NC}\n"
     # shellcheck disable=SC1009
-    if [[ $(kubectl get volumesnapshotclass "${SNAPSHOT_CLASS}" | grep -E "(^|\s)${provisioner}($|\s)") ]]; then
+    if [[ $(kubectl get volumesnapshotclass "${SNAPSHOT_CLASS}" -oyaml | grep -e "driver: ${provisioner}") ]]; then
       echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" driver matches with given StorageClass's provisioner${NC}\n"
     else
       echo -e "${RED} ${CROSS} Volume snapshot class \"${SNAPSHOT_CLASS}\" driver does not match with given StorageClass's provisioner${NC}\n"
@@ -330,7 +337,7 @@ check_volume_snapshot() {
   echo -e "${LIGHT_BLUE}Checking if volume snapshot and restore enabled in K8s cluster...${NC}\n"
   local err_status=1
   local success_status=0
-  local retries=30
+  local retries=45
   local sleep=5
 
   # shellcheck disable=SC2143
