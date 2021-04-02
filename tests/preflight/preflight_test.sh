@@ -13,7 +13,7 @@ take_input --storageclass csi-gce-pd --snapshotclass default-snapshot-class
 
 testKubectl() {
   check_kubectl
-    rc=$?
+  rc=$?
   # shellcheck disable=SC2181
   if [ $rc != "0" ]; then
     # shellcheck disable=SC2082
@@ -25,7 +25,7 @@ testKubectl() {
 testKubectlAccess() {
 
   check_kubectl_access
-    rc=$?
+  rc=$?
   # shellcheck disable=SC2181
   if [ $rc != "0" ]; then
     # shellcheck disable=SC2082
@@ -37,7 +37,7 @@ testKubectlAccess() {
 testHelmVersion() {
 
   check_helm_version
-    rc=$?
+  rc=$?
   # shellcheck disable=SC2181
   if [ $rc != "0" ]; then
     # shellcheck disable=SC2082
@@ -49,7 +49,7 @@ testHelmVersion() {
 testK8sVersion() {
 
   check_kubernetes_version
-    rc=$?
+  rc=$?
   # shellcheck disable=SC2181
   if [ $rc != "0" ]; then
     # shellcheck disable=SC2082
@@ -73,7 +73,7 @@ testK8sRBAC() {
 testStorageSnapshotClass() {
 
   check_storage_snapshot_class
-    rc=$?
+  rc=$?
   # shellcheck disable=SC2181
   if [ $rc != "0" ]; then
     # shellcheck disable=SC2082
@@ -85,7 +85,7 @@ testStorageSnapshotClass() {
 testCSI() {
 
   check_csi
-    rc=$?
+  rc=$?
   # shellcheck disable=SC2181
   if [ $rc != "0" ]; then
     # shellcheck disable=SC2082
@@ -97,7 +97,7 @@ testCSI() {
 testDNSResolution() {
 
   check_dns_resolution
-    rc=$?
+  rc=$?
   # shellcheck disable=SC2181
   if [ $rc != "0" ]; then
     # shellcheck disable=SC2082
@@ -109,7 +109,7 @@ testDNSResolution() {
 testVolumeSnapshot() {
 
   check_volume_snapshot
-    rc=$?
+  rc=$?
   # shellcheck disable=SC2181
   if [ $rc != "0" ]; then
     # shellcheck disable=SC2082

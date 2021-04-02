@@ -41,7 +41,7 @@ Usage:
 kubectl tvk-preflight --storageclass <storage_class_name> --snapshotclass <volume_snapshot_class>
 Params:
 	--storageclass	name of storage class being used in k8s cluster
-	--snapshotclass name of volume snapshot class being used in k8s cluster
+	--snapshotclass name of volume snapshot class being used in k8s cluster (OPTIONAL)
 	--kubeconfig	path to kube config (OPTIONAL)
 --------------------------------------------------------------
 "
@@ -49,7 +49,7 @@ Params:
 
 take_input() {
   if [[ -z "${1}" ]]; then
-    echo "Error: --storageclass and --snapshotclass flags are needed to run pre flight checks!"
+    echo "Error: --storageclass needed to run pre flight checks!"
     print_help
     exit 1
   fi
@@ -70,7 +70,7 @@ take_input() {
         SNAPSHOT_CLASS=$2
         shift 2
       else
-        echo "Error: flag --snapshotclass value may not be empty!"
+        echo "Error: flag --snapshotclass value may not be empty. Either set the value or skip this flag!"
         print_help
         exit 1
       fi
@@ -80,8 +80,9 @@ take_input() {
         KUBECONFIG_PATH=$2
         shift 2
       else
-        KUBECONFIG_PATH=""
-        shift
+        echo "Error: flag --kubeconfig value may not be empty. Either set the value or skip this flag!"
+        print_help
+        exit 1
       fi
       ;;
     -h | --help)
@@ -89,14 +90,14 @@ take_input() {
       exit
       ;;
     *)
-      echo "Error: wrong parameter $1 passed. Check Usage!"
+      echo "Error: wrong input parameter $1 passed. Check Usage!"
       print_help
       exit 1
       ;;
     esac
   done
-  if [[ -z "${STORAGE_CLASS}" || -z "${SNAPSHOT_CLASS}" ]]; then
-    echo "Error: --storageclass and --snapshotclass, both flags are needed to run pre flight checks!"
+  if [[ -z "${STORAGE_CLASS}" ]]; then
+    echo "Error: --storageclass flag needed to run pre flight checks!"
     print_help
     exit 1
   fi
@@ -215,17 +216,40 @@ check_storage_snapshot_class() {
     echo -e "${RED} ${CROSS} Storage class \"${STORAGE_CLASS}\" not found${NC}\n"
     exit_status=1
   fi
+
+  if [[ -z "${SNAPSHOT_CLASS}" ]]; then
+    # shellcheck disable=SC1083
+    driver=$(kubectl get sc "${STORAGE_CLASS}" | grep -E "(^|\s)${STORAGE_CLASS}($|\s)" | awk {'print $2'})
+    # shellcheck disable=SC1083
+    vsList=$(kubectl get volumesnapshotclass | grep "$driver" | awk {'print $1'})
+
+    if [[ -n "${vsList}" ]]; then
+      # shellcheck disable=SC2162
+      while read -r vs; do
+        # shellcheck disable=SC2143
+        if [[ $(kubectl get volumesnapshotclass "$vs" -o yaml | grep "is-default-class: \"true\"") ]]; then
+          SNAPSHOT_CLASS=$vs
+          break
+        fi
+        SNAPSHOT_CLASS=$vs
+      done <<<"$vsList"
+    fi
+  fi
+
+  if [[ -z "${SNAPSHOT_CLASS}" ]]; then
+    echo -e "${RED} ${CROSS} Volume snapshot class not found with same driver of given storage class${NC}\n"
+    exit_status=1
+    return ${exit_status}
+  fi
+
   # shellcheck disable=SC2143
   if [[ $(kubectl get volumesnapshotclass | grep -E "(^|\s)${SNAPSHOT_CLASS}($|\s)") ]]; then
-    echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" found${NC}\n"
+    echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" found in cluster${NC}\n"
   else
-    echo -e "${RED} ${CROSS} Volume snapshot class \"${SNAPSHOT_CLASS}\" not found${NC}\n"
+    echo -e "${RED} ${CROSS} Volume snapshot class \"${SNAPSHOT_CLASS}\" not found in cluster${NC}\n"
     exit_status=1
   fi
-  # shellcheck disable=SC2143
-  if [[ $(kubectl get apiservices | grep -e "v1beta1.snapshot.storage.k8s.io" -e "v1.snapshot.storage.k8s.io") ]]; then
-    echo -e "${GREEN} ${CHECK} Snapshot api is not in alpha. No need to have default class annotation on volume snapshot class${NC}\n"
-  fi
+
   return ${exit_status}
 }
 
@@ -301,6 +325,12 @@ check_volume_snapshot() {
   local retries=30
   local sleep=5
 
+  # shellcheck disable=SC2143
+  if [[ -z "${SNAPSHOT_CLASS}" ]]; then
+    echo -e "${RED} ${CROSS} Volume snapshot class not found with same driver of given storage class${NC}\n"
+    return ${err_status}
+  fi
+
   cat <<EOF | kubectl apply -f - &>/dev/null
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -348,24 +378,20 @@ EOF
   fi
 
   api_service=$(kubectl get apiservices)
+  snapshotVersion=""
   # shellcheck disable=SC2143
-  # shellcheck disable=SC2006
   if [[ $(echo "$api_service" | grep "v1.snapshot.storage.k8s.io") ]]; then
-    cat <<EOF | kubectl apply -f - &>/dev/null
-apiVersion: snapshot.storage.k8s.io/v1
-kind: VolumeSnapshot
-metadata:
-  name: ${VOLUME_SNAP_SRC}
-  labels:
-    trilio: tvk-preflight
-spec:
-  volumeSnapshotClassName: ${SNAPSHOT_CLASS}
-  source:
-    persistentVolumeClaimName: ${SOURCE_PVC}
-EOF
+    snapshotVersion="v1"
   elif [[ $(echo "$api_service" | grep "v1beta1.snapshot.storage.k8s.io") ]]; then
-    cat <<EOF | kubectl apply -f - &>/dev/null
-apiVersion: snapshot.storage.k8s.io/v1beta1
+    snapshotVersion="v1beta1"
+  else
+    echo -e "${RED} ${CROSS} Volume snapshot crd version [v1 or v1beta1] not found in cluster${NC}\n"
+    return ${err_status}
+  fi
+
+  # shellcheck disable=SC2006
+  cat <<EOF | kubectl apply -f - &>/dev/null
+apiVersion: snapshot.storage.k8s.io/${snapshotVersion}
 kind: VolumeSnapshot
 metadata:
   name: ${VOLUME_SNAP_SRC}
@@ -376,7 +402,7 @@ spec:
   source:
     persistentVolumeClaimName: ${SOURCE_PVC}
 EOF
-  fi
+
   # shellcheck disable=SC2181
   if [[ $? -ne 0 ]]; then
     echo -e "${RED_BOLD} ${CROSS} Error creating volume snapshot from source pvc${NC}\n"
@@ -468,11 +494,9 @@ EOF
     exit_status=1
   fi
 
-  api_service=$(kubectl get apiservices)
   # shellcheck disable=SC2143
-  if [[ $(echo "$api_service" | grep "v1.snapshot.storage.k8s.io") ]]; then
-    cat <<EOF | kubectl apply -f - &>/dev/null
-apiVersion: snapshot.storage.k8s.io/v1
+  cat <<EOF | kubectl apply -f - &>/dev/null
+apiVersion: snapshot.storage.k8s.io/${snapshotVersion}
 kind: VolumeSnapshot
 metadata:
   name: ${UNUSED_VOLUME_SNAP_SRC}
@@ -483,20 +507,7 @@ spec:
   source:
     persistentVolumeClaimName: ${SOURCE_PVC}
 EOF
-  elif [[ $(echo "$api_service" | grep "v1beta1.snapshot.storage.k8s.io") ]]; then
-    cat <<EOF | kubectl apply -f - &>/dev/null
-apiVersion: snapshot.storage.k8s.io/v1beta1
-kind: VolumeSnapshot
-metadata:
-  name: ${UNUSED_VOLUME_SNAP_SRC}
-  labels:
-    trilio: tvk-preflight
-spec:
-  volumeSnapshotClassName: ${SNAPSHOT_CLASS}
-  source:
-    persistentVolumeClaimName: ${SOURCE_PVC}
-EOF
-  fi
+
   # shellcheck disable=SC2181
   if [[ $? -ne 0 ]]; then
     echo -e "${RED_BOLD} ${CROSS} Error creating volume snapshot from unused source pvc${NC}\n"
