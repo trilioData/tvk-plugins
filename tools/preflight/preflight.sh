@@ -217,11 +217,12 @@ check_storage_snapshot_class() {
     exit_status=1
   fi
 
+  # shellcheck disable=SC1083
+  provisioner=$(kubectl get sc "${STORAGE_CLASS}" | grep -E "(^|\s)${STORAGE_CLASS}($|\s)" | awk {'print $2'})
+
   if [[ -z "${SNAPSHOT_CLASS}" ]]; then
     # shellcheck disable=SC1083
-    driver=$(kubectl get sc "${STORAGE_CLASS}" | grep -E "(^|\s)${STORAGE_CLASS}($|\s)" | awk {'print $2'})
-    # shellcheck disable=SC1083
-    vsList=$(kubectl get volumesnapshotclass | grep "$driver" | awk {'print $1'})
+    vsList=$(kubectl get volumesnapshotclass | grep "$provisioner" | awk {'print $1'})
 
     if [[ -n "${vsList}" ]]; then
       # shellcheck disable=SC2162
@@ -237,7 +238,7 @@ check_storage_snapshot_class() {
   fi
 
   if [[ -z "${SNAPSHOT_CLASS}" ]]; then
-    echo -e "${RED} ${CROSS} Volume snapshot class not found with same driver of given storage class${NC}\n"
+    echo -e "${RED} ${CROSS} Volume snapshot class having same driver as StorageClass's provisioner not found in cluster${NC}\n"
     exit_status=1
     return ${exit_status}
   fi
@@ -245,6 +246,13 @@ check_storage_snapshot_class() {
   # shellcheck disable=SC2143
   if [[ $(kubectl get volumesnapshotclass | grep -E "(^|\s)${SNAPSHOT_CLASS}($|\s)") ]]; then
     echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" found in cluster${NC}\n"
+    # shellcheck disable=SC1009
+    if [[ $(kubectl get volumesnapshotclass "${SNAPSHOT_CLASS}" | grep -E "(^|\s)${provisioner}($|\s)") ]]; then
+      echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" driver matches with given StorageClass's provisioner${NC}\n"
+    else
+      echo -e "${RED} ${CROSS} Volume snapshot class \"${SNAPSHOT_CLASS}\" driver does not match with given StorageClass's provisioner${NC}\n"
+      exit_status=1
+    fi
   else
     echo -e "${RED} ${CROSS} Volume snapshot class \"${SNAPSHOT_CLASS}\" not found in cluster${NC}\n"
     exit_status=1
@@ -327,7 +335,7 @@ check_volume_snapshot() {
 
   # shellcheck disable=SC2143
   if [[ -z "${SNAPSHOT_CLASS}" ]]; then
-    echo -e "${RED} ${CROSS} Volume snapshot class not found with same driver of given storage class${NC}\n"
+    echo -e "${RED} ${CROSS} Volume snapshot class having same driver as StorageClass's provisioner not found in cluster${NC}\n"
     return ${err_status}
   fi
 
@@ -702,4 +710,5 @@ if [ $PREFLIGHT_RUN_SUCCESS == "true" ]; then
   echo -e "\n${GREEN_BOLD}All Pre-flight Checks Succeeded!${NC}\n"
 else
   echo -e "\n${RED_BOLD}Some Pre-flight Checks Failed!${NC}\n"
+  exit 1
 fi
