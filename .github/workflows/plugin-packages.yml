@@ -2,6 +2,8 @@
 name: Plugin Packages CI
 on:
   push:
+    branches:
+      - 'main'
     tags:
       - 'v*.*.*'
   pull_request:
@@ -142,6 +144,18 @@ jobs:
 
       - name: Test Log-Collector Plugin Locally
         run: make test-log-collector-plugin-locally
+
+      - name: Set up Cloud SDK
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.GCS_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCS_ARTIFACTS_CREDENTIALS }}
+          export_default_credentials: true
+
+      - name: Upload Preflight Plugin Packges to GCS artifact
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: gsutil cp dist/log-collector_linux_amd64/log-collector gs://trilio-artifacts/tvk-plugins/log-collector/main/log-collector
 
   # pre-release job determines whether to create release or not and sets job variables which will be used to decide
   # what packages(preflight or log-collector or both) should be included in release
