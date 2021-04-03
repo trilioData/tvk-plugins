@@ -10,6 +10,7 @@ GREEN_BOLD='\033[0;32m\e[1m'
 LIGHT_BLUE='\033[1;34m'
 RED='\033[0;31m'
 RED_BOLD='\033[0;31m\e[1m'
+BROWN='\033[0;33m'
 NC='\033[0m'
 
 CHECK='\xE2\x9C\x94'
@@ -244,7 +245,7 @@ check_storage_snapshot_class() {
       exit_status=1
       return ${exit_status}
     else
-      echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" found in cluster${NC}\n"
+      echo -e "${GREEN} ${CHECK} Extracted volume snapshot class \"${SNAPSHOT_CLASS}\" found in cluster${NC}\n"
       echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" driver matches with given StorageClass's provisioner${NC}\n"
       return
     fi
@@ -346,6 +347,8 @@ check_volume_snapshot() {
     return ${err_status}
   fi
 
+  echo -e "${BROWN} Creating source pod and pvc for volume-snapshot check${NC}\n"
+
   cat <<EOF | kubectl apply -f - &>/dev/null
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -404,6 +407,8 @@ EOF
     return ${err_status}
   fi
 
+  echo -e "${BROWN} Creating volume snapshot from source pvc${NC}\n"
+
   # shellcheck disable=SC2006
   cat <<EOF | kubectl apply -f - &>/dev/null
 apiVersion: snapshot.storage.k8s.io/${snapshotVersion}
@@ -439,6 +444,8 @@ EOF
       continue
     fi
   done
+
+  echo -e "${BROWN} Creating restore pod from volume snapshot${NC}\n"
 
   cat <<EOF | kubectl apply -f - &>/dev/null
 kind: PersistentVolumeClaim
@@ -509,6 +516,8 @@ EOF
     exit_status=1
   fi
 
+  echo -e "${BROWN} Creating volume snapshot from unused source pvc${NC}\n"
+
   # shellcheck disable=SC2143
   cat <<EOF | kubectl apply -f - &>/dev/null
 apiVersion: snapshot.storage.k8s.io/${snapshotVersion}
@@ -544,6 +553,8 @@ EOF
       continue
     fi
   done
+
+  echo -e "${BROWN} Creating restore pod from volume snapshot of unused pv${NC}\n"
 
   cat <<EOF | kubectl apply -f - &>/dev/null
 kind: PersistentVolumeClaim
@@ -654,7 +665,7 @@ take_input "$@"
 
 echo
 echo -e "${GREEN_BOLD}--- Running Pre-flight Checks Before Installing Triliovault for Kubernetes ---${NC}\n"
-echo -e "${GREEN}Might take a few minutes...${NC}\n"
+echo -e "${BROWN}Might take a few minutes...${NC}\n"
 
 trap "cleanup" EXIT
 
