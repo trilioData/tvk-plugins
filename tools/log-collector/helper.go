@@ -172,11 +172,10 @@ func getGVByGroup(apiGVList []*apiv1.APIGroup, groupName string, isPreferredVers
 	for index := range apiGVList {
 		if apiGVList[index].Name == groupName {
 			if isPreferredVersion {
-				return append(gvList, apiGVList[index].PreferredVersion.GroupVersion)
+				gvList = append(gvList, apiGVList[index].PreferredVersion.GroupVersion)
 			}
 			for in := range apiGVList[index].Versions {
 				gvList = append(gvList, apiGVList[index].Versions[in].GroupVersion)
-				return gvList
 			}
 		}
 	}
