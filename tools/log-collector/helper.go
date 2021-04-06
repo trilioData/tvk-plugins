@@ -71,6 +71,9 @@ func aggregateEvents(eventObjects unstructured.UnstructuredList,
 		}
 
 		namespace, _, nErr := unstructured.NestedString(eve.Object, "involvedObject", "namespace")
+		if namespace == "" {
+			namespace = "default"
+		}
 		if nErr != nil {
 			log.Errorf("Unable to get event data of Object : %v", nErr)
 			return nil, nErr
@@ -208,13 +211,12 @@ func getResourceByName(gVResources []apiv1.APIResource, name string) (matchedRes
 // getContainerStatusValue returns whether current and previous container present to capture logs
 func getContainerStatusValue(containerStatus *corev1.ContainerStatus) (conStatObj containerStat) {
 
-	lastState := containerStatus.LastTerminationState
 	currentState := containerStatus.State
 
-	if lastState.Terminated != nil {
+	if currentState.Running != nil && currentState.Terminated != nil {
 		conStatObj.prev = true
-	}
-	if currentState.Running != nil || lastState.Terminated != nil {
+		conStatObj.curr = true
+	} else {
 		conStatObj.curr = true
 	}
 	return conStatObj
