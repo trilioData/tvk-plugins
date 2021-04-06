@@ -19,10 +19,11 @@ import (
 )
 
 const (
-	TriliovaultGroup      = "triliovault.trilio.io"
-	CsiStorageGroup       = "csi.storage.k8s.io"
-	SnapshotStorageGroup  = "snapshot.storage.k8s.io"
-	ClusterServiceVersion = "clusterserviceversions"
+	TriliovaultGroup          = "triliovault.trilio.io"
+	CsiStorageGroup           = "csi.storage.k8s.io"
+	SnapshotStorageGroup      = "snapshot.storage.k8s.io"
+	ClusterServiceVersion     = "clusterserviceversions"
+	ClusterServiceVersionKind = "ClusterServiceVersion"
 
 	OperatorGroup              = "operators.coreos.com"
 	APIExtensionsGroup         = "apiextensions.k8s.io"

@@ -510,6 +510,11 @@ func (l *LogCollector) filteringWithLabels(resourceGroup map[string][]apiv1.APIR
 			res := getResourceByName(resources, resources[index].Name)
 			resObject := l.getResourceObjectsWithLabel(getAPIGroupVersionResourcePath(group), &res)
 
+			if l.CheckIsOpenshift() {
+				olmObj := l.getResourceObjectsWithOwnerRef(getAPIGroupVersionResourcePath(group), &res)
+				resObjects.Items = append(resObjects.Items, olmObj.Items...)
+			}
+
 			if len(resObject.Items) != 0 {
 				if res.Kind == Pod {
 					for _, podObject := range resObject.Items {
@@ -683,4 +688,30 @@ func (l *LogCollector) fetchAPIGroups() (apiGroups []*apiv1.APIGroup, err error)
 		log.Warn("To fix this, kubectl delete apiservice <service-name>")
 	}
 	return apiGroups, nil
+}
+
+func (l *LogCollector) CheckIsOpenshift() bool {
+	_, err := l.disClient.ServerResourcesForGroupVersion("security.openshift.io/v1")
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return false
+		}
+	}
+	return true
+}
+
+func (l *LogCollector) getResourceObjectsWithOwnerRef(resourcePath string,
+	resource *apiv1.APIResource) (objects unstructured.UnstructuredList) {
+	allObjects := l.getResourceObjects(resourcePath, resource)
+
+	for _, object := range allObjects.Items {
+		ownerRefs := object.GetOwnerReferences()
+		for _, ownRef := range ownerRefs {
+			if strings.HasPrefix(ownRef.Name, "k8s-triliovault") &&
+				ownRef.Kind == ClusterServiceVersionKind {
+				objects.Items = append(objects.Items, object)
+			}
+		}
+	}
+	return objects
 }
