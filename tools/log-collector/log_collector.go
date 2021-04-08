@@ -129,6 +129,12 @@ func (l *LogCollector) CollectLogsAndDump() error {
 	}
 	resourceGroup[BatchGv] = batchGV
 
+	batchGV1beta1, bg1Err := l.getAPIGVResources(BatchGv1beta1)
+	if bg1Err != nil {
+		return bg1Err
+	}
+	resourceGroup[BatchGv1beta1] = batchGV1beta1
+
 	log.Info("Checking Apps Group")
 	appsGv, agErr := l.getAPIGVResources(AppsGv)
 	if agErr != nil {
@@ -258,7 +264,7 @@ func (l *LogCollector) getGVResourceObjects(gvResourceMap map[string]apiv1.APIRe
 }
 
 // writeEvents writes events
-func (l *LogCollector) writeEvents(events map[string]map[string]interface{}) error {
+func (l *LogCollector) writeEvents(events map[string][]map[string]interface{}) error {
 
 	for k, v := range events {
 		resourceDir := filepath.Join(l.OutputDir, "Events", k)
@@ -269,23 +275,26 @@ func (l *LogCollector) writeEvents(events map[string]map[string]interface{}) err
 				return mErr
 			}
 		}
-		for key, value := range v {
-			key = strings.Replace(key, "/", ".", 1)
-			objectFilePath := filepath.Join(resourceDir, key)
-			fp, err := os.Create(objectFilePath + ".yaml")
-			if err != nil {
-				log.Errorf("Unable to create the file : %v", err)
-				return err
-			}
-			buf, bErr := yaml.Marshal(value)
-			if bErr != nil {
-				log.Errorf("Unable to marshal the content : %v", bErr)
-				return bErr
-			}
-			_, fErr := fp.Write(buf)
-			if fErr != nil {
-				log.Errorf("Unable to write the contents : %v", fErr)
-				return fErr
+
+		for _, obj := range v {
+			for key, value := range obj {
+				key = strings.Replace(key, "/", ".", 1)
+				objectFilePath := filepath.Join(resourceDir, key)
+				fp, err := os.Create(objectFilePath + ".yaml")
+				if err != nil {
+					log.Errorf("Unable to create the file : %v", err)
+					return err
+				}
+				buf, bErr := yaml.Marshal(value)
+				if bErr != nil {
+					log.Errorf("Unable to marshal the content : %v", bErr)
+					return bErr
+				}
+				_, fErr := fp.Write(buf)
+				if fErr != nil {
+					log.Errorf("Unable to write the contents : %v", fErr)
+					return fErr
+				}
 			}
 		}
 	}
@@ -509,25 +518,20 @@ func (l *LogCollector) filteringWithLabels(resourceGroup map[string][]apiv1.APIR
 			var resObjects unstructured.UnstructuredList
 			res := getResourceByName(resources, resources[index].Name)
 			resObject := l.getResourceObjectsWithLabel(getAPIGroupVersionResourcePath(group), &res)
+			resObjects.Items = append(resObjects.Items, resObject.Items...)
 
 			if l.CheckIsOpenshift() {
 				olmObj := l.getResourceObjectsWithOwnerRef(getAPIGroupVersionResourcePath(group), &res)
 				resObjects.Items = append(resObjects.Items, olmObj.Items...)
 			}
 
-			if len(resObject.Items) != 0 {
-				if res.Kind == Pod {
-					for _, podObject := range resObject.Items {
-						podName := podObject.GetName()
-						podNs := podObject.GetNamespace()
-						nsName = append(nsName, types.NamespacedName{Name: podName, Namespace: podNs})
-					}
-					resourceMap[res.Kind] = nsName
-				}
-				resObjects.Items = append(resObjects.Items, resObject.Items...)
-			}
-
 			for _, obj := range resObjects.Items {
+
+				oName := obj.GetName()
+				oNs := obj.GetNamespace()
+				nsName = append(nsName, types.NamespacedName{Name: oName, Namespace: oNs})
+				resourceMap[res.Kind] = nsName
+
 				resourceDir := filepath.Join(res.Kind)
 				if res.Kind == Pod {
 					eLrr := l.writeLogs(resourceDir, obj)

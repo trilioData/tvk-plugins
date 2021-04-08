@@ -29,10 +29,11 @@ const (
 	APIExtensionsGroup         = "apiextensions.k8s.io"
 	AdmissionRegistrationGroup = "admissionregistration.k8s.io/v1beta1"
 
-	StorageGv = "storage.k8s.io/v1"
-	CoreGv    = "v1"
-	BatchGv   = "batch/v1"
-	AppsGv    = "apps/v1"
+	StorageGv     = "storage.k8s.io/v1"
+	CoreGv        = "v1"
+	BatchGv       = "batch/v1"
+	BatchGv1beta1 = "batch/v1beta1"
+	AppsGv        = "apps/v1"
 
 	Namespaces          = "namespaces"
 	Events              = "events"
@@ -60,9 +61,9 @@ type containerStat struct {
 
 // aggregateEvents aggregates events based on involved objects
 func aggregateEvents(eventObjects unstructured.UnstructuredList,
-	resourceMap map[string][]types.NamespacedName) (map[string]map[string]interface{}, error) {
+	resourceMap map[string][]types.NamespacedName) (map[string][]map[string]interface{}, error) {
 
-	eventsData := make(map[string]map[string]interface{})
+	eventsData := make(map[string][]map[string]interface{})
 	for _, eve := range eventObjects.Items {
 
 		apiVersion, _, aErr := unstructured.NestedString(eve.Object, "involvedObject", "apiVersion")
@@ -91,7 +92,6 @@ func aggregateEvents(eventObjects unstructured.UnstructuredList,
 			log.Errorf("Unable to get event data of Object : %v", naErr)
 			return nil, naErr
 		}
-
 		namespacedName := getNamespacedName(namespace, name)
 
 		// checking if kind and Namespaced Name exist in resourceMap
@@ -118,9 +118,10 @@ func aggregateEvents(eventObjects unstructured.UnstructuredList,
 			}
 
 			kindNameKey := fmt.Sprintf("%s/%s", strings.ToLower(kind), name)
+
 			tempMap := make(map[string]interface{})
 			tempMap[kindNameKey] = eve.Object
-			eventsData[namespace] = tempMap
+			eventsData[namespace] = append(eventsData[namespace], tempMap)
 		}
 	}
 	return eventsData, nil
@@ -293,6 +294,8 @@ func filterGroupResources(resources []apiv1.APIResource, group string) (filtered
 		} else if group == AppsGv && resources[index].Kind != ControllerRevision {
 			filteredResources = append(filteredResources, resources[index])
 		} else if group == BatchGv {
+			filteredResources = append(filteredResources, resources[index])
+		} else if group == BatchGv1beta1 {
 			filteredResources = append(filteredResources, resources[index])
 		}
 	}
