@@ -120,27 +120,10 @@ func (l *LogCollector) CollectLogsAndDump() error {
 		}
 	}
 
-	resourceGroup := make(map[string][]apiv1.APIResource)
-
-	log.Info("Checking Batch Group")
-	batchGV, bgErr := l.getAPIGVResources(BatchGv)
-	if bgErr != nil {
-		return bgErr
+	resourceGroup, rErr := l.getResourceGroup()
+	if rErr != nil {
+		return rErr
 	}
-	resourceGroup[BatchGv] = batchGV
-
-	batchGV1beta1, bg1Err := l.getAPIGVResources(BatchGv1beta1)
-	if bg1Err != nil {
-		return bg1Err
-	}
-	resourceGroup[BatchGv1beta1] = batchGV1beta1
-
-	log.Info("Checking Apps Group")
-	appsGv, agErr := l.getAPIGVResources(AppsGv)
-	if agErr != nil {
-		return agErr
-	}
-	resourceGroup[AppsGv] = appsGv
 
 	log.Info("Checking Core Group")
 	coreGVResources, cgvErr := l.getAPIGVResources(CoreGv)
@@ -605,6 +588,32 @@ func (l *LogCollector) snapshotStorageGroup(apiGroups []*apiv1.APIGroup) error {
 	return nil
 }
 
+func (l *LogCollector) getResourceGroup() (map[string][]apiv1.APIResource, error) {
+
+	resourceGroup := make(map[string][]apiv1.APIResource)
+	log.Info("Checking Batch Group")
+	batchGV, bgErr := l.getAPIGVResources(BatchGv)
+	if bgErr != nil {
+		return resourceGroup, bgErr
+	}
+	resourceGroup[BatchGv] = batchGV
+
+	batchGV1beta1, bg1Err := l.getAPIGVResources(BatchGv1beta1)
+	if bg1Err != nil {
+		return resourceGroup, bg1Err
+	}
+	resourceGroup[BatchGv1beta1] = batchGV1beta1
+
+	log.Info("Checking Apps Group")
+	appsGv, agErr := l.getAPIGVResources(AppsGv)
+	if agErr != nil {
+		return resourceGroup, agErr
+	}
+	resourceGroup[AppsGv] = appsGv
+
+	return resourceGroup, nil
+}
+
 func (l *LogCollector) clusterServiceVersion(apiGroups []*apiv1.APIGroup) error {
 
 	log.Info("Checking Cluster Service Version")
@@ -710,9 +719,9 @@ func (l *LogCollector) getResourceObjectsWithOwnerRef(resourcePath string,
 
 	for _, object := range allObjects.Items {
 		ownerRefs := object.GetOwnerReferences()
-		for _, ownRef := range ownerRefs {
-			if strings.HasPrefix(ownRef.Name, "k8s-triliovault") &&
-				ownRef.Kind == ClusterServiceVersionKind {
+		for idx := range ownerRefs {
+			if strings.HasPrefix(ownerRefs[idx].Name, "k8s-triliovault") &&
+				ownerRefs[idx].Kind == ClusterServiceVersionKind {
 				objects.Items = append(objects.Items, object)
 			}
 		}
