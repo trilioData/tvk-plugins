@@ -1,7 +1,0 @@
-time="2021-02-15T10:00:08Z" level=info msg="fetched the application instance: cust-ozjnc"
-time="2021-02-15T10:00:08Z" level=info msg="Assigning new UUID for Backup resource: d42ee4d8-88bf-4287-9b87-10540da73b2a"
-time="2021-02-15T10:00:08Z" level=info msg="Fetched objectReference of application instance: cust-ozjnc, in: niranjan2"
-time="2021-02-15T10:00:08Z" level=info msg="Created Backup Resource structure: {Full &ObjectReference{Kind:BackupPlan,Namespace:niranjan2,Name:cust-ozjnc,UID:1ff81b07-0839-42e2-b637-ed2e278088e5,APIVersion:triliovault.trilio.io/v1,ResourceVersion:1364102,FieldPath:,}}"
-time="2021-02-15T10:00:08Z" level=info msg="Created Backup Resource: {Full &ObjectReference{Kind:BackupPlan,Namespace:niranjan2,Name:cust-ozjnc,UID:1ff81b07-0839-42e2-b637-ed2e278088e5,APIVersion:triliovault.trilio.io/v1,ResourceVersion:1364102,FieldPath:,}}"
-time="2021-02-15T10:00:08Z" level=info msg="Validating the Backup resource creation: cust-ozjnc-d42ee4d8-88bf-4287-9b87-10540da73b2a, in: niranjan2"
-time="2021-02-15T10:00:08Z" level=info msg="Backup Object Created Successfully!!!"
