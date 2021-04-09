@@ -1,0 +1,21 @@
+apiVersion: v1
+data:
+  dataJobLimits: |-
+    cpu: 1000m
+    memory: 1536Mi
+  metadataJobLimits: |-
+    cpu: 500m
+    memory: 512Mi
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2021-03-22T10:50:42Z"
+  labels:
+    app.kubernetes.io/instance: k8s-triliovault-config
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: k8s-triliovault-config
+  namespace: shubh
+  resourceVersion: "66840474"
+  selfLink: /api/v1/namespaces/shubh/configmaps/k8s-triliovault-config
+  uid: 2f2907ba-9d28-47b2-8b35-fb8b43651641

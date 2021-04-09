@@ -1,0 +1,24 @@
+apiVersion: snapshot.storage.k8s.io/v1beta1
+kind: VolumeSnapshot
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"snapshot.storage.k8s.io/v1beta1","kind":"VolumeSnapshot","metadata":{"annotations":{},"name":"snapshot-source-pvc-zdoylq","namespace":"vinod4"},"spec":{"source":{"persistentVolumeClaimName":"source-pvc-zdoylq"},"volumeSnapshotClassName":"default-snapshot-class"}}
+  creationTimestamp: "2021-03-31T04:17:55Z"
+  deletionGracePeriodSeconds: 0
+  deletionTimestamp: "2021-03-31T04:21:15Z"
+  finalizers:
+  - snapshot.storage.kubernetes.io/volumesnapshot-bound-protection
+  generation: 2
+  name: snapshot-source-pvc-zdoylq
+  namespace: vinod4
+  resourceVersion: "81053946"
+  selfLink: /apis/snapshot.storage.k8s.io/v1beta1/namespaces/vinod4/volumesnapshots/snapshot-source-pvc-zdoylq
+  uid: a2addb3c-fe97-45fa-8e64-c1e40170c58d
+spec:
+  source:
+    persistentVolumeClaimName: source-pvc-zdoylq
+  volumeSnapshotClassName: default-snapshot-class
+status:
+  boundVolumeSnapshotContentName: snapcontent-a2addb3c-fe97-45fa-8e64-c1e40170c58d
+  readyToUse: false

@@ -1,0 +1,21 @@
+apiVersion: v1
+data:
+  dataJobLimits: |-
+    cpu: 1000m
+    memory: 1536Mi
+  metadataJobLimits: |-
+    cpu: 500m
+    memory: 512Mi
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2021-02-25T02:04:16Z"
+  labels:
+    app.kubernetes.io/instance: k8s-triliovault-config
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: k8s-triliovault-config
+  namespace: backtest
+  resourceVersion: "22742482"
+  selfLink: /api/v1/namespaces/backtest/configmaps/k8s-triliovault-config
+  uid: cd914999-9559-4ee9-b025-b8a302424df6

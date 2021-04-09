@@ -1,0 +1,62 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  creationTimestamp: "2021-02-25T02:41:48Z"
+  generation: 1
+  name: back-bknd-helm-operator-gqmih
+  namespace: backtest
+  resourceVersion: "33830652"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/backtest/backupplans/back-bknd-helm-operator-gqmih
+  uid: fda2270e-6620-443d-b874-18c69ae8cb19
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: 0 10 15 * *
+      incrementalCron:
+        schedule: 0 10 15 * *
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-targetecyjrbe-injector
+      namespace: backtest
+      resourceVersion: "22782526"
+      uid: 2aafe56e-4dda-445a-8971-e1e4efcba42a
+  backupPlanComponents:
+    operators:
+    - applicationResourceSelector:
+      - matchLabels:
+          app: redis
+          release: back-bknd-redis
+      customResources:
+      - groupVersionKind:
+          group: helm.fluxcd.io
+          kind: HelmRelease
+          version: v1
+        objects:
+        - back-bknd-redis
+      operatorId: back-bknd-helm-operator
+      operatorResourceSelector:
+      - matchLabels:
+          app: helm-operator
+          release: back-bknd-helm-operator
+status:
+  stats:
+    backupSummary:
+      lastSuccessfulBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: back-bknd-helm-operator-gqmih-psou
+        namespace: backtest
+        resourceVersion: "33826457"
+        uid: 80b66f63-921e-424c-89d1-55208b7753ac
+      latestBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: back-bknd-helm-operator-gqmih-psou
+        namespace: backtest
+        resourceVersion: "33826457"
+        uid: 80b66f63-921e-424c-89d1-55208b7753ac
+      totalAvailableBackups: 2
+    restoreSummary: {}
+  status: Available

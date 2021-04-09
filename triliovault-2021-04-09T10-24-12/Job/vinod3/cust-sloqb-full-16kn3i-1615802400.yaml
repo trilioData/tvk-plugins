@@ -1,0 +1,89 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  creationTimestamp: "2021-03-15T10:00:05Z"
+  labels:
+    app.kubernetes.io/instance: cust-sloqb-full-16kn3i
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: cust-sloqb-full-16kn3i-1615802400
+  namespace: vinod3
+  resourceVersion: "56711274"
+  selfLink: /apis/batch/v1/namespaces/vinod3/jobs/cust-sloqb-full-16kn3i-1615802400
+  uid: 26c6cc81-1705-4eb5-8f3a-ed510cd4a442
+spec:
+  backoffLimit: 6
+  completions: 1
+  parallelism: 1
+  selector:
+    matchLabels:
+      controller-uid: 26c6cc81-1705-4eb5-8f3a-ed510cd4a442
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: cust-sloqb-full-16kn3i
+        app.kubernetes.io/managed-by: k8s-triliovault
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+        controller-uid: 26c6cc81-1705-4eb5-8f3a-ed510cd4a442
+        job-name: cust-sloqb-full-16kn3i-1615802400
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - args:
+        - --namespace=vinod3
+        - --application-name=cust-sloqb
+        - --backup-type=Full
+        - --backup-schedule-type=Periodic
+        image: gcr.io/amazing-chalice-243510/backup-scheduler:7e27caa91f28226dfdd56d485a0c84cc8947799c
+        imagePullPolicy: IfNotPresent
+        name: backup-scheduler
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - KILL
+            - AUDIT_WRITE
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1001
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: OnFailure
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      serviceAccount: k8s-triliovault
+      serviceAccountName: k8s-triliovault
+      terminationGracePeriodSeconds: 30
+status:
+  completionTime: "2021-03-15T10:00:12Z"
+  conditions:
+  - lastProbeTime: "2021-03-15T10:00:12Z"
+    lastTransitionTime: "2021-03-15T10:00:12Z"
+    status: "True"
+    type: Complete
+  startTime: "2021-03-15T10:00:05Z"
+  succeeded: 1

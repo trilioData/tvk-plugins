@@ -1,0 +1,10 @@
+I0409 04:56:01.789981       1 request.go:655] Throttling request took 1.043349493s, request: GET:https://10.96.0.1:443/apis/rbac.authorization.k8s.io/v1beta1?timeout=32s
+time="2021-04-09T04:56:03Z" level=info msg="Setting up the APP_SCOPE environment"
+time="2021-04-09T04:56:05Z" level=error msg="Unable to get the operatorGroup no matches for kind \"OperatorGroup\" in version \"operators.coreos.com/v1\""
+panic: no matches for kind "OperatorGroup" in version "operators.coreos.com/v1"
+
+goroutine 1 [running]:
+github.com/trilioData/k8s-triliovault/internal/helpers.SetAppScopeIfNotPresent(0x1bf8fa0, 0xc0008140e0, 0xc000048012, 0x9)
+	internal/helpers/olm.go:22 +0x65f
+github.com/trilioData/k8s-triliovault/pkg/webhook/webhook-init.init.0()
+	pkg/webhook/webhook-init/webhook_init.go:84 +0x149

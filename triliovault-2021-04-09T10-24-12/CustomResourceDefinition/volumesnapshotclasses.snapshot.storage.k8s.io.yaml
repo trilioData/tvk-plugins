@@ -1,0 +1,100 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    api-approved.kubernetes.io: https://github.com/kubernetes-csi/external-snapshotter/pull/139
+    components.gke.io/component-name: snapshot-controller-addon
+    components.gke.io/component-version: 0.2.8
+    components.gke.io/layer: addon
+    controller-gen.kubebuilder.io/version: (devel)
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apiextensions.k8s.io/v1beta1","kind":"CustomResourceDefinition","metadata":{"annotations":{"api-approved.kubernetes.io":"https://github.com/kubernetes-csi/external-snapshotter/pull/139","components.gke.io/component-name":"snapshot-controller-addon","components.gke.io/component-version":"0.2.8","components.gke.io/layer":"addon","controller-gen.kubebuilder.io/version":"(devel)"},"creationTimestamp":null,"labels":{"addonmanager.kubernetes.io/mode":"Reconcile"},"name":"volumesnapshotclasses.snapshot.storage.k8s.io"},"spec":{"group":"snapshot.storage.k8s.io","names":{"kind":"VolumeSnapshotClass","listKind":"VolumeSnapshotClassList","plural":"volumesnapshotclasses","singular":"volumesnapshotclass"},"preserveUnknownFields":false,"scope":"Cluster","validation":{"openAPIV3Schema":{"description":"VolumeSnapshotClass specifies parameters that a underlying storage system uses when creating a volume snapshot. A specific VolumeSnapshotClass is used by specifying its name in a VolumeSnapshot object. VolumeSnapshotClasses are non-namespaced","properties":{"apiVersion":{"description":"APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources","type":"string"},"deletionPolicy":{"description":"deletionPolicy determines whether a VolumeSnapshotContent created through the VolumeSnapshotClass should be deleted when its bound VolumeSnapshot is deleted. Supported values are \"Retain\" and \"Delete\". \"Retain\" means that the VolumeSnapshotContent and its physical snapshot on underlying storage system are kept. \"Delete\" means that the VolumeSnapshotContent and its physical snapshot on underlying storage system are deleted. Required.","enum":["Delete","Retain"],"type":"string"},"driver":{"description":"driver is the name of the storage driver that handles this VolumeSnapshotClass. Required.","type":"string"},"kind":{"description":"Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds","type":"string"},"parameters":{"additionalProperties":{"type":"string"},"description":"parameters is a key-value map with storage driver specific parameters for creating snapshots. These values are opaque to Kubernetes.","type":"object"}},"required":["deletionPolicy","driver"],"type":"object"}},"version":"v1beta1","versions":[{"name":"v1beta1","served":true,"storage":true}]},"status":{"acceptedNames":{"kind":"","plural":""},"conditions":[],"storedVersions":[]}}
+  creationTimestamp: "2021-02-03T07:55:13Z"
+  generation: 3
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+  name: volumesnapshotclasses.snapshot.storage.k8s.io
+  resourceVersion: "79978879"
+  selfLink: /apis/apiextensions.k8s.io/v1/customresourcedefinitions/volumesnapshotclasses.snapshot.storage.k8s.io
+  uid: 9b538559-be06-4ea9-8e4e-893c79549fbe
+spec:
+  conversion:
+    strategy: None
+  group: snapshot.storage.k8s.io
+  names:
+    kind: VolumeSnapshotClass
+    listKind: VolumeSnapshotClassList
+    plural: volumesnapshotclasses
+    singular: volumesnapshotclass
+  scope: Cluster
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: VolumeSnapshotClass specifies parameters that a underlying storage
+          system uses when creating a volume snapshot. A specific VolumeSnapshotClass
+          is used by specifying its name in a VolumeSnapshot object. VolumeSnapshotClasses
+          are non-namespaced
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+            type: string
+          deletionPolicy:
+            description: deletionPolicy determines whether a VolumeSnapshotContent
+              created through the VolumeSnapshotClass should be deleted when its bound
+              VolumeSnapshot is deleted. Supported values are "Retain" and "Delete".
+              "Retain" means that the VolumeSnapshotContent and its physical snapshot
+              on underlying storage system are kept. "Delete" means that the VolumeSnapshotContent
+              and its physical snapshot on underlying storage system are deleted.
+              Required.
+            enum:
+            - Delete
+            - Retain
+            type: string
+          driver:
+            description: driver is the name of the storage driver that handles this
+              VolumeSnapshotClass. Required.
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+            type: string
+          parameters:
+            additionalProperties:
+              type: string
+            description: parameters is a key-value map with storage driver specific
+              parameters for creating snapshots. These values are opaque to Kubernetes.
+            type: object
+        required:
+        - deletionPolicy
+        - driver
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: VolumeSnapshotClass
+    listKind: VolumeSnapshotClassList
+    plural: volumesnapshotclasses
+    singular: volumesnapshotclass
+  conditions:
+  - lastTransitionTime: "2021-02-03T07:55:13Z"
+    message: approved in https://github.com/kubernetes-csi/external-snapshotter/pull/139
+    reason: ApprovedAnnotation
+    status: "True"
+    type: KubernetesAPIApprovalPolicyConformant
+  - lastTransitionTime: "2021-02-03T07:55:13Z"
+    message: no conflicts found
+    reason: NoConflicts
+    status: "True"
+    type: NamesAccepted
+  - lastTransitionTime: "2021-02-03T07:55:13Z"
+    message: the initial names have been accepted
+    reason: InitialNamesAccepted
+    status: "True"
+    type: Established
+  storedVersions:
+  - v1beta1

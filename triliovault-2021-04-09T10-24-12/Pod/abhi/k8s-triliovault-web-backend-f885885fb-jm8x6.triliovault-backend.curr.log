@@ -1,0 +1,188 @@
+I0408 14:21:23.275522       1 request.go:655] Throttling request took 1.043814946s, request: GET:https://10.96.0.1:443/apis/storage.k8s.io/v1?timeout=32s
+{"component":"Manager","file":"internal/helpers/olm.go:16","func":"github.com/trilioData/k8s-triliovault/internal/helpers.SetAppScopeIfNotPresent","level":"info","msg":"Setting up the APP_SCOPE environment","time":"2021-04-08T14:21:24Z"}
+2021-04-08T14:21:26.045Z	INFO	controller-runtime.metrics	metrics server is starting to listen	{"addr": ":8080"}
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.299Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-04-08T14:21:27.300Z	INFO	setup	starting manager
+2021-04-08T14:21:27.400Z	INFO	controller-runtime.manager	starting metrics server	{"path": "/metrics"}
+2021-04-08T14:21:27.400Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:27.501Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:27.602Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:27.703Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:27.803Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:27.904Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:28.004Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:28.105Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:28.205Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:28.306Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:28.406Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:28.507Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:28.608Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:28.708Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:28.809Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:28.910Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:29.010Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:29.111Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:29.212Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:29.313Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:29.414Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:29.515Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:29.616Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:29.717Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:29.818Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:29.919Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:30.020Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:30.122Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:30.224Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:30.324Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:30.425Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:30.526Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:30.627Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:30.728Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:30.728Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:30.829Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:30.930Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:31.032Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:31.032Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: /, Kind="}
+2021-04-08T14:21:31.032Z	INFO	controller-runtime.manager.controller.namespace	Starting EventSource	{"reconciler group": "", "reconciler kind": "Namespace", "source": "kind source: apiextensions.k8s.io/v1, Kind=CustomResourceDefinition"}
+2021-04-08T14:21:33.921Z	INFO	controller-runtime.manager.controller.namespace	Starting Controller	{"reconciler group": "", "reconciler kind": "Namespace"}
+2021-04-08T14:21:33.921Z	INFO	controller-runtime.manager.controller.namespace	Starting workers	{"reconciler group": "", "reconciler kind": "Namespace", "worker count": 1}
+2021/04/08 14:21:35 Using in-cluster config to connect to apiserver
+2021/04/08 14:21:35 Generating JWE encryption key
+2021/04/08 14:21:38 Initializing JWE encryption key from synchronized object
+I0408 14:36:39.286469       1 request.go:655] Throttling request took 1.041671923s, request: GET:https://10.96.0.1:443/apis/admissionregistration.k8s.io/v1?timeout=32s
+I0408 14:51:39.286728       1 request.go:655] Throttling request took 1.042453564s, request: GET:https://10.96.0.1:443/apis/etcd.database.coreos.com/v1beta2?timeout=32s
+I0408 15:06:39.286746       1 request.go:655] Throttling request took 1.043063704s, request: GET:https://10.96.0.1:443/apis/apiextensions.k8s.io/v1?timeout=32s
+I0408 15:21:39.286640       1 request.go:655] Throttling request took 1.042595735s, request: GET:https://10.96.0.1:443/apis/admissionregistration.k8s.io/v1?timeout=32s
+I0408 15:36:39.286748       1 request.go:655] Throttling request took 1.041667157s, request: GET:https://10.96.0.1:443/apis/rbacmanager.reactiveops.io/v1beta1?timeout=32s
+I0408 15:51:39.286717       1 request.go:655] Throttling request took 1.041890613s, request: GET:https://10.96.0.1:443/apis/mysql.presslabs.org/v1alpha1?timeout=32s
+I0408 16:06:39.286987       1 request.go:655] Throttling request took 1.042205839s, request: GET:https://10.96.0.1:443/apis/cloud.google.com/v1beta1?timeout=32s
+I0408 16:21:39.286977       1 request.go:655] Throttling request took 1.041645583s, request: GET:https://10.96.0.1:443/apis/rbac.authorization.k8s.io/v1beta1?timeout=32s
+I0408 16:36:39.286567       1 request.go:655] Throttling request took 1.043158486s, request: GET:https://10.96.0.1:443/apis/batch/v1?timeout=32s
+I0408 16:51:39.286686       1 request.go:655] Throttling request took 1.042083609s, request: GET:https://10.96.0.1:443/apis/rbacmanager.reactiveops.io/v1beta1?timeout=32s
+I0408 17:06:39.286908       1 request.go:655] Throttling request took 1.038141674s, request: GET:https://10.96.0.1:443/apis/nodemanagement.gke.io/v1alpha1?timeout=32s
+I0408 17:21:39.285987       1 request.go:655] Throttling request took 1.042535342s, request: GET:https://10.96.0.1:443/apis/batch/v1?timeout=32s
+I0408 17:36:39.287036       1 request.go:655] Throttling request took 1.042602088s, request: GET:https://10.96.0.1:443/apis/networking.k8s.io/v1beta1?timeout=32s
+I0408 17:51:39.286503       1 request.go:655] Throttling request took 1.042023494s, request: GET:https://10.96.0.1:443/apis/velotio.pankaj.io/v1?timeout=32s
+I0408 18:06:39.286629       1 request.go:655] Throttling request took 1.04292166s, request: GET:https://10.96.0.1:443/apis/authorization.k8s.io/v1beta1?timeout=32s
+I0408 18:21:39.286680       1 request.go:655] Throttling request took 1.042308292s, request: GET:https://10.96.0.1:443/apis/triliovault.trilio.io/v1?timeout=32s
+I0408 18:36:39.286837       1 request.go:655] Throttling request took 1.041249929s, request: GET:https://10.96.0.1:443/apis/internal.autoscaling.k8s.io/v1alpha1?timeout=32s
+I0408 18:51:39.286593       1 request.go:655] Throttling request took 1.041791967s, request: GET:https://10.96.0.1:443/apis/redskyops.dev/v1beta1?timeout=32s
+I0408 19:06:39.286536       1 request.go:655] Throttling request took 1.042266833s, request: GET:https://10.96.0.1:443/apis/networking.gke.io/v1beta2?timeout=32s
+I0408 19:21:39.286818       1 request.go:655] Throttling request took 1.043313136s, request: GET:https://10.96.0.1:443/apis/rbac.authorization.k8s.io/v1beta1?timeout=32s
+I0408 19:36:39.286648       1 request.go:655] Throttling request took 1.042751503s, request: GET:https://10.96.0.1:443/apis/networking.gke.io/v1beta1?timeout=32s
+I0408 19:51:39.286528       1 request.go:655] Throttling request took 1.033646541s, request: GET:https://10.96.0.1:443/apis/policy/v1beta1?timeout=32s
+I0408 20:06:39.286779       1 request.go:655] Throttling request took 1.038236851s, request: GET:https://10.96.0.1:443/apis/nodemanagement.gke.io/v1alpha1?timeout=32s
+I0408 20:21:39.286619       1 request.go:655] Throttling request took 1.040335228s, request: GET:https://10.96.0.1:443/apis/migration.k8s.io/v1alpha1?timeout=32s
+I0408 20:36:39.286553       1 request.go:655] Throttling request took 1.039991951s, request: GET:https://10.96.0.1:443/apis/networking.gke.io/v1beta2?timeout=32s
+I0408 20:51:39.286707       1 request.go:655] Throttling request took 1.041651953s, request: GET:https://10.96.0.1:443/apis/internal.autoscaling.k8s.io/v1alpha1?timeout=32s
+I0408 21:06:39.286593       1 request.go:655] Throttling request took 1.041772886s, request: GET:https://10.96.0.1:443/apis/admissionregistration.k8s.io/v1beta1?timeout=32s
+I0408 21:21:39.286659       1 request.go:655] Throttling request took 1.041225413s, request: GET:https://10.96.0.1:443/apis/velotio.pankaj.io/v1?timeout=32s
+I0408 21:36:39.287214       1 request.go:655] Throttling request took 1.041116761s, request: GET:https://10.96.0.1:443/apis/node.k8s.io/v1beta1?timeout=32s
+I0408 21:51:39.286810       1 request.go:655] Throttling request took 1.036471922s, request: GET:https://10.96.0.1:443/apis/storage.k8s.io/v1beta1?timeout=32s
+I0408 22:06:39.287321       1 request.go:655] Throttling request took 1.042649499s, request: GET:https://10.96.0.1:443/api/v1?timeout=32s
+I0408 22:21:39.286660       1 request.go:655] Throttling request took 1.042069406s, request: GET:https://10.96.0.1:443/apis/cloud.google.com/v1?timeout=32s
+I0408 22:36:39.286666       1 request.go:655] Throttling request took 1.042268233s, request: GET:https://10.96.0.1:443/apis/admissionregistration.k8s.io/v1beta1?timeout=32s
+I0408 22:51:39.286971       1 request.go:655] Throttling request took 1.04215793s, request: GET:https://10.96.0.1:443/apis/internal.autoscaling.k8s.io/v1alpha1?timeout=32s
+I0408 23:06:39.287011       1 request.go:655] Throttling request took 1.041971159s, request: GET:https://10.96.0.1:443/apis/networking.k8s.io/v1beta1?timeout=32s
+I0408 23:21:39.286728       1 request.go:655] Throttling request took 1.041155845s, request: GET:https://10.96.0.1:443/apis/coordination.k8s.io/v1?timeout=32s
+I0408 23:36:39.286434       1 request.go:655] Throttling request took 1.042255443s, request: GET:https://10.96.0.1:443/apis/autoscaling/v2beta1?timeout=32s
+I0408 23:51:39.286845       1 request.go:655] Throttling request took 1.042213816s, request: GET:https://10.96.0.1:443/apis/scheduling.k8s.io/v1?timeout=32s
+I0409 00:06:39.286630       1 request.go:655] Throttling request took 1.042942541s, request: GET:https://10.96.0.1:443/apis/storage.k8s.io/v1?timeout=32s
+I0409 00:21:39.286574       1 request.go:655] Throttling request took 1.042647279s, request: GET:https://10.96.0.1:443/apis/authorization.k8s.io/v1?timeout=32s
+I0409 00:36:39.286640       1 request.go:655] Throttling request took 1.040012401s, request: GET:https://10.96.0.1:443/apis/triliovault.trilio.io/v1?timeout=32s
+I0409 00:51:39.286507       1 request.go:655] Throttling request took 1.041226954s, request: GET:https://10.96.0.1:443/apis/migration.k8s.io/v1alpha1?timeout=32s
+I0409 01:06:39.286610       1 request.go:655] Throttling request took 1.04218298s, request: GET:https://10.96.0.1:443/apis/rbacmanager.reactiveops.io/v1beta1?timeout=32s
+I0409 01:21:39.286673       1 request.go:655] Throttling request took 1.041666123s, request: GET:https://10.96.0.1:443/apis/velotio.pankaj.io/v1?timeout=32s
+I0409 01:36:39.287029       1 request.go:655] Throttling request took 1.040151529s, request: GET:https://10.96.0.1:443/apis/coordination.k8s.io/v1?timeout=32s
+I0409 01:51:39.286859       1 request.go:655] Throttling request took 1.040340994s, request: GET:https://10.96.0.1:443/apis/mysql.presslabs.org/v1alpha1?timeout=32s
+I0409 02:06:39.286566       1 request.go:655] Throttling request took 1.042552615s, request: GET:https://10.96.0.1:443/apis/certificates.k8s.io/v1beta1?timeout=32s
+I0409 02:21:39.286454       1 request.go:655] Throttling request took 1.042696942s, request: GET:https://10.96.0.1:443/apis/triliovault.trilio.io/v1?timeout=32s
+I0409 02:36:39.286487       1 request.go:655] Throttling request took 1.040755309s, request: GET:https://10.96.0.1:443/apis/nodemanagement.gke.io/v1alpha1?timeout=32s
+I0409 02:51:39.286510       1 request.go:655] Throttling request took 1.042594513s, request: GET:https://10.96.0.1:443/apis/batch/v1?timeout=32s
+I0409 03:06:39.286602       1 request.go:655] Throttling request took 1.040254258s, request: GET:https://10.96.0.1:443/apis/migration.k8s.io/v1alpha1?timeout=32s
+I0409 03:21:39.286682       1 request.go:655] Throttling request took 1.042054056s, request: GET:https://10.96.0.1:443/apis/rbac.authorization.k8s.io/v1?timeout=32s
+I0409 03:36:39.286696       1 request.go:655] Throttling request took 1.040229393s, request: GET:https://10.96.0.1:443/apis/redskyops.dev/v1beta1?timeout=32s
+I0409 03:51:39.286954       1 request.go:655] Throttling request took 1.040941392s, request: GET:https://10.96.0.1:443/apis/snapshot.storage.k8s.io/v1beta1?timeout=32s
+I0409 04:06:39.286516       1 request.go:655] Throttling request took 1.042936966s, request: GET:https://10.96.0.1:443/apis/admissionregistration.k8s.io/v1beta1?timeout=32s
+I0409 04:21:39.286734       1 request.go:655] Throttling request took 1.040529353s, request: GET:https://10.96.0.1:443/apis/authentication.k8s.io/v1?timeout=32s
+I0409 04:36:39.286623       1 request.go:655] Throttling request took 1.040675958s, request: GET:https://10.96.0.1:443/apis/redskyops.dev/v1beta1?timeout=32s
+I0409 04:51:39.286746       1 request.go:655] Throttling request took 1.04068271s, request: GET:https://10.96.0.1:443/apis/nodemanagement.gke.io/v1alpha1?timeout=32s

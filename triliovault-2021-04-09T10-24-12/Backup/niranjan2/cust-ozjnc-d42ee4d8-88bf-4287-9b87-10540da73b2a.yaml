@@ -1,0 +1,476 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Backup
+metadata:
+  annotations:
+    scheduleType: Periodic
+  creationTimestamp: "2021-02-15T10:00:08Z"
+  finalizers:
+  - backup-cleanup-finalizer
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: cust-ozjnc-d42ee4d8-88bf-4287-9b87-10540da73b2a
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    operator: k8s-triliovault
+  name: cust-ozjnc-d42ee4d8-88bf-4287-9b87-10540da73b2a
+  namespace: niranjan2
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: BackupPlan
+    name: cust-ozjnc
+    uid: 1ff81b07-0839-42e2-b637-ed2e278088e5
+  resourceVersion: "33830715"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/niranjan2/backups/cust-ozjnc-d42ee4d8-88bf-4287-9b87-10540da73b2a
+  uid: b1f871f9-24a7-41ce-8b69-f9e4b493d3e6
+spec:
+  backupPlan:
+    apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: cust-ozjnc
+    namespace: niranjan2
+    resourceVersion: "1364102"
+    uid: 1ff81b07-0839-42e2-b637-ed2e278088e5
+  type: Full
+status:
+  backupScope: App
+  completionTimestamp: "2021-02-17T11:25:23Z"
+  condition:
+  - phase: MetaSnapshot
+    reason: MetaSnapshot InProgress
+    status: InProgress
+    timestamp: "2021-02-17T11:18:16Z"
+  - phase: MetaSnapshot
+    reason: MetaSnapshot Completed
+    status: Completed
+    timestamp: "2021-02-17T11:18:40Z"
+  - phase: DataSnapshot
+    reason: DataSnapshot InProgress
+    status: InProgress
+    timestamp: "2021-02-17T11:18:40Z"
+  - phase: DataUpload
+    reason: DataUpload InProgress
+    status: InProgress
+    timestamp: "2021-02-17T11:20:28Z"
+  - phase: DataSnapshot
+    reason: DataSnapshot Completed
+    status: Completed
+    timestamp: "2021-02-17T11:21:27Z"
+  - phase: DataUpload
+    reason: DataUpload Completed
+    status: Completed
+    timestamp: "2021-02-17T11:25:08Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload InProgress
+    status: InProgress
+    timestamp: "2021-02-17T11:25:09Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload Completed
+    status: Completed
+    timestamp: "2021-02-17T11:25:23Z"
+  location: 1ff81b07-0839-42e2-b637-ed2e278088e5/b1f871f9-24a7-41ce-8b69-f9e4b493d3e6
+  percentageCompletion: 100
+  phase: MetadataUpload
+  phaseStatus: Completed
+  size: "110456832"
+  snapshot:
+    custom:
+      dataSnapshots:
+      - backupType: Full
+        conditions:
+        - phase: Snapshot
+          reason: Snapshot InProgress
+          status: InProgress
+          timestamp: "2021-02-17T11:19:41Z"
+        - phase: Snapshot
+          reason: Snapshot Completed
+          status: Completed
+          timestamp: "2021-02-17T11:21:27Z"
+        - phase: Upload
+          reason: Upload InProgress
+          status: InProgress
+          timestamp: "2021-02-17T11:21:28Z"
+        - phase: Upload
+          reason: Upload Completed
+          status: Completed
+          timestamp: "2021-02-17T11:24:35Z"
+        location: 1ff81b07-0839-42e2-b637-ed2e278088e5/b1f871f9-24a7-41ce-8b69-f9e4b493d3e6/custom/data-snapshot/web-backend-grve-nginx-rc-pvc
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"PersistentVolumeClaim\",\"metadata\":{\"annotations\":{},\"name\":\"web-backend-grve-nginx-rc-pvc\",\"namespace\":\"niranjan2\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"1Gi\"}},\"storageClassName\":\"csi-gce-pd\"}}\n","pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"gke-dev-cluster-dev-cluster-pool-eab0992b-5s14"},"creationTimestamp":"2021-02-05T11:26:17Z","finalizers":["kubernetes.io/pvc-protection"],"name":"web-backend-grve-nginx-rc-pvc","namespace":"niranjan2","resourceVersion":"1362564","selfLink":"/api/v1/namespaces/niranjan2/persistentvolumeclaims/web-backend-grve-nginx-rc-pvc","uid":"3f285b44-f68c-428f-9687-b8af5d77a62b"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-3f285b44-f68c-428f-9687-b8af5d77a62b"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"1Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: web-backend-grve-nginx-rc-pvc
+        podContainersMap:
+        - containers:
+          - nginx-rc
+          podName: web-backend-grve-nginx-rc-gl9gt
+        size: "18354176"
+        snapshotSize: "1073741824"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: web-backend-grve-nginx-rc--2e49c701-c1e8-401e-837c-138f1ac049bd
+            namespace: niranjan2
+            resourceVersion: "11956433"
+            uid: 5e1fc9a2-475e-4340-bfde-7a146f5ebaef
+      - backupType: Full
+        conditions:
+        - phase: Snapshot
+          reason: Snapshot InProgress
+          status: InProgress
+          timestamp: "2021-02-17T11:19:41Z"
+        - phase: Snapshot
+          reason: Snapshot Completed
+          status: Completed
+          timestamp: "2021-02-17T11:20:27Z"
+        - phase: Upload
+          reason: Upload InProgress
+          status: InProgress
+          timestamp: "2021-02-17T11:20:29Z"
+        - phase: Upload
+          reason: Upload Completed
+          status: Completed
+          timestamp: "2021-02-17T11:22:41Z"
+        location: 1ff81b07-0839-42e2-b637-ed2e278088e5/b1f871f9-24a7-41ce-8b69-f9e4b493d3e6/custom/data-snapshot/web-backend-grve-nginx-deploy-pvc
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"PersistentVolumeClaim\",\"metadata\":{\"annotations\":{},\"name\":\"web-backend-grve-nginx-deploy-pvc\",\"namespace\":\"niranjan2\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"1Gi\"}},\"storageClassName\":\"csi-gce-pd\"}}\n","pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"gke-dev-cluster-dev-cluster-pool-eab0992b-5s14"},"creationTimestamp":"2021-02-05T11:26:18Z","finalizers":["kubernetes.io/pvc-protection"],"name":"web-backend-grve-nginx-deploy-pvc","namespace":"niranjan2","resourceVersion":"1362416","selfLink":"/api/v1/namespaces/niranjan2/persistentvolumeclaims/web-backend-grve-nginx-deploy-pvc","uid":"a1ccc809-6831-4d45-ae8b-598ed49687a4"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-a1ccc809-6831-4d45-ae8b-598ed49687a4"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"1Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: web-backend-grve-nginx-deploy-pvc
+        podContainersMap:
+        - containers:
+          - fsfreeze
+          - nginx
+          podName: web-backend-grve-nginx-deployment-7cb7f5dc75-kfl7z
+        size: "18485248"
+        snapshotSize: "1073741824"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: web-backend-grve-nginx-dep-0df3b232-a700-4db5-a906-6a897069aaa3
+            namespace: niranjan2
+            resourceVersion: "11953893"
+            uid: 27f35207-37c8-451e-a810-14d4153928ec
+      - backupType: Full
+        conditions:
+        - phase: Snapshot
+          reason: Snapshot InProgress
+          status: InProgress
+          timestamp: "2021-02-17T11:19:41Z"
+        - phase: Snapshot
+          reason: Snapshot Completed
+          status: Completed
+          timestamp: "2021-02-17T11:20:29Z"
+        - phase: Upload
+          reason: Upload InProgress
+          status: InProgress
+          timestamp: "2021-02-17T11:20:31Z"
+        - phase: Upload
+          reason: Upload Completed
+          status: Completed
+          timestamp: "2021-02-17T11:24:16Z"
+        location: 1ff81b07-0839-42e2-b637-ed2e278088e5/b1f871f9-24a7-41ce-8b69-f9e4b493d3e6/custom/data-snapshot/web-backend-grve-pod-pvc
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"PersistentVolumeClaim\",\"metadata\":{\"annotations\":{},\"name\":\"web-backend-grve-pod-pvc\",\"namespace\":\"niranjan2\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"1Gi\"}},\"storageClassName\":\"csi-gce-pd\"}}\n","pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"gke-dev-cluster-dev-cluster-pool-eab0992b-5s14"},"creationTimestamp":"2021-02-05T11:26:19Z","finalizers":["kubernetes.io/pvc-protection"],"name":"web-backend-grve-pod-pvc","namespace":"niranjan2","resourceVersion":"1362478","selfLink":"/api/v1/namespaces/niranjan2/persistentvolumeclaims/web-backend-grve-pod-pvc","uid":"e25e71d0-a8df-4129-acc1-5dc872afb993"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-e25e71d0-a8df-4129-acc1-5dc872afb993"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"1Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: web-backend-grve-pod-pvc
+        podContainersMap:
+        - containers:
+          - fsfreeze
+          - nginx
+          podName: web-backend-grve-nginx-pod
+        size: "18419712"
+        snapshotSize: "1073741824"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: web-backend-grve-pod-pvc-a139cb02-19a8-4613-b4b8-9e4e340f207d
+            namespace: niranjan2
+            resourceVersion: "11953922"
+            uid: 482ef3b8-1bf8-4cfc-8ea1-57ea93885795
+      - backupType: Full
+        conditions:
+        - phase: Snapshot
+          reason: Snapshot InProgress
+          status: InProgress
+          timestamp: "2021-02-17T11:19:41Z"
+        - phase: Snapshot
+          reason: Snapshot Completed
+          status: Completed
+          timestamp: "2021-02-17T11:20:31Z"
+        - phase: Upload
+          reason: Upload InProgress
+          status: InProgress
+          timestamp: "2021-02-17T11:20:33Z"
+        - phase: Upload
+          reason: Upload Completed
+          status: Completed
+          timestamp: "2021-02-17T11:25:08Z"
+        location: 1ff81b07-0839-42e2-b637-ed2e278088e5/b1f871f9-24a7-41ce-8b69-f9e4b493d3e6/custom/data-snapshot/web-backend-grve-nginx-rs-pvc
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"PersistentVolumeClaim\",\"metadata\":{\"annotations\":{},\"name\":\"web-backend-grve-nginx-rs-pvc\",\"namespace\":\"niranjan2\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"1Gi\"}},\"storageClassName\":\"csi-gce-pd\"}}\n","pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"gke-dev-cluster-dev-cluster-pool-eab0992b-5s14"},"creationTimestamp":"2021-02-05T11:26:31Z","finalizers":["kubernetes.io/pvc-protection"],"name":"web-backend-grve-nginx-rs-pvc","namespace":"niranjan2","resourceVersion":"1362612","selfLink":"/api/v1/namespaces/niranjan2/persistentvolumeclaims/web-backend-grve-nginx-rs-pvc","uid":"24bb7100-64ce-469a-834e-02978e362339"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-24bb7100-64ce-469a-834e-02978e362339"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"1Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: web-backend-grve-nginx-rs-pvc
+        podContainersMap:
+        - containers:
+          - nginx-rs
+          podName: web-backend-grve-nginx-rs-mknbx
+        size: "18419712"
+        snapshotSize: "1073741824"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: web-backend-grve-nginx-rs--28d7d979-6cbb-45fb-8ed4-d95b01e0666d
+            namespace: niranjan2
+            resourceVersion: "11953995"
+            uid: a28c37e8-c3cb-4888-a053-9c3ad04c4a20
+      - backupType: Full
+        conditions:
+        - phase: Snapshot
+          reason: Snapshot InProgress
+          status: InProgress
+          timestamp: "2021-02-17T11:19:41Z"
+        - phase: Snapshot
+          reason: Snapshot Completed
+          status: Completed
+          timestamp: "2021-02-17T11:20:29Z"
+        - phase: Upload
+          reason: Upload InProgress
+          status: InProgress
+          timestamp: "2021-02-17T11:20:31Z"
+        - phase: Upload
+          reason: Upload Completed
+          status: Completed
+          timestamp: "2021-02-17T11:22:41Z"
+        location: 1ff81b07-0839-42e2-b637-ed2e278088e5/b1f871f9-24a7-41ce-8b69-f9e4b493d3e6/custom/data-snapshot/sts-pvc-web-backend-grve-nginx-sts-0
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"gke-dev-cluster-dev-cluster-pool-eab0992b-5s14"},"creationTimestamp":"2021-02-05T11:26:26Z","finalizers":["kubernetes.io/pvc-protection"],"labels":{"app":"web-backend-grve-nginx-sts"},"name":"sts-pvc-web-backend-grve-nginx-sts-0","namespace":"niranjan2","resourceVersion":"1362531","selfLink":"/api/v1/namespaces/niranjan2/persistentvolumeclaims/sts-pvc-web-backend-grve-nginx-sts-0","uid":"bf9f7be7-430a-4d1a-a71d-ee9c6fce6dfd"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-bf9f7be7-430a-4d1a-a71d-ee9c6fce6dfd"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"1Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: sts-pvc-web-backend-grve-nginx-sts-0
+        podContainersMap:
+        - containers:
+          - nginx
+          podName: web-backend-grve-nginx-sts-0
+        size: "18354176"
+        snapshotSize: "1073741824"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: sts-pvc-web-backend-grve-n-db91bd67-5883-4a89-82d5-ec189f89a7f3
+            namespace: niranjan2
+            resourceVersion: "11953946"
+            uid: 5472e3fe-50aa-4c33-b2fc-d1e7597e3344
+      - backupType: Full
+        conditions:
+        - phase: Snapshot
+          reason: Snapshot InProgress
+          status: InProgress
+          timestamp: "2021-02-17T11:19:41Z"
+        - phase: Snapshot
+          reason: Snapshot Completed
+          status: Completed
+          timestamp: "2021-02-17T11:20:31Z"
+        - phase: Upload
+          reason: Upload InProgress
+          status: InProgress
+          timestamp: "2021-02-17T11:20:33Z"
+        - phase: Upload
+          reason: Upload Completed
+          status: Completed
+          timestamp: "2021-02-17T11:22:39Z"
+        location: 1ff81b07-0839-42e2-b637-ed2e278088e5/b1f871f9-24a7-41ce-8b69-f9e4b493d3e6/custom/data-snapshot/web-backend-grve-pod-raw-pvc
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"PersistentVolumeClaim\",\"metadata\":{\"annotations\":{},\"name\":\"web-backend-grve-pod-raw-pvc\",\"namespace\":\"niranjan2\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"1Gi\"}},\"storageClassName\":\"csi-gce-pd\"}}\n","pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"gke-dev-cluster-dev-cluster-pool-eab0992b-5s14"},"creationTimestamp":"2021-02-05T11:26:20Z","finalizers":["kubernetes.io/pvc-protection"],"name":"web-backend-grve-pod-raw-pvc","namespace":"niranjan2","resourceVersion":"1362453","selfLink":"/api/v1/namespaces/niranjan2/persistentvolumeclaims/web-backend-grve-pod-raw-pvc","uid":"d4f7c1b8-38f6-4d9c-a607-28a39c192611"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-d4f7c1b8-38f6-4d9c-a607-28a39c192611"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"1Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: web-backend-grve-pod-raw-pvc
+        podContainersMap:
+        - containers:
+          - ubuntu
+          podName: web-backend-grve-pod-raw
+        size: "18423808"
+        snapshotSize: "1073741824"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: web-backend-grve-pod-raw-p-29b32b05-8e16-4bc4-bc22-384ebfb9254a
+            namespace: niranjan2
+            resourceVersion: "11953988"
+            uid: 70d64763-f347-496f-a3e4-069120bcdc89
+      resources:
+      - groupVersionKind:
+          kind: ReplicationController
+          version: v1
+        objects:
+        - web-backend-grve-nginx-rc
+      - groupVersionKind:
+          kind: Pod
+          version: v1
+        objects:
+        - web-backend-grve-nginx-pod
+        - web-backend-grve-pod-raw
+      - groupVersionKind:
+          kind: ServiceAccount
+          version: v1
+        objects:
+        - web-backend-grve-sa-test
+      - groupVersionKind:
+          kind: Service
+          version: v1
+        objects:
+        - web-backend-grve-nginx-deployment-svc
+        - web-backend-grve-nginx-pod-svc
+        - web-backend-grve-nginx-rc-svc
+        - web-backend-grve-nginx-rs-svc
+        - web-backend-grve-nginx-sts-svc
+      - groupVersionKind:
+          kind: Secret
+          version: v1
+        objects:
+        - web-backend-grve-secret-test
+      - groupVersionKind:
+          kind: ConfigMap
+          version: v1
+        objects:
+        - web-backend-grve-configmap-test
+      - groupVersionKind:
+          group: networking.k8s.io
+          kind: Ingress
+          version: v1beta1
+        objects:
+        - web-backend-grve-test-ingress
+      - groupVersionKind:
+          group: apps
+          kind: StatefulSet
+          version: v1
+        objects:
+        - web-backend-grve-nginx-sts
+      - groupVersionKind:
+          group: apps
+          kind: DaemonSet
+          version: v1
+        objects:
+        - web-backend-grve-fluentd-elasticsearch
+      - groupVersionKind:
+          group: apps
+          kind: Deployment
+          version: v1
+        objects:
+        - web-backend-grve-nginx-deployment
+      - groupVersionKind:
+          group: apps
+          kind: ReplicaSet
+          version: v1
+        objects:
+        - web-backend-grve-nginx-rs
+      - groupVersionKind:
+          group: autoscaling
+          kind: HorizontalPodAutoscaler
+          version: v1
+        objects:
+        - web-backend-grve-demo-hpa
+      - groupVersionKind:
+          group: batch
+          kind: Job
+          version: v1
+        objects:
+        - web-backend-grve-ubuntu-job
+      - groupVersionKind:
+          group: batch
+          kind: CronJob
+          version: v1beta1
+        objects:
+        - web-backend-grve-ubuntu-cronjob
+      - groupVersionKind:
+          group: networking.k8s.io
+          kind: NetworkPolicy
+          version: v1
+        objects:
+        - web-backend-grve-network-policy
+      - groupVersionKind:
+          group: policy
+          kind: PodSecurityPolicy
+          version: v1beta1
+        objects:
+        - web-backend-grve-pod-sec-policy
+      - groupVersionKind:
+          group: rbac.authorization.k8s.io
+          kind: ClusterRole
+          version: v1
+        objects:
+        - web-backend-grve-clusterrole-test
+      - groupVersionKind:
+          group: rbac.authorization.k8s.io
+          kind: ClusterRoleBinding
+          version: v1
+        objects:
+        - web-backend-grve-clusterrolebinding-test
+      - groupVersionKind:
+          group: storage.k8s.io
+          kind: StorageClass
+          version: v1
+        objects:
+        - web-backend-grve-sc-test
+        - csi-gce-pd
+      - groupVersionKind:
+          group: admissionregistration.k8s.io
+          kind: ValidatingWebhookConfiguration
+          version: v1
+        objects:
+        - web-backend-grve-validation-webhook
+      - groupVersionKind:
+          group: admissionregistration.k8s.io
+          kind: MutatingWebhookConfiguration
+          version: v1
+        objects:
+        - web-backend-grve-mutation-webhook
+      - groupVersionKind:
+          group: scheduling.k8s.io
+          kind: PriorityClass
+          version: v1
+        objects:
+        - web-backend-grve-high-priority
+      warnings:
+      - |
+        Found Dependant Resource:
+        GVK: [storage.k8s.io/v1, Kind=StorageClass]
+        Name: [csi-gce-pd]
+      - |
+        Found NodeAffinity:
+        GVK: [/v1, Kind=Pod]
+        Name: [web-backend-grve-fluentd-elasticsearch-rkqx9]
+      - |
+        Found NodeAffinity:
+        GVK: [/v1, Kind=Pod]
+        Name: [web-backend-grve-fluentd-elasticsearch-wc9rh]
+  startTimestamp: "2021-02-17T11:18:15Z"
+  stats:
+    applicationType: Custom
+    backupNamespace: niranjan2
+    hookExists: false
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-targetqhbkwmj-injector
+      namespace: niranjan2
+      resourceVersion: "1362960"
+      uid: 9d0e0651-0fce-47fe-9a92-9339f468a34d
+  status: Available
+  type: Full

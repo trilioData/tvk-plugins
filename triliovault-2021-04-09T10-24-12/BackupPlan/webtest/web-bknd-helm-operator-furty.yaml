@@ -1,0 +1,44 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  creationTimestamp: "2021-02-23T02:49:17Z"
+  generation: 1
+  name: web-bknd-helm-operator-furty
+  namespace: webtest
+  resourceVersion: "19949834"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/webtest/backupplans/web-bknd-helm-operator-furty
+  uid: a72abb9d-2b01-4591-afcb-bd450fa9959e
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: 0 10 15 * *
+      incrementalCron:
+        schedule: 0 10 15 * *
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: target-sample
+      namespace: webtest
+      resourceVersion: "19945531"
+      uid: ad77678f-2fa9-4776-a41c-4608a873db3e
+  backupPlanComponents:
+    operators:
+    - applicationResourceSelector:
+      - matchLabels:
+          app: redis
+          release: web-bknd-redis
+      customResources:
+      - groupVersionKind:
+          group: helm.fluxcd.io
+          kind: HelmRelease
+          version: v1
+        objects:
+        - web-bknd-redis
+      operatorId: web-bknd-helm-operator
+      operatorResourceSelector:
+      - matchLabels:
+          app: helm-operator
+          release: web-bknd-helm-operator
+status:
+  status: Available

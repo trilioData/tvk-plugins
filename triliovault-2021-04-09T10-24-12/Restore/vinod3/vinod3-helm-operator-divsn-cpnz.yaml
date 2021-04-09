@@ -1,0 +1,143 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Restore
+metadata:
+  creationTimestamp: "2021-03-16T05:26:54Z"
+  finalizers:
+  - child-delete-finalizer
+  generation: 1
+  name: vinod3-helm-operator-divsn-cpnz
+  namespace: vinod3
+  resourceVersion: "67038668"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/vinod3/restores/vinod3-helm-operator-divsn-cpnz
+  uid: d0a78ac5-3801-466a-b4ec-9f9d26f47215
+spec:
+  patchIfAlreadyExists: true
+  restoreNamespace: res-1
+  source:
+    backup:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Backup
+      name: vinod3-helm-operator-divsn-umsb
+      namespace: vinod3
+      resourceVersion: "56726695"
+      uid: eefe965e-a92a-4bc0-bd75-fe17d56c36fc
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-targetvbglqvf-injector
+      namespace: vinod3
+      resourceVersion: "56726718"
+      uid: 0d27eb48-c906-47fe-ad43-28166b15497d
+    type: Backup
+status:
+  completionTimestamp: "2021-03-16T05:29:55Z"
+  percentageCompletion: 100
+  restoreApplication:
+    operators:
+    - snapshot:
+        customResources:
+        - groupVersionKind:
+            group: helm.fluxcd.io
+            kind: HelmRelease
+            version: v1
+          objects:
+          - app-redis
+        dataSnapshots:
+        - location: 3ccb2ff0-d0f8-44b8-9854-ee6af46d0efb/748e1692-5f61-413b-85f2-c5aacf5318fc/operator/sample-fluxcd-helm-release/data-snapshot/redis-data-redis-master-0
+          persistentVolumeClaimMetadata: |
+            {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"nodes-rkmd"},"creationTimestamp":"2020-11-25T10:04:42Z","finalizers":["kubernetes.io/pvc-protection"],"labels":{"app":"redis","component":"master","heritage":"Helm","release":"redis","role":"master"},"name":"redis-data-redis-master-0","namespace":"apps","resourceVersion":"2533120","selfLink":"/api/v1/namespaces/apps/persistentvolumeclaims/redis-data-redis-master-0","uid":"fe5774c9-f5b0-42ac-afc3-de8f21524934"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"8Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-fe5774c9-f5b0-42ac-afc3-de8f21524934"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"8Gi"},"phase":"Bound"}}
+          persistentVolumeClaimName: redis-data-redis-master-0
+          podContainersMap:
+          - containers:
+            - redis
+            podName: redis-master-0
+          size: "8370"
+          snapshotSize: "0"
+        helm:
+          newRelease: helm-operetvd
+          release: helm-operator
+          resources:
+          - groupVersionKind:
+              group: rbac.authorization.k8s.io
+              kind: ClusterRole
+              version: v1beta1
+            objects:
+            - helm-operetvd-helm-operator
+          - groupVersionKind:
+              group: rbac.authorization.k8s.io
+              kind: ClusterRoleBinding
+              version: v1beta1
+            objects:
+            - helm-operetvd-helm-operator
+          - groupVersionKind:
+              kind: Service
+              version: v1
+            objects:
+            - helm-operetvd-helm-operator
+          - groupVersionKind:
+              group: apps
+              kind: Deployment
+              version: v1
+            objects:
+            - helm-operetvd-helm-operator
+          - groupVersionKind:
+              kind: Secret
+              version: v1
+            objects:
+            - helm-operetvd-helm-operator-git-deploy
+          - groupVersionKind:
+              kind: ConfigMap
+              version: v1
+            objects:
+            - helm-operetvd-helm-operator-kube-config
+          - groupVersionKind:
+              kind: ServiceAccount
+              version: v1
+            objects:
+            - helm-operetvd-helm-operator
+          revision: 1
+          storageBackend: Secret
+          version: v3
+        operatorId: sample-fluxcd-helm-release
+      status:
+        excludedResources:
+        - groupVersionKind:
+            kind: PersistentVolumeClaim
+            version: v1
+          objects:
+          - redis-data-redis-slave-0
+          - redis-data-redis-slave-1
+        existingResource:
+        - groupVersionKind:
+            group: apiextensions.k8s.io
+            kind: CustomResourceDefinition
+            version: v1beta1
+          objects:
+          - helmreleases.helm.fluxcd.io
+        - groupVersionKind:
+            group: helm.fluxcd.io
+            kind: HelmRelease
+            version: v1
+          objects:
+          - app-redis
+        phase: MetadataRestore
+        phaseStatus: Completed
+        reason: Restore MetaData Operation Successful
+        skippedResources:
+        - groupVersionKind:
+            group: apiextensions.k8s.io
+            kind: CustomResourceDefinition
+            version: v1beta1
+          objects:
+          - helmreleases.helm.fluxcd.io
+  size: "8370"
+  startTimestamp: "2021-03-16T05:26:55Z"
+  stats:
+    backupPlan:
+      apiVersion: triliovault.trilio.io/v1
+      kind: BackupPlan
+      name: vinod3-helm-operator-divsn
+      namespace: vinod3
+      resourceVersion: "56726666"
+      uid: 9a6cd18c-56f5-4a62-9baf-8f526aadcc5c
+  status: Completed

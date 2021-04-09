@@ -1,0 +1,25 @@
+apiVersion: snapshot.storage.k8s.io/v1beta1
+kind: VolumeSnapshot
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"snapshot.storage.k8s.io/v1beta1","kind":"VolumeSnapshot","metadata":{"annotations":{},"name":"unused-source-pvc-dasswk","namespace":"default"},"spec":{"source":{"persistentVolumeClaimName":"source-pvc-dasswk"},"volumeSnapshotClassName":"default-snapshot-class"}}
+  creationTimestamp: "2021-03-17T06:02:14Z"
+  finalizers:
+  - snapshot.storage.kubernetes.io/volumesnapshot-as-source-protection
+  - snapshot.storage.kubernetes.io/volumesnapshot-bound-protection
+  generation: 1
+  name: unused-source-pvc-dasswk
+  namespace: default
+  resourceVersion: "58390017"
+  selfLink: /apis/snapshot.storage.k8s.io/v1beta1/namespaces/default/volumesnapshots/unused-source-pvc-dasswk
+  uid: 35a42be6-4f96-4d3f-950e-bb1c8300394f
+spec:
+  source:
+    persistentVolumeClaimName: source-pvc-dasswk
+  volumeSnapshotClassName: default-snapshot-class
+status:
+  boundVolumeSnapshotContentName: snapcontent-35a42be6-4f96-4d3f-950e-bb1c8300394f
+  creationTime: "2021-03-17T06:02:21Z"
+  readyToUse: true
+  restoreSize: 1Gi

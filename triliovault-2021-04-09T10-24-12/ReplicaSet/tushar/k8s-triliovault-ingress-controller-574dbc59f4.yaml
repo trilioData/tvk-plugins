@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    deployment.kubernetes.io/desired-replicas: "1"
+    deployment.kubernetes.io/max-replicas: "2"
+    deployment.kubernetes.io/revision: "1"
+  creationTimestamp: "2021-02-05T11:06:13Z"
+  generation: 2
+  labels:
+    app: k8s-triliovault-ingress-controller
+    app.kubernetes.io/instance: k8s-triliovault-ingress-controller
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    pod-template-hash: 574dbc59f4
+  name: k8s-triliovault-ingress-controller-574dbc59f4
+  namespace: tushar
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: k8s-triliovault-ingress-controller
+    uid: 1cface21-4fb1-4987-a2b4-1be9593bd64d
+  resourceVersion: "6430632"
+  selfLink: /apis/apps/v1/namespaces/tushar/replicasets/k8s-triliovault-ingress-controller-574dbc59f4
+  uid: 5c396494-4f99-4d9f-9b88-a0712ea698ad
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: k8s-triliovault-ingress-controller
+      pod-template-hash: 574dbc59f4
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: k8s-triliovault-ingress-controller
+        app.kubernetes.io/instance: k8s-triliovault-ingress-controller
+        app.kubernetes.io/managed-by: k8s-triliovault
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+        pod-template-hash: 574dbc59f4
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - args:
+        - -nginx-plus=false
+        - -nginx-reload-timeout=0
+        - -enable-app-protect=false
+        - -default-server-tls-secret=$(POD_NAMESPACE)/k8s-triliovault-ingress-server-certs
+        - -ingress-class=nginx
+        - -use-ingress-class-only=false
+        - -watch-namespace=$(POD_NAMESPACE)
+        - -nginx-debug=false
+        - -v=1
+        - -nginx-status=false
+        - -report-ingress-status
+        - -enable-leader-election=false
+        - -enable-prometheus-metrics=false
+        - -enable-custom-resources=false
+        - -ready-status=false
+        - -enable-latency-metrics=false
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: gcr.io/amazing-chalice-243510/ingress-controller:v2.0.0
+        imagePullPolicy: IfNotPresent
+        name: ingress-controller
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        - containerPort: 443
+          name: https
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - SYS_ADMIN
+            - NET_BIND_SERVICE
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 101
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+      serviceAccount: k8s-triliovault
+      serviceAccountName: k8s-triliovault
+      terminationGracePeriodSeconds: 30
+status:
+  observedGeneration: 2
+  replicas: 0

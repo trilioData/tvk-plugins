@@ -1,0 +1,54 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  creationTimestamp: "2021-04-06T05:53:49Z"
+  finalizers:
+  - backupplan-delete-finalizer
+  generation: 2
+  name: bp
+  namespace: ajay
+  resourceVersion: "100635569"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/ajay/backupplans/bp
+  uid: 29bf53f2-5c99-4d82-af16-1fc0f9627db0
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: ""
+      incrementalCron:
+        schedule: ""
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: s3
+      namespace: ajay
+      resourceVersion: "95139135"
+      uid: 29af3228-93bf-45fc-943a-7f7fe23fd6fc
+  backupNamespace: ajay
+  backupPlanComponents:
+    custom:
+    - matchLabels:
+        triliobackupall: aj
+status:
+  applicationType: Custom
+  scope: App
+  stats:
+    backupSummary:
+      lastSuccessfulBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: bk1
+        namespace: ajay
+        resourceVersion: "95199232"
+        uid: dc04e364-055a-4bde-bbed-50b7fcfbd727
+      latestBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: bk2
+        namespace: ajay
+        resourceVersion: "100635567"
+        uid: 69be9316-daae-4c67-a604-fc6d343bbb00
+      totalAvailableBackups: 1
+      totalFailedBackups: 1
+    restoreSummary: {}
+  status: Available

@@ -1,0 +1,143 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  creationTimestamp: "2021-02-25T02:05:12Z"
+  generation: 1
+  labels:
+    app: k8s-triliovault-ingress-controller
+    app.kubernetes.io/instance: k8s-triliovault-ingress-controller
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: k8s-triliovault-ingress-controller
+  namespace: backtest
+  resourceVersion: "70257853"
+  selfLink: /apis/apps/v1/namespaces/backtest/deployments/k8s-triliovault-ingress-controller
+  uid: 760b4a2b-a862-4a94-841d-4d59c8f7cf6e
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: k8s-triliovault-ingress-controller
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: k8s-triliovault-ingress-controller
+        app.kubernetes.io/instance: k8s-triliovault-ingress-controller
+        app.kubernetes.io/managed-by: k8s-triliovault
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - args:
+        - -nginx-plus=false
+        - -nginx-reload-timeout=0
+        - -enable-app-protect=false
+        - -default-server-tls-secret=$(POD_NAMESPACE)/k8s-triliovault-ingress-server-certs
+        - -ingress-class=nginx
+        - -use-ingress-class-only=false
+        - -watch-namespace=$(POD_NAMESPACE)
+        - -nginx-debug=false
+        - -v=1
+        - -nginx-status=false
+        - -report-ingress-status
+        - -enable-leader-election=false
+        - -enable-prometheus-metrics=false
+        - -enable-custom-resources=false
+        - -ready-status=false
+        - -enable-latency-metrics=false
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: gcr.io/amazing-chalice-243510/ingress-controller:v2.0.0
+        imagePullPolicy: Always
+        name: ingress-controller
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        - containerPort: 443
+          name: https
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - SYS_ADMIN
+            - NET_BIND_SERVICE
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 101
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+      serviceAccount: k8s-triliovault
+      serviceAccountName: k8s-triliovault
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2021-02-25T02:05:12Z"
+    lastUpdateTime: "2021-02-25T02:05:17Z"
+    message: ReplicaSet "k8s-triliovault-ingress-controller-7f7f9cf47b" has successfully
+      progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  - lastTransitionTime: "2021-03-23T20:03:40Z"
+    lastUpdateTime: "2021-03-23T20:03:40Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

@@ -1,0 +1,74 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"triliovault.trilio.io/v1","kind":"BackupPlan","metadata":{"annotations":{},"name":"sample-backupplan-all","namespace":"abhi"},"spec":{"backupConfig":{"retentionPolicy":{"name":"sample-policy","namespace":"abhi"},"target":{"name":"sample-target","namespace":"abhi"}},"backupPlanComponents":{"custom":[{"matchLabels":{"triliobackupall":"bkp-e2e-lxhm"}}],"helmReleases":["bkp-e2e-lxhm-mysql"],"operators":[{"applicationResourceSelector":[{"matchLabels":{"app.kubernetes.io/managed-by":"mysql.presslabs.org","app.kubernetes.io/name":"mysql"}}],"customResources":[{"groupVersionKind":{"group":"mysql.presslabs.org","kind":"MysqlCluster","version":"v1alpha1"},"objects":["bkp-e2e-lxhm-sample-mysqlcluster"]}],"operatorId":"bkp-e2e-lxhm-mysql-operator","operatorResourceSelector":[{"matchLabels":{"app":"mysql-operator","release":"bkp-e2e-lxhm-mysql-operator"}}]}]}}}
+  creationTimestamp: "2021-04-08T14:32:54Z"
+  finalizers:
+  - backupplan-delete-finalizer
+  generation: 2
+  name: sample-backupplan-all
+  namespace: abhi
+  resourceVersion: "101002990"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/abhi/backupplans/sample-backupplan-all
+  uid: 418612f3-ef9b-4402-908f-d3645b4812bc
+spec:
+  backupConfig:
+    retentionPolicy:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Policy
+      name: sample-policy
+      namespace: abhi
+      resourceVersion: "100967953"
+      uid: 4f19f1de-f092-4a1d-ab11-88b1bd3ad5bb
+    schedulePolicy:
+      fullBackupCron:
+        schedule: ""
+      incrementalCron:
+        schedule: ""
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-target
+      namespace: abhi
+      resourceVersion: "100988458"
+      uid: 9f1c7480-a8f1-47fa-a344-10b457cf3593
+  backupPlanComponents:
+    custom:
+    - matchLabels:
+        triliobackupall: bkp-e2e-lxhm
+    helmReleases:
+    - bkp-e2e-lxhm-mysql
+    operators:
+    - applicationResourceSelector:
+      - matchLabels:
+          app.kubernetes.io/managed-by: mysql.presslabs.org
+          app.kubernetes.io/name: mysql
+      customResources:
+      - groupVersionKind:
+          group: mysql.presslabs.org
+          kind: MysqlCluster
+          version: v1alpha1
+        objects:
+        - bkp-e2e-lxhm-sample-mysqlcluster
+      operatorId: bkp-e2e-lxhm-mysql-operator
+      operatorResourceSelector:
+      - matchLabels:
+          app: mysql-operator
+          release: bkp-e2e-lxhm-mysql-operator
+status:
+  applicationType: Custom
+  scope: App
+  stats:
+    backupSummary:
+      latestBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: sample-backup-all
+        namespace: abhi
+        resourceVersion: "101002989"
+        uid: 4d3745de-82eb-4ee2-9692-0343316c2f11
+      totalFailedBackups: 1
+    restoreSummary: {}
+  status: Available

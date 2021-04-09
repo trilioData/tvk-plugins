@@ -1,0 +1,55 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"triliovault.trilio.io/v1","kind":"BackupPlan","metadata":{"annotations":{},"name":"sample-application","namespace":"vishu"},"spec":{"backupConfig":{"target":{"name":"sample-target"}},"backupNamespace":"vishu","backupPlanComponents":{"custom":[{"matchLabels":{"app":"nginx-app"}}]}}}
+  creationTimestamp: "2021-02-12T17:10:12Z"
+  generation: 1
+  name: sample-application
+  namespace: vishu
+  resourceVersion: "55626162"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/vishu/backupplans/sample-application
+  uid: fc50e5bb-aea5-4cd7-b6a4-c42c9c3c7cd1
+spec:
+  backupConfig:
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-target
+      namespace: vishu
+      resourceVersion: "6610783"
+      uid: 9873f41e-3985-4d48-88f5-1093f6b0df63
+  backupNamespace: vishu
+  backupPlanComponents:
+    custom:
+    - matchLabels:
+        app: nginx-app
+status:
+  stats:
+    backupSummary:
+      lastSuccessfulBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: sample-backup
+        namespace: vishu
+        resourceVersion: "33830602"
+        uid: b3ede1f7-5bae-4829-a881-67ba22a0abf8
+      latestBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: sample-backup
+        namespace: vishu
+        resourceVersion: "33830602"
+        uid: b3ede1f7-5bae-4829-a881-67ba22a0abf8
+      totalAvailableBackups: 1
+    restoreSummary:
+      lastSuccessfulRestore:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Restore
+        name: sample-restore
+        namespace: vishu
+        resourceVersion: "55626161"
+        uid: 030bf29c-07da-4ccb-89b8-cc48ed6cf944
+      totalCompletedRestores: 1
+  status: Available

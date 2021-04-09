@@ -1,0 +1,117 @@
+INFO:root:Calling crd-parser to get the datastore
+INFO:root:Parsing the target-crd to get the list of datastores
+INFO:root:Fetched the list of datastores to be mounted
+INFO:root:mounting datastore of type s3
+INFO:root:mounting the S3 datastore by the name s3
+INFO:root:writing the conf data to the conf file: s3_vault.conf
+
+INFO:root:command: /usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/s3_vault.conf &
+INFO:root:Executing command /usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/s3_vault.conf &
+INFO:root:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/s3_vault.conf & command execution starting time: 2021-04-08 11:03:38.171407
+INFO:root:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/s3_vault.conf & command execution completion time: 2021-04-08 11:03:38.176786
+INFO:root:Command:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/s3_vault.conf &, ExitCode:0
+
+INFO:root:2021-04-08 11:03:38.177326: waiting for mount operation to complete.
+INFO:root:2021-04-08 11:03:40.179645: waiting for mount operation to complete.
+INFO:root:2021-04-08 11:03:40.180798: target mounted successfully.
+INFO:root:Removing all the vault files from the ./tmp directory
+
+
+I0408 11:03:41.387530      30 request.go:655] Throttling request took 1.030578849s, request: GET:https://10.96.0.1:443/apis/velero.io/v1?timeout=32s
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/cmd/datamover/main.go:130","func":"main.main","level":"info","msg":"The passed datastore path is mounted properly","time":"2021-04-08T11:03:42Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/cmd/datamover/main.go:174","func":"main.backupDataActions","level":"info","msg":"Getting backup path and volume mode for pvc: [fs-pvc], app-component: [custom], component-identifier: []","time":"2021-04-08T11:03:42Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/datamover_utils.go:96","func":"github.com/trilioData/k8s-triliovault/pkg/datamover.GetBackupComponentByIdentifier","level":"info","msg":"Checking backup application component for component:custom identifier:","time":"2021-04-08T11:03:42Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/datamover.go:140","func":"github.com/trilioData/k8s-triliovault/pkg/datamover.BackupData","level":"info","msg":"Starting backup","time":"2021-04-08T11:03:42Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/datamover.go:148","func":"github.com/trilioData/k8s-triliovault/pkg/datamover.BackupData","level":"info","msg":"Created the destination directory for the backup: /triliodata/29bf53f2-5c99-4d82-af16-1fc0f9627db0/69be9316-daae-4c67-a604-fc6d343bbb00/custom/data-snapshot/fs-pvc","time":"2021-04-08T11:03:43Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/datamover.go:66","func":"github.com/trilioData/k8s-triliovault/pkg/datamover.backupFileSystemPV","level":"info","msg":"Running backup for Filesystem Mode PV","time":"2021-04-08T11:03:43Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/datamover.go:93","func":"github.com/trilioData/k8s-triliovault/pkg/datamover.backupFileSystemPV","level":"info","msg":"Processing full filesystem backup","time":"2021-04-08T11:03:43Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem/fsbackup_manager.go:73","func":"github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem.Process","level":"info","msg":"Operation Full\nDirectory where PV is mounted: /src/data\nQcow2 image: /triliodata/29bf53f2-5c99-4d82-af16-1fc0f9627db0/69be9316-daae-4c67-a604-fc6d343bbb00/custom/data-snapshot/fs-pvc/pv.qcow2\nBacking file: \nPV Size: 21474836480\n","time":"2021-04-08T11:03:43Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem/fsbackup_manager.go:83","func":"github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem.Process","level":"info","msg":"Performing Full backup","time":"2021-04-08T11:03:43Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem/fsbackup.go:42","func":"github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem.(*FileSystem).Launch","level":"debug","msg":"Setting Backingfile_is_set to false as it's full backup","time":"2021-04-08T11:03:43Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem/fsbackup.go:53","func":"github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem.(*FileSystem).Launch","level":"info","msg":"Creating disk /triliodata/29bf53f2-5c99-4d82-af16-1fc0f9627db0/69be9316-daae-4c67-a604-fc6d343bbb00/custom/data-snapshot/fs-pvc/pv.qcow2 of format qcow2 and size 21474836480","time":"2021-04-08T11:03:43Z"}
+2021-04-08 11:03:45.853 12 INFO s3 [-] Starting worker thread[7f063affd700].[00m
+2021-04-08 11:03:45.870 12 INFO s3 [-] Starting worker thread[7f063a7fc700].[00m
+2021-04-08 11:03:45.883 12 INFO s3 [-] Starting worker thread[7f0639ffb700].[00m
+2021-04-08 11:03:45.896 12 INFO s3 [-] Starting worker thread[7f06397fa700].[00m
+2021-04-08 11:03:45.917 12 INFO s3 [-] Starting worker thread[7f0638ff9700].[00m
+2021-04-08 11:03:46.931 12 INFO s3 [-] Starting worker thread[7f0638ff9700].[00m
+2021-04-08 11:03:46.941 12 INFO s3 [-] Starting worker thread[7f06397fa700].[00m
+2021-04-08 11:03:46.955 12 INFO s3 [-] Starting worker thread[7f0639ffb700].[00m
+2021-04-08 11:03:46.972 12 INFO s3 [-] Starting worker thread[7f063a7fc700].[00m
+2021-04-08 11:03:46.991 12 INFO s3 [-] Starting worker thread[7f063affd700].[00m
+2021-04-08 11:03:48.394 12 INFO s3 [-] Starting worker thread[7f063a7fc700].[00m
+2021-04-08 11:03:48.408 12 INFO s3 [-] Starting worker thread[7f0639ffb700].[00m
+2021-04-08 11:03:48.430 12 INFO s3 [-] Starting worker thread[7f06397fa700].[00m
+2021-04-08 11:03:48.444 12 INFO s3 [-] Starting worker thread[7f0638ff9700].[00m
+2021-04-08 11:03:48.454 12 INFO s3 [-] Starting worker thread[7f063affd700].[00m
+2021-04-08 11:03:49.468 12 INFO s3 [-] Starting worker thread[7f063affd700].[00m
+2021-04-08 11:03:49.483 12 INFO s3 [-] Starting worker thread[7f0638ff9700].[00m
+2021-04-08 11:03:49.495 12 INFO s3 [-] Starting worker thread[7f06397fa700].[00m
+2021-04-08 11:03:49.516 12 INFO s3 [-] Starting worker thread[7f0639ffb700].[00m
+2021-04-08 11:03:49.531 12 INFO s3 [-] Starting worker thread[7f063a7fc700].[00m
+2021-04-08 11:03:51.151 12 INFO s3 [-] Starting worker thread[7f0639ffb700].[00m
+2021-04-08 11:03:51.170 12 INFO s3 [-] Starting worker thread[7f06397fa700].[00m
+2021-04-08 11:03:51.187 12 INFO s3 [-] Starting worker thread[7f0638ff9700].[00m
+2021-04-08 11:03:51.197 12 INFO s3 [-] Starting worker thread[7f063affd700].[00m
+2021-04-08 11:03:51.212 12 INFO s3 [-] Starting worker thread[7f061ffff700].[00m
+2021-04-08 11:03:51.386 12 INFO s3 [-] Starting worker thread[7f063bfff700].[00m
+2021-04-08 11:03:51.399 12 INFO s3 [-] Starting worker thread[7f0650c91700].[00m
+2021-04-08 11:03:51.418 12 INFO s3 [-] Starting worker thread[7f06514d2700].[00m
+2021-04-08 11:03:51.434 12 INFO s3 [-] Starting worker thread[7f0651d13700].[00m
+2021-04-08 11:03:51.451 12 INFO s3 [-] Starting worker thread[7f063b7fe700].[00m
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem/fsbackup.go:69","func":"github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem.(*FileSystem).Launch","level":"debug","msg":"Adding /triliodata/29bf53f2-5c99-4d82-af16-1fc0f9627db0/69be9316-daae-4c67-a604-fc6d343bbb00/custom/data-snapshot/fs-pvc/pv.qcow2 disk to the appliance","time":"2021-04-08T11:03:52Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem/fsbackup.go:78","func":"github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem.(*FileSystem).Launch","level":"debug","msg":"Setting network to true for current guestfs handle","time":"2021-04-08T11:03:52Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem/fsbackup.go:86","func":"github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem.(*FileSystem).Launch","level":"info","msg":"Launching the qcow2 using guestfs handle","time":"2021-04-08T11:03:52Z"}
+2021-04-08 11:04:02.022 12 INFO s3 [-] Starting worker thread[7f063bfff700].[00m
+2021-04-08 11:04:02.035 12 INFO s3 [-] Starting worker thread[7f063b7fe700].[00m
+2021-04-08 11:04:02.054 12 INFO s3 [-] Starting worker thread[7f0651d13700].[00m
+2021-04-08 11:04:02.071 12 INFO s3 [-] Starting worker thread[7f06514d2700].[00m
+2021-04-08 11:04:02.087 12 INFO s3 [-] Starting worker thread[7f0650c91700].[00m
+2021-04-08 11:04:02.268 12 INFO s3 [-] Starting worker thread[7f063affd700].[00m
+2021-04-08 11:04:02.287 12 INFO s3 [-] Starting worker thread[7f0639ffb700].[00m
+2021-04-08 11:04:02.308 12 INFO s3 [-] Starting worker thread[7f06397fa700].[00m
+2021-04-08 11:04:02.332 12 INFO s3 [-] Starting worker thread[7f0638ff9700].[00m
+2021-04-08 11:04:02.343 12 INFO s3 [-] Starting worker thread[7f061ffff700].[00m
+2021-04-08 11:04:02.519 12 INFO s3 [-] Starting worker thread[7f061effd700].[00m
+2021-04-08 11:04:02.532 12 INFO s3 [-] Starting worker thread[7f061e7fc700].[00m
+2021-04-08 11:04:02.554 12 INFO s3 [-] Starting worker thread[7f061dffb700].[00m
+2021-04-08 11:04:02.573 12 INFO s3 [-] Starting worker thread[7f061d7fa700].[00m
+2021-04-08 11:04:02.588 12 INFO s3 [-] Starting worker thread[7f061cff9700].[00m
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem/fsbackup.go:95","func":"github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem.(*FileSystem).Launch","level":"info","msg":"Formatting partition as it's full backup","time":"2021-04-08T11:04:41Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem/fsbackup.go:177","func":"github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem.(*FileSystem).FormatPartition","level":"info","msg":"Partitions to format: [/dev/sda1]","time":"2021-04-08T11:04:45Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem/fsbackup.go:141","func":"github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem.(*FileSystem).MountPartition","level":"info","msg":"Mounting /dev/sda1 on /","time":"2021-04-08T11:05:02Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem/fsbackup.go:492","func":"github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem.(*FileSystem).Full","level":"info","msg":"CopyIn files/dirs from /src/data/./ to qcow2","time":"2021-04-08T11:05:04Z"}
+libguestfs: error: appliance closed the connection unexpectedly.
+This usually means the libguestfs appliance crashed.
+Do:
+  export LIBGUESTFS_DEBUG=1 LIBGUESTFS_TRACE=1
+and run the command again.  For further information, read:
+  http://libguestfs.org/guestfs-faq.1.html#debugging-libguestfs
+You can also run 'libguestfs-test-tool' and post the *complete* output
+into a bug report or message to the libguestfs mailing list.
+libguestfs: error: /usr/libexec/qemu-kvm killed by signal 9 (Killed).
+To see full error messages you may need to enable debugging.
+Do:
+  export LIBGUESTFS_DEBUG=1 LIBGUESTFS_TRACE=1
+and run the command again.  For further information, read:
+  http://libguestfs.org/guestfs-faq.1.html#debugging-libguestfs
+You can also run 'libguestfs-test-tool' and post the *complete* output
+into a bug report or message to the libguestfs mailing list.
+libguestfs: error: appliance closed the connection unexpectedly.
+This usually means the libguestfs appliance crashed.
+Do:
+  export LIBGUESTFS_DEBUG=1 LIBGUESTFS_TRACE=1
+and run the command again.  For further information, read:
+  http://libguestfs.org/guestfs-faq.1.html#debugging-libguestfs
+You can also run 'libguestfs-test-tool' and post the *complete* output
+into a bug report or message to the libguestfs mailing list.
+libguestfs: error: tar subprocess failed: 
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem/fsbackup.go:371","func":"github.com/trilioData/k8s-triliovault/pkg/datamover/filesystem.(*FileSystem).CopyIn","level":"error","msg":"Error while Copy_in copy_in: tar subprocess failed: : errno 0","time":"2021-04-08T11:06:28Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/cmd/datamover/main.go:211","func":"main.backupDataActions","level":"error","msg":"backup [/src/data] =\u003e failed :[]","time":"2021-04-08T11:06:28Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/datamover_utils.go:306","func":"github.com/trilioData/k8s-triliovault/pkg/datamover.GetBackupDataComponentPath","level":"info","msg":"Getting data component patchPath for appComponentName:[custom] componentIdentifier:[] pvcName:[fs-pvc]","time":"2021-04-08T11:06:28Z"}
+{"component":"data-mover","file":"/go/src/github.com/trilioData/k8s-triliovault/pkg/datamover/datamover_utils.go:96","func":"github.com/trilioData/k8s-triliovault/pkg/datamover.GetBackupComponentByIdentifier","level":"info","msg":"Checking backup application component for component:custom identifier:","time":"2021-04-08T11:06:28Z"}
+panic: backup for [fs-pvc] Failed in [/triliodata/29bf53f2-5c99-4d82-af16-1fc0f9627db0/69be9316-daae-4c67-a604-fc6d343bbb00/custom/data-snapshot/fs-pvc/pv.qcow2] with error: copy_in: tar subprocess failed: : errno 0
+
+goroutine 1 [running]:
+main.main()
+	/go/src/github.com/trilioData/k8s-triliovault/cmd/datamover/main.go:150 +0x5f3

@@ -1,0 +1,35 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"triliovault.trilio.io/v1","kind":"BackupPlan","metadata":{"annotations":{},"name":"sample-application","namespace":"vinod6"},"spec":{"backupConfig":{"target":{"name":"sample-target"}},"backupPlanComponents":{"custom":[{"matchLabels":{"newpod":"p1"}}]}}}
+  creationTimestamp: "2021-04-04T09:52:49Z"
+  finalizers:
+  - backupplan-delete-finalizer
+  generation: 2
+  name: sample-application
+  namespace: vinod6
+  resourceVersion: "90152668"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/vinod6/backupplans/sample-application
+  uid: e896f875-b911-413f-80f2-a509ecc95eef
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: ""
+      incrementalCron:
+        schedule: ""
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-target
+      namespace: vinod6
+      resourceVersion: "90145785"
+      uid: 94eb0697-6879-4dfd-a723-7eeaec3d3ebb
+  backupPlanComponents:
+    custom:
+    - matchLabels:
+        newpod: p1
+status:
+  status: Available

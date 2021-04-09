@@ -1,0 +1,49 @@
+I0317 12:26:31.389555       1 request.go:655] Throttling request took 1.043406598s, request: GET:https://10.96.0.1:443/apis/cloud.google.com/v1beta1?timeout=32s
+time="2021-03-17T12:26:31Z" level=info msg="initializing common tests package"
+{"component":"Manager","file":"internal/helpers/olm.go:16","func":"github.com/trilioData/k8s-triliovault/internal/helpers.SetAppScopeIfNotPresent","level":"info","msg":"Setting up the APP_SCOPE environment","time":"2021-03-17T12:26:33Z"}
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	controller-runtime.injectors-warning	Injectors are deprecated, and will be removed in v0.10.x
+2021-03-17T12:26:34.836Z	INFO	setup	starting manager
+2021-03-17T12:26:35.142Z	INFO	controller-runtime.manager.controller.backup	Starting EventSource	{"reconciler group": "triliovault.trilio.io", "reconciler kind": "Backup", "source": "kind source: /, Kind="}
+2021-03-17T12:26:35.144Z	INFO	controller-runtime.manager.controller.backup	Starting EventSource	{"reconciler group": "triliovault.trilio.io", "reconciler kind": "Backup", "source": "kind source: /, Kind="}
+2021-03-17T12:26:35.145Z	INFO	controller-runtime.manager.controller.backup	Starting Controller	{"reconciler group": "triliovault.trilio.io", "reconciler kind": "Backup"}
+2021-03-17T12:26:35.146Z	INFO	controller-runtime.manager.controller.backup	Starting workers	{"reconciler group": "triliovault.trilio.io", "reconciler kind": "Backup", "worker count": 1}
+2021-03-17T12:26:35.144Z	INFO	controller-runtime.manager.controller.backupplan	Starting EventSource	{"reconciler group": "triliovault.trilio.io", "reconciler kind": "BackupPlan", "source": "kind source: /, Kind="}
+2021-03-17T12:26:35.146Z	INFO	controller-runtime.manager.controller.backupplan	Starting EventSource	{"reconciler group": "triliovault.trilio.io", "reconciler kind": "BackupPlan", "source": "kind source: /, Kind="}
+2021-03-17T12:26:35.147Z	INFO	controller-runtime.manager.controller.backupplan	Starting EventSource	{"reconciler group": "triliovault.trilio.io", "reconciler kind": "BackupPlan", "source": "kind source: /, Kind="}
+2021-03-17T12:26:35.150Z	INFO	controller-runtime.manager.controller.backupplan	Starting Controller	{"reconciler group": "triliovault.trilio.io", "reconciler kind": "BackupPlan"}
+2021-03-17T12:26:35.150Z	INFO	controller-runtime.manager.controller.backupplan	Starting workers	{"reconciler group": "triliovault.trilio.io", "reconciler kind": "BackupPlan", "worker count": 1}
+2021-03-17T12:26:35.144Z	INFO	controller-runtime.manager.controller.target	Starting EventSource	{"reconciler group": "triliovault.trilio.io", "reconciler kind": "Target", "source": "kind source: /, Kind="}
+2021-03-17T12:26:35.144Z	INFO	controller-runtime.manager.controller.restore	Starting EventSource	{"reconciler group": "triliovault.trilio.io", "reconciler kind": "Restore", "source": "kind source: /, Kind="}
+2021-03-17T12:26:35.151Z	INFO	controller-runtime.manager.controller.restore	Starting Controller	{"reconciler group": "triliovault.trilio.io", "reconciler kind": "Restore"}
+2021-03-17T12:26:35.251Z	INFO	controller-runtime.manager.controller.restore	Starting workers	{"reconciler group": "triliovault.trilio.io", "reconciler kind": "Restore", "worker count": 1}
+2021-03-17T12:26:35.252Z	INFO	controller-runtime.manager.controller.target	Starting EventSource	{"reconciler group": "triliovault.trilio.io", "reconciler kind": "Target", "source": "kind source: /, Kind="}
+2021-03-17T12:26:35.253Z	INFO	controller-runtime.manager.controller.target	Starting EventSource	{"reconciler group": "triliovault.trilio.io", "reconciler kind": "Target", "source": "kind source: /, Kind="}
+2021-03-17T12:26:35.254Z	INFO	controller-runtime.manager.controller.target	Starting Controller	{"reconciler group": "triliovault.trilio.io", "reconciler kind": "Target"}
+2021-03-17T12:26:35.254Z	INFO	controller-runtime.manager.controller.target	Starting workers	{"reconciler group": "triliovault.trilio.io", "reconciler kind": "Target", "worker count": 1}
+E0327 16:19:34.585949       1 reflector.go:138] pkg/cache/internal/informers_map.go:229: Failed to watch *v1.Target: the server could not find the requested resource (get targets.triliovault.trilio.io)
+E0327 16:19:35.725152       1 reflector.go:138] pkg/cache/internal/informers_map.go:229: Failed to watch *v1.Target: failed to list *v1.Target: the server could not find the requested resource (get targets.triliovault.trilio.io)
+E0327 16:19:38.431265       1 reflector.go:138] pkg/cache/internal/informers_map.go:229: Failed to watch *v1.Target: failed to list *v1.Target: the server could not find the requested resource (get targets.triliovault.trilio.io)
+E0327 16:19:42.879808       1 reflector.go:138] pkg/cache/internal/informers_map.go:229: Failed to watch *v1.Target: failed to list *v1.Target: the server could not find the requested resource (get targets.triliovault.trilio.io)
+E0327 16:19:50.544262       1 reflector.go:138] pkg/cache/internal/informers_map.go:229: Failed to watch *v1.Target: failed to list *v1.Target: the server could not find the requested resource (get targets.triliovault.trilio.io)
+E0327 16:20:06.324777       1 reflector.go:138] pkg/cache/internal/informers_map.go:229: Failed to watch *v1.Target: failed to list *v1.Target: the server could not find the requested resource (get targets.triliovault.trilio.io)
+E0328 13:26:43.200707       1 reflector.go:138] pkg/cache/internal/informers_map.go:229: Failed to watch *v1.Target: the server could not find the requested resource (get targets.triliovault.trilio.io)
+E0328 13:26:44.376337       1 reflector.go:138] pkg/cache/internal/informers_map.go:229: Failed to watch *v1.Target: failed to list *v1.Target: the server could not find the requested resource (get targets.triliovault.trilio.io)
+E0328 13:26:46.233612       1 reflector.go:138] pkg/cache/internal/informers_map.go:229: Failed to watch *v1.Target: failed to list *v1.Target: the server could not find the requested resource (get targets.triliovault.trilio.io)
+E0328 13:26:51.913538       1 reflector.go:138] pkg/cache/internal/informers_map.go:229: Failed to watch *v1.Target: failed to list *v1.Target: the server could not find the requested resource (get targets.triliovault.trilio.io)

@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    deployment.kubernetes.io/desired-replicas: "1"
+    deployment.kubernetes.io/max-replicas: "2"
+    deployment.kubernetes.io/revision: "1"
+    meta.helm.sh/release-name: tvm-ajay
+    meta.helm.sh/release-namespace: ajay
+  creationTimestamp: "2021-04-06T06:36:21Z"
+  generation: 1
+  labels:
+    app: k8s-triliovault-exporter
+    app.kubernetes.io/instance: k8s-triliovault-exporter
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    pod-template-hash: 74f479869f
+    rel: tvm-ajay
+  name: k8s-triliovault-exporter-74f479869f
+  namespace: ajay
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: k8s-triliovault-exporter
+    uid: 9520fe23-c9a6-493f-84ab-d304f1dfc208
+  resourceVersion: "95138271"
+  selfLink: /apis/apps/v1/namespaces/ajay/replicasets/k8s-triliovault-exporter-74f479869f
+  uid: e1b94346-c20d-41a3-a9b9-1d8104c1785b
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k8s-triliovault-exporter
+      pod-template-hash: 74f479869f
+      rel: tvm-ajay
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+      creationTimestamp: null
+      labels:
+        app: k8s-triliovault-exporter
+        app.kubernetes.io/instance: k8s-triliovault-exporter
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+        pod-template-hash: 74f479869f
+        rel: tvm-ajay
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - env:
+        - name: INSTALL_NAMESPACE
+          value: ajay
+        - name: RELEASE_TAG
+          value: v2.1.0-beta.6
+        - name: APP_SCOPE
+          value: Namespaced
+        image: eu.gcr.io/amazing-chalice-243510/exporter:v2.1.0-beta.6
+        imagePullPolicy: IfNotPresent
+        name: triliovault-exporter
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - KILL
+            - AUDIT_WRITE
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1001
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      serviceAccount: k8s-triliovault
+      serviceAccountName: k8s-triliovault
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 1
+  fullyLabeledReplicas: 1
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1

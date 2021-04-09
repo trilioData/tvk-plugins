@@ -1,0 +1,61 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Target
+metadata:
+  annotations:
+    targetSpecHash: "3725611344"
+  creationTimestamp: "2021-04-05T09:41:45Z"
+  finalizers:
+  - target-delete-finalizer
+  generation: 2
+  name: sample-target
+  namespace: ms
+  resourceVersion: "93136738"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/ms/targets/sample-target
+  uid: 19c135cf-8f5e-4086-ae45-7053602b1c34
+spec:
+  enableBrowsing: true
+  nfsCredentials:
+    nfsExport: 34.66.17.160:/src/nfs/kubedata
+    nfsOptions: nfsvers=4
+  objectStoreCredentials:
+    accessKey: ""
+    bucketName: ""
+    secretKey: ""
+  type: NFS
+  vendor: Other
+status:
+  browsingEnabled: true
+  condition:
+  - reason: Target credentials changed.
+    timestamp: "2021-04-05T09:41:45Z"
+  - phase: Validation
+    reason: Validation InProgress
+    status: InProgress
+    timestamp: "2021-04-05T09:41:45Z"
+  - phase: Validation
+    reason: Validation Completed
+    status: Completed
+    timestamp: "2021-04-05T09:42:08Z"
+  - phase: TargetBrowsing
+    reason: Browsing is enabled, waiting for target browser deployment and service
+      to come up.
+    status: InProgress
+    timestamp: "2021-04-05T09:42:08Z"
+  - phase: TargetBrowsing
+    reason: Successfully enabled target browser
+    status: Completed
+    timestamp: "2021-04-05T10:02:36Z"
+  - phase: TargetBrowsing
+    reason: Updating existing target browser deployment and service
+    status: InProgress
+    timestamp: "2021-04-05T12:11:51Z"
+  - phase: TargetBrowsing
+    reason: Successfully enabled target browser
+    status: Completed
+    timestamp: "2021-04-05T12:11:51Z"
+  stats:
+    applicationCapacity: "8589934592"
+    applicationCapacityConsumed: "8589934592"
+    capacityOccupied: "280641536"
+    totalBackupPlans: 1
+  status: Available

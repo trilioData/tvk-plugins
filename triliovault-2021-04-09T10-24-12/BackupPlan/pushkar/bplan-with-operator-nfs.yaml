@@ -1,0 +1,58 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  creationTimestamp: "2021-04-06T11:07:54Z"
+  finalizers:
+  - backupplan-delete-finalizer
+  generation: 2
+  labels:
+    app.kubernetes.io/managed-by: k8s-triliovault-ui
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: bplan-with-operator-nfs
+  namespace: pushkar
+  resourceVersion: "98201018"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pushkar/backupplans/bplan-with-operator-nfs
+  uid: 47921ba7-50c0-4101-83cb-fa76e8714fe7
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: ""
+      incrementalCron:
+        schedule: ""
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: nfs-target-ns
+      namespace: pushkar
+      resourceVersion: "95621771"
+      uid: 4517fc76-0a3d-411e-9935-0ff7b2ceb7b7
+  backupPlanComponents:
+    custom:
+    - matchExpressions:
+      - key: app.kubernetes.io/managed-by
+        operator: Exists
+      matchLabels:
+        addonmanager.kubernetes.io/mode: Reconcile
+    helmReleases:
+    - k8s-triliovault-1617641738
+    operators:
+    - applicationResourceSelector:
+      - matchLabels:
+          addonmanager.kubernetes.io/mode: EnsureExists
+      customResources:
+      - groupVersionKind:
+          group: extensions
+          kind: Ingress
+          version: v1beta1
+        objects:
+        - k8s-triliovault-ingress
+      operatorId: mysql
+      operatorResourceSelector:
+      - matchLabels:
+          addonmanager.kubernetes.io/mode: Reconcile
+status:
+  applicationType: Custom
+  scope: App
+  status: Available

@@ -1,0 +1,57 @@
+INFO:root:Calling crd-parser to get the datastore
+INFO:root:Parsing the target-crd to get the list of datastores
+INFO:root:Fetched the list of datastores to be mounted
+INFO:root:mounting datastore of type s3
+INFO:root:mounting the S3 datastore by the name aws-target-ns
+INFO:root:writing the conf data to the conf file: aws-target-ns_vault.conf
+
+INFO:root:command: /usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/aws-target-ns_vault.conf &
+INFO:root:Executing command /usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/aws-target-ns_vault.conf &
+INFO:root:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/aws-target-ns_vault.conf & command execution starting time: 2021-04-06 12:47:21.766136
+INFO:root:waiting for command to complete...
+INFO:root:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/aws-target-ns_vault.conf & command execution completion time: 2021-04-06 12:47:23.774372
+INFO:root:Command:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/aws-target-ns_vault.conf &, ExitCode:0
+
+INFO:root:2021-04-06 12:47:23.776289: waiting for mount operation to complete.
+INFO:root:2021-04-06 12:47:25.778173: waiting for mount operation to complete.
+INFO:root:2021-04-06 12:47:25.779256: target mounted successfully.
+INFO:root:Removing all the vault files from the ./tmp directory
+
+
+I0406 12:47:27.099088      30 request.go:655] Throttling request took 1.031176349s, request: GET:https://10.96.0.1:443/apis/storage.k8s.io/v1beta1?timeout=32s
+{"component":"meta-mover","file":"cmd/metamover/metamover.go:10","func":"main.main","level":"info","msg":"Starting the Metadata Processing","time":"2021-04-06T12:47:28Z"}
+{"component":"meta-mover","file":"cmd/metamover/app/restore.go:53","func":"github.com/trilioData/k8s-triliovault/cmd/metamover/app.runRestoreE","level":"info","msg":"starting restore for t223, from namespace: pushkar","time":"2021-04-06T12:47:28Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/restore.go:40","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.Do","level":"info","msg":"Starting the restore process of the metadata from namespace: pushkar, restore resource: t223","time":"2021-04-06T12:47:28Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/restore.go:64","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.Do","level":"info","msg":"prepared the backup location: /triliodata/497ed961-4a58-4618-ba17-62441d8c4c09/017a96a7-9e1a-409f-8fe8-f8a80d7248af","time":"2021-04-06T12:47:28Z"}
+2021-04-06 12:47:29.058 12 INFO s3 [-] Starting worker thread[7f8d7ffff700].[00m
+2021-04-06 12:47:29.077 12 INFO s3 [-] Starting worker thread[7f8d7f7be700].[00m
+2021-04-06 12:47:29.097 12 INFO s3 [-] Starting worker thread[7f8d7ef7d700].[00m
+2021-04-06 12:47:29.140 12 INFO s3 [-] Starting worker thread[7f8d7e6fc700].[00m
+2021-04-06 12:47:29.156 12 INFO s3 [-] Starting worker thread[7f8d7debb700].[00m
+{"component":"meta-mover","file":"pkg/metamover/restore/commons.go:848","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.retrieveBackupInfoFromRestore","level":"info","msg":"Backup namespace [apps1] extracted from backupPlan.json present on target","time":"2021-04-06T12:47:29Z"}
+{"component":"meta-mover","file":"internal/helpers/commons.go:103","func":"github.com/trilioData/k8s-triliovault/internal/helpers.ValidateBackupLocation","level":"info","msg":"Checking if location present: /triliodata/497ed961-4a58-4618-ba17-62441d8c4c09/017a96a7-9e1a-409f-8fe8-f8a80d7248af","time":"2021-04-06T12:47:29Z"}
+{"component":"meta-mover","file":"internal/helpers/commons.go:108","func":"github.com/trilioData/k8s-triliovault/internal/helpers.ValidateBackupLocation","level":"info","msg":"Location /triliodata/497ed961-4a58-4618-ba17-62441d8c4c09/017a96a7-9e1a-409f-8fe8-f8a80d7248af present","time":"2021-04-06T12:47:29Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/restore.go:124","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.Do","level":"info","msg":"Metadata restored in [pushkar]","time":"2021-04-06T12:47:29Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/restore.go:134","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.Do","level":"info","msg":"hook execution is needed for  t223","time":"2021-04-06T12:47:29Z"}
+{"component":"meta-mover","file":"internal/apis/snapshot_manager.go:327","func":"github.com/trilioData/k8s-triliovault/internal/apis.(*FullSnapshot).CheckAndGetHookStatus","level":"info","msg":"t223 needs hook[mode Sequential] implementation","time":"2021-04-06T12:47:29Z"}
+{"component":"meta-mover","file":"internal/apis/snapshot_manager.go:381","func":"github.com/trilioData/k8s-triliovault/internal/apis.(*FullSnapshot).identifyHookResources","level":"info","msg":"identifying hook target resources","time":"2021-04-06T12:47:29Z"}
+{"component":"meta-mover","file":"internal/apis/snapshot_manager.go:353","func":"github.com/trilioData/k8s-triliovault/internal/apis.(*FullSnapshot).CheckAndGetHookStatus","level":"error","msg":"no matching resources found for hook hook-ns, mode Sequential","time":"2021-04-06T12:47:29Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/restore.go:147","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.Do","level":"error","msg":"no matching resources found for hook hook-ns, mode Sequential","time":"2021-04-06T12:47:29Z"}
+Error: restore metadata failed, with error: no matching resources found for hook hook-ns, mode Sequential
+Usage:
+  metaMover restore [flags]
+
+Flags:
+  -h, --help                    help for restore
+      --name string             Name of the Restore CR from which the metadata is to be applied to the cluster [Required]
+      --run-primitive-restore   Runs restores for all category GKs except primitiveCategoryGK in 'Restore' phase
+                                which restores objects depending upon value set for this flag.
+                                
+                                If '--run-primitive-restore' flag is set then, restore for primitiveCategoryGK such as storageClass, etc. will be done.
+                                If '--run-primitive-restore' flag is not set then, restore will run for all category GKs except primitiveCategoryGK such
+                                as storageClass, etc.
+
+Global Flags:
+  -n, --namespace string   Namespace from which the restore CR is to be fetched, default value is: [default] (default "default")
+
+{"component":"meta-mover","file":"cmd/metamover/app/root.go:46","func":"github.com/trilioData/k8s-triliovault/cmd/metamover/app.Execute","level":"fatal","msg":"restore metadata failed, with error: no matching resources found for hook hook-ns, mode Sequential","time":"2021-04-06T12:47:29Z"}

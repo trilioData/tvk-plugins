@@ -1,0 +1,21 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"storage.k8s.io/v1","kind":"StorageClass","metadata":{"annotations":{},"labels":{"app":"back-bknd-frontend","trilio":"back-bknd","triliobackupall":"back-bknd","triliobackupother":"other"},"name":"back-bknd-sc-test"},"parameters":{"type":"pd-standard"},"provisioner":"pd.csi.storage.gke.io","volumeBindingMode":"WaitForFirstConsumer"}
+  creationTimestamp: "2021-02-25T02:28:00Z"
+  labels:
+    app: back-bknd-frontend
+    trilio: back-bknd
+    triliobackupall: back-bknd
+    triliobackupother: other
+  name: back-bknd-sc-test
+  resourceVersion: "22767885"
+  selfLink: /apis/storage.k8s.io/v1/storageclasses/back-bknd-sc-test
+  uid: 0fd95f5f-7adc-40e8-8dc7-d51ac54f26b4
+parameters:
+  type: pd-standard
+provisioner: pd.csi.storage.gke.io
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer

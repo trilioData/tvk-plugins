@@ -1,0 +1,24 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Backup
+metadata:
+  creationTimestamp: "2021-03-30T17:38:18Z"
+  generation: 1
+  name: backup-sample
+  namespace: vinod4
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: application-sample
+    uid: 594ae503-5865-4d92-be0c-b17e25081897
+  resourceVersion: "80427006"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/vinod4/backups/backup-sample
+  uid: d6e4b3f0-c076-4bff-b1ee-5ceca90e8cc4
+spec:
+  backupPlan:
+    apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: application-sample
+    namespace: vinod4
+    resourceVersion: "80426991"
+    uid: 594ae503-5865-4d92-be0c-b17e25081897
+  type: Incremental

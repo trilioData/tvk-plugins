@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    deployment.kubernetes.io/desired-replicas: "1"
+    deployment.kubernetes.io/max-replicas: "2"
+    deployment.kubernetes.io/revision: "1"
+    meta.helm.sh/release-name: k8s-triliovault-1617624664
+    meta.helm.sh/release-namespace: ms
+  creationTimestamp: "2021-04-05T12:11:40Z"
+  generation: 1
+  labels:
+    app: k8s-triliovault-web-backend
+    app.kubernetes.io/instance: k8s-triliovault-web-backend
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    pod-template-hash: 6f784cbc
+    release: k8s-triliovault-1617624664
+  name: k8s-triliovault-web-backend-6f784cbc
+  namespace: ms
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: k8s-triliovault-web-backend
+    uid: b3716618-c5e9-464c-8d9e-1014ff798976
+  resourceVersion: "93104358"
+  selfLink: /apis/apps/v1/namespaces/ms/replicasets/k8s-triliovault-web-backend-6f784cbc
+  uid: d1128fea-7999-4471-8644-903d80580ca7
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k8s-triliovault-web-backend
+      pod-template-hash: 6f784cbc
+      release: k8s-triliovault-1617624664
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: k8s-triliovault-web-backend
+        app.kubernetes.io/instance: k8s-triliovault-web-backend
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+        pod-template-hash: 6f784cbc
+        release: k8s-triliovault-1617624664
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - env:
+        - name: INSTALL_NAMESPACE
+          value: ms
+        - name: APP_SCOPE
+          value: Namespaced
+        - name: RELEASE
+          value: k8s-triliovault-1617624664
+        - name: RELEASE_TAG
+          value: 3c8841d1e772bffb2ea59b86b9812808c2a3bd6e
+        - name: RESTORE_NAMESPACES
+          value: manoj-res,ms,ms-res,ms-test,restore-namespace,triliovault-integration
+        - name: WEB_SESSION_ACCESS_TTL
+          value: 1h
+        - name: WEB_SESSION_REFRESH_TTL
+          value: 24h
+        - name: WEB_SESSION_MAX_INACTIVITY_TTL
+          value: 15m
+        image: gcr.io/amazing-chalice-243510/web-backend:3c8841d1e772bffb2ea59b86b9812808c2a3bd6e
+        imagePullPolicy: IfNotPresent
+        name: triliovault-backend
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - KILL
+            - AUDIT_WRITE
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1001
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      serviceAccount: k8s-triliovault
+      serviceAccountName: k8s-triliovault
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 1
+  fullyLabeledReplicas: 1
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1

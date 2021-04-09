@@ -332,6 +332,9 @@ func (l *LogCollector) writeLogs(resourceDir string, obj unstructured.Unstructur
 	var podObj corev1.Pod
 	err := l.k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: objNs}, &podObj)
 	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
 		log.Errorf("Unable to get the object : %v", err)
 		return err
 	}

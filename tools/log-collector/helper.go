@@ -50,7 +50,7 @@ var (
 	scheme = runtime.NewScheme()
 
 	// CoreGRPResources ... List of core group resources collected by log collector
-	CoreGRPResources    = []string{"Pod", "PersistentVolumeClaim", "PersistentVolume", "Service"}
+	CoreGRPResources    = []string{"Pod", "PersistentVolumeClaim", "PersistentVolume", "Service", "ConfigMap"}
 	K8STrilioVaultLabel = map[string]string{"app.kubernetes.io/part-of": "k8s-triliovault"}
 )
 

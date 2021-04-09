@@ -1,0 +1,140 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2021-04-06T12:56:34Z"
+  generateName: res4-metamover-82iioq-
+  labels:
+    app.kubernetes.io/instance: res4-metamover-82iioq
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    controller-owner-uid: 691d4cd6-1aa7-4d95-83ab-6f1ce292ffb3
+    controller-uid: 38fedcb4-c0ff-4742-b365-500e8cfb9761
+    job-name: res4-metamover-82iioq
+  name: res4-metamover-82iioq-h8nm6
+  namespace: pushkar
+  ownerReferences:
+  - apiVersion: batch/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Job
+    name: res4-metamover-82iioq
+    uid: 38fedcb4-c0ff-4742-b365-500e8cfb9761
+  resourceVersion: "95819229"
+  selfLink: /api/v1/namespaces/pushkar/pods/res4-metamover-82iioq-h8nm6
+  uid: 4581b0d7-1d9a-4bed-aa3e-d1f369e6c7dd
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/arch
+            operator: In
+            values:
+            - amd64
+  containers:
+  - command:
+    - /bin/sh
+    - -c
+    - python /opt/tvk/datastore-attacher/mount_utility/mount_by_target_crd/mount_datastores.py
+      --namespace=pushkar --target-name=nfs-target-ns && /opt/tvk/metamover restore
+      --name res4 --namespace pushkar
+    image: eu.gcr.io/amazing-chalice-243510/metamover:v2.1.0-beta.6
+    imagePullPolicy: IfNotPresent
+    name: metamover
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 10m
+        memory: 10Mi
+    securityContext:
+      allowPrivilegeEscalation: true
+      capabilities:
+        add:
+        - SYS_ADMIN
+        drop:
+        - ALL
+      privileged: true
+      readOnlyRootFilesystem: false
+      runAsNonRoot: false
+      runAsUser: 0
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: triliovault-restore-691d4cd6-1aa7-4d95-83ab-6f1ce292ffb3-thfgrc
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: gke-dev-cluster-dev-cluster-pool-eab0992b-lsr9
+  priority: 0
+  restartPolicy: Never
+  schedulerName: default-scheduler
+  securityContext:
+    runAsNonRoot: false
+    runAsUser: 0
+  serviceAccount: triliovault-restore-691d4cd6-1aa7-4d95-83ab-6f1ce292ffb3
+  serviceAccountName: triliovault-restore-691d4cd6-1aa7-4d95-83ab-6f1ce292ffb3
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: triliovault-restore-691d4cd6-1aa7-4d95-83ab-6f1ce292ffb3-thfgrc
+    secret:
+      defaultMode: 420
+      secretName: triliovault-restore-691d4cd6-1aa7-4d95-83ab-6f1ce292ffb3-thfgrc
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2021-04-06T12:56:34Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2021-04-06T12:56:46Z"
+    message: 'containers with unready status: [metamover]'
+    reason: ContainersNotReady
+    status: "False"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2021-04-06T12:56:46Z"
+    message: 'containers with unready status: [metamover]'
+    reason: ContainersNotReady
+    status: "False"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2021-04-06T12:56:34Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: docker://7b2fc23915e114781a42a04b4468aebd348eefca9bbff7dd22125b00f73c2b68
+    image: eu.gcr.io/amazing-chalice-243510/metamover:v2.1.0-beta.6
+    imageID: docker-pullable://eu.gcr.io/amazing-chalice-243510/metamover@sha256:ff2ec145bb7f01d9c0eda0a3b804860e910282d134c7ec43dd6f180c507edbeb
+    lastState: {}
+    name: metamover
+    ready: false
+    restartCount: 0
+    started: false
+    state:
+      terminated:
+        containerID: docker://7b2fc23915e114781a42a04b4468aebd348eefca9bbff7dd22125b00f73c2b68
+        exitCode: 1
+        finishedAt: "2021-04-06T12:56:45Z"
+        reason: Error
+        startedAt: "2021-04-06T12:56:36Z"
+  hostIP: 10.142.0.16
+  phase: Failed
+  podIP: 10.92.2.121
+  podIPs:
+  - ip: 10.92.2.121
+  qosClass: Burstable
+  startTime: "2021-04-06T12:56:34Z"

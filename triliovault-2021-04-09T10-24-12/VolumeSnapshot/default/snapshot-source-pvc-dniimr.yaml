@@ -1,0 +1,25 @@
+apiVersion: snapshot.storage.k8s.io/v1beta1
+kind: VolumeSnapshot
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"snapshot.storage.k8s.io/v1beta1","kind":"VolumeSnapshot","metadata":{"annotations":{},"name":"snapshot-source-pvc-dniimr","namespace":"default"},"spec":{"source":{"persistentVolumeClaimName":"source-pvc-dniimr"},"volumeSnapshotClassName":"default-snapshot-class"}}
+  creationTimestamp: "2021-03-16T12:47:06Z"
+  finalizers:
+  - snapshot.storage.kubernetes.io/volumesnapshot-as-source-protection
+  - snapshot.storage.kubernetes.io/volumesnapshot-bound-protection
+  generation: 1
+  name: snapshot-source-pvc-dniimr
+  namespace: default
+  resourceVersion: "57165722"
+  selfLink: /apis/snapshot.storage.k8s.io/v1beta1/namespaces/default/volumesnapshots/snapshot-source-pvc-dniimr
+  uid: 4a065a75-f3af-4c00-ba1b-420e7008ebc2
+spec:
+  source:
+    persistentVolumeClaimName: source-pvc-dniimr
+  volumeSnapshotClassName: default-snapshot-class
+status:
+  boundVolumeSnapshotContentName: snapcontent-4a065a75-f3af-4c00-ba1b-420e7008ebc2
+  creationTime: "2021-03-16T12:47:20Z"
+  readyToUse: true
+  restoreSize: 1Gi

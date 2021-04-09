@@ -1,0 +1,87 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Backup
+metadata:
+  creationTimestamp: "2021-04-06T11:29:00Z"
+  finalizers:
+  - backup-cleanup-finalizer
+  generation: 1
+  labels:
+    app.kubernetes.io/managed-by: k8s-triliovault-ui
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: backup-with-scheduling-policy-nfs
+  namespace: pushkar
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: bplan-with-scheduling-policy-nfs
+    uid: e43efe9c-059e-44bd-a95d-2b2547f698ca
+  resourceVersion: "95663661"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pushkar/backups/backup-with-scheduling-policy-nfs
+  uid: d04882a2-f352-4fe7-825d-2fc132e94111
+spec:
+  backupPlan:
+    apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: bplan-with-scheduling-policy-nfs
+    namespace: pushkar
+    resourceVersion: "95619359"
+    uid: e43efe9c-059e-44bd-a95d-2b2547f698ca
+  type: Full
+status:
+  backupScope: Namespace
+  completionTimestamp: "2021-04-06T11:29:36Z"
+  condition:
+  - phase: MetaSnapshot
+    reason: MetaSnapshot InProgress
+    status: InProgress
+    timestamp: "2021-04-06T11:29:00Z"
+  - phase: MetaSnapshot
+    reason: MetaSnapshot Completed
+    status: Completed
+    timestamp: "2021-04-06T11:29:21Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload InProgress
+    status: InProgress
+    timestamp: "2021-04-06T11:29:21Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload Completed
+    status: Completed
+    timestamp: "2021-04-06T11:29:36Z"
+  location: e43efe9c-059e-44bd-a95d-2b2547f698ca/d04882a2-f352-4fe7-825d-2fc132e94111
+  percentageCompletion: 100
+  phase: MetadataUpload
+  phaseStatus: Completed
+  size: "0"
+  snapshot:
+    custom:
+      resources:
+      - groupVersionKind:
+          kind: Secret
+          version: v1
+        objects:
+        - default-token-cd6lb
+        - gcecreds
+        - ssl-certs
+      - groupVersionKind:
+          kind: ServiceAccount
+          version: v1
+        objects:
+        - default
+      - groupVersionKind:
+          kind: ResourceQuota
+          version: v1
+        objects:
+        - gke-resource-quotas
+  startTimestamp: "2021-04-06T11:29:00Z"
+  stats:
+    hookExists: false
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: nfs-target-ns
+      namespace: pushkar
+      resourceVersion: "95533239"
+      uid: 4517fc76-0a3d-411e-9935-0ff7b2ceb7b7
+  status: Available
+  type: Full

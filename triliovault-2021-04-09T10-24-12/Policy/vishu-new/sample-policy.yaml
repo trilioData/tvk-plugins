@@ -1,0 +1,22 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Policy
+metadata:
+  creationTimestamp: "2021-04-08T20:00:07Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/managed-by: k8s-triliovault-ui
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: sample-policy
+  namespace: vishu-new
+  resourceVersion: "101541824"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/vishu-new/policies/sample-policy
+  uid: 61b2755f-84b2-468b-881c-0656481a7563
+spec:
+  cleanupConfig:
+    backupDays: 28
+  default: true
+  retentionConfig:
+    latest: 1
+  timeoutConfig: {}
+  type: Retention

@@ -1,0 +1,14 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  creationTimestamp: "2021-03-09T18:50:59Z"
+  name: csi-gce-pd-ext3
+  resourceVersion: "48552520"
+  selfLink: /apis/storage.k8s.io/v1/storageclasses/csi-gce-pd-ext3
+  uid: 886e65d2-68b4-4551-88c8-47becf7f6da9
+parameters:
+  csi.storage.k8s.io/fstype: ext3
+  type: pd-standard
+provisioner: pd.csi.storage.gke.io
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer

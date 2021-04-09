@@ -1,0 +1,63 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  creationTimestamp: "2021-02-05T11:27:26Z"
+  generation: 1
+  name: cust-ozjnc
+  namespace: niranjan2
+  resourceVersion: "33830582"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/niranjan2/backupplans/cust-ozjnc
+  uid: 1ff81b07-0839-42e2-b637-ed2e278088e5
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: 0 10 15 * *
+      incrementalCron:
+        schedule: 0 10 15 * *
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-targetqhbkwmj-injector
+      namespace: niranjan2
+      resourceVersion: "1362960"
+      uid: 9d0e0651-0fce-47fe-9a92-9339f468a34d
+  backupNamespace: niranjan2
+  backupPlanComponents:
+    custom:
+    - matchLabels:
+        triliobackupall: web-backend-grve
+status:
+  fullBackupCron:
+    apiVersion: batch/v1beta1
+    kind: CronJob
+    name: cust-ozjnc-full-156nvs
+    namespace: niranjan2
+    resourceVersion: "1364101"
+    uid: 7d569031-f319-4022-802c-2eef51e53654
+  incrementalCron:
+    apiVersion: batch/v1beta1
+    kind: CronJob
+    name: cust-ozjnc-incremental-7mrx3r
+    namespace: niranjan2
+    resourceVersion: "1364100"
+    uid: fb7f28c4-002b-4183-99f7-9d6555f74b69
+  stats:
+    backupSummary:
+      lastSuccessfulBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: cust-ozjnc-d42ee4d8-88bf-4287-9b87-10540da73b2a
+        namespace: niranjan2
+        resourceVersion: "15191900"
+        uid: b1f871f9-24a7-41ce-8b69-f9e4b493d3e6
+      latestBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: cust-ozjnc-f381bb69-7f5c-4853-92c4-c41ff03c185b
+        namespace: niranjan2
+        resourceVersion: "15191908"
+        uid: 21b8f2bb-dbfc-4e7a-b3c7-dcc0593cd700
+      totalAvailableBackups: 2
+    restoreSummary: {}
+  status: Available

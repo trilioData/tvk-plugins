@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    deployment.kubernetes.io/desired-replicas: "1"
+    deployment.kubernetes.io/max-replicas: "2"
+    deployment.kubernetes.io/revision: "1"
+  creationTimestamp: "2021-02-04T06:28:59Z"
+  generation: 2
+  labels:
+    app: k8s-triliovault-backend
+    app.kubernetes.io/instance: k8s-triliovault-backend
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    pod-template-hash: 86b7c9bb5c
+    release: k8s-triliovault-1612420122
+  name: k8s-triliovault-backend-86b7c9bb5c
+  namespace: vinod
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: k8s-triliovault-backend
+    uid: 4d0a9fb0-6598-4258-b4d6-4f8ddeab9cfc
+  resourceVersion: "1327145"
+  selfLink: /apis/apps/v1/namespaces/vinod/replicasets/k8s-triliovault-backend-86b7c9bb5c
+  uid: ecacff1c-2a4c-4259-96b7-fba3caef4dd1
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: k8s-triliovault-backend
+      pod-template-hash: 86b7c9bb5c
+      release: k8s-triliovault-1612420122
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: k8s-triliovault-backend
+        app.kubernetes.io/instance: k8s-triliovault-backend
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+        pod-template-hash: 86b7c9bb5c
+        release: k8s-triliovault-1612420122
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - env:
+        - name: INSTALL_NAMESPACE
+          value: vinod
+        - name: APP_SCOPE
+          value: Namespaced
+        - name: RELEASE
+          value: k8s-triliovault-1612420122
+        - name: RESTORE_NAMESPACES
+          value: vinod-namespace
+        image: gcr.io/amazing-chalice-243510/web-backend:master
+        imagePullPolicy: IfNotPresent
+        name: triliovault-backend
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - KILL
+            - AUDIT_WRITE
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1001
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      serviceAccount: k8s-triliovault
+      serviceAccountName: k8s-triliovault
+      terminationGracePeriodSeconds: 30
+status:
+  observedGeneration: 2
+  replicas: 0

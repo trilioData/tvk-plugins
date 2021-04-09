@@ -1,0 +1,261 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Restore
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"triliovault.trilio.io/v1","kind":"Restore","metadata":{"annotations":{},"name":"sample-restore-3","namespace":"ms"},"spec":{"hookConfig":{"hooks":[{"containerRegex":"redis","hook":{"name":"sample-hookaction"},"podSelector":{"labels":[{"matchLabels":{"app":"redis","release":"m-redis"}}]}}],"mode":"Sequential"},"restoreNamespace":"ms-res","skipIfAlreadyExists":true,"source":{"backup":{"name":"sample-backup"},"type":"Backup"}}}
+  creationTimestamp: "2021-04-05T13:59:03Z"
+  generation: 1
+  name: sample-restore-3
+  namespace: ms
+  resourceVersion: "93365763"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/ms/restores/sample-restore-3
+  uid: c37cb08c-348f-4ab0-abf8-cf1fcfd2c424
+spec:
+  hookConfig:
+    hooks:
+    - containerRegex: redis
+      hook:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Hook
+        name: sample-hookaction
+        namespace: ms
+        resourceVersion: "92797996"
+        uid: f7cffc2a-dec7-4fa0-93ae-22db6a447a6f
+      podSelector:
+        labels:
+        - matchLabels:
+            app: redis
+            release: m-redis
+    mode: Sequential
+    podReadyWaitSeconds: 120
+  restoreNamespace: ms-res
+  skipIfAlreadyExists: true
+  source:
+    backup:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Backup
+      name: sample-backup
+      namespace: ms
+      resourceVersion: "93241591"
+      uid: 2d6330c0-8f9a-4691-a032-76a6952a22e3
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-target
+      namespace: ms
+      resourceVersion: "93136738"
+      uid: 19c135cf-8f5e-4086-ae45-7053602b1c34
+    type: Backup
+status:
+  hookStatus:
+    hookPriorityStatus:
+    - hooks:
+      - hook:
+          apiVersion: triliovault.trilio.io/v1
+          kind: Hook
+          name: sample-hookaction
+          namespace: ms
+          resourceVersion: "92797996"
+          uid: f7cffc2a-dec7-4fa0-93ae-22db6a447a6f
+        hookTarget:
+        - containerRegex: redis
+          owner:
+            groupVersionKind:
+              group: apps
+              kind: StatefulSet
+              version: v1
+            name: m-redis-master
+        postHookConf:
+          maxRetryCount: 10
+          timeoutSeconds: 30
+        preHookConf:
+          maxRetryCount: 10
+          timeoutSeconds: 30
+      priority: 0
+    podReadyWaitSeconds: 120
+  restoreApplication:
+    operators:
+    - snapshot:
+        dataSnapshots:
+        - location: 683e6f3c-7422-4c4a-b174-1ff5b4dddd1c/2d6330c0-8f9a-4691-a032-76a6952a22e3/operator/sample-fluxcd-helm-release/data-snapshot/redis-data-m-redis-master-0
+          persistentVolumeClaimMetadata: |
+            {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"gke-dev-cluster-dev-cluster-pool-eab0992b-5s14"},"creationTimestamp":"2021-04-05T10:37:52Z","finalizers":["kubernetes.io/pvc-protection"],"labels":{"app":"redis","component":"master","heritage":"Helm","release":"m-redis","role":"master"},"name":"redis-data-m-redis-master-0","namespace":"ms","resourceVersion":"92927098","selfLink":"/api/v1/namespaces/ms/persistentvolumeclaims/redis-data-m-redis-master-0","uid":"8a244c22-befa-44c9-9768-a8d4aa918897"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"8Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-8a244c22-befa-44c9-9768-a8d4aa918897"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"8Gi"},"phase":"Bound"}}
+          persistentVolumeClaimName: redis-data-m-redis-master-0
+          podContainersMap:
+          - containers:
+            - redis
+            - volume-permissions
+            podName: m-redis-master-0
+          size: "0"
+          snapshotSize: "0"
+        operatorId: sample-fluxcd-helm-release
+        operatorResources:
+        - groupVersionKind:
+            kind: Service
+            version: v1
+          objects:
+          - ho-helm-operator
+        - groupVersionKind:
+            group: apps
+            kind: Deployment
+            version: v1
+          objects:
+          - ho-helm-operator
+        warnings:
+        - |
+          Resource Modified:
+          GVK: [rbac.authorization.k8s.io/v1, Kind=ClusterRoleBinding]
+          Name: [ho-helm-operator]
+          subjects[0].namespace: [ms] -> [ms-res]
+          metadata.name: [ho-helm-operator] -> [ho-helm-operator-hldz]
+        - |
+          Resource Modified:
+          GVK: [rbac.authorization.k8s.io/v1, Kind=ClusterRoleBinding]
+          Name: [ho-helm-operator]
+          subjects[0].namespace: [ms] -> [ms-res]
+          metadata.name: [ho-helm-operator] -> [ho-helm-operator-krpo]
+      status:
+        existingResource:
+        - groupVersionKind:
+            kind: Secret
+            version: v1
+          objects:
+          - ho-helm-operator-git-deploy
+          - redis-auth
+        - groupVersionKind:
+            kind: ConfigMap
+            version: v1
+          objects:
+          - ho-helm-operator-kube-config
+        - groupVersionKind:
+            kind: ServiceAccount
+            version: v1
+          objects:
+          - ho-helm-operator
+        - groupVersionKind:
+            group: rbac.authorization.k8s.io
+            kind: ClusterRole
+            version: v1
+          objects:
+          - ho-helm-operator
+        - groupVersionKind:
+            group: rbac.authorization.k8s.io
+            kind: ClusterRoleBinding
+            version: v1
+          objects:
+          - ho-helm-operator
+        - groupVersionKind:
+            group: apiextensions.k8s.io
+            kind: CustomResourceDefinition
+            version: v1beta1
+          objects:
+          - helmreleases.helm.fluxcd.io
+        newResourcesAdded:
+        - groupVersionKind:
+            group: rbac.authorization.k8s.io
+            kind: ClusterRoleBinding
+            version: v1
+          objects:
+          - ho-helm-operator-krpo
+        - groupVersionKind:
+            group: rbac.authorization.k8s.io
+            kind: ClusterRoleBinding
+            version: v1
+          objects:
+          - ho-helm-operator-hldz
+        phase: MetadataRestore
+        phaseStatus: Completed
+        reason: Restore MetaData Operation Successful
+        skippedResources:
+        - groupVersionKind:
+            group: storage.k8s.io
+            kind: StorageClass
+            version: v1
+          objects:
+          - csi-gce-pd
+        - groupVersionKind:
+            group: apiextensions.k8s.io
+            kind: CustomResourceDefinition
+            version: v1beta1
+          objects:
+          - helmreleases.helm.fluxcd.io
+        - groupVersionKind:
+            kind: Secret
+            version: v1
+          objects:
+          - ho-helm-operator-git-deploy
+          - redis-auth
+        - groupVersionKind:
+            kind: ServiceAccount
+            version: v1
+          objects:
+          - ho-helm-operator
+        - groupVersionKind:
+            group: rbac.authorization.k8s.io
+            kind: ClusterRole
+            version: v1
+          objects:
+          - ho-helm-operator
+        - groupVersionKind:
+            group: rbac.authorization.k8s.io
+            kind: ClusterRoleBinding
+            version: v1
+          objects:
+          - ho-helm-operator
+        - groupVersionKind:
+            kind: ConfigMap
+            version: v1
+          objects:
+          - ho-helm-operator-kube-config
+        - groupVersionKind:
+            group: apiextensions.k8s.io
+            kind: CustomResourceDefinition
+            version: v1beta1
+          objects:
+          - helmreleases.helm.fluxcd.io
+        - groupVersionKind:
+            kind: Secret
+            version: v1
+          objects:
+          - ho-helm-operator-git-deploy
+          - redis-auth
+        - groupVersionKind:
+            kind: ServiceAccount
+            version: v1
+          objects:
+          - ho-helm-operator
+        - groupVersionKind:
+            group: rbac.authorization.k8s.io
+            kind: ClusterRole
+            version: v1
+          objects:
+          - ho-helm-operator
+        - groupVersionKind:
+            group: rbac.authorization.k8s.io
+            kind: ClusterRoleBinding
+            version: v1
+          objects:
+          - ho-helm-operator
+        - groupVersionKind:
+            kind: ConfigMap
+            version: v1
+          objects:
+          - ho-helm-operator-kube-config
+        - groupVersionKind:
+            kind: Service
+            version: v1
+          objects:
+          - ho-helm-operator
+        - groupVersionKind:
+            group: apps
+            kind: Deployment
+            version: v1
+          objects:
+          - ho-helm-operator
+        - groupVersionKind:
+            group: helm.fluxcd.io
+            kind: HelmRelease
+            version: v1
+          objects:
+          - m-redis

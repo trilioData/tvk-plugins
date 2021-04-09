@@ -1,0 +1,176 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Backup
+metadata:
+  creationTimestamp: "2021-04-06T06:51:41Z"
+  finalizers:
+  - backup-cleanup-finalizer
+  generation: 1
+  name: bk1
+  namespace: ajay
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: bp
+    uid: 29bf53f2-5c99-4d82-af16-1fc0f9627db0
+  resourceVersion: "95199232"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/ajay/backups/bk1
+  uid: dc04e364-055a-4bde-bbed-50b7fcfbd727
+spec:
+  backupPlan:
+    apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: bp
+    namespace: ajay
+    resourceVersion: "95161625"
+    uid: 29bf53f2-5c99-4d82-af16-1fc0f9627db0
+  type: Full
+status:
+  applicationType: Custom
+  backupScope: App
+  completionTimestamp: "2021-04-06T07:10:13Z"
+  condition:
+  - phase: MetaSnapshot
+    reason: MetaSnapshot InProgress
+    status: InProgress
+    timestamp: "2021-04-06T06:51:41Z"
+  - phase: MetaSnapshot
+    reason: MetaSnapshot Completed
+    status: Completed
+    timestamp: "2021-04-06T06:52:22Z"
+  - phase: DataSnapshot
+    reason: DataSnapshot InProgress
+    status: InProgress
+    timestamp: "2021-04-06T06:52:22Z"
+  - phase: DataSnapshot
+    reason: DataSnapshot Completed
+    status: Completed
+    timestamp: "2021-04-06T06:53:52Z"
+  - phase: DataUpload
+    reason: DataUpload InProgress
+    status: InProgress
+    timestamp: "2021-04-06T06:53:52Z"
+  - phase: DataUpload
+    reason: DataUpload Completed
+    status: Completed
+    timestamp: "2021-04-06T07:09:47Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload InProgress
+    status: InProgress
+    timestamp: "2021-04-06T07:09:47Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload Completed
+    status: Completed
+    timestamp: "2021-04-06T07:10:13Z"
+  location: 29bf53f2-5c99-4d82-af16-1fc0f9627db0/dc04e364-055a-4bde-bbed-50b7fcfbd727
+  percentageCompletion: 100
+  phase: MetadataUpload
+  phaseStatus: Completed
+  size: "5511577600"
+  snapshot:
+    custom:
+      dataSnapshots:
+      - backupType: Full
+        conditions:
+        - phase: Snapshot
+          reason: Snapshot InProgress
+          status: InProgress
+          timestamp: "2021-04-06T06:52:22Z"
+        - phase: Snapshot
+          reason: Snapshot Completed
+          status: Completed
+          timestamp: "2021-04-06T06:53:52Z"
+        - phase: Upload
+          reason: Upload InProgress
+          status: InProgress
+          timestamp: "2021-04-06T06:53:52Z"
+        - phase: Upload
+          reason: Upload Completed
+          status: Completed
+          timestamp: "2021-04-06T07:09:47Z"
+        location: 29bf53f2-5c99-4d82-af16-1fc0f9627db0/dc04e364-055a-4bde-bbed-50b7fcfbd727/custom/data-snapshot/fs-pvc
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"gke-dev-cluster-dev-cluster-pool-eab0992b-5s14"},"creationTimestamp":"2021-04-06T05:47:02Z","finalizers":["kubernetes.io/pvc-protection"],"name":"fs-pvc","namespace":"ajay","resourceVersion":"95112862","selfLink":"/api/v1/namespaces/ajay/persistentvolumeclaims/fs-pvc","uid":"bb9b13b8-9458-4d6b-a595-62e684ec4f79"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"20Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-bb9b13b8-9458-4d6b-a595-62e684ec4f79"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"20Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: fs-pvc
+        podContainersMap:
+        - containers:
+          - nginx
+          podName: nginx-5465875c9d-fhbpp
+        size: "5511577600"
+        snapshotSize: "21474836480"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: fs-pvc-03371d6a-5f1c-43d8-a37a-d704631f68ca
+            namespace: ajay
+            resourceVersion: "95169743"
+            uid: 995ac44e-b0c3-4cab-b1e0-ad80ac1744fb
+      resources:
+      - groupVersionKind:
+          group: apps
+          kind: Deployment
+          version: v1
+        objects:
+        - nginx
+      - groupVersionKind:
+          group: policy
+          kind: PodSecurityPolicy
+          version: v1beta1
+        objects:
+        - aj-pod-sec-policy
+      - groupVersionKind:
+          group: rbac.authorization.k8s.io
+          kind: ClusterRoleBinding
+          version: v1
+        objects:
+        - aj-clusterrolebinding-test
+      - groupVersionKind:
+          group: rbac.authorization.k8s.io
+          kind: ClusterRole
+          version: v1
+        objects:
+        - aj-clusterrole-test
+      - groupVersionKind:
+          group: admissionregistration.k8s.io
+          kind: MutatingWebhookConfiguration
+          version: v1
+        objects:
+        - aj-mutation-webhook
+      - groupVersionKind:
+          group: admissionregistration.k8s.io
+          kind: ValidatingWebhookConfiguration
+          version: v1
+        objects:
+        - aj-validation-webhook
+      - groupVersionKind:
+          group: scheduling.k8s.io
+          kind: PriorityClass
+          version: v1
+        objects:
+        - aj-high-priority
+      - groupVersionKind:
+          group: storage.k8s.io
+          kind: StorageClass
+          version: v1
+        objects:
+        - csi-gce-pd
+      warnings:
+      - |
+        Found Dependant Resource:
+        GVK: [storage.k8s.io/v1, Kind=StorageClass]
+        Name: [csi-gce-pd]
+  startTimestamp: "2021-04-06T06:51:41Z"
+  stats:
+    hookExists: false
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: s3
+      namespace: ajay
+      resourceVersion: "95139135"
+      uid: 29af3228-93bf-45fc-943a-7f7fe23fd6fc
+  status: Available
+  type: Full

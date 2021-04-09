@@ -1,0 +1,28 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Policy
+metadata:
+  creationTimestamp: "2021-04-06T10:13:49Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/managed-by: k8s-triliovault-ui
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: clone-retention-policy-ns
+  namespace: pushkar
+  resourceVersion: "95527875"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pushkar/policies/clone-retention-policy-ns
+  uid: fb3d1d42-eb61-4f4e-8065-ed2e50af442e
+spec:
+  cleanupConfig:
+    backupDays: 1
+  default: false
+  retentionConfig:
+    dateOfMonth: 1
+    dayOfWeek: Monday
+    latest: 1
+    monthOfYear: April
+    monthly: 1
+    weekly: 1
+    yearly: 1
+  timeoutConfig: {}
+  type: Retention

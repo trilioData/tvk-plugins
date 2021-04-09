@@ -1,0 +1,8 @@
+I0317 12:26:31.790701       1 request.go:655] Throttling request took 1.046452258s, request: GET:https://10.96.0.1:443/apis/networking.k8s.io/v1beta1?timeout=32s
+time="2021-03-17T12:26:31Z" level=info msg="Setting up the APP_SCOPE environment"
+TargetCollector is collecting from namespace:  
+ApplicationCollector is collecting from namespace:  
+BackupCollector is collecting from namespace:  
+RestoreCollector is collecting from namespace:  
+Suggestion: set the env CLUSTER_NAME to provide custom cluster name.
+ServerCollector is collecting from namespace:  pmath2

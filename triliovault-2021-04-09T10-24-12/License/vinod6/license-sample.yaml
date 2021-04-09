@@ -1,0 +1,42 @@
+apiVersion: triliovault.trilio.io/v1
+kind: License
+metadata:
+  annotations:
+    generation: "1"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"triliovault.trilio.io/v1","kind":"License","metadata":{"annotations":{},"name":"license-sample","namespace":"vinod6"},"spec":{"key":"xLkNDgwKD3jafZJNa8MwDIbv/hWGnQ2xE2dOIYfRdjDWdmP92Fm2FWpok+A4Zf33S9aNlaRUvhhJfvRK8sMnWroET2NOhZhINUm6SyQ4mXqE4KpyBgHpv+V9kEUxizmZW9dn0IHlzx5x4x0cCJjgTkhHGcG3SA7OYNngDn1zTckFWYIrA5ZQGpx/1c6fLyL62gmLJIsUmVbHGsrziPyBdg+BrNqjRv9WbJuOfhVmnKzRn9C/zIYvVSaFTqVgmUhSxjlqlsVxwYq40NmjKnh3yHq+ojcs7/zsF5DcBSwuTQ/L55vd03ax+WPI+yJMVeMNESUcsanBoCWvrcbtqEeaa8yQWxExIRWyxFpgWknOVJoajSpTWiP5mTmMVns9/vfWmz00eOd3TKGT4sJwRTmPaK+OriqLzTf7npvNMEUCIFQoSNjU9iBNn5HJlPr8Dysj15x66AVj9S5i94pFUIMBAiEAsruFR+9U/qXestjh99y4jyrguMdJBvnm1/mJf3/DJNc=X02gk"}}
+  creationTimestamp: "2021-03-31T17:29:01Z"
+  generation: 1
+  name: license-sample
+  namespace: vinod6
+  resourceVersion: "90149484"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/vinod6/licenses/license-sample
+  uid: ee867d70-3e99-426e-9e59-09449dd5e32c
+spec:
+  key: xLkNDgwKD3jafZJNa8MwDIbv/hWGnQ2xE2dOIYfRdjDWdmP92Fm2FWpok+A4Zf33S9aNlaRUvhhJfvRK8sMnWroET2NOhZhINUm6SyQ4mXqE4KpyBgHpv+V9kEUxizmZW9dn0IHlzx5x4x0cCJjgTkhHGcG3SA7OYNngDn1zTckFWYIrA5ZQGpx/1c6fLyL62gmLJIsUmVbHGsrziPyBdg+BrNqjRv9WbJuOfhVmnKzRn9C/zIYvVSaFTqVgmUhSxjlqlsVxwYq40NmjKnh3yHq+ojcs7/zsF5DcBSwuTQ/L55vd03ax+WPI+yJMVeMNESUcsanBoCWvrcbtqEeaa8yQWxExIRWyxFpgWknOVJoajSpTWiP5mTmMVns9/vfWmz00eOd3TKGT4sJwRTmPaK+OriqLzTf7npvNMEUCIFQoSNjU9iBNn5HJlPr8Dysj15x66AVj9S5i94pFUIMBAiEAsruFR+9U/qXestjh99y4jyrguMdJBvnm1/mJf3/DJNc=X02gk
+status:
+  condition:
+  - message: License Key changed
+    timestamp: "2021-03-31T17:29:01Z"
+  - message: Cluster License Activated successfully.
+    status: Active
+    timestamp: "2021-03-31T17:29:01Z"
+  currentNodeCount: 6
+  message: Cluster License Activated successfully.
+  properties:
+    active: true
+    capacity: 10
+    company: Redhat
+    creationTimestamp: "2021-03-30T18:30:00Z"
+    edition: FreeTrial
+    expirationTimestamp: "2024-05-07T18:30:00Z"
+    kubeUID: be9e1d20-258e-4dda-b851-866cbe898bbe
+    licenseID: TVAULT-8952b655-9246-11eb-933f-f3fb978f1f1f
+    maintenanceExpiryTimestamp: "2024-05-07T18:30:00Z"
+    numberOfUsers: -1
+    purchaseTimestamp: "2021-03-30T18:30:00Z"
+    scope: Namespaced
+    sen: SEN-8952b654-9246-11eb-933f-f3fb978f1f1f
+    serverID: 8952b652-9246-11eb-933f-f3fb978f1f1f
+    version: "2"
+  status: Active

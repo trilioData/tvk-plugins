@@ -1,0 +1,93 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Backup
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"triliovault.trilio.io/v1","kind":"Backup","metadata":{"annotations":{},"name":"cockroachdb-full-backup","namespace":"pankaj"},"spec":{"backupPlan":{"name":"cockroachdb-backup-plan"},"type":"Full"}}
+  creationTimestamp: "2021-04-02T05:27:46Z"
+  finalizers:
+  - backup-cleanup-finalizer
+  generation: 1
+  name: cockroachdb-full-backup
+  namespace: pankaj
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: cockroachdb-backup-plan
+    uid: 6a87ae43-eb08-4a32-bf3f-a75209f9f249
+  resourceVersion: "83834265"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pankaj/backups/cockroachdb-full-backup
+  uid: 81c34c58-f83e-4a0e-813d-84b811eb2c4b
+spec:
+  backupPlan:
+    apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: cockroachdb-backup-plan
+    namespace: pankaj
+    resourceVersion: "83831906"
+    uid: 6a87ae43-eb08-4a32-bf3f-a75209f9f249
+  type: Full
+status:
+  backupScope: App
+  completionTimestamp: "2021-04-02T05:28:28Z"
+  condition:
+  - phase: MetaSnapshot
+    reason: MetaSnapshot InProgress
+    status: InProgress
+    timestamp: "2021-04-02T05:27:47Z"
+  - phase: MetaSnapshot
+    reason: MetaSnapshot Completed
+    status: Completed
+    timestamp: "2021-04-02T05:28:06Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload InProgress
+    status: InProgress
+    timestamp: "2021-04-02T05:28:08Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload Completed
+    status: Completed
+    timestamp: "2021-04-02T05:28:28Z"
+  location: 6a87ae43-eb08-4a32-bf3f-a75209f9f249/81c34c58-f83e-4a0e-813d-84b811eb2c4b
+  percentageCompletion: 100
+  phase: MetadataUpload
+  phaseStatus: Completed
+  size: "0"
+  snapshot:
+    helmCharts:
+    - release: cockroachdb-app
+      resources:
+      - groupVersionKind:
+          group: batch
+          kind: Job
+          version: v1
+        objects:
+        - cockroachdb-app-init
+      - groupVersionKind:
+          kind: Secret
+          version: v1
+        objects:
+        - sh.helm.release.v1.cockroachdb-app.v1
+      - groupVersionKind:
+          group: policy
+          kind: PodDisruptionBudget
+          version: v1beta1
+        objects:
+        - cockroachdb-app-budget
+      - groupVersionKind:
+          kind: Service
+          version: v1
+        objects:
+        - cockroachdb-app
+        - cockroachdb-app-public
+      - groupVersionKind:
+          group: apps
+          kind: StatefulSet
+          version: v1
+        objects:
+        - cockroachdb-app
+      revision: 1
+      storageBackend: Secret
+      version: v3
+  startTimestamp: "2021-04-02T05:27:46Z"
+  status: Available
+  type: Full

@@ -1,0 +1,32 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Hook
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"triliovault.trilio.io/v1","kind":"Hook","metadata":{"annotations":{},"name":"sample-hookaction","namespace":"ms"},"spec":{"post":{"execAction":{"command":["sh","-c","ps"]},"ignoreFailure":false,"maxRetryCount":10,"timeoutSeconds":30},"pre":{"execAction":{"command":["sh","-c","ps"]},"ignoreFailure":false,"maxRetryCount":10,"timeoutSeconds":30}}}
+  creationTimestamp: "2021-04-05T09:51:11Z"
+  generation: 1
+  name: sample-hookaction
+  namespace: ms
+  resourceVersion: "92797996"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/ms/hooks/sample-hookaction
+  uid: f7cffc2a-dec7-4fa0-93ae-22db6a447a6f
+spec:
+  post:
+    execAction:
+      command:
+      - sh
+      - -c
+      - ps
+    ignoreFailure: false
+    maxRetryCount: 10
+    timeoutSeconds: 30
+  pre:
+    execAction:
+      command:
+      - sh
+      - -c
+      - ps
+    ignoreFailure: false
+    maxRetryCount: 10
+    timeoutSeconds: 30

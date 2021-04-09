@@ -1,0 +1,66 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  creationTimestamp: "2021-04-06T11:04:36Z"
+  finalizers:
+  - backupplan-delete-finalizer
+  generation: 2
+  labels:
+    app.kubernetes.io/managed-by: k8s-triliovault-ui
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: bplan-with-scheduling-policy-nfs
+  namespace: pushkar
+  resourceVersion: "95663663"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pushkar/backupplans/bplan-with-scheduling-policy-nfs
+  uid: e43efe9c-059e-44bd-a95d-2b2547f698ca
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: 1 1 1 1 1
+      incrementalCron:
+        schedule: 1 1 1 1 1
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: nfs-target-ns
+      namespace: pushkar
+      resourceVersion: "95533239"
+      uid: 4517fc76-0a3d-411e-9935-0ff7b2ceb7b7
+  backupPlanComponents: {}
+status:
+  fullBackupCron:
+    apiVersion: batch/v1beta1
+    kind: CronJob
+    name: bplan-with-scheduling-policy-nfs-full-1dhrf4
+    namespace: pushkar
+    resourceVersion: "95618748"
+    uid: 3ac5874f-b49c-446c-a557-62aade58e6ea
+  incrementalCron:
+    apiVersion: batch/v1beta1
+    kind: CronJob
+    name: bplan-with-scheduling-policy-nf-incremental-kmyjvm
+    namespace: pushkar
+    resourceVersion: "95618747"
+    uid: 06e5dc48-36ec-4248-af2b-0fd8c2a47880
+  scope: Namespace
+  stats:
+    backupSummary:
+      lastSuccessfulBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: backup-with-scheduling-policy-nfs
+        namespace: pushkar
+        resourceVersion: "95663661"
+        uid: d04882a2-f352-4fe7-825d-2fc132e94111
+      latestBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: backup-with-scheduling-policy-nfs
+        namespace: pushkar
+        resourceVersion: "95663661"
+        uid: d04882a2-f352-4fe7-825d-2fc132e94111
+      totalAvailableBackups: 1
+    restoreSummary: {}
+  status: Available

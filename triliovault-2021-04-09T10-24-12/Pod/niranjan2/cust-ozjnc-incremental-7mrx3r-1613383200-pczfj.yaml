@@ -1,0 +1,143 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2021-02-15T10:00:01Z"
+  generateName: cust-ozjnc-incremental-7mrx3r-1613383200-
+  labels:
+    app.kubernetes.io/instance: cust-ozjnc-incremental-7mrx3r
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    controller-uid: afa6a6d1-b8a4-49fb-8281-fc8851080785
+    job-name: cust-ozjnc-incremental-7mrx3r-1613383200
+  name: cust-ozjnc-incremental-7mrx3r-1613383200-pczfj
+  namespace: niranjan2
+  ownerReferences:
+  - apiVersion: batch/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Job
+    name: cust-ozjnc-incremental-7mrx3r-1613383200
+    uid: afa6a6d1-b8a4-49fb-8281-fc8851080785
+  resourceVersion: "8837127"
+  selfLink: /api/v1/namespaces/niranjan2/pods/cust-ozjnc-incremental-7mrx3r-1613383200-pczfj
+  uid: 00ba98f4-20b4-4827-9a77-d6486326e35e
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: beta.kubernetes.io/arch
+            operator: In
+            values:
+            - amd64
+        - matchExpressions:
+          - key: kubernetes.io/arch
+            operator: In
+            values:
+            - amd64
+  containers:
+  - args:
+    - --namespace=niranjan2
+    - --application-name=cust-ozjnc
+    - --backup-type=Incremental
+    - --backup-schedule-type=Periodic
+    image: gcr.io/amazing-chalice-243510/backup-scheduler:master
+    imagePullPolicy: IfNotPresent
+    name: backup-scheduler
+    resources:
+      limits:
+        cpu: 200m
+        memory: 512Mi
+      requests:
+        cpu: 10m
+        memory: 10Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        add:
+        - KILL
+        - AUDIT_WRITE
+        drop:
+        - ALL
+      privileged: false
+      readOnlyRootFilesystem: false
+      runAsNonRoot: true
+      runAsUser: 1001
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: k8s-triliovault-token-29p7g
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: gke-dev-cluster-dev-cluster-pool-eab0992b-5s14
+  priority: 0
+  restartPolicy: OnFailure
+  schedulerName: default-scheduler
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+  serviceAccount: k8s-triliovault
+  serviceAccountName: k8s-triliovault
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: k8s-triliovault-token-29p7g
+    secret:
+      defaultMode: 420
+      secretName: k8s-triliovault-token-29p7g
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2021-02-15T10:00:02Z"
+    reason: PodCompleted
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2021-02-15T10:00:11Z"
+    reason: PodCompleted
+    status: "False"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2021-02-15T10:00:11Z"
+    reason: PodCompleted
+    status: "False"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2021-02-15T10:00:01Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: docker://8eef4e3ba5c7c4e058d7fd397d3391c67f3f2933ea3aed2d2cfdb89aeb5ed102
+    image: gcr.io/amazing-chalice-243510/backup-scheduler:master
+    imageID: docker-pullable://gcr.io/amazing-chalice-243510/backup-scheduler@sha256:997862aad7bb15e3e4af4ff203694c4924999a4c8a9b0a040667cebe85142e70
+    lastState: {}
+    name: backup-scheduler
+    ready: false
+    restartCount: 0
+    started: false
+    state:
+      terminated:
+        containerID: docker://8eef4e3ba5c7c4e058d7fd397d3391c67f3f2933ea3aed2d2cfdb89aeb5ed102
+        exitCode: 0
+        finishedAt: "2021-02-15T10:00:09Z"
+        reason: Completed
+        startedAt: "2021-02-15T10:00:08Z"
+  hostIP: 10.142.0.107
+  phase: Succeeded
+  podIP: 10.92.1.248
+  podIPs:
+  - ip: 10.92.1.248
+  qosClass: Burstable
+  startTime: "2021-02-15T10:00:02Z"

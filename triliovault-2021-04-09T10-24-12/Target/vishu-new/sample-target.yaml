@@ -1,0 +1,53 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Target
+metadata:
+  annotations:
+    targetSpecHash: "3674547955"
+  creationTimestamp: "2021-04-08T13:03:11Z"
+  finalizers:
+  - target-delete-finalizer
+  generation: 2
+  name: sample-target
+  namespace: vishu-new
+  resourceVersion: "100849611"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/vishu-new/targets/sample-target
+  uid: f8da7562-4fe0-4dce-8295-4acb526f4171
+spec:
+  enableBrowsing: true
+  nfsCredentials:
+    nfsExport: 34.66.17.160:/src/nfs/abhi
+    nfsOptions: nfsvers=4
+  objectStoreCredentials:
+    accessKey: ""
+    bucketName: ""
+    secretKey: ""
+  type: NFS
+  vendor: Other
+status:
+  browsingEnabled: true
+  condition:
+  - reason: Target credentials changed.
+    timestamp: "2021-04-08T13:03:11Z"
+  - phase: Validation
+    reason: Validation InProgress
+    status: InProgress
+    timestamp: "2021-04-08T13:03:11Z"
+  - phase: Validation
+    reason: Validation Completed
+    status: Completed
+    timestamp: "2021-04-08T13:03:27Z"
+  - phase: TargetBrowsing
+    reason: Browsing is enabled, waiting for target browser deployment and service
+      to come up.
+    status: InProgress
+    timestamp: "2021-04-08T13:03:27Z"
+  - phase: TargetBrowsing
+    reason: Successfully enabled target browser
+    status: Completed
+    timestamp: "2021-04-08T13:03:44Z"
+  stats:
+    applicationCapacity: "0"
+    applicationCapacityConsumed: "0"
+    capacityOccupied: "0"
+    totalBackupPlans: 1
+  status: Available

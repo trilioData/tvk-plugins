@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    pv.kubernetes.io/bind-completed: "yes"
+    pv.kubernetes.io/bound-by-controller: "yes"
+    volume.beta.kubernetes.io/storage-provisioner: pd.csi.storage.gke.io
+    volume.kubernetes.io/selected-node: gke-dev-cluster-dev-cluster-pool-eab0992b-sp8x
+  creationTimestamp: "2021-04-08T11:01:55Z"
+  finalizers:
+  - kubernetes.io/pvc-protection
+  labels:
+    app.kubernetes.io/instance: fs-pvc-7da0c9be-5ad1-45f3-90f3-e8540def3d5c
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: fs-pvc-7da0c9be-5ad1-45f3-90f3-e8540def3d5c
+  namespace: ajay
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Backup
+    name: bk2
+    uid: 69be9316-daae-4c67-a604-fc6d343bbb00
+  resourceVersion: "100628022"
+  selfLink: /api/v1/namespaces/ajay/persistentvolumeclaims/fs-pvc-7da0c9be-5ad1-45f3-90f3-e8540def3d5c
+  uid: bf8b9d91-5dff-4cf8-add9-7f28a2d6dfb7
+spec:
+  accessModes:
+  - ReadWriteOnce
+  dataSource:
+    apiGroup: snapshot.storage.k8s.io
+    kind: VolumeSnapshot
+    name: fs-pvc-f1f97872-6237-4c85-9cac-47400ab01de5
+  resources:
+    requests:
+      storage: "21474836480"
+  storageClassName: csi-gce-pd
+  volumeMode: Filesystem
+  volumeName: pvc-bf8b9d91-5dff-4cf8-add9-7f28a2d6dfb7
+status:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 20Gi
+  phase: Bound

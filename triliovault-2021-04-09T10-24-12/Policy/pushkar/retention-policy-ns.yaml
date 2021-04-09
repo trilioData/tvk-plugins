@@ -1,0 +1,28 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Policy
+metadata:
+  creationTimestamp: "2021-04-06T08:52:13Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/managed-by: k8s-triliovault-ui
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: retention-policy-ns
+  namespace: pushkar
+  resourceVersion: "95381563"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pushkar/policies/retention-policy-ns
+  uid: 9828bcec-7f1a-4691-ac67-3fb5e3557980
+spec:
+  cleanupConfig:
+    backupDays: 1
+  default: false
+  retentionConfig:
+    dateOfMonth: 1
+    dayOfWeek: Monday
+    latest: 1
+    monthOfYear: April
+    monthly: 1
+    weekly: 1
+    yearly: 1
+  timeoutConfig: {}
+  type: Retention

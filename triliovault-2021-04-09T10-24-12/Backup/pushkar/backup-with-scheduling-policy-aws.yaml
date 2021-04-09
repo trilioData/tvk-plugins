@@ -1,0 +1,87 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Backup
+metadata:
+  creationTimestamp: "2021-04-06T11:29:19Z"
+  finalizers:
+  - backup-cleanup-finalizer
+  generation: 1
+  labels:
+    app.kubernetes.io/managed-by: k8s-triliovault-ui
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: backup-with-scheduling-policy-aws
+  namespace: pushkar
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: bplan-with-scheduling-policy-aws
+    uid: 1feaa5f2-a61b-4405-8724-828e361893e8
+  resourceVersion: "95665107"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pushkar/backups/backup-with-scheduling-policy-aws
+  uid: 331c6343-d186-4fe3-ad14-80ca7faf8566
+spec:
+  backupPlan:
+    apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: bplan-with-scheduling-policy-aws
+    namespace: pushkar
+    resourceVersion: "95617948"
+    uid: 1feaa5f2-a61b-4405-8724-828e361893e8
+  type: Full
+status:
+  backupScope: Namespace
+  completionTimestamp: "2021-04-06T11:30:17Z"
+  condition:
+  - phase: MetaSnapshot
+    reason: MetaSnapshot InProgress
+    status: InProgress
+    timestamp: "2021-04-06T11:29:19Z"
+  - phase: MetaSnapshot
+    reason: MetaSnapshot Completed
+    status: Completed
+    timestamp: "2021-04-06T11:29:45Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload InProgress
+    status: InProgress
+    timestamp: "2021-04-06T11:29:45Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload Completed
+    status: Completed
+    timestamp: "2021-04-06T11:30:17Z"
+  location: 1feaa5f2-a61b-4405-8724-828e361893e8/331c6343-d186-4fe3-ad14-80ca7faf8566
+  percentageCompletion: 100
+  phase: MetadataUpload
+  phaseStatus: Completed
+  size: "0"
+  snapshot:
+    custom:
+      resources:
+      - groupVersionKind:
+          kind: ResourceQuota
+          version: v1
+        objects:
+        - gke-resource-quotas
+      - groupVersionKind:
+          kind: Secret
+          version: v1
+        objects:
+        - default-token-cd6lb
+        - gcecreds
+        - ssl-certs
+      - groupVersionKind:
+          kind: ServiceAccount
+          version: v1
+        objects:
+        - default
+  startTimestamp: "2021-04-06T11:29:19Z"
+  stats:
+    hookExists: false
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: aws-target-ns
+      namespace: pushkar
+      resourceVersion: "95616588"
+      uid: 2db4f14b-846f-45ee-8e1b-440f7811ca98
+  status: Available
+  type: Full

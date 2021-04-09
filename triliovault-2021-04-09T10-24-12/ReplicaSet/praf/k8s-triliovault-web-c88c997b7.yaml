@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    deployment.kubernetes.io/desired-replicas: "1"
+    deployment.kubernetes.io/max-replicas: "2"
+    deployment.kubernetes.io/revision: "1"
+    meta.helm.sh/release-name: tvk
+    meta.helm.sh/release-namespace: praf
+  creationTimestamp: "2021-03-20T09:07:25Z"
+  generation: 2
+  labels:
+    app: k8s-triliovault-web
+    app.kubernetes.io/instance: k8s-triliovault-web
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    pod-template-hash: c88c997b7
+    release: tvk
+  name: k8s-triliovault-web-c88c997b7
+  namespace: praf
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: k8s-triliovault-web
+    uid: b2299070-2e7e-4587-94ee-70672b1996d1
+  resourceVersion: "63542364"
+  selfLink: /apis/apps/v1/namespaces/praf/replicasets/k8s-triliovault-web-c88c997b7
+  uid: 077489c7-eca1-493c-8745-1a5bf645bc47
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: k8s-triliovault-web
+      pod-template-hash: c88c997b7
+      release: tvk
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: k8s-triliovault-web
+        app.kubernetes.io/instance: k8s-triliovault-web
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+        pod-template-hash: c88c997b7
+        release: tvk
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - env:
+        - name: INSTALL_NAMESPACE
+          value: praf
+        - name: APP_SCOPE
+          value: Namespaced
+        - name: RELEASE
+          value: tvk
+        image: gcr.io/amazing-chalice-243510/web:master
+        imagePullPolicy: Always
+        name: triliovault-web
+        ports:
+        - containerPort: 9443
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - KILL
+            - AUDIT_WRITE
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1001
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      serviceAccount: k8s-triliovault
+      serviceAccountName: k8s-triliovault
+      terminationGracePeriodSeconds: 30
+status:
+  observedGeneration: 2
+  replicas: 0

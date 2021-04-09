@@ -1,0 +1,30 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  creationTimestamp: "2021-02-23T02:53:09Z"
+  generation: 1
+  name: cust-apflq
+  namespace: webtest
+  resourceVersion: "33841969"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/webtest/backupplans/cust-apflq
+  uid: a9194f91-08b1-4569-99af-8e1ff30920c8
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: 0 10 15 * *
+      incrementalCron:
+        schedule: 0 10 15 * *
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: target-sample
+      namespace: webtest
+      resourceVersion: "19945531"
+      uid: ad77678f-2fa9-4776-a41c-4608a873db3e
+  backupPlanComponents:
+    custom:
+    - matchLabels:
+        triliobackupall: web-bknd
+status:
+  status: Error

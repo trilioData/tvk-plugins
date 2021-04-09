@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    meta.helm.sh/release-name: tvk
+    meta.helm.sh/release-namespace: pmath2
+  creationTimestamp: "2021-03-17T12:26:26Z"
+  generation: 1
+  labels:
+    app: k8s-triliovault-web
+    app.kubernetes.io/instance: k8s-triliovault-web
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    release: tvk
+  name: k8s-triliovault-web
+  namespace: pmath2
+  resourceVersion: "70258144"
+  selfLink: /apis/apps/v1/namespaces/pmath2/deployments/k8s-triliovault-web
+  uid: fc015873-e345-4d90-8607-39af7c80b1a7
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: k8s-triliovault-web
+      release: tvk
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: k8s-triliovault-web
+        app.kubernetes.io/instance: k8s-triliovault-web
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+        release: tvk
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - env:
+        - name: INSTALL_NAMESPACE
+          value: pmath2
+        - name: APP_SCOPE
+          value: Namespaced
+        - name: RELEASE
+          value: tvk
+        image: gcr.io/amazing-chalice-243510/web:004b62c38994107b4c9a51300bebf993295611cb
+        imagePullPolicy: IfNotPresent
+        name: triliovault-web
+        ports:
+        - containerPort: 9443
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - KILL
+            - AUDIT_WRITE
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1001
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      serviceAccount: k8s-triliovault
+      serviceAccountName: k8s-triliovault
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2021-03-17T12:26:26Z"
+    lastUpdateTime: "2021-03-17T12:29:14Z"
+    message: ReplicaSet "k8s-triliovault-web-7d6cb9f58c" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  - lastTransitionTime: "2021-03-23T20:03:57Z"
+    lastUpdateTime: "2021-03-23T20:03:57Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "2"
+    meta.helm.sh/release-name: nir-tvk2
+    meta.helm.sh/release-namespace: niranjan2
+  creationTimestamp: "2021-02-05T11:16:04Z"
+  generation: 2
+  labels:
+    app: k8s-triliovault-backend
+    app.kubernetes.io/instance: k8s-triliovault-backend
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    release: nir-tvk2
+  name: k8s-triliovault-backend
+  namespace: niranjan2
+  resourceVersion: "1358123"
+  selfLink: /apis/apps/v1/namespaces/niranjan2/deployments/k8s-triliovault-backend
+  uid: 3d89a2df-89d6-4a49-b869-e13dc1eb9e49
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: k8s-triliovault-backend
+      release: nir-tvk2
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: k8s-triliovault-backend
+        app.kubernetes.io/instance: k8s-triliovault-backend
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+        release: nir-tvk2
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - env:
+        - name: HELM_VERSION
+          value: v3
+        - name: TILLER_NAMESPACE
+        - name: INSTALL_NAMESPACE
+          value: niranjan2
+        - name: APP_SCOPE
+          value: Namespaced
+        - name: RELEASE
+          value: nir-tvk2
+        - name: RESTORE_NAMESPACES
+          value: niranjan-res
+        image: gcr.io/amazing-chalice-243510/web-backend:941411255a7dd07aa2b90409ffae7fcf0d86b19d
+        imagePullPolicy: IfNotPresent
+        name: triliovault-backend
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - KILL
+            - AUDIT_WRITE
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1001
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      serviceAccount: k8s-triliovault
+      serviceAccountName: k8s-triliovault
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2021-02-05T11:16:07Z"
+    lastUpdateTime: "2021-02-05T11:16:07Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2021-02-05T11:16:04Z"
+    lastUpdateTime: "2021-02-05T11:17:53Z"
+    message: ReplicaSet "k8s-triliovault-backend-68645796ff" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 2
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

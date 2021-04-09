@@ -1,0 +1,15 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"storage.k8s.io/v1","kind":"StorageClass","metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"},"name":"csi-hostpath-sc"},"provisioner":"hostpath.csi.k8s.io","reclaimPolicy":"Retain","volumeBindingMode":"Immediate"}
+    storageclass.kubernetes.io/is-default-class: "true"
+  creationTimestamp: "2021-03-30T08:26:04Z"
+  name: csi-hostpath-sc
+  resourceVersion: "79893930"
+  selfLink: /apis/storage.k8s.io/v1/storageclasses/csi-hostpath-sc
+  uid: d6a3d910-9637-4106-8c85-f98657debc9a
+provisioner: hostpath.csi.k8s.io
+reclaimPolicy: Retain
+volumeBindingMode: Immediate

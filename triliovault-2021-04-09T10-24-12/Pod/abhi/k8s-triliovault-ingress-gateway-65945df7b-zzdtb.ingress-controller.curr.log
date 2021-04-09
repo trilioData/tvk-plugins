@@ -1,0 +1,173 @@
+I0408 14:21:33.777246       7 request.go:655] Throttling request took 1.044718934s, request: GET:https://10.96.0.1:443/apis/autoscaling/v2beta2?timeout=32s
+I0408 14:22:05.326313       1 main.go:258] Starting NGINX Ingress controller Version=edge GitCommit=177af78c
+2021/04/08 14:22:05 [notice] 21#21: using the "epoll" event method
+2021/04/08 14:22:05 [notice] 21#21: nginx/1.19.8
+2021/04/08 14:22:05 [notice] 21#21: built by gcc 8.3.1 20191121 (Red Hat 8.3.1-5) (GCC) 
+2021/04/08 14:22:05 [notice] 21#21: OS: Linux 4.19.150+
+2021/04/08 14:22:05 [notice] 21#21: getrlimit(RLIMIT_NOFILE): 1048576:1048576
+2021/04/08 14:22:05 [notice] 21#21: start worker processes
+2021/04/08 14:22:05 [notice] 21#21: start worker process 23
+2021/04/08 14:22:05 [notice] 21#21: start worker process 24
+2021/04/08 14:22:05 [notice] 21#21: start worker process 25
+2021/04/08 14:22:05 [notice] 21#21: start worker process 26
+W0408 14:22:05.721548       1 controller.go:3055] Using the DEPRECATED annotation 'kubernetes.io/ingress.class'. The 'ingressClassName' field will be ignored.
+I0408 14:22:05.726362       1 event.go:282] Event(v1.ObjectReference{Kind:"Ingress", Namespace:"abhi", Name:"snapshot-scqf-test-ingress", UID:"aa794ec1-7c17-4cd3-b44c-91b9418f3763", APIVersion:"networking.k8s.io/v1beta1", ResourceVersion:"76388597", FieldPath:""}): type: 'Warning' reason: 'Rejected' spec.rules[0].host: Required value
+W0408 14:22:06.118684       1 controller.go:3055] Using the DEPRECATED annotation 'kubernetes.io/ingress.class'. The 'ingressClassName' field will be ignored.
+2021/04/08 14:22:06 [notice] 21#21: signal 1 (SIGHUP) received from 30, reconfiguring
+2021/04/08 14:22:06 [notice] 21#21: reconfiguring
+2021/04/08 14:22:06 [notice] 21#21: using the "epoll" event method
+2021/04/08 14:22:06 [notice] 21#21: start worker processes
+2021/04/08 14:22:06 [notice] 21#21: start worker process 31
+2021/04/08 14:22:06 [notice] 21#21: start worker process 32
+2021/04/08 14:22:06 [notice] 21#21: start worker process 33
+2021/04/08 14:22:06 [notice] 21#21: start worker process 34
+2021/04/08 14:22:06 [notice] 24#24: gracefully shutting down
+2021/04/08 14:22:06 [notice] 24#24: exiting
+2021/04/08 14:22:06 [notice] 24#24: exit
+2021/04/08 14:22:06 [notice] 25#25: gracefully shutting down
+2021/04/08 14:22:06 [notice] 26#26: gracefully shutting down
+2021/04/08 14:22:06 [notice] 25#25: exiting
+2021/04/08 14:22:06 [notice] 26#26: exiting
+2021/04/08 14:22:06 [notice] 23#23: gracefully shutting down
+2021/04/08 14:22:06 [notice] 25#25: exit
+2021/04/08 14:22:06 [notice] 23#23: exiting
+2021/04/08 14:22:06 [notice] 26#26: exit
+2021/04/08 14:22:06 [notice] 23#23: exit
+I0408 14:22:06.326590       1 event.go:282] Event(v1.ObjectReference{Kind:"Ingress", Namespace:"abhi", Name:"k8s-triliovault-ingress", UID:"308cdc14-5996-48e7-be90-3f185db2692b", APIVersion:"networking.k8s.io/v1beta1", ResourceVersion:"81800605", FieldPath:""}): type: 'Normal' reason: 'AddedOrUpdated' Configuration for abhi/k8s-triliovault-ingress was added or updated 
+2021/04/08 14:22:06 [notice] 21#21: signal 17 (SIGCHLD) received from 23
+2021/04/08 14:22:06 [notice] 21#21: worker process 23 exited with code 0
+2021/04/08 14:22:06 [notice] 21#21: worker process 24 exited with code 0
+2021/04/08 14:22:06 [notice] 21#21: worker process 26 exited with code 0
+2021/04/08 14:22:06 [notice] 21#21: signal 1 (SIGHUP) received from 35, reconfiguring
+2021/04/08 14:22:06 [notice] 21#21: reconfiguring
+2021/04/08 14:22:06 [notice] 21#21: using the "epoll" event method
+2021/04/08 14:22:06 [notice] 21#21: start worker processes
+2021/04/08 14:22:06 [notice] 21#21: start worker process 36
+2021/04/08 14:22:06 [notice] 21#21: start worker process 37
+2021/04/08 14:22:06 [notice] 21#21: start worker process 38
+2021/04/08 14:22:06 [notice] 21#21: start worker process 39
+2021/04/08 14:22:06 [notice] 21#21: signal 29 (SIGIO) received
+2021/04/08 14:22:06 [notice] 21#21: signal 17 (SIGCHLD) received from 25
+2021/04/08 14:22:06 [notice] 21#21: worker process 25 exited with code 0
+2021/04/08 14:22:06 [notice] 21#21: signal 29 (SIGIO) received
+2021/04/08 14:22:06 [notice] 31#31: gracefully shutting down
+2021/04/08 14:22:06 [notice] 31#31: exiting
+2021/04/08 14:22:06 [notice] 34#34: gracefully shutting down
+2021/04/08 14:22:06 [notice] 34#34: exiting
+2021/04/08 14:22:06 [notice] 34#34: exit
+2021/04/08 14:22:06 [notice] 33#33: gracefully shutting down
+2021/04/08 14:22:06 [notice] 31#31: exit
+2021/04/08 14:22:06 [notice] 32#32: gracefully shutting down
+2021/04/08 14:22:06 [notice] 33#33: exiting
+2021/04/08 14:22:06 [notice] 32#32: exiting
+2021/04/08 14:22:06 [notice] 32#32: exit
+2021/04/08 14:22:06 [notice] 33#33: exit
+2021/04/08 14:22:06 [notice] 21#21: signal 17 (SIGCHLD) received from 34
+2021/04/08 14:22:06 [notice] 21#21: worker process 34 exited with code 0
+2021/04/08 14:22:06 [notice] 21#21: signal 29 (SIGIO) received
+2021/04/08 14:22:06 [notice] 21#21: signal 17 (SIGCHLD) received from 31
+2021/04/08 14:22:06 [notice] 21#21: worker process 31 exited with code 0
+2021/04/08 14:22:06 [notice] 21#21: signal 29 (SIGIO) received
+2021/04/08 14:22:06 [notice] 21#21: signal 17 (SIGCHLD) received from 32
+2021/04/08 14:22:06 [notice] 21#21: worker process 32 exited with code 0
+2021/04/08 14:22:06 [notice] 21#21: signal 29 (SIGIO) received
+2021/04/08 14:22:06 [notice] 21#21: signal 17 (SIGCHLD) received from 33
+2021/04/08 14:22:06 [notice] 21#21: worker process 33 exited with code 0
+2021/04/08 14:22:06 [notice] 21#21: signal 1 (SIGHUP) received from 40, reconfiguring
+2021/04/08 14:22:06 [notice] 21#21: reconfiguring
+2021/04/08 14:22:06 [notice] 21#21: using the "epoll" event method
+2021/04/08 14:22:06 [notice] 21#21: start worker processes
+2021/04/08 14:22:06 [notice] 21#21: start worker process 41
+2021/04/08 14:22:06 [notice] 21#21: start worker process 42
+2021/04/08 14:22:06 [notice] 21#21: start worker process 43
+2021/04/08 14:22:06 [notice] 21#21: start worker process 44
+2021/04/08 14:22:06 [notice] 21#21: signal 29 (SIGIO) received
+2021/04/08 14:22:06 [notice] 39#39: gracefully shutting down
+2021/04/08 14:22:06 [notice] 39#39: exiting
+2021/04/08 14:22:06 [notice] 39#39: exit
+2021/04/08 14:22:06 [notice] 36#36: gracefully shutting down
+2021/04/08 14:22:06 [notice] 36#36: exiting
+2021/04/08 14:22:06 [notice] 36#36: exit
+2021/04/08 14:22:06 [notice] 37#37: gracefully shutting down
+2021/04/08 14:22:06 [notice] 37#37: exiting
+2021/04/08 14:22:06 [notice] 37#37: exit
+2021/04/08 14:22:06 [notice] 38#38: gracefully shutting down
+2021/04/08 14:22:06 [notice] 38#38: exiting
+2021/04/08 14:22:06 [notice] 38#38: exit
+2021/04/08 14:22:06 [notice] 21#21: signal 17 (SIGCHLD) received from 36
+2021/04/08 14:22:06 [notice] 21#21: worker process 36 exited with code 0
+2021/04/08 14:22:06 [notice] 21#21: worker process 37 exited with code 0
+2021/04/08 14:22:06 [notice] 21#21: worker process 38 exited with code 0
+2021/04/08 14:22:06 [notice] 21#21: signal 29 (SIGIO) received
+2021/04/08 14:22:06 [notice] 21#21: signal 17 (SIGCHLD) received from 38
+2021/04/08 14:22:06 [notice] 21#21: signal 17 (SIGCHLD) received from 39
+2021/04/08 14:22:06 [notice] 21#21: worker process 39 exited with code 0
+2021/04/08 14:22:06 [notice] 21#21: signal 29 (SIGIO) received
+2021/04/08 14:22:06 [notice] 21#21: signal 1 (SIGHUP) received from 45, reconfiguring
+2021/04/08 14:22:06 [notice] 21#21: reconfiguring
+2021/04/08 14:22:06 [notice] 21#21: using the "epoll" event method
+2021/04/08 14:22:06 [notice] 21#21: start worker processes
+2021/04/08 14:22:06 [notice] 21#21: start worker process 46
+2021/04/08 14:22:06 [notice] 21#21: start worker process 47
+2021/04/08 14:22:06 [notice] 21#21: start worker process 48
+2021/04/08 14:22:06 [notice] 21#21: start worker process 49
+2021/04/08 14:22:06 [notice] 41#41: gracefully shutting down
+2021/04/08 14:22:06 [notice] 41#41: exiting
+2021/04/08 14:22:06 [notice] 42#42: gracefully shutting down
+2021/04/08 14:22:06 [notice] 42#42: exiting
+2021/04/08 14:22:06 [notice] 42#42: exit
+2021/04/08 14:22:06 [notice] 41#41: exit
+2021/04/08 14:22:06 [notice] 44#44: gracefully shutting down
+2021/04/08 14:22:06 [notice] 44#44: exiting
+2021/04/08 14:22:06 [notice] 43#43: gracefully shutting down
+2021/04/08 14:22:06 [notice] 43#43: exiting
+2021/04/08 14:22:06 [notice] 44#44: exit
+2021/04/08 14:22:06 [notice] 43#43: exit
+2021/04/08 14:22:06 [notice] 21#21: signal 17 (SIGCHLD) received from 41
+2021/04/08 14:22:06 [notice] 21#21: worker process 41 exited with code 0
+2021/04/08 14:22:06 [notice] 21#21: worker process 43 exited with code 0
+2021/04/08 14:22:06 [notice] 21#21: worker process 44 exited with code 0
+2021/04/08 14:22:06 [notice] 21#21: signal 29 (SIGIO) received
+2021/04/08 14:22:06 [notice] 21#21: signal 17 (SIGCHLD) received from 44
+2021/04/08 14:22:06 [notice] 21#21: worker process 42 exited with code 0
+2021/04/08 14:22:06 [notice] 21#21: signal 29 (SIGIO) received
+2021/04/08 14:22:06 [notice] 21#21: signal 17 (SIGCHLD) received from 42
+2021/04/08 14:22:07 [notice] 21#21: signal 1 (SIGHUP) received from 50, reconfiguring
+2021/04/08 14:22:07 [notice] 21#21: reconfiguring
+2021/04/08 14:22:07 [notice] 21#21: using the "epoll" event method
+2021/04/08 14:22:07 [notice] 21#21: start worker processes
+2021/04/08 14:22:07 [notice] 21#21: start worker process 51
+2021/04/08 14:22:07 [notice] 21#21: start worker process 52
+2021/04/08 14:22:07 [notice] 21#21: start worker process 53
+2021/04/08 14:22:07 [notice] 21#21: start worker process 54
+2021/04/08 14:22:07 [notice] 49#49: gracefully shutting down
+2021/04/08 14:22:07 [notice] 46#46: gracefully shutting down
+2021/04/08 14:22:07 [notice] 46#46: exiting
+2021/04/08 14:22:07 [notice] 47#47: gracefully shutting down
+2021/04/08 14:22:07 [notice] 46#46: exit
+2021/04/08 14:22:07 [notice] 47#47: exiting
+2021/04/08 14:22:07 [notice] 47#47: exit
+2021/04/08 14:22:07 [notice] 49#49: exiting
+2021/04/08 14:22:07 [notice] 48#48: gracefully shutting down
+2021/04/08 14:22:07 [notice] 48#48: exiting
+2021/04/08 14:22:07 [notice] 49#49: exit
+2021/04/08 14:22:07 [notice] 48#48: exit
+2021/04/08 14:22:07 [notice] 21#21: signal 17 (SIGCHLD) received from 49
+2021/04/08 14:22:07 [notice] 21#21: worker process 49 exited with code 0
+2021/04/08 14:22:07 [notice] 21#21: signal 29 (SIGIO) received
+2021/04/08 14:22:07 [notice] 21#21: signal 17 (SIGCHLD) received from 46
+2021/04/08 14:22:07 [notice] 21#21: worker process 46 exited with code 0
+2021/04/08 14:22:07 [notice] 21#21: signal 29 (SIGIO) received
+2021/04/08 14:22:07 [notice] 21#21: signal 17 (SIGCHLD) received from 47
+2021/04/08 14:22:07 [notice] 21#21: worker process 47 exited with code 0
+2021/04/08 14:22:07 [notice] 21#21: signal 29 (SIGIO) received
+2021/04/08 14:22:07 [notice] 21#21: signal 17 (SIGCHLD) received from 48
+2021/04/08 14:22:07 [notice] 21#21: worker process 48 exited with code 0
+2021/04/08 14:22:07 [notice] 21#21: signal 29 (SIGIO) received
+I0408 14:22:07.153659       1 event.go:282] Event(v1.ObjectReference{Kind:"Secret", Namespace:"abhi", Name:"k8s-triliovault-ingress-tls-certs", UID:"446d178f-b134-42ac-90ab-4c4cdedb6098", APIVersion:"v1", ResourceVersion:"100964052", FieldPath:""}): type: 'Normal' reason: 'Updated' the special Secret abhi/k8s-triliovault-ingress-tls-certs was updated
+W0408 14:32:34.416935       1 controller.go:3055] Using the DEPRECATED annotation 'kubernetes.io/ingress.class'. The 'ingressClassName' field will be ignored.
+I0408 14:32:34.417380       1 event.go:282] Event(v1.ObjectReference{Kind:"Ingress", Namespace:"abhi", Name:"bkp-e2e-lxhm-test-ingress", UID:"ab764a40-27eb-4c51-8258-b51bfda10636", APIVersion:"networking.k8s.io/v1beta1", ResourceVersion:"100987640", FieldPath:""}): type: 'Warning' reason: 'Rejected' spec.rules[0].host: Required value
+W0408 14:32:34.898958       1 controller.go:3055] Using the DEPRECATED annotation 'kubernetes.io/ingress.class'. The 'ingressClassName' field will be ignored.
+I0408 14:32:34.899714       1 event.go:282] Event(v1.ObjectReference{Kind:"Ingress", Namespace:"abhi", Name:"bkp-e2e-lxhm-test-ingress", UID:"ab764a40-27eb-4c51-8258-b51bfda10636", APIVersion:"networking.k8s.io/v1beta1", ResourceVersion:"100987648", FieldPath:""}): type: 'Warning' reason: 'Rejected' spec.rules[0].host: Required value
+W0408 14:41:12.136674       1 controller.go:3055] Using the DEPRECATED annotation 'kubernetes.io/ingress.class'. The 'ingressClassName' field will be ignored.
+I0408 14:41:12.137444       1 event.go:282] Event(v1.ObjectReference{Kind:"Ingress", Namespace:"abhi", Name:"bkp-e2e-lxhm-test-ingress", UID:"ab764a40-27eb-4c51-8258-b51bfda10636", APIVersion:"networking.k8s.io/v1beta1", ResourceVersion:"101009167", FieldPath:""}): type: 'Warning' reason: 'Rejected' spec.rules[0].host: Required value

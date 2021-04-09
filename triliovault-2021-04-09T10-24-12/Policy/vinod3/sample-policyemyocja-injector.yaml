@@ -1,0 +1,18 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Policy
+metadata:
+  creationTimestamp: "2021-03-16T05:26:45Z"
+  generation: 1
+  name: sample-policyemyocja-injector
+  namespace: vinod3
+  resourceVersion: "56726552"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/vinod3/policies/sample-policyemyocja-injector
+  uid: 66b72cce-909f-48d4-86cb-a9ebe61f6df2
+spec:
+  cleanupConfig:
+    backupDays: 28
+  default: false
+  retentionConfig:
+    latest: 5
+  timeoutConfig: {}
+  type: Retention

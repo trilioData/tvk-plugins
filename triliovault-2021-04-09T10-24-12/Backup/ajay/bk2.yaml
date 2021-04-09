@@ -1,0 +1,168 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Backup
+metadata:
+  creationTimestamp: "2021-04-08T10:59:51Z"
+  finalizers:
+  - backup-cleanup-finalizer
+  generation: 1
+  name: bk2
+  namespace: ajay
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: bp
+    uid: 29bf53f2-5c99-4d82-af16-1fc0f9627db0
+  resourceVersion: "100635567"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/ajay/backups/bk2
+  uid: 69be9316-daae-4c67-a604-fc6d343bbb00
+spec:
+  backupPlan:
+    apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: bp
+    namespace: ajay
+    resourceVersion: "95199234"
+    uid: 29bf53f2-5c99-4d82-af16-1fc0f9627db0
+  type: Full
+status:
+  applicationType: Custom
+  backupScope: App
+  completionTimestamp: "2021-04-08T11:06:53Z"
+  condition:
+  - phase: MetaSnapshot
+    reason: MetaSnapshot Completed
+    status: Completed
+    timestamp: "2021-04-08T11:00:52Z"
+  - phase: DataSnapshot
+    reason: DataSnapshot InProgress
+    status: InProgress
+    timestamp: "2021-04-08T11:00:52Z"
+  - phase: DataSnapshot
+    reason: DataSnapshot Completed
+    status: Completed
+    timestamp: "2021-04-08T11:01:55Z"
+  - phase: DataUpload
+    reason: DataUpload InProgress
+    status: InProgress
+    timestamp: "2021-04-08T11:01:55Z"
+  - phase: DataUpload
+    reason: DataUpload Failed
+    status: Failed
+    timestamp: "2021-04-08T11:06:29Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload InProgress
+    status: InProgress
+    timestamp: "2021-04-08T11:06:29Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload Completed
+    status: Completed
+    timestamp: "2021-04-08T11:06:53Z"
+  location: 29bf53f2-5c99-4d82-af16-1fc0f9627db0/69be9316-daae-4c67-a604-fc6d343bbb00
+  percentageCompletion: 31
+  phase: MetadataUpload
+  phaseStatus: Completed
+  size: "0"
+  snapshot:
+    custom:
+      dataSnapshots:
+      - backupType: Full
+        conditions:
+        - phase: Snapshot
+          reason: Snapshot InProgress
+          status: InProgress
+          timestamp: "2021-04-08T11:00:52Z"
+        - phase: Snapshot
+          reason: Snapshot Completed
+          status: Completed
+          timestamp: "2021-04-08T11:01:55Z"
+        - phase: Upload
+          reason: Upload InProgress
+          status: InProgress
+          timestamp: "2021-04-08T11:01:55Z"
+        error: 'copy_in: tar subprocess failed: : errno 0'
+        location: 29bf53f2-5c99-4d82-af16-1fc0f9627db0/69be9316-daae-4c67-a604-fc6d343bbb00/custom/data-snapshot/fs-pvc
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"gke-dev-cluster-dev-cluster-pool-eab0992b-5s14"},"creationTimestamp":"2021-04-06T05:47:02Z","finalizers":["kubernetes.io/pvc-protection"],"name":"fs-pvc","namespace":"ajay","resourceVersion":"95169745","selfLink":"/api/v1/namespaces/ajay/persistentvolumeclaims/fs-pvc","uid":"bb9b13b8-9458-4d6b-a595-62e684ec4f79"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"20Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-bb9b13b8-9458-4d6b-a595-62e684ec4f79"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"20Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: fs-pvc
+        podContainersMap:
+        - containers:
+          - nginx
+          podName: nginx-5465875c9d-fhbpp
+        size: "0"
+        snapshotSize: "21474836480"
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: fs-pvc-f1f97872-6237-4c85-9cac-47400ab01de5
+            namespace: ajay
+            resourceVersion: "100627340"
+            uid: 8896935e-18d1-46df-93dc-fff8d17df45e
+      resources:
+      - groupVersionKind:
+          group: apps
+          kind: Deployment
+          version: v1
+        objects:
+        - nginx
+      - groupVersionKind:
+          group: policy
+          kind: PodSecurityPolicy
+          version: v1beta1
+        objects:
+        - aj-pod-sec-policy
+      - groupVersionKind:
+          group: rbac.authorization.k8s.io
+          kind: ClusterRoleBinding
+          version: v1
+        objects:
+        - aj-clusterrolebinding-test
+      - groupVersionKind:
+          group: rbac.authorization.k8s.io
+          kind: ClusterRole
+          version: v1
+        objects:
+        - aj-clusterrole-test
+      - groupVersionKind:
+          group: admissionregistration.k8s.io
+          kind: MutatingWebhookConfiguration
+          version: v1
+        objects:
+        - aj-mutation-webhook
+      - groupVersionKind:
+          group: admissionregistration.k8s.io
+          kind: ValidatingWebhookConfiguration
+          version: v1
+        objects:
+        - aj-validation-webhook
+      - groupVersionKind:
+          group: scheduling.k8s.io
+          kind: PriorityClass
+          version: v1
+        objects:
+        - aj-high-priority
+      - groupVersionKind:
+          group: storage.k8s.io
+          kind: StorageClass
+          version: v1
+        objects:
+        - csi-gce-pd
+      warnings:
+      - |
+        Found Dependant Resource:
+        GVK: [storage.k8s.io/v1, Kind=StorageClass]
+        Name: [csi-gce-pd]
+  startTimestamp: "2021-04-08T10:59:52Z"
+  stats:
+    hookExists: false
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: s3
+      namespace: ajay
+      resourceVersion: "95139135"
+      uid: 29af3228-93bf-45fc-943a-7f7fe23fd6fc
+  status: Failed
+  type: Full

@@ -1,0 +1,62 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  creationTimestamp: "2021-02-23T02:52:53Z"
+  generation: 1
+  name: web-bknd-helm-operator-ophzi
+  namespace: webtest
+  resourceVersion: "33830603"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/webtest/backupplans/web-bknd-helm-operator-ophzi
+  uid: a22e2fb6-2577-4af4-8763-75859facba26
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: 0 10 15 * *
+      incrementalCron:
+        schedule: 0 10 15 * *
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: target-sample
+      namespace: webtest
+      resourceVersion: "19945531"
+      uid: ad77678f-2fa9-4776-a41c-4608a873db3e
+  backupPlanComponents:
+    operators:
+    - applicationResourceSelector:
+      - matchLabels:
+          app: redis
+          release: web-bknd-redis
+      customResources:
+      - groupVersionKind:
+          group: helm.fluxcd.io
+          kind: HelmRelease
+          version: v1
+        objects:
+        - web-bknd-redis
+      operatorId: web-bknd-helm-operator
+      operatorResourceSelector:
+      - matchLabels:
+          app: helm-operator
+          release: web-bknd-helm-operator
+status:
+  stats:
+    backupSummary:
+      lastSuccessfulBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: web-bknd-helm-operator-ophzi-xnud
+        namespace: webtest
+        resourceVersion: "33826184"
+        uid: 802f0a93-8700-49da-bf05-d79aacfe54f7
+      latestBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: web-bknd-helm-operator-ophzi-xnud
+        namespace: webtest
+        resourceVersion: "33826184"
+        uid: 802f0a93-8700-49da-bf05-d79aacfe54f7
+      totalAvailableBackups: 2
+    restoreSummary: {}
+  status: Available

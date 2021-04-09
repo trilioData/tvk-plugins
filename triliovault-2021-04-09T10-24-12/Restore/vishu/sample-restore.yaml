@@ -1,0 +1,90 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Restore
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"triliovault.trilio.io/v1","kind":"Restore","metadata":{"annotations":{},"name":"sample-restore","namespace":"vishu"},"spec":{"restoreNamespace":"vishu-restore","source":{"backup":{"name":"sample-backup","namespace":"vishu"},"type":"Backup"}}}
+  creationTimestamp: "2021-02-13T07:31:25Z"
+  finalizers:
+  - child-delete-finalizer
+  generation: 1
+  name: sample-restore
+  namespace: vishu
+  resourceVersion: "55626161"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/vishu/restores/sample-restore
+  uid: 030bf29c-07da-4ccb-89b8-cc48ed6cf944
+spec:
+  restoreNamespace: vishu-restore
+  source:
+    backup:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Backup
+      name: sample-backup
+      namespace: vishu
+      resourceVersion: "6615452"
+      uid: b3ede1f7-5bae-4829-a881-67ba22a0abf8
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-target
+      namespace: vishu
+      resourceVersion: "7060627"
+      uid: 9873f41e-3985-4d48-88f5-1093f6b0df63
+    type: Backup
+status:
+  completionTimestamp: "2021-02-13T07:31:58Z"
+  condition:
+  - phase: Validation
+    reason: Validation InProgress
+    status: InProgress
+    timestamp: "2021-02-13T07:31:27Z"
+  - phase: Validation
+    reason: Validation Completed
+    status: Completed
+    timestamp: "2021-02-13T07:31:44Z"
+  - phase: MetadataRestore
+    reason: MetadataRestore InProgress
+    status: InProgress
+    timestamp: "2021-02-13T07:31:45Z"
+  - phase: MetadataRestore
+    reason: MetadataRestore Completed
+    status: Completed
+    timestamp: "2021-02-13T07:31:58Z"
+  hookStatus: {}
+  percentageCompletion: 100
+  phase: MetadataRestore
+  phaseStatus: Completed
+  restoreApplication:
+    custom:
+      snapshot:
+        resources:
+        - groupVersionKind:
+            group: apps
+            kind: Deployment
+            version: v1
+          objects:
+          - nginx-deploy
+      status:
+        failedResources:
+        - groupVersionKind:
+            group: apps
+            kind: Deployment
+            version: v1
+          objects:
+          - nginx-deploy
+        phase: MetadataRestore
+        phaseStatus: Failed
+        reason: 'error occurred: resource: apps/v1, Kind=Deployment, name: nginx-deploy
+          already exists but policy is neither ''skip'' not ''patch'''
+  restoreScope: App
+  size: "0"
+  startTimestamp: "2021-02-13T07:31:26Z"
+  stats:
+    backupPlan:
+      apiVersion: triliovault.trilio.io/v1
+      kind: BackupPlan
+      name: sample-application
+      namespace: vishu
+      resourceVersion: "6614624"
+      uid: fc50e5bb-aea5-4cd7-b6a4-c42c9c3c7cd1
+  status: Completed

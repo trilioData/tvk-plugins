@@ -1,0 +1,22 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Target
+metadata:
+  creationTimestamp: "2021-03-30T17:38:12Z"
+  generation: 1
+  name: target-sample
+  namespace: vinod4
+  resourceVersion: "80426901"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/vinod4/targets/target-sample
+  uid: b0c752e1-f35d-4827-a762-d88652de9a53
+spec:
+  nfsCredentials:
+    nfsExport: 34.66.17.160:/src/nfs/targetbrowser1
+    nfsOptions: nfsvers\\=4
+  objectStoreCredentials:
+    accessKey: ""
+    bucketName: ""
+    secretKey: ""
+  type: NFS
+  vendor: Other
+status:
+  status: Available

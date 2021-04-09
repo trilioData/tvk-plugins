@@ -1,0 +1,145 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Backup
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"triliovault.trilio.io/v1","kind":"Backup","metadata":{"annotations":{},"name":"mysql-label-backup","namespace":"pankaj"},"spec":{"backupPlan":{"name":"mysql-label-backupplan","namespace":"pankaj"},"type":"Full"}}
+  creationTimestamp: "2021-04-02T11:10:32Z"
+  finalizers:
+  - backup-cleanup-finalizer
+  generation: 1
+  name: mysql-label-backup
+  namespace: pankaj
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: mysql-label-backupplan
+    uid: 9baa90e8-c326-4eba-9fd3-3e363accc6b0
+  resourceVersion: "84193884"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pankaj/backups/mysql-label-backup
+  uid: 8970181a-18f7-44a0-b1e8-4d061f779ada
+spec:
+  backupPlan:
+    apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: mysql-label-backupplan
+    namespace: pankaj
+    resourceVersion: "81564492"
+    uid: 9baa90e8-c326-4eba-9fd3-3e363accc6b0
+  type: Full
+status:
+  backupScope: App
+  completionTimestamp: "2021-04-02T11:15:52Z"
+  condition:
+  - phase: MetaSnapshot
+    reason: MetaSnapshot InProgress
+    status: InProgress
+    timestamp: "2021-04-02T11:10:33Z"
+  - phase: MetaSnapshot
+    reason: MetaSnapshot Completed
+    status: Completed
+    timestamp: "2021-04-02T11:10:58Z"
+  - phase: DataSnapshot
+    reason: DataSnapshot InProgress
+    status: InProgress
+    timestamp: "2021-04-02T11:10:58Z"
+  - phase: DataSnapshot
+    reason: DataSnapshot Completed
+    status: Completed
+    timestamp: "2021-04-02T11:11:48Z"
+  - phase: DataUpload
+    reason: DataUpload InProgress
+    status: InProgress
+    timestamp: "2021-04-02T11:11:49Z"
+  - phase: DataUpload
+    reason: DataUpload Completed
+    status: Completed
+    timestamp: "2021-04-02T11:15:30Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload InProgress
+    status: InProgress
+    timestamp: "2021-04-02T11:15:31Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload Completed
+    status: Completed
+    timestamp: "2021-04-02T11:15:52Z"
+  location: 9baa90e8-c326-4eba-9fd3-3e363accc6b0/8970181a-18f7-44a0-b1e8-4d061f779ada
+  percentageCompletion: 100
+  phase: MetadataUpload
+  phaseStatus: Completed
+  size: "261038080"
+  snapshot:
+    custom:
+      dataSnapshots:
+      - backupType: Full
+        conditions:
+        - phase: Snapshot
+          reason: Snapshot InProgress
+          status: InProgress
+          timestamp: "2021-04-02T11:10:59Z"
+        - phase: Snapshot
+          reason: Snapshot Completed
+          status: Completed
+          timestamp: "2021-04-02T11:11:48Z"
+        - phase: Upload
+          reason: Upload InProgress
+          status: InProgress
+          timestamp: "2021-04-02T11:11:51Z"
+        - phase: Upload
+          reason: Upload Completed
+          status: Completed
+          timestamp: "2021-04-02T11:15:30Z"
+        location: 9baa90e8-c326-4eba-9fd3-3e363accc6b0/8970181a-18f7-44a0-b1e8-4d061f779ada/custom/data-snapshot/mysql-pv-claim
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"PersistentVolumeClaim\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"k8s-demo-app\",\"tier\":\"mysql\"},\"name\":\"mysql-pv-claim\",\"namespace\":\"pankaj\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"5Gi\"}},\"storageClassName\":\"csi-gce-pd\"}}\n","pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"gke-dev-cluster-dev-cluster-pool-eab0992b-5s14"},"creationTimestamp":"2021-03-31T11:34:21Z","finalizers":["kubernetes.io/pvc-protection"],"labels":{"app":"k8s-demo-app","tier":"mysql"},"name":"mysql-pv-claim","namespace":"pankaj","resourceVersion":"81458443","selfLink":"/api/v1/namespaces/pankaj/persistentvolumeclaims/mysql-pv-claim","uid":"fe2573b8-6ace-4e2f-87a1-aab30d52b090"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"5Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-fe2573b8-6ace-4e2f-87a1-aab30d52b090"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"5Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: mysql-pv-claim
+        podContainersMap:
+        - containers:
+          - mysql
+          podName: k8s-demo-app-mysql-765495d764-8bvgb
+        size: "261038080"
+        snapshotSize: "5368709120"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: mysql-pv-claim-7f8b7857-8578-499a-9a5b-7ea071047896
+            namespace: pankaj
+            resourceVersion: "84182357"
+            uid: 70685d24-fb13-4a2d-aa31-bf2cbf9c5a62
+      resources:
+      - groupVersionKind:
+          kind: Secret
+          version: v1
+        objects:
+        - mysql-pass
+      - groupVersionKind:
+          kind: Service
+          version: v1
+        objects:
+        - k8s-demo-app-frontend
+        - k8s-demo-app-mysql
+      - groupVersionKind:
+          group: apps
+          kind: Deployment
+          version: v1
+        objects:
+        - k8s-demo-app-frontend
+        - k8s-demo-app-mysql
+      - groupVersionKind:
+          group: storage.k8s.io
+          kind: StorageClass
+          version: v1
+        objects:
+        - csi-gce-pd
+      warnings:
+      - |
+        Found Dependant Resource:
+        GVK: [storage.k8s.io/v1, Kind=StorageClass]
+        Name: [csi-gce-pd]
+  startTimestamp: "2021-04-02T11:10:32Z"
+  status: Available
+  type: Full

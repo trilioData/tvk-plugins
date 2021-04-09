@@ -1,0 +1,91 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  creationTimestamp: "2021-04-06T06:00:01Z"
+  labels:
+    app.kubernetes.io/instance: k8s-triliovault-resource-cleaner
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: k8s-triliovault-resource-cleaner-1617688800
+  namespace: pankaj
+  ownerReferences:
+  - apiVersion: batch/v1beta1
+    blockOwnerDeletion: true
+    controller: true
+    kind: CronJob
+    name: k8s-triliovault-resource-cleaner
+    uid: da8e52ac-e5ea-4ccf-96da-46ed89ab9a76
+  resourceVersion: "95070894"
+  selfLink: /apis/batch/v1/namespaces/pankaj/jobs/k8s-triliovault-resource-cleaner-1617688800
+  uid: bf62382e-01c2-460c-83b8-cb48eb7ffb21
+spec:
+  backoffLimit: 6
+  completions: 1
+  parallelism: 1
+  selector:
+    matchLabels:
+      controller-uid: bf62382e-01c2-460c-83b8-cb48eb7ffb21
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: k8s-triliovault-resource-cleaner
+        app.kubernetes.io/managed-by: k8s-triliovault
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+        controller-uid: bf62382e-01c2-460c-83b8-cb48eb7ffb21
+        job-name: k8s-triliovault-resource-cleaner-1617688800
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - env:
+        - name: INSTALL_NAMESPACE
+          value: pankaj
+        image: eu.gcr.io/amazing-chalice-243510/resource-cleaner:v2.0.3
+        imagePullPolicy: IfNotPresent
+        name: resource-cleaner
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - KILL
+            - AUDIT_WRITE
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1001
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      serviceAccount: k8s-triliovault
+      serviceAccountName: k8s-triliovault
+      terminationGracePeriodSeconds: 30
+status: {}

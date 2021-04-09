@@ -1,0 +1,98 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    operation: target-validation
+  creationTimestamp: "2021-02-09T10:22:06Z"
+  labels:
+    app.kubernetes.io/instance: sample-target-3-validator-024cb7
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    owner-gen-id: "2"
+  name: sample-target-3-validator-024cb7
+  namespace: res-1
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Target
+    name: sample-target-3
+    uid: f3e91246-2825-481d-bcbf-badead68c69d
+  resourceVersion: "4210404"
+  selfLink: /apis/batch/v1/namespaces/res-1/jobs/sample-target-3-validator-024cb7
+  uid: f7a21610-66da-4a7b-a3e4-0c79d6813dea
+spec:
+  activeDeadlineSeconds: 43200
+  backoffLimit: 0
+  completions: 1
+  parallelism: 1
+  selector:
+    matchLabels:
+      controller-uid: f7a21610-66da-4a7b-a3e4-0c79d6813dea
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: sample-target-3-validator-024cb7
+        app.kubernetes.io/managed-by: k8s-triliovault
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+        controller-uid: f7a21610-66da-4a7b-a3e4-0c79d6813dea
+        job-name: sample-target-3-validator-024cb7
+        owner-gen-id: "2"
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - command:
+        - /bin/sh
+        - -c
+        - python /opt/tvk/datastore-attacher/mount_utility/mount_by_target_crd/mount_datastores.py
+          --namespace=res-1 --target-name=sample-target-3 && python /opt/tvk/datastore-attacher/scripts/target_validations.py
+          --target-name=sample-target-3 --namespace=res-1
+        env:
+        - name: HELM_VERSION
+          value: v3
+        image: gcr.io/amazing-chalice-243510/datastore-attacher:master
+        imagePullPolicy: Always
+        name: validator
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - SYS_ADMIN
+            drop:
+            - ALL
+          privileged: true
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+          runAsUser: 0
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+      serviceAccount: k8s-triliovault
+      serviceAccountName: k8s-triliovault
+      terminationGracePeriodSeconds: 30
+status: {}

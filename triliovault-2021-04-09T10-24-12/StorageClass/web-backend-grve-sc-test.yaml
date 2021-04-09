@@ -1,0 +1,21 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"storage.k8s.io/v1","kind":"StorageClass","metadata":{"annotations":{},"labels":{"app":"web-backend-grve-frontend","trilio":"web-backend-grve","triliobackupall":"web-backend-grve","triliobackupother":"other"},"name":"web-backend-grve-sc-test"},"parameters":{"type":"pd-standard"},"provisioner":"pd.csi.storage.gke.io","volumeBindingMode":"WaitForFirstConsumer"}
+  creationTimestamp: "2021-02-05T11:26:32Z"
+  labels:
+    app: web-backend-grve-frontend
+    trilio: web-backend-grve
+    triliobackupall: web-backend-grve
+    triliobackupother: other
+  name: web-backend-grve-sc-test
+  resourceVersion: "1362556"
+  selfLink: /apis/storage.k8s.io/v1/storageclasses/web-backend-grve-sc-test
+  uid: 3ebf4cf6-111a-43c3-aca8-b45fe28dc731
+parameters:
+  type: pd-standard
+provisioner: pd.csi.storage.gke.io
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer

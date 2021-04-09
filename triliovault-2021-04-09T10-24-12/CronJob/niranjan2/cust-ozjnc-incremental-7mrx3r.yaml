@@ -1,0 +1,102 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  annotations:
+    backup-type: Incremental
+  creationTimestamp: "2021-02-05T11:29:11Z"
+  labels:
+    app.kubernetes.io/instance: cust-ozjnc-incremental-7mrx3r
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: cust-ozjnc-incremental-7mrx3r
+  namespace: niranjan2
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: BackupPlan
+    name: cust-ozjnc
+    uid: 1ff81b07-0839-42e2-b637-ed2e278088e5
+  resourceVersion: "55600861"
+  selfLink: /apis/batch/v1beta1/namespaces/niranjan2/cronjobs/cust-ozjnc-incremental-7mrx3r
+  uid: fb7f28c4-002b-4183-99f7-9d6555f74b69
+spec:
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: cust-ozjnc-incremental-7mrx3r
+        app.kubernetes.io/managed-by: k8s-triliovault
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+    spec:
+      template:
+        metadata:
+          creationTimestamp: null
+          labels:
+            app.kubernetes.io/instance: cust-ozjnc-incremental-7mrx3r
+            app.kubernetes.io/managed-by: k8s-triliovault
+            app.kubernetes.io/name: k8s-triliovault
+            app.kubernetes.io/part-of: k8s-triliovault
+        spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: beta.kubernetes.io/arch
+                    operator: In
+                    values:
+                    - amd64
+                - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                    - amd64
+          containers:
+          - args:
+            - --namespace=niranjan2
+            - --application-name=cust-ozjnc
+            - --backup-type=Incremental
+            - --backup-schedule-type=Periodic
+            image: gcr.io/amazing-chalice-243510/backup-scheduler:master
+            imagePullPolicy: IfNotPresent
+            name: backup-scheduler
+            resources:
+              limits:
+                cpu: 200m
+                memory: 512Mi
+              requests:
+                cpu: 10m
+                memory: 10Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                add:
+                - KILL
+                - AUDIT_WRITE
+                drop:
+                - ALL
+              privileged: false
+              readOnlyRootFilesystem: false
+              runAsNonRoot: true
+              runAsUser: 1001
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+          dnsPolicy: ClusterFirst
+          restartPolicy: OnFailure
+          schedulerName: default-scheduler
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+          serviceAccount: k8s-triliovault
+          serviceAccountName: k8s-triliovault
+          terminationGracePeriodSeconds: 30
+  schedule: 0 10 15 * *
+  successfulJobsHistoryLimit: 3
+  suspend: false
+status:
+  lastScheduleTime: "2021-03-15T10:00:00Z"

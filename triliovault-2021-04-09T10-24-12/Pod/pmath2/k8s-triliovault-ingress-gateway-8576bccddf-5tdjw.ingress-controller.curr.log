@@ -1,0 +1,327 @@
+I0317 12:26:30.932282       7 request.go:655] Throttling request took 1.003405282s, request: GET:https://10.96.0.1:443/apis/redskyops.dev/v1beta1?timeout=32s
+I0317 12:27:01.612189       1 main.go:258] Starting NGINX Ingress controller Version=edge GitCommit=177af78c
+2021/03/17 12:27:01 [notice] 23#23: using the "epoll" event method
+2021/03/17 12:27:01 [notice] 23#23: nginx/1.19.8
+2021/03/17 12:27:01 [notice] 23#23: built by gcc 8.3.1 20191121 (Red Hat 8.3.1-5) (GCC) 
+2021/03/17 12:27:01 [notice] 23#23: OS: Linux 4.19.150+
+2021/03/17 12:27:01 [notice] 23#23: getrlimit(RLIMIT_NOFILE): 1048576:1048576
+2021/03/17 12:27:01 [notice] 23#23: start worker processes
+2021/03/17 12:27:01 [notice] 23#23: start worker process 24
+2021/03/17 12:27:01 [notice] 23#23: start worker process 25
+2021/03/17 12:27:01 [notice] 23#23: start worker process 26
+2021/03/17 12:27:01 [notice] 23#23: start worker process 27
+I0317 12:27:01.837844       1 leaderelection.go:243] attempting to acquire leader lease pmath2/nginx-ingress-leader-election...
+W0317 12:27:01.842902       1 controller.go:3055] Using the DEPRECATED annotation 'kubernetes.io/ingress.class'. The 'ingressClassName' field will be ignored.
+W0317 12:27:01.843014       1 controller.go:2174] Error retrieving endpoints for the service k8s-triliovault-web-backend: service pmath2/k8s-triliovault-web-backend doesn't exist
+W0317 12:27:01.843025       1 controller.go:2174] Error retrieving endpoints for the service k8s-triliovault-web: service pmath2/k8s-triliovault-web doesn't exist
+2021/03/17 12:27:02 [notice] 23#23: signal 1 (SIGHUP) received from 30, reconfiguring
+2021/03/17 12:27:02 [notice] 23#23: reconfiguring
+2021/03/17 12:27:02 [notice] 23#23: using the "epoll" event method
+2021/03/17 12:27:02 [notice] 23#23: start worker processes
+2021/03/17 12:27:02 [notice] 23#23: start worker process 33
+2021/03/17 12:27:02 [notice] 23#23: start worker process 34
+2021/03/17 12:27:02 [notice] 23#23: start worker process 35
+2021/03/17 12:27:02 [notice] 23#23: start worker process 36
+2021/03/17 12:27:02 [notice] 26#26: gracefully shutting down
+2021/03/17 12:27:02 [notice] 24#24: gracefully shutting down
+2021/03/17 12:27:02 [notice] 26#26: exiting
+2021/03/17 12:27:02 [notice] 24#24: exiting
+2021/03/17 12:27:02 [notice] 26#26: exit
+2021/03/17 12:27:02 [notice] 24#24: exit
+2021/03/17 12:27:02 [notice] 25#25: gracefully shutting down
+2021/03/17 12:27:02 [notice] 25#25: exiting
+2021/03/17 12:27:02 [notice] 25#25: exit
+2021/03/17 12:27:02 [notice] 27#27: gracefully shutting down
+2021/03/17 12:27:02 [notice] 27#27: exiting
+2021/03/17 12:27:02 [notice] 27#27: exit
+2021/03/17 12:27:02 [notice] 23#23: signal 17 (SIGCHLD) received from 24
+2021/03/17 12:27:02 [notice] 23#23: worker process 24 exited with code 0
+2021/03/17 12:27:02 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/17 12:27:02 [notice] 23#23: signal 17 (SIGCHLD) received from 26
+2021/03/17 12:27:02 [notice] 23#23: worker process 25 exited with code 0
+2021/03/17 12:27:02 [notice] 23#23: worker process 26 exited with code 0
+2021/03/17 12:27:02 [notice] 23#23: worker process 27 exited with code 0
+2021/03/17 12:27:02 [notice] 23#23: signal 29 (SIGIO) received
+W0317 12:27:02.259502       1 controller.go:2174] Error retrieving endpoints for the service k8s-triliovault-web: No endpoints for target port 9443 in service k8s-triliovault-web
+I0317 12:27:02.259625       1 event.go:282] Event(v1.ObjectReference{Kind:"Ingress", Namespace:"pmath2", Name:"k8s-triliovault-ingress", UID:"84901eb7-d6a4-4ff2-bb8b-3b0236de74f0", APIVersion:"networking.k8s.io/v1beta1", ResourceVersion:"57259690", FieldPath:""}): type: 'Normal' reason: 'AddedOrUpdated' Configuration for pmath2/k8s-triliovault-ingress was added or updated 
+2021/03/17 12:27:02 [notice] 23#23: signal 1 (SIGHUP) received from 37, reconfiguring
+2021/03/17 12:27:02 [notice] 23#23: reconfiguring
+2021/03/17 12:27:02 [notice] 23#23: using the "epoll" event method
+2021/03/17 12:27:02 [notice] 23#23: start worker processes
+2021/03/17 12:27:02 [notice] 23#23: start worker process 38
+2021/03/17 12:27:02 [notice] 23#23: start worker process 39
+2021/03/17 12:27:02 [notice] 23#23: start worker process 40
+2021/03/17 12:27:02 [notice] 23#23: start worker process 41
+2021/03/17 12:27:02 [notice] 35#35: gracefully shutting down
+2021/03/17 12:27:02 [notice] 35#35: exiting
+2021/03/17 12:27:02 [notice] 35#35: exit
+2021/03/17 12:27:02 [notice] 33#33: gracefully shutting down
+2021/03/17 12:27:02 [notice] 33#33: exiting
+2021/03/17 12:27:02 [notice] 33#33: exit
+2021/03/17 12:27:02 [notice] 36#36: gracefully shutting down
+2021/03/17 12:27:02 [notice] 36#36: exiting
+2021/03/17 12:27:02 [notice] 36#36: exit
+2021/03/17 12:27:02 [notice] 34#34: gracefully shutting down
+2021/03/17 12:27:02 [notice] 34#34: exiting
+2021/03/17 12:27:02 [notice] 34#34: exit
+2021/03/17 12:27:02 [notice] 23#23: signal 17 (SIGCHLD) received from 35
+2021/03/17 12:27:02 [notice] 23#23: worker process 35 exited with code 0
+2021/03/17 12:27:02 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/17 12:27:02 [notice] 23#23: signal 17 (SIGCHLD) received from 33
+2021/03/17 12:27:02 [notice] 23#23: worker process 33 exited with code 0
+2021/03/17 12:27:02 [notice] 23#23: worker process 34 exited with code 0
+2021/03/17 12:27:02 [notice] 23#23: signal 29 (SIGIO) received
+W0317 12:27:02.561662       1 controller.go:2174] Error retrieving endpoints for the service k8s-triliovault-web: No endpoints for target port 9443 in service k8s-triliovault-web
+2021/03/17 12:27:02 [notice] 23#23: signal 17 (SIGCHLD) received from 36
+2021/03/17 12:27:02 [notice] 23#23: worker process 36 exited with code 0
+2021/03/17 12:27:02 [notice] 23#23: signal 29 (SIGIO) received
+I0317 12:27:02.562244       1 event.go:282] Event(v1.ObjectReference{Kind:"Ingress", Namespace:"pmath2", Name:"k8s-triliovault-ingress", UID:"84901eb7-d6a4-4ff2-bb8b-3b0236de74f0", APIVersion:"networking.k8s.io/v1beta1", ResourceVersion:"57259690", FieldPath:""}): type: 'Normal' reason: 'AddedOrUpdated' Configuration for pmath2/k8s-triliovault-ingress was added or updated 
+2021/03/17 12:27:02 [notice] 23#23: signal 1 (SIGHUP) received from 42, reconfiguring
+2021/03/17 12:27:02 [notice] 23#23: reconfiguring
+2021/03/17 12:27:02 [notice] 23#23: using the "epoll" event method
+2021/03/17 12:27:02 [notice] 23#23: start worker processes
+2021/03/17 12:27:02 [notice] 23#23: start worker process 43
+2021/03/17 12:27:02 [notice] 23#23: start worker process 44
+2021/03/17 12:27:02 [notice] 23#23: start worker process 45
+2021/03/17 12:27:02 [notice] 23#23: start worker process 46
+2021/03/17 12:27:02 [notice] 38#38: gracefully shutting down
+2021/03/17 12:27:02 [notice] 39#39: gracefully shutting down
+2021/03/17 12:27:02 [notice] 39#39: exiting
+2021/03/17 12:27:02 [notice] 38#38: exiting
+2021/03/17 12:27:02 [notice] 38#38: exit
+2021/03/17 12:27:02 [notice] 39#39: exit
+2021/03/17 12:27:02 [notice] 40#40: gracefully shutting down
+2021/03/17 12:27:02 [notice] 40#40: exiting
+2021/03/17 12:27:02 [notice] 40#40: exit
+2021/03/17 12:27:02 [notice] 41#41: gracefully shutting down
+2021/03/17 12:27:02 [notice] 41#41: exiting
+2021/03/17 12:27:02 [notice] 41#41: exit
+2021/03/17 12:27:02 [notice] 23#23: signal 17 (SIGCHLD) received from 40
+2021/03/17 12:27:02 [notice] 23#23: worker process 39 exited with code 0
+2021/03/17 12:27:02 [notice] 23#23: worker process 40 exited with code 0
+2021/03/17 12:27:02 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/17 12:27:02 [notice] 23#23: signal 17 (SIGCHLD) received from 38
+2021/03/17 12:27:02 [notice] 23#23: worker process 38 exited with code 0
+2021/03/17 12:27:02 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/17 12:27:02 [notice] 23#23: signal 17 (SIGCHLD) received from 41
+2021/03/17 12:27:02 [notice] 23#23: worker process 41 exited with code 0
+2021/03/17 12:27:02 [notice] 23#23: signal 29 (SIGIO) received
+W0317 12:27:02.760541       1 controller.go:2174] Error retrieving endpoints for the service k8s-triliovault-web: No endpoints for target port 9443 in service k8s-triliovault-web
+I0317 12:27:02.760811       1 event.go:282] Event(v1.ObjectReference{Kind:"Ingress", Namespace:"pmath2", Name:"k8s-triliovault-ingress", UID:"84901eb7-d6a4-4ff2-bb8b-3b0236de74f0", APIVersion:"networking.k8s.io/v1beta1", ResourceVersion:"57259690", FieldPath:""}): type: 'Normal' reason: 'AddedOrUpdated' Configuration for pmath2/k8s-triliovault-ingress was added or updated 
+2021/03/17 12:27:02 [notice] 23#23: signal 1 (SIGHUP) received from 47, reconfiguring
+2021/03/17 12:27:02 [notice] 23#23: reconfiguring
+2021/03/17 12:27:02 [notice] 23#23: using the "epoll" event method
+2021/03/17 12:27:02 [notice] 23#23: start worker processes
+2021/03/17 12:27:02 [notice] 23#23: start worker process 48
+2021/03/17 12:27:02 [notice] 23#23: start worker process 49
+2021/03/17 12:27:02 [notice] 23#23: start worker process 50
+2021/03/17 12:27:02 [notice] 23#23: start worker process 51
+2021/03/17 12:27:03 [notice] 43#43: gracefully shutting down
+2021/03/17 12:27:03 [notice] 43#43: exiting
+2021/03/17 12:27:03 [notice] 43#43: exit
+2021/03/17 12:27:03 [notice] 44#44: gracefully shutting down
+2021/03/17 12:27:03 [notice] 44#44: exiting
+2021/03/17 12:27:03 [notice] 44#44: exit
+2021/03/17 12:27:03 [notice] 46#46: gracefully shutting down
+2021/03/17 12:27:03 [notice] 46#46: exiting
+2021/03/17 12:27:03 [notice] 46#46: exit
+2021/03/17 12:27:03 [notice] 45#45: gracefully shutting down
+2021/03/17 12:27:03 [notice] 45#45: exiting
+2021/03/17 12:27:03 [notice] 45#45: exit
+2021/03/17 12:27:03 [notice] 23#23: signal 17 (SIGCHLD) received from 43
+2021/03/17 12:27:03 [notice] 23#23: worker process 43 exited with code 0
+2021/03/17 12:27:03 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/17 12:27:03 [notice] 23#23: signal 17 (SIGCHLD) received from 44
+2021/03/17 12:27:03 [notice] 23#23: worker process 44 exited with code 0
+2021/03/17 12:27:03 [notice] 23#23: worker process 45 exited with code 0
+2021/03/17 12:27:03 [notice] 23#23: worker process 46 exited with code 0
+2021/03/17 12:27:03 [notice] 23#23: signal 29 (SIGIO) received
+W0317 12:27:03.064144       1 controller.go:2174] Error retrieving endpoints for the service k8s-triliovault-web: No endpoints for target port 9443 in service k8s-triliovault-web
+2021/03/17 12:27:03 [notice] 23#23: signal 1 (SIGHUP) received from 52, reconfiguring
+2021/03/17 12:27:03 [notice] 23#23: reconfiguring
+2021/03/17 12:27:03 [notice] 23#23: using the "epoll" event method
+2021/03/17 12:27:03 [notice] 23#23: start worker processes
+2021/03/17 12:27:03 [notice] 23#23: start worker process 53
+2021/03/17 12:27:03 [notice] 23#23: start worker process 54
+2021/03/17 12:27:03 [notice] 23#23: start worker process 55
+2021/03/17 12:27:03 [notice] 23#23: start worker process 56
+2021/03/17 12:27:03 [notice] 48#48: gracefully shutting down
+2021/03/17 12:27:03 [notice] 49#49: gracefully shutting down
+2021/03/17 12:27:03 [notice] 49#49: exiting
+2021/03/17 12:27:03 [notice] 48#48: exiting
+2021/03/17 12:27:03 [notice] 48#48: exit
+2021/03/17 12:27:03 [notice] 49#49: exit
+2021/03/17 12:27:03 [notice] 50#50: gracefully shutting down
+2021/03/17 12:27:03 [notice] 50#50: exiting
+2021/03/17 12:27:03 [notice] 50#50: exit
+2021/03/17 12:27:03 [notice] 51#51: gracefully shutting down
+2021/03/17 12:27:03 [notice] 51#51: exiting
+2021/03/17 12:27:03 [notice] 51#51: exit
+2021/03/17 12:27:03 [notice] 23#23: signal 17 (SIGCHLD) received from 48
+2021/03/17 12:27:03 [notice] 23#23: worker process 48 exited with code 0
+2021/03/17 12:27:03 [notice] 23#23: worker process 49 exited with code 0
+2021/03/17 12:27:03 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/17 12:27:03 [notice] 23#23: signal 17 (SIGCHLD) received from 50
+2021/03/17 12:27:03 [notice] 23#23: worker process 50 exited with code 0
+2021/03/17 12:27:03 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/17 12:27:03 [notice] 23#23: signal 17 (SIGCHLD) received from 51
+2021/03/17 12:27:03 [notice] 23#23: worker process 51 exited with code 0
+2021/03/17 12:27:03 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/17 12:27:03 [notice] 23#23: signal 1 (SIGHUP) received from 57, reconfiguring
+2021/03/17 12:27:03 [notice] 23#23: reconfiguring
+2021/03/17 12:27:03 [notice] 23#23: using the "epoll" event method
+2021/03/17 12:27:03 [notice] 23#23: start worker processes
+2021/03/17 12:27:03 [notice] 23#23: start worker process 58
+2021/03/17 12:27:03 [notice] 23#23: start worker process 59
+2021/03/17 12:27:03 [notice] 23#23: start worker process 60
+2021/03/17 12:27:03 [notice] 23#23: start worker process 61
+2021/03/17 12:27:03 [notice] 53#53: gracefully shutting down
+2021/03/17 12:27:03 [notice] 53#53: exiting
+2021/03/17 12:27:03 [notice] 53#53: exit
+2021/03/17 12:27:03 [notice] 54#54: gracefully shutting down
+2021/03/17 12:27:03 [notice] 56#56: gracefully shutting down
+2021/03/17 12:27:03 [notice] 56#56: exiting
+2021/03/17 12:27:03 [notice] 54#54: exiting
+2021/03/17 12:27:03 [notice] 56#56: exit
+2021/03/17 12:27:03 [notice] 54#54: exit
+2021/03/17 12:27:03 [notice] 55#55: gracefully shutting down
+2021/03/17 12:27:03 [notice] 55#55: exiting
+2021/03/17 12:27:03 [notice] 55#55: exit
+I0317 12:27:03.446164       1 event.go:282] Event(v1.ObjectReference{Kind:"Secret", Namespace:"pmath2", Name:"k8s-triliovault-ingress-tls-certs", UID:"b6bdbea4-3c3b-4490-9b77-8479abb6ff9a", APIVersion:"v1", ResourceVersion:"58854526", FieldPath:""}): type: 'Normal' reason: 'Updated' the special Secret pmath2/k8s-triliovault-ingress-tls-certs was updated
+2021/03/17 12:27:03 [notice] 23#23: signal 17 (SIGCHLD) received from 53
+2021/03/17 12:27:03 [notice] 23#23: worker process 53 exited with code 0
+2021/03/17 12:27:03 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/17 12:27:03 [notice] 23#23: signal 17 (SIGCHLD) received from 55
+2021/03/17 12:27:03 [notice] 23#23: worker process 54 exited with code 0
+2021/03/17 12:27:03 [notice] 23#23: worker process 55 exited with code 0
+2021/03/17 12:27:03 [notice] 23#23: worker process 56 exited with code 0
+2021/03/17 12:27:03 [notice] 23#23: signal 29 (SIGIO) received
+I0317 12:27:32.531474       1 leaderelection.go:253] successfully acquired lease pmath2/nginx-ingress-leader-election
+2021/03/17 12:29:14 [notice] 23#23: signal 1 (SIGHUP) received from 62, reconfiguring
+2021/03/17 12:29:14 [notice] 23#23: reconfiguring
+2021/03/17 12:29:14 [notice] 23#23: using the "epoll" event method
+2021/03/17 12:29:14 [notice] 23#23: start worker processes
+2021/03/17 12:29:14 [notice] 23#23: start worker process 63
+2021/03/17 12:29:14 [notice] 23#23: start worker process 64
+2021/03/17 12:29:14 [notice] 23#23: start worker process 65
+2021/03/17 12:29:14 [notice] 23#23: start worker process 66
+2021/03/17 12:29:15 [notice] 58#58: gracefully shutting down
+2021/03/17 12:29:15 [notice] 58#58: exiting
+2021/03/17 12:29:15 [notice] 58#58: exit
+2021/03/17 12:29:15 [notice] 59#59: gracefully shutting down
+2021/03/17 12:29:15 [notice] 59#59: exiting
+2021/03/17 12:29:15 [notice] 60#60: gracefully shutting down
+2021/03/17 12:29:15 [notice] 60#60: exiting
+2021/03/17 12:29:15 [notice] 60#60: exit
+2021/03/17 12:29:15 [notice] 59#59: exit
+2021/03/17 12:29:15 [notice] 61#61: gracefully shutting down
+2021/03/17 12:29:15 [notice] 61#61: exiting
+2021/03/17 12:29:15 [notice] 61#61: exit
+2021/03/17 12:29:15 [notice] 23#23: signal 17 (SIGCHLD) received from 60
+2021/03/17 12:29:15 [notice] 23#23: worker process 60 exited with code 0
+2021/03/17 12:29:15 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/17 12:29:15 [notice] 23#23: signal 17 (SIGCHLD) received from 58
+2021/03/17 12:29:15 [notice] 23#23: worker process 58 exited with code 0
+2021/03/17 12:29:15 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/17 12:29:15 [notice] 23#23: signal 17 (SIGCHLD) received from 59
+2021/03/17 12:29:15 [notice] 23#23: worker process 59 exited with code 0
+2021/03/17 12:29:15 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/17 12:29:15 [notice] 23#23: signal 17 (SIGCHLD) received from 61
+2021/03/17 12:29:15 [notice] 23#23: worker process 61 exited with code 0
+2021/03/17 12:29:15 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/23 19:59:32 [notice] 23#23: signal 1 (SIGHUP) received from 67, reconfiguring
+2021/03/23 19:59:32 [notice] 23#23: reconfiguring
+2021/03/23 19:59:32 [notice] 23#23: using the "epoll" event method
+2021/03/23 19:59:32 [notice] 23#23: start worker processes
+2021/03/23 19:59:32 [notice] 23#23: start worker process 68
+2021/03/23 19:59:32 [notice] 23#23: start worker process 69
+2021/03/23 19:59:32 [notice] 23#23: start worker process 70
+2021/03/23 19:59:32 [notice] 23#23: start worker process 71
+2021/03/23 19:59:32 [notice] 63#63: gracefully shutting down
+2021/03/23 19:59:32 [notice] 64#64: gracefully shutting down
+2021/03/23 19:59:32 [notice] 63#63: exiting
+2021/03/23 19:59:32 [notice] 64#64: exiting
+2021/03/23 19:59:32 [notice] 63#63: exit
+2021/03/23 19:59:32 [notice] 64#64: exit
+2021/03/23 19:59:32 [notice] 65#65: gracefully shutting down
+2021/03/23 19:59:32 [notice] 65#65: exiting
+2021/03/23 19:59:32 [notice] 65#65: exit
+2021/03/23 19:59:32 [notice] 66#66: gracefully shutting down
+2021/03/23 19:59:32 [notice] 66#66: exiting
+2021/03/23 19:59:32 [notice] 66#66: exit
+2021/03/23 19:59:32 [notice] 23#23: signal 17 (SIGCHLD) received from 63
+2021/03/23 19:59:32 [notice] 23#23: worker process 63 exited with code 0
+2021/03/23 19:59:32 [notice] 23#23: worker process 65 exited with code 0
+2021/03/23 19:59:32 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/23 19:59:32 [notice] 23#23: signal 17 (SIGCHLD) received from 64
+2021/03/23 19:59:32 [notice] 23#23: worker process 64 exited with code 0
+2021/03/23 19:59:32 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/23 19:59:32 [notice] 23#23: signal 17 (SIGCHLD) received from 66
+2021/03/23 19:59:32 [notice] 23#23: worker process 66 exited with code 0
+2021/03/23 19:59:32 [notice] 23#23: signal 29 (SIGIO) received
+W0323 20:02:35.537747       1 controller.go:2174] Error retrieving endpoints for the service k8s-triliovault-web: No endpoints for target port 9443 in service k8s-triliovault-web
+2021/03/23 20:02:35 [notice] 23#23: signal 1 (SIGHUP) received from 72, reconfiguring
+2021/03/23 20:02:35 [notice] 23#23: reconfiguring
+2021/03/23 20:02:35 [notice] 23#23: using the "epoll" event method
+2021/03/23 20:02:35 [notice] 23#23: start worker processes
+2021/03/23 20:02:35 [notice] 23#23: start worker process 73
+2021/03/23 20:02:35 [notice] 23#23: start worker process 74
+2021/03/23 20:02:35 [notice] 23#23: start worker process 75
+2021/03/23 20:02:35 [notice] 23#23: start worker process 76
+2021/03/23 20:02:35 [notice] 68#68: gracefully shutting down
+2021/03/23 20:02:35 [notice] 68#68: exiting
+2021/03/23 20:02:35 [notice] 68#68: exit
+2021/03/23 20:02:35 [notice] 70#70: gracefully shutting down
+2021/03/23 20:02:35 [notice] 69#69: gracefully shutting down
+2021/03/23 20:02:35 [notice] 70#70: exiting
+2021/03/23 20:02:35 [notice] 69#69: exiting
+2021/03/23 20:02:35 [notice] 69#69: exit
+2021/03/23 20:02:35 [notice] 70#70: exit
+2021/03/23 20:02:35 [notice] 71#71: gracefully shutting down
+2021/03/23 20:02:35 [notice] 71#71: exiting
+2021/03/23 20:02:35 [notice] 71#71: exit
+2021/03/23 20:02:35 [notice] 23#23: signal 17 (SIGCHLD) received from 68
+2021/03/23 20:02:35 [notice] 23#23: worker process 68 exited with code 0
+2021/03/23 20:02:35 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/23 20:02:35 [notice] 23#23: signal 17 (SIGCHLD) received from 69
+2021/03/23 20:02:35 [notice] 23#23: worker process 69 exited with code 0
+2021/03/23 20:02:35 [notice] 23#23: worker process 70 exited with code 0
+2021/03/23 20:02:35 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/23 20:02:35 [notice] 23#23: signal 17 (SIGCHLD) received from 71
+2021/03/23 20:02:35 [notice] 23#23: worker process 71 exited with code 0
+2021/03/23 20:02:35 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/23 20:03:57 [notice] 23#23: signal 1 (SIGHUP) received from 77, reconfiguring
+2021/03/23 20:03:57 [notice] 23#23: reconfiguring
+2021/03/23 20:03:57 [notice] 23#23: using the "epoll" event method
+2021/03/23 20:03:57 [notice] 23#23: start worker processes
+2021/03/23 20:03:57 [notice] 23#23: start worker process 78
+2021/03/23 20:03:57 [notice] 23#23: start worker process 79
+2021/03/23 20:03:57 [notice] 23#23: start worker process 80
+2021/03/23 20:03:57 [notice] 23#23: start worker process 81
+2021/03/23 20:03:57 [notice] 74#74: gracefully shutting down
+2021/03/23 20:03:57 [notice] 74#74: exiting
+2021/03/23 20:03:57 [notice] 74#74: exit
+2021/03/23 20:03:57 [notice] 73#73: gracefully shutting down
+2021/03/23 20:03:57 [notice] 73#73: exiting
+2021/03/23 20:03:57 [notice] 75#75: gracefully shutting down
+2021/03/23 20:03:57 [notice] 73#73: exit
+2021/03/23 20:03:57 [notice] 75#75: exiting
+2021/03/23 20:03:57 [notice] 75#75: exit
+2021/03/23 20:03:57 [notice] 76#76: gracefully shutting down
+2021/03/23 20:03:57 [notice] 76#76: exiting
+2021/03/23 20:03:57 [notice] 76#76: exit
+2021/03/23 20:03:57 [notice] 23#23: signal 17 (SIGCHLD) received from 74
+2021/03/23 20:03:57 [notice] 23#23: worker process 74 exited with code 0
+2021/03/23 20:03:57 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/23 20:03:57 [notice] 23#23: signal 17 (SIGCHLD) received from 76
+2021/03/23 20:03:57 [notice] 23#23: worker process 76 exited with code 0
+2021/03/23 20:03:57 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/23 20:03:57 [notice] 23#23: signal 17 (SIGCHLD) received from 73
+2021/03/23 20:03:57 [notice] 23#23: worker process 73 exited with code 0
+2021/03/23 20:03:57 [notice] 23#23: signal 29 (SIGIO) received
+2021/03/23 20:03:57 [notice] 23#23: signal 17 (SIGCHLD) received from 75
+2021/03/23 20:03:57 [notice] 23#23: worker process 75 exited with code 0
+2021/03/23 20:03:57 [notice] 23#23: signal 29 (SIGIO) received
+E0402 10:52:51.865629       1 leaderelection.go:325] error retrieving resource lock pmath2/nginx-ingress-leader-election: Get "https://10.96.0.1:443/api/v1/namespaces/pmath2/configmaps/nginx-ingress-leader-election": dial tcp 10.96.0.1:443: connect: connection refused
+E0402 10:52:59.486569       1 leaderelection.go:325] error retrieving resource lock pmath2/nginx-ingress-leader-election: Get "https://10.96.0.1:443/api/v1/namespaces/pmath2/configmaps/nginx-ingress-leader-election": dial tcp 10.96.0.1:443: connect: connection refused
+I0402 10:53:06.635772       1 leaderelection.go:278] failed to renew lease pmath2/nginx-ingress-leader-election: timed out waiting for the condition

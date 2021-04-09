@@ -1,0 +1,13 @@
+apiVersion: triliovault.trilio.io/v1
+kind: License
+metadata:
+  creationTimestamp: "2021-03-26T08:13:11Z"
+  generation: 1
+  name: license-sample
+  namespace: vishu
+  resourceVersion: "74120933"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/vishu/licenses/license-sample
+  uid: 78fa3fb3-c64c-4869-8b25-969022eac2db
+spec:
+  key: |
+    xLQNDgwKD3jafVLLasMwELzrKwQ9Cyz5gR3woeQBpUla2iT3lTQlgsQ2sh2av6/cUBqckDlqZ2dmd/W08I6vyHOVcRlPkngiI64iJdnUgzpXVzPqwP9RDkURxUJlbG7dwOAjlAsPbLyjAyPTuRP4DaPzPdjBGVQtdvDttUqp2Ipc1aGiymD+3Th/voQYvBMRpcGeTetjQ9X5RvkDdk8dW/dHDf/2tW2D+lVZSPYJf4J/mY07JRVxYg1EjkgLKaFFrmwiMk25tWmGIgvN8zW/gzK8i4uAjR4KLC9Dj+3Lze55u9z8acjHIUzd4E6Iio5oGzKw7LXX2N7MyEuNAtKqSKg0hwhOJHSeBrssMxp5kWsN9rtzujnt9frfe2/21OLB75hSiOK68YkChQ/p+Lq2aH8A5G+dWTBEAiA0NTh6iPIOcGpZtjrpazdfaQBV2buNFHGEoEBRGNGJLQIgUU+dvvpIYRMyzGp6Fely3ugYlGrLttW/RFqwoOYwcqk=X02gc

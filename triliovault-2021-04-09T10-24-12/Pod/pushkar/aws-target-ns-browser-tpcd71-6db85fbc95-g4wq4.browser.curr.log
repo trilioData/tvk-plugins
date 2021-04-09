@@ -1,0 +1,345 @@
+INFO:root:Calling crd-parser to get the datastore
+INFO:root:Parsing the target-crd to get the list of datastores
+INFO:root:Fetched the list of datastores to be mounted
+INFO:root:mounting datastore of type s3
+INFO:root:mounting the S3 datastore by the name aws-target-ns
+INFO:root:writing the conf data to the conf file: aws-target-ns_vault.conf
+
+INFO:root:command: /usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/aws-target-ns_vault.conf &
+INFO:root:Executing command /usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/aws-target-ns_vault.conf &
+INFO:root:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/aws-target-ns_vault.conf & command execution starting time: 2021-04-06 10:14:04.858807
+INFO:root:waiting for command to complete...
+INFO:root:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/aws-target-ns_vault.conf & command execution completion time: 2021-04-06 10:14:06.870207
+INFO:root:Command:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/aws-target-ns_vault.conf &, ExitCode:0
+
+INFO:root:2021-04-06 10:14:06.870465: waiting for mount operation to complete.
+INFO:root:2021-04-06 10:14:08.873160: waiting for mount operation to complete.
+INFO:root:2021-04-06 10:14:08.873911: target mounted successfully.
+INFO:root:Removing all the vault files from the ./tmp directory
+
+
+I0406 10:14:10.375991      31 request.go:655] Throttling request took 1.04364635s, request: GET:https://10.96.0.1:443/apis/admissionregistration.k8s.io/v1beta1?timeout=32s
+{"component":"Target-Browser","file":"cmd/target-browser/main.go:38","func":"main.main","level":"info","msg":"Creating manager client","time":"2021-04-06T10:14:10Z"}
+{"component":"Target-Browser","file":"cmd/target-browser/main.go:47","func":"main.main","level":"info","msg":"Initializing cache for target browser","time":"2021-04-06T10:14:11Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:46","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.InitializeBrowserCache","level":"info","msg":"Target type: [ObjectStore]","time":"2021-04-06T10:14:11Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:47","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.InitializeBrowserCache","level":"info","msg":"Maximum GoRoutines to be used 75","time":"2021-04-06T10:14:11Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:245","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch","level":"info","msg":"Starting target watcher on dir [/triliodata]","time":"2021-04-06T10:14:11Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:53","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.InitializeBrowserCache","level":"info","msg":"Successfully set up watchers over target locations","time":"2021-04-06T10:14:11Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:55","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.InitializeBrowserCache","level":"info","msg":"Starting background sync for all current data in target location","time":"2021-04-06T10:14:11Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:92","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncOnce","level":"info","msg":"Read all backupplans from target location","time":"2021-04-06T10:14:11Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:60","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.InitializeBrowserCache","level":"info","msg":"Initiating watcher for target","time":"2021-04-06T10:14:11Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:70","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.InitializeBrowserCache","level":"info","msg":"Successfully created watcher instance for target","time":"2021-04-06T10:14:11Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:72","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.InitializeBrowserCache","level":"info","msg":"Successfully completed background sync-up of data in target location at startup","time":"2021-04-06T10:14:11Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:73","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.InitializeBrowserCache","level":"info","msg":"cache is now ready","time":"2021-04-06T10:14:11Z"}
+{"component":"Target-Browser","file":"cmd/target-browser/main.go:61","func":"main.main","level":"info","msg":"Starting manager","time":"2021-04-06T10:14:11Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/5fd49fbe-a90b-4d1e-8d72-26ad6f5e14ae-Rjm8Ay]","time":"2021-04-06T10:15:07Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/df9924b2-c7f0-4e8f-b64a-e967f3d00629]","time":"2021-04-06T10:16:39Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:307","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/df9924b2-c7f0-4e8f-b64a-e967f3d00629/5c181f61-9afe-4042-82e3-5a14aadb2b3c/backup.json]","time":"2021-04-06T10:16:55Z"}
+2021-04-06 10:16:55.391 13 INFO s3 [-] Starting worker thread[7f46d1a9d700].[00m
+2021-04-06 10:16:55.453 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 10:16:55.469 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 10:16:55.492 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 10:16:55.497 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/resources/common/helper.go:36","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/resources/common.ReadBackupFromTarget","level":"error","msg":"Error while unmarshalling backupunexpected end of JSON input","time":"2021-04-06T10:16:55Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:175","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup.func1","level":"error","msg":"Error reading backup 5c181f61-9afe-4042-82e3-5a14aadb2b3c for backupplan df9924b2-c7f0-4e8f-b64a-e967f3d00629, unexpected end of JSON input","time":"2021-04-06T10:16:55Z"}
+2021-04-06 10:16:57.888 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 10:16:57.907 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 10:16:57.929 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 10:16:57.944 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 10:16:57.995 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 10:16:58.643 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+2021-04-06 10:16:58.657 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 10:16:58.706 13 INFO s3 [-] Starting worker thread[7f46b17fa700].[00m
+2021-04-06 10:16:58.727 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 10:16:58.739 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/resources/common/helper.go:84","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/resources/common.ReadBackupPlanFromTarget","level":"error","msg":"TVKMeta file NotFound at target location, /triliodata/df9924b2-c7f0-4e8f-b64a-e967f3d00629/5c181f61-9afe-4042-82e3-5a14aadb2b3c/tvk-meta.json","time":"2021-04-06T10:16:59Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:207","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup","level":"info","msg":"BackupPlan not found in cache, adding new entry df9924b2-c7f0-4e8f-b64a-e967f3d00629","time":"2021-04-06T10:16:59Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/122f91ee-a761-4d88-baee-c52a50e0828e]","time":"2021-04-06T10:17:47Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:307","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/122f91ee-a761-4d88-baee-c52a50e0828e/74038319-1b08-47d0-90a0-a4beefa4b413/backup.json]","time":"2021-04-06T10:18:20Z"}
+2021-04-06 10:18:20.701 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+2021-04-06 10:18:20.719 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 10:18:20.735 13 INFO s3 [-] Starting worker thread[7f46b17fa700].[00m
+2021-04-06 10:18:20.747 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 10:18:20.807 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 10:18:21.350 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 10:18:21.368 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 10:18:21.381 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 10:18:21.404 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 10:18:21.419 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+2021-04-06 10:18:22.056 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 10:18:22.072 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 10:18:22.104 13 INFO s3 [-] Starting worker thread[7f46b17fa700].[00m
+2021-04-06 10:18:22.136 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 10:18:22.146 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:207","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup","level":"info","msg":"BackupPlan not found in cache, adding new entry 122f91ee-a761-4d88-baee-c52a50e0828e","time":"2021-04-06T10:18:22Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/497ed961-4a58-4618-ba17-62441d8c4c09]","time":"2021-04-06T10:19:19Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:307","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/497ed961-4a58-4618-ba17-62441d8c4c09/017a96a7-9e1a-409f-8fe8-f8a80d7248af/backup.json]","time":"2021-04-06T10:19:36Z"}
+2021-04-06 10:19:36.832 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+2021-04-06 10:19:36.845 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 10:19:36.863 13 INFO s3 [-] Starting worker thread[7f46b17fa700].[00m
+2021-04-06 10:19:36.915 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 10:19:37.052 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 10:19:37.619 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 10:19:37.644 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 10:19:37.694 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 10:19:37.727 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 10:19:37.740 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/resources/common/helper.go:84","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/resources/common.ReadBackupPlanFromTarget","level":"error","msg":"TVKMeta file NotFound at target location, /triliodata/497ed961-4a58-4618-ba17-62441d8c4c09/017a96a7-9e1a-409f-8fe8-f8a80d7248af/tvk-meta.json","time":"2021-04-06T10:19:38Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:207","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup","level":"info","msg":"BackupPlan not found in cache, adding new entry 497ed961-4a58-4618-ba17-62441d8c4c09","time":"2021-04-06T10:19:38Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/922e35f5-4d99-4d37-a03b-e369e8a0abdb]","time":"2021-04-06T10:20:15Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/976ccb93-233d-4290-ac36-44d32bf848e2]","time":"2021-04-06T10:22:00Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/da6de442-66fd-4cc0-bf32-ecdf4073d53b]","time":"2021-04-06T10:22:06Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:307","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/da6de442-66fd-4cc0-bf32-ecdf4073d53b/c4263da0-cb5a-40df-a140-7c5883673095/backup.json]","time":"2021-04-06T10:22:19Z"}
+2021-04-06 10:22:19.339 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+2021-04-06 10:22:19.357 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 10:22:19.404 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 10:22:19.425 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/resources/common/helper.go:36","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/resources/common.ReadBackupFromTarget","level":"error","msg":"Error while unmarshalling backupinvalid character '\\x00' looking for beginning of value","time":"2021-04-06T10:22:19Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:175","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup.func1","level":"error","msg":"Error reading backup c4263da0-cb5a-40df-a140-7c5883673095 for backupplan da6de442-66fd-4cc0-bf32-ecdf4073d53b, invalid character '\\x00' looking for beginning of value","time":"2021-04-06T10:22:19Z"}
+2021-04-06 10:22:21.885 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 10:22:21.892 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 10:22:21.908 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 10:22:21.921 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 10:22:21.936 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 10:22:22.569 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+2021-04-06 10:22:22.586 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 10:22:22.600 13 INFO s3 [-] Starting worker thread[7f46b17fa700].[00m
+2021-04-06 10:22:22.615 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 10:22:22.626 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/resources/common/helper.go:84","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/resources/common.ReadBackupPlanFromTarget","level":"error","msg":"TVKMeta file NotFound at target location, /triliodata/da6de442-66fd-4cc0-bf32-ecdf4073d53b/c4263da0-cb5a-40df-a140-7c5883673095/tvk-meta.json","time":"2021-04-06T10:22:23Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:207","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup","level":"info","msg":"BackupPlan not found in cache, adding new entry da6de442-66fd-4cc0-bf32-ecdf4073d53b","time":"2021-04-06T10:22:23Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:307","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/976ccb93-233d-4290-ac36-44d32bf848e2/470a4cf6-b4e5-48de-a87d-b1e498e8ae57/backup.json]","time":"2021-04-06T10:22:31Z"}
+2021-04-06 10:22:31.676 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+2021-04-06 10:22:31.690 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 10:22:31.708 13 INFO s3 [-] Starting worker thread[7f46b17fa700].[00m
+2021-04-06 10:22:31.725 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 10:22:31.748 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 10:22:32.378 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 10:22:32.397 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 10:22:32.411 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 10:22:32.427 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 10:22:32.439 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+2021-04-06 10:22:33.247 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 10:22:33.262 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 10:22:33.295 13 INFO s3 [-] Starting worker thread[7f46b17fa700].[00m
+2021-04-06 10:22:33.329 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 10:22:33.343 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:207","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup","level":"info","msg":"BackupPlan not found in cache, adding new entry 976ccb93-233d-4290-ac36-44d32bf848e2","time":"2021-04-06T10:22:33Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:307","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/922e35f5-4d99-4d37-a03b-e369e8a0abdb/9c2b8eb8-5e6d-4312-b67f-fc0d04746053/backup.json]","time":"2021-04-06T10:30:00Z"}
+2021-04-06 10:30:00.164 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+2021-04-06 10:30:00.176 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 10:30:00.185 13 INFO s3 [-] Starting worker thread[7f46b17fa700].[00m
+2021-04-06 10:30:00.211 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 10:30:00.224 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 10:30:00.944 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 10:30:00.957 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 10:30:00.972 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 10:30:01.005 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 10:30:01.027 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+2021-04-06 10:30:01.621 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 10:30:01.634 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 10:30:01.647 13 INFO s3 [-] Starting worker thread[7f4696ffd700].[00m
+2021-04-06 10:30:01.718 13 INFO s3 [-] Starting worker thread[7f46977fe700].[00m
+2021-04-06 10:30:01.720 13 INFO s3 [-] Starting worker thread[7f46b17fa700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:207","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup","level":"info","msg":"BackupPlan not found in cache, adding new entry 922e35f5-4d99-4d37-a03b-e369e8a0abdb","time":"2021-04-06T10:30:02Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/82a7e900-5f3f-4049-acf8-06b9acf233e3-EqdgeC]","time":"2021-04-06T10:33:58Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/c3f5159c-3cff-4fd6-b459-955649587107-HnTdaD]","time":"2021-04-06T10:37:03Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/2380c0af-8d50-4cb5-b2ba-eea438998c9a-cd4wjO]","time":"2021-04-06T10:38:12Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/541da0d3-a32f-4982-9b44-904a4771de14]","time":"2021-04-06T10:44:12Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:307","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/541da0d3-a32f-4982-9b44-904a4771de14/bdd9d4b4-2570-46e2-9316-462493033125/backup.json]","time":"2021-04-06T10:44:18Z"}
+2021-04-06 10:44:18.655 13 INFO s3 [-] Starting worker thread[7f46977fe700].[00m
+2021-04-06 10:44:18.690 13 INFO s3 [-] Starting worker thread[7f4696ffd700].[00m
+2021-04-06 10:44:18.692 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 10:44:18.725 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 10:44:18.738 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 10:44:19.429 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 10:44:19.452 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 10:44:19.465 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 10:44:19.521 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+2021-04-06 10:44:19.525 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/resources/common/helper.go:84","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/resources/common.ReadBackupPlanFromTarget","level":"error","msg":"TVKMeta file NotFound at target location, /triliodata/541da0d3-a32f-4982-9b44-904a4771de14/bdd9d4b4-2570-46e2-9316-462493033125/tvk-meta.json","time":"2021-04-06T10:44:19Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:207","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup","level":"info","msg":"BackupPlan not found in cache, adding new entry 541da0d3-a32f-4982-9b44-904a4771de14","time":"2021-04-06T10:44:19Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/49f93024-739f-4a1f-b6e1-9c1882845194]","time":"2021-04-06T10:44:50Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:307","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/49f93024-739f-4a1f-b6e1-9c1882845194/47a0607e-2f2d-4504-b27b-dee1f62dcc76/backup.json]","time":"2021-04-06T10:44:56Z"}
+2021-04-06 10:44:56.934 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 10:44:56.959 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+2021-04-06 10:44:57.018 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 10:44:57.032 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 10:44:57.046 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/resources/common/helper.go:36","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/resources/common.ReadBackupFromTarget","level":"error","msg":"Error while unmarshalling backupunexpected end of JSON input","time":"2021-04-06T10:44:57Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:175","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup.func1","level":"error","msg":"Error reading backup 47a0607e-2f2d-4504-b27b-dee1f62dcc76 for backupplan 49f93024-739f-4a1f-b6e1-9c1882845194, unexpected end of JSON input","time":"2021-04-06T10:44:57Z"}
+2021-04-06 10:44:59.510 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 10:44:59.513 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 10:44:59.527 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 10:44:59.593 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+2021-04-06 10:44:59.614 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 10:45:00.177 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 10:45:00.192 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 10:45:00.204 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 10:45:00.220 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+2021-04-06 10:45:00.234 13 INFO s3 [-] Starting worker thread[7f46977fe700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/resources/common/helper.go:84","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/resources/common.ReadBackupPlanFromTarget","level":"error","msg":"TVKMeta file NotFound at target location, /triliodata/49f93024-739f-4a1f-b6e1-9c1882845194/47a0607e-2f2d-4504-b27b-dee1f62dcc76/tvk-meta.json","time":"2021-04-06T10:45:00Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:207","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup","level":"info","msg":"BackupPlan not found in cache, adding new entry 49f93024-739f-4a1f-b6e1-9c1882845194","time":"2021-04-06T10:45:00Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/9b1c2fdb-82f1-4d2f-a61e-51017a83adfb]","time":"2021-04-06T10:45:03Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:307","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/9b1c2fdb-82f1-4d2f-a61e-51017a83adfb/c7732178-9a8e-4d29-8224-08eaccd67623/backup.json]","time":"2021-04-06T10:45:30Z"}
+2021-04-06 10:45:31.136 13 INFO s3 [-] Starting worker thread[7f46977fe700].[00m
+2021-04-06 10:45:31.160 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+2021-04-06 10:45:31.168 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 10:45:31.178 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 10:45:31.841 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 10:45:31.869 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 10:45:31.911 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 10:45:31.942 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 10:45:32.536 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 10:45:32.559 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 10:45:32.598 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 10:45:32.610 13 INFO s3 [-] Starting worker thread[7f46967fc700].[00m
+2021-04-06 10:45:32.622 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:207","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup","level":"info","msg":"BackupPlan not found in cache, adding new entry 9b1c2fdb-82f1-4d2f-a61e-51017a83adfb","time":"2021-04-06T10:45:32Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/66c753d2-1a2c-436b-87e0-9bcae0b082f1]","time":"2021-04-06T10:45:44Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:307","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/66c753d2-1a2c-436b-87e0-9bcae0b082f1/c4f6f8e3-58a1-4bd7-b30b-240cb2274396/backup.json]","time":"2021-04-06T10:45:58Z"}
+2021-04-06 10:45:58.195 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+2021-04-06 10:45:58.207 13 INFO s3 [-] Starting worker thread[7f46967fc700].[00m
+2021-04-06 10:45:58.215 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 10:45:58.227 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 10:45:58.303 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 10:45:58.940 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 10:45:58.951 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 10:45:58.964 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 10:45:58.999 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 10:45:59.023 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/resources/common/helper.go:84","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/resources/common.ReadBackupPlanFromTarget","level":"error","msg":"TVKMeta file NotFound at target location, /triliodata/66c753d2-1a2c-436b-87e0-9bcae0b082f1/c4f6f8e3-58a1-4bd7-b30b-240cb2274396/tvk-meta.json","time":"2021-04-06T10:45:59Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:207","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup","level":"info","msg":"BackupPlan not found in cache, adding new entry 66c753d2-1a2c-436b-87e0-9bcae0b082f1","time":"2021-04-06T10:45:59Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/71a519d9-bbca-47a9-9e41-9eb541915bae]","time":"2021-04-06T10:46:19Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:307","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/71a519d9-bbca-47a9-9e41-9eb541915bae/0102b8a2-f588-4748-b24e-d3e20334df01/backup.json]","time":"2021-04-06T10:46:26Z"}
+2021-04-06 10:46:26.440 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+2021-04-06 10:46:26.455 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 10:46:26.463 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 10:46:26.500 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 10:46:26.500 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 10:46:27.170 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 10:46:27.180 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 10:46:27.189 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 10:46:27.203 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+2021-04-06 10:46:27.217 13 INFO s3 [-] Starting worker thread[7f46977fe700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/resources/common/helper.go:84","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/resources/common.ReadBackupPlanFromTarget","level":"error","msg":"TVKMeta file NotFound at target location, /triliodata/71a519d9-bbca-47a9-9e41-9eb541915bae/0102b8a2-f588-4748-b24e-d3e20334df01/tvk-meta.json","time":"2021-04-06T10:46:27Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:207","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup","level":"info","msg":"BackupPlan not found in cache, adding new entry 71a519d9-bbca-47a9-9e41-9eb541915bae","time":"2021-04-06T10:46:27Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/4256bcea-26e9-4de0-9741-d9c5afb619e1]","time":"2021-04-06T11:20:18Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:307","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/4256bcea-26e9-4de0-9741-d9c5afb619e1/7ef2daa4-3d57-4ad4-9406-e3f5d0e41923/backup.json]","time":"2021-04-06T11:20:26Z"}
+2021-04-06 11:20:26.194 13 INFO s3 [-] Starting worker thread[7f46977fe700].[00m
+2021-04-06 11:20:26.204 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+2021-04-06 11:20:26.227 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 11:20:26.239 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 11:20:26.251 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/resources/common/helper.go:36","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/resources/common.ReadBackupFromTarget","level":"error","msg":"Error while unmarshalling backupunexpected end of JSON input","time":"2021-04-06T11:20:26Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:175","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup.func1","level":"error","msg":"Error reading backup 7ef2daa4-3d57-4ad4-9406-e3f5d0e41923 for backupplan 4256bcea-26e9-4de0-9741-d9c5afb619e1, unexpected end of JSON input","time":"2021-04-06T11:20:26Z"}
+2021-04-06 11:20:28.808 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 11:20:28.830 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 11:20:28.838 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 11:20:28.853 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+2021-04-06 11:20:28.909 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 11:20:29.541 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 11:20:29.627 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 11:20:29.636 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 11:20:29.710 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+2021-04-06 11:20:29.715 13 INFO s3 [-] Starting worker thread[7f46977fe700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/resources/common/helper.go:84","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/resources/common.ReadBackupPlanFromTarget","level":"error","msg":"TVKMeta file NotFound at target location, /triliodata/4256bcea-26e9-4de0-9741-d9c5afb619e1/7ef2daa4-3d57-4ad4-9406-e3f5d0e41923/tvk-meta.json","time":"2021-04-06T11:20:30Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:207","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup","level":"info","msg":"BackupPlan not found in cache, adding new entry 4256bcea-26e9-4de0-9741-d9c5afb619e1","time":"2021-04-06T11:20:30Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/9d367792-b8ed-4cda-aa04-0c7060ddb544]","time":"2021-04-06T11:21:16Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:307","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/9d367792-b8ed-4cda-aa04-0c7060ddb544/9bc8e5a1-8fb8-4658-870f-e41761f8cdf4/backup.json]","time":"2021-04-06T11:21:53Z"}
+2021-04-06 11:21:53.231 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+2021-04-06 11:21:53.246 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 11:21:53.264 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 11:21:53.299 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 11:21:53.326 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 11:21:54.042 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 11:21:54.070 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 11:21:54.073 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 11:21:54.095 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+2021-04-06 11:21:54.135 13 INFO s3 [-] Starting worker thread[7f4696ffd700].[00m
+2021-04-06 11:21:54.728 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 11:21:54.750 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+2021-04-06 11:21:54.798 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 11:21:54.809 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 11:21:54.822 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:207","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup","level":"info","msg":"BackupPlan not found in cache, adding new entry 9d367792-b8ed-4cda-aa04-0c7060ddb544","time":"2021-04-06T11:21:55Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/de7d6499-8308-424f-a2ac-88b869758bf4]","time":"2021-04-06T11:22:51Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:307","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/de7d6499-8308-424f-a2ac-88b869758bf4/db50406e-be06-4d95-9f98-4711c5470dc5/backup.json]","time":"2021-04-06T11:23:06Z"}
+2021-04-06 11:23:06.607 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 11:23:06.620 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 11:23:06.631 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 11:23:06.640 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+2021-04-06 11:23:07.407 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 11:23:07.416 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 11:23:07.427 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 11:23:07.441 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+2021-04-06 11:23:07.513 13 INFO s3 [-] Starting worker thread[7f4696ffd700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/resources/common/helper.go:84","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/resources/common.ReadBackupPlanFromTarget","level":"error","msg":"TVKMeta file NotFound at target location, /triliodata/de7d6499-8308-424f-a2ac-88b869758bf4/db50406e-be06-4d95-9f98-4711c5470dc5/tvk-meta.json","time":"2021-04-06T11:23:07Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:207","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup","level":"info","msg":"BackupPlan not found in cache, adding new entry de7d6499-8308-424f-a2ac-88b869758bf4","time":"2021-04-06T11:23:07Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/86043f5b-c1bc-4ff6-9a14-789e6d0bdaf7]","time":"2021-04-06T11:26:08Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:307","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/86043f5b-c1bc-4ff6-9a14-789e6d0bdaf7/a5ddc632-310c-47b2-b452-d400792cd2ad/backup.json]","time":"2021-04-06T11:26:39Z"}
+2021-04-06 11:26:39.863 13 INFO s3 [-] Starting worker thread[7f4696ffd700].[00m
+2021-04-06 11:26:39.878 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+2021-04-06 11:26:39.911 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 11:26:39.931 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 11:26:39.936 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 11:26:40.571 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 11:26:40.637 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 11:26:40.646 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 11:26:40.666 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 11:26:41.263 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 11:26:41.275 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 11:26:41.288 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 11:26:41.301 13 INFO s3 [-] Starting worker thread[7f4695ffb700].[00m
+2021-04-06 11:26:41.311 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:207","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup","level":"info","msg":"BackupPlan not found in cache, adding new entry 86043f5b-c1bc-4ff6-9a14-789e6d0bdaf7","time":"2021-04-06T11:26:41Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/1feaa5f2-a61b-4405-8724-828e361893e8]","time":"2021-04-06T11:29:44Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:307","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/1feaa5f2-a61b-4405-8724-828e361893e8/331c6343-d186-4fe3-ad14-80ca7faf8566/backup.json]","time":"2021-04-06T11:30:16Z"}
+2021-04-06 11:30:17.147 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+2021-04-06 11:30:17.165 13 INFO s3 [-] Starting worker thread[7f4695ffb700].[00m
+2021-04-06 11:30:17.209 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 11:30:17.222 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 11:30:17.243 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 11:30:17.940 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 11:30:18.002 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 11:30:18.042 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 11:30:18.073 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 11:30:18.101 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+2021-04-06 11:30:18.691 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 11:30:18.741 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 11:30:18.742 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 11:30:18.775 13 INFO s3 [-] Starting worker thread[7f4695ffb700].[00m
+2021-04-06 11:30:18.808 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:207","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup","level":"info","msg":"BackupPlan not found in cache, adding new entry 1feaa5f2-a61b-4405-8724-828e361893e8","time":"2021-04-06T11:30:19Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:283","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/5b18286c-e864-4bea-9b32-f0dc444b78a1]","time":"2021-04-06T11:30:58Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:307","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [CREATE] path: [/triliodata/5b18286c-e864-4bea-9b32-f0dc444b78a1/74c4c092-29f6-4412-a83f-b832bdfe853e/backup.json]","time":"2021-04-06T11:31:14Z"}
+2021-04-06 11:31:14.539 13 INFO s3 [-] Starting worker thread[7f4697fff700].[00m
+2021-04-06 11:31:14.553 13 INFO s3 [-] Starting worker thread[7f4695ffb700].[00m
+2021-04-06 11:31:14.566 13 INFO s3 [-] Starting worker thread[7f46b0ff9700].[00m
+2021-04-06 11:31:14.625 13 INFO s3 [-] Starting worker thread[7f46b37fe700].[00m
+2021-04-06 11:31:14.633 13 INFO s3 [-] Starting worker thread[7f46d121c700].[00m
+2021-04-06 11:31:15.230 13 INFO s3 [-] Starting worker thread[7f46b3fff700].[00m
+2021-04-06 11:31:15.243 13 INFO s3 [-] Starting worker thread[7f46d09db700].[00m
+2021-04-06 11:31:15.265 13 INFO s3 [-] Starting worker thread[7f46b2ffd700].[00m
+2021-04-06 11:31:15.314 13 INFO s3 [-] Starting worker thread[7f46b27fc700].[00m
+2021-04-06 11:31:15.336 13 INFO s3 [-] Starting worker thread[7f46b1ffb700].[00m
+{"component":"Target-Browser","file":"pkg/target-browser/resources/common/helper.go:84","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/resources/common.ReadBackupPlanFromTarget","level":"error","msg":"TVKMeta file NotFound at target location, /triliodata/5b18286c-e864-4bea-9b32-f0dc444b78a1/74c4c092-29f6-4412-a83f-b832bdfe853e/tvk-meta.json","time":"2021-04-06T11:31:15Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:207","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.syncBackup","level":"info","msg":"BackupPlan not found in cache, adding new entry 5b18286c-e864-4bea-9b32-f0dc444b78a1","time":"2021-04-06T11:31:15Z"}
+2021/04/06 12:46:14 Generating JWE encryption key
+2021/04/06 12:46:15 Initializing JWE encryption key from synchronized object
+2021/04/06 12:46:19 Generating JWE encryption key
+2021/04/06 12:46:19 Initializing JWE encryption key from synchronized object
+2021/04/06 12:48:16 Generating JWE encryption key
+2021/04/06 12:48:16 Initializing JWE encryption key from synchronized object
+2021/04/06 12:48:19 Generating JWE encryption key
+2021/04/06 12:48:20 Initializing JWE encryption key from synchronized object
+2021/04/06 12:48:24 Generating JWE encryption key
+2021/04/06 12:48:25 Initializing JWE encryption key from synchronized object
+2021/04/06 12:48:32 Generating JWE encryption key
+2021/04/06 12:48:32 Initializing JWE encryption key from synchronized object
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:300","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [REMOVE] path: [/triliodata/5b18286c-e864-4bea-9b32-f0dc444b78a1/74c4c092-29f6-4412-a83f-b832bdfe853e/backup.json]","time":"2021-04-07T11:30:30Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:301","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Removing backup 74c4c092-29f6-4412-a83f-b832bdfe853e for backupPlan 5b18286c-e864-4bea-9b32-f0dc444b78a1 from cache","time":"2021-04-07T11:30:30Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:300","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [REMOVE] path: [/triliodata/4256bcea-26e9-4de0-9741-d9c5afb619e1/7ef2daa4-3d57-4ad4-9406-e3f5d0e41923/backup.json]","time":"2021-04-07T11:30:30Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:301","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Removing backup 7ef2daa4-3d57-4ad4-9406-e3f5d0e41923 for backupPlan 4256bcea-26e9-4de0-9741-d9c5afb619e1 from cache","time":"2021-04-07T11:30:30Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:300","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Target watcher event op: [REMOVE] path: [/triliodata/de7d6499-8308-424f-a2ac-88b869758bf4/db50406e-be06-4d95-9f98-4711c5470dc5/backup.json]","time":"2021-04-07T11:30:30Z"}
+{"component":"Target-Browser","file":"pkg/target-browser/cache/cache.go:301","func":"github.com/trilioData/k8s-triliovault/pkg/target-browser/cache.startTargetWatch.func1","level":"info","msg":"Removing backup db50406e-be06-4d95-9f98-4711c5470dc5 for backupPlan de7d6499-8308-424f-a2ac-88b869758bf4 from cache","time":"2021-04-07T11:30:30Z"}

@@ -1,0 +1,15 @@
+apiVersion: triliovault.trilio.io/v1
+kind: License
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"triliovault.trilio.io/v1","kind":"License","metadata":{"annotations":{},"name":"test-license-1","namespace":"default"},"spec":{"key":"xZINDgwKD3jajZFfa4MwFMXf8ykCew4k/mlrwYfOpkPq7Jja13GNVxZoVaKW9dvProMVLWXnIQ/Jye8k5z5tjKarxlBqUb5YOt7S8qjFLUECg9DpulpDh/RP/uWQcYdxi8hCXxx0JH9jEFOj4UBAdfqEdOLoTI/koBVWLe7RtLcU3yKvoKsOK6gUyq9Gm/P1Eb/ZLuM2CepjA9V5Qk7fwyjcsW32LGOZyoRFYSDjRLIXGbPNu5Qfg2MVkbg/5mh2ZdYO8Tf3mSAJmhOacD1Gu+BaJQrFnHkxLKIsGXhgM1Vy2/Vs5eQ2kETG9I78YZ8VhTv4ZjPm2blgQmDOFsoeqlTKmYNXFs4CSXRtZRzvp/tVFqVXhqsWDxk/pcFkNrf9vfVGfUKLD8abqLrBO1+p4IhtAwoLsu1zzCZN/bOqAAaI7sYz9AXnnF7INK4LbL8B4kOmUjAsAhQfK8nDKAsSySrAviviSYNvQ59+nAIUc4BnRLjWq9bVknU1Ph5lCDDVW58=X02gk"}}
+  creationTimestamp: "2021-04-02T12:54:13Z"
+  generation: 1
+  name: test-license-1
+  namespace: default
+  resourceVersion: "84457135"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/default/licenses/test-license-1
+  uid: d80d7978-0358-4744-b534-3cea077fe0d5
+spec:
+  key: xZINDgwKD3jajZFfa4MwFMXf8ykCew4k/mlrwYfOpkPq7Jja13GNVxZoVaKW9dvProMVLWXnIQ/Jye8k5z5tjKarxlBqUb5YOt7S8qjFLUECg9DpulpDh/RP/uWQcYdxi8hCXxx0JH9jEFOj4UBAdfqEdOLoTI/koBVWLe7RtLcU3yKvoKsOK6gUyq9Gm/P1Eb/ZLuM2CepjA9V5Qk7fwyjcsW32LGOZyoRFYSDjRLIXGbPNu5Qfg2MVkbg/5mh2ZdYO8Tf3mSAJmhOacD1Gu+BaJQrFnHkxLKIsGXhgM1Vy2/Vs5eQ2kETG9I78YZ8VhTv4ZjPm2blgQmDOFsoeqlTKmYNXFs4CSXRtZRzvp/tVFqVXhqsWDxk/pcFkNrf9vfVGfUKLD8abqLrBO1+p4IhtAwoLsu1zzCZN/bOqAAaI7sYz9AXnnF7INK4LbL8B4kOmUjAsAhQfK8nDKAsSySrAviviSYNvQ59+nAIUc4BnRLjWq9bVknU1Ph5lCDDVW58=X02gk

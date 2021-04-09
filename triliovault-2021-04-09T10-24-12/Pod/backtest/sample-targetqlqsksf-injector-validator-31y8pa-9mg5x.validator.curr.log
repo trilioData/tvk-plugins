@@ -1,0 +1,120 @@
+INFO:root:Calling crd-parser to get the datastore
+INFO:root:Parsing the target-crd to get the list of datastores
+INFO:root:Fetched the list of datastores to be mounted
+INFO:root:mounting datastore of type s3
+INFO:root:mounting the S3 datastore by the name sample-targetqlqsksf-injector
+INFO:root:writing the conf data to the conf file: sample-targetqlqsksf-injector_vault.conf
+
+INFO:root:command: /usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/sample-targetqlqsksf-injector_vault.conf &
+INFO:root:Executing command /usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/sample-targetqlqsksf-injector_vault.conf &
+INFO:root:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/sample-targetqlqsksf-injector_vault.conf & command execution starting time: 2021-03-01 11:15:34.730588
+INFO:root:waiting for command to complete...
+INFO:root:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/sample-targetqlqsksf-injector_vault.conf & command execution completion time: 2021-03-01 11:15:36.748948
+INFO:root:Command:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/sample-targetqlqsksf-injector_vault.conf &, ExitCode:0
+
+INFO:root:2021-03-01 11:15:36.749256: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:15:38.757166: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:15:40.759654: waiting for mount operation to complete.
+2021-03-01 11:15:41.117 10 ERROR root [-] Invalid endpoint: http://s3."us-east-1".amazonaws.com: ValueError: Invalid endpoint: http://s3."us-east-1".amazonaws.com
+2021-03-01 11:15:41.117 10 TRACE root Traceback (most recent call last):
+2021-03-01 11:15:41.117 10 TRACE root   File "/opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py", line 27, in <module>
+2021-03-01 11:15:41.117 10 TRACE root     mount()
+2021-03-01 11:15:41.117 10 TRACE root   File "/opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py", line 21, in mount
+2021-03-01 11:15:41.117 10 TRACE root     s3fuse.mount(conf_file_path)
+2021-03-01 11:15:41.117 10 TRACE root   File "/usr/lib/python2.7/site-packages/s3fuse/__init__.py", line 38, in mount
+2021-03-01 11:15:41.117 10 TRACE root     s3vaultfuse.run()
+2021-03-01 11:15:41.117 10 TRACE root   File "/usr/lib/python2.7/site-packages/s3fuse/s3vaultfuse.py", line 2318, in run
+2021-03-01 11:15:41.117 10 TRACE root     main(CONF.vault_data_directory, CONF.vault_data_directory_old)
+2021-03-01 11:15:41.117 10 TRACE root   File "/usr/lib/python2.7/site-packages/s3fuse/s3vaultfuse.py", line 2295, in main
+2021-03-01 11:15:41.117 10 TRACE root     cacheroot, repository=BackendRepository(cacheroot)
+2021-03-01 11:15:41.117 10 TRACE root   File "/usr/lib/python2.7/site-packages/s3fuse/s3vaultfuse.py", line 627, in __init__
+2021-03-01 11:15:41.117 10 TRACE root     self.__backend = vaults3.S3Backend(options)
+2021-03-01 11:15:41.117 10 TRACE root   File "/usr/lib/python2.7/site-packages/s3fuse/vaults3.py", line 65, in __init__
+2021-03-01 11:15:41.117 10 TRACE root     config=config_object)
+2021-03-01 11:15:41.117 10 TRACE root   File "/usr/lib/python2.7/site-packages/boto3/__init__.py", line 91, in client
+2021-03-01 11:15:41.117 10 TRACE root     return _get_default_session().client(*args, **kwargs)
+2021-03-01 11:15:41.117 10 TRACE root   File "/usr/lib/python2.7/site-packages/boto3/session.py", line 263, in client
+2021-03-01 11:15:41.117 10 TRACE root     aws_session_token=aws_session_token, config=config)
+2021-03-01 11:15:41.117 10 TRACE root   File "/usr/lib/python2.7/site-packages/botocore/session.py", line 838, in create_client
+2021-03-01 11:15:41.117 10 TRACE root     client_config=config, api_version=api_version)
+2021-03-01 11:15:41.117 10 TRACE root   File "/usr/lib/python2.7/site-packages/botocore/client.py", line 86, in create_client
+2021-03-01 11:15:41.117 10 TRACE root     verify, credentials, scoped_config, client_config, endpoint_bridge)
+2021-03-01 11:15:41.117 10 TRACE root   File "/usr/lib/python2.7/site-packages/botocore/client.py", line 328, in _get_client_args
+2021-03-01 11:15:41.117 10 TRACE root     verify, credentials, scoped_config, client_config, endpoint_bridge)
+2021-03-01 11:15:41.117 10 TRACE root   File "/usr/lib/python2.7/site-packages/botocore/args.py", line 85, in get_client_args
+2021-03-01 11:15:41.117 10 TRACE root     client_cert=new_config.client_cert)
+2021-03-01 11:15:41.117 10 TRACE root   File "/usr/lib/python2.7/site-packages/botocore/endpoint.py", line 261, in create_endpoint
+2021-03-01 11:15:41.117 10 TRACE root     raise ValueError("Invalid endpoint: %s" % endpoint_url)
+2021-03-01 11:15:41.117 10 TRACE root ValueError: Invalid endpoint: http://s3."us-east-1".amazonaws.com
+2021-03-01 11:15:41.117 10 TRACE root [00m
+INFO:root:2021-03-01 11:15:42.761615: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:15:44.763955: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:15:46.767321: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:15:48.769139: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:15:50.771263: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:15:52.773193: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:15:54.775192: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:15:56.778242: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:15:58.782071: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:00.785666: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:02.787156: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:04.791269: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:06.794300: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:08.796242: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:10.798282: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:12.800498: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:14.802224: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:16.807140: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:18.811174: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:20.819146: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:22.821148: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:24.823411: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:26.825578: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:28.827595: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:30.829183: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:32.834756: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:34.839825: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:36.843578: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:38.845193: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:40.847185: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:42.850149: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:44.852367: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:46.854414: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:48.856478: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:50.858148: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:52.860147: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:54.863148: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:56.865147: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:16:58.867373: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:00.872469: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:02.874151: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:04.876289: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:06.885560: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:08.902328: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:10.906430: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:12.911304: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:14.915611: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:16.917478: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:18.919301: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:20.921161: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:22.923303: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:24.926192: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:26.928905: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:28.934640: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:30.937656: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:32.944248: waiting for mount operation to complete.
+INFO:root:2021-03-01 11:17:34.950249: waiting for mount operation to complete.
+ERROR:root:2021-03-01 11:17:36.952717: timeout exceeded, not able to mount within time.
+ERROR:root:/triliodata is not a mountpoint. We can't proceed further.
+Traceback (most recent call last):
+  File "/opt/tvk/datastore-attacher/mount_utility/mount_by_target_crd/mount_datastores.py", line 210, in main
+    mount_datastore(metadata, datastore.get(constants.DATASTORE_TYPE), ds_base_path)
+  File "/opt/tvk/datastore-attacher/mount_utility/mount_by_target_crd/mount_datastores.py", line 190, in mount_datastore
+    mount_S3_datastore(metadata_list, ds_base_path)
+  File "/opt/tvk/datastore-attacher/mount_utility/mount_by_target_crd/mount_datastores.py", line 168, in mount_S3_datastore
+    utilities.waitUntilMount()
+  File "/opt/tvk/datastore-attacher/mount_utility/utilities.py", line 158, in waitUntilMount
+    constants.DEFAULT_DATASTORE_BASE_PATH))
+Exception: /triliodata is not a mountpoint. We can't proceed further.
+
+

@@ -1,0 +1,172 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2021-03-05T07:12:44Z"
+  generateName: k8s-triliovault-ingress-controller-7f7f9cf47b-
+  labels:
+    app: k8s-triliovault-ingress-controller
+    app.kubernetes.io/instance: k8s-triliovault-ingress-controller
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    pod-template-hash: 7f7f9cf47b
+  name: k8s-triliovault-ingress-controller-7f7f9cf47b-8964c
+  namespace: backtest
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: k8s-triliovault-ingress-controller-7f7f9cf47b
+    uid: 4d37185e-a886-4c84-aa56-642c82dedc7b
+  resourceVersion: "70257850"
+  selfLink: /api/v1/namespaces/backtest/pods/k8s-triliovault-ingress-controller-7f7f9cf47b-8964c
+  uid: 52b683ac-9912-4eac-8ef6-77463c369ed1
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: beta.kubernetes.io/arch
+            operator: In
+            values:
+            - amd64
+        - matchExpressions:
+          - key: kubernetes.io/arch
+            operator: In
+            values:
+            - amd64
+  containers:
+  - args:
+    - -nginx-plus=false
+    - -nginx-reload-timeout=0
+    - -enable-app-protect=false
+    - -default-server-tls-secret=$(POD_NAMESPACE)/k8s-triliovault-ingress-server-certs
+    - -ingress-class=nginx
+    - -use-ingress-class-only=false
+    - -watch-namespace=$(POD_NAMESPACE)
+    - -nginx-debug=false
+    - -v=1
+    - -nginx-status=false
+    - -report-ingress-status
+    - -enable-leader-election=false
+    - -enable-prometheus-metrics=false
+    - -enable-custom-resources=false
+    - -ready-status=false
+    - -enable-latency-metrics=false
+    env:
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.namespace
+    image: gcr.io/amazing-chalice-243510/ingress-controller:v2.0.0
+    imagePullPolicy: Always
+    name: ingress-controller
+    ports:
+    - containerPort: 80
+      name: http
+      protocol: TCP
+    - containerPort: 443
+      name: https
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 200m
+        memory: 512Mi
+      requests:
+        cpu: 10m
+        memory: 10Mi
+    securityContext:
+      allowPrivilegeEscalation: true
+      capabilities:
+        add:
+        - SYS_ADMIN
+        - NET_BIND_SERVICE
+        drop:
+        - ALL
+      privileged: false
+      readOnlyRootFilesystem: false
+      runAsNonRoot: true
+      runAsUser: 101
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: k8s-triliovault-token-fx7gr
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: gke-dev-cluster-dev-cluster-pool-eab0992b-lsr9
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 101
+  serviceAccount: k8s-triliovault
+  serviceAccountName: k8s-triliovault
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: k8s-triliovault-token-fx7gr
+    secret:
+      defaultMode: 420
+      secretName: k8s-triliovault-token-fx7gr
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2021-03-05T07:12:44Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2021-03-23T20:03:29Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2021-03-23T20:03:29Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2021-03-05T07:12:44Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: docker://d29bb4f6e6a4935b32260c8dfd8fa3e99c3f74a0e02d3f05a620ec3214b07208
+    image: eu.gcr.io/amazing-chalice-243510/ingress-controller:v2.0.0
+    imageID: docker-pullable://eu.gcr.io/amazing-chalice-243510/ingress-controller@sha256:9c3b8023fe01ce3682a0469dfb827ee7052fbada9e098049b6e3182cc08c0385
+    lastState:
+      terminated:
+        containerID: docker://0301051964b815a90fe4da4257423a663b57a1a8be0d20b89e3c4553766ed02e
+        exitCode: 255
+        finishedAt: "2021-03-23T20:00:58Z"
+        reason: Error
+        startedAt: "2021-03-05T07:12:51Z"
+    name: ingress-controller
+    ready: true
+    restartCount: 1
+    started: true
+    state:
+      running:
+        startedAt: "2021-03-23T20:03:10Z"
+  hostIP: 10.142.0.16
+  phase: Running
+  podIP: 10.92.2.47
+  podIPs:
+  - ip: 10.92.2.47
+  qosClass: Burstable
+  startTime: "2021-03-05T07:12:44Z"

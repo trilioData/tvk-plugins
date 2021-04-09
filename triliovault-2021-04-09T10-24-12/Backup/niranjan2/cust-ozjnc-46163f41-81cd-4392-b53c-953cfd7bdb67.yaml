@@ -1,0 +1,34 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Backup
+metadata:
+  annotations:
+    scheduleType: Periodic
+  creationTimestamp: "2021-03-15T10:00:23Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: cust-ozjnc-46163f41-81cd-4392-b53c-953cfd7bdb67
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    operator: k8s-triliovault
+  name: cust-ozjnc-46163f41-81cd-4392-b53c-953cfd7bdb67
+  namespace: niranjan2
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: BackupPlan
+    name: cust-ozjnc
+    uid: 1ff81b07-0839-42e2-b637-ed2e278088e5
+  resourceVersion: "55600458"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/niranjan2/backups/cust-ozjnc-46163f41-81cd-4392-b53c-953cfd7bdb67
+  uid: d3d5c44a-4487-4bbc-8700-b25d1c3a6520
+spec:
+  backupPlan:
+    apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: cust-ozjnc
+    namespace: niranjan2
+    resourceVersion: "33830582"
+    uid: 1ff81b07-0839-42e2-b637-ed2e278088e5
+  type: Full

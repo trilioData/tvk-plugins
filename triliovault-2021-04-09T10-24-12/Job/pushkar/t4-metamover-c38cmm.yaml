@@ -1,0 +1,98 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    ControllerOwnerKind: Restore
+    controller-owner-name: t4
+    controller-owner-namespace: pushkar
+    operation: metadata-restore-validation
+  creationTimestamp: "2021-04-06T12:50:43Z"
+  labels:
+    app.kubernetes.io/instance: t4-metamover-c38cmm
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    controller-owner-uid: d940e924-017d-48e3-a80c-be3dba33d174
+  name: t4-metamover-c38cmm
+  namespace: pushkar
+  resourceVersion: "95808656"
+  selfLink: /apis/batch/v1/namespaces/pushkar/jobs/t4-metamover-c38cmm
+  uid: 54e443ec-c12c-4f1d-923f-4ad37fb63098
+spec:
+  activeDeadlineSeconds: 43200
+  backoffLimit: 0
+  completions: 1
+  parallelism: 1
+  selector:
+    matchLabels:
+      controller-uid: 54e443ec-c12c-4f1d-923f-4ad37fb63098
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: t4-metamover-c38cmm
+        app.kubernetes.io/managed-by: k8s-triliovault
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+        controller-owner-uid: d940e924-017d-48e3-a80c-be3dba33d174
+        controller-uid: 54e443ec-c12c-4f1d-923f-4ad37fb63098
+        job-name: t4-metamover-c38cmm
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - command:
+        - /bin/sh
+        - -c
+        - python /opt/tvk/datastore-attacher/mount_utility/mount_by_target_crd/mount_datastores.py
+          --namespace=pushkar --target-name=aws-target-ns && /opt/tvk/metamover validate
+          --name t4 --run-primitive-restore --namespace pushkar
+        image: eu.gcr.io/amazing-chalice-243510/metamover:v2.1.0-beta.6
+        imagePullPolicy: IfNotPresent
+        name: metamover
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - SYS_ADMIN
+            drop:
+            - ALL
+          privileged: true
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+          runAsUser: 0
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+      serviceAccount: triliovault-restore-d940e924-017d-48e3-a80c-be3dba33d174
+      serviceAccountName: triliovault-restore-d940e924-017d-48e3-a80c-be3dba33d174
+      terminationGracePeriodSeconds: 30
+status:
+  conditions:
+  - lastProbeTime: "2021-04-06T12:50:57Z"
+    lastTransitionTime: "2021-04-06T12:50:57Z"
+    message: Job has reached the specified backoff limit
+    reason: BackoffLimitExceeded
+    status: "True"
+    type: Failed
+  failed: 1
+  startTime: "2021-04-06T12:50:43Z"

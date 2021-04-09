@@ -1,0 +1,47 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  creationTimestamp: "2021-04-06T11:03:24Z"
+  finalizers:
+  - backupplan-delete-finalizer
+  generation: 2
+  labels:
+    app.kubernetes.io/managed-by: k8s-triliovault-ui
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: bplan-with-hook-nfs
+  namespace: pushkar
+  resourceVersion: "98200989"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pushkar/backupplans/bplan-with-hook-nfs
+  uid: c48c65a6-3583-4496-9017-20c0aa7b38a8
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: ""
+      incrementalCron:
+        schedule: ""
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: nfs-target-ns
+      namespace: pushkar
+      resourceVersion: "95533239"
+      uid: 4517fc76-0a3d-411e-9935-0ff7b2ceb7b7
+  backupPlanComponents: {}
+  hookConfig:
+    hooks:
+    - hook:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Hook
+        name: hook-ns
+        namespace: pushkar
+        resourceVersion: "95382125"
+        uid: 0e3bfb48-bcf9-4cb8-9a4e-40e37d2b3498
+      podSelector:
+        regex: mongo*
+    mode: Sequential
+    podReadyWaitSeconds: 120
+status:
+  scope: Namespace
+  status: Available

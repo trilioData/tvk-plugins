@@ -1,0 +1,41 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  creationTimestamp: "2021-04-06T11:16:04Z"
+  finalizers:
+  - backupplan-delete-finalizer
+  generation: 2
+  labels:
+    app.kubernetes.io/managed-by: k8s-triliovault-ui
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: bplan-with-custom-nfs
+  namespace: pushkar
+  resourceVersion: "98200954"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pushkar/backupplans/bplan-with-custom-nfs
+  uid: 5de47b1f-9dd3-4765-b336-98bec92e77c5
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: ""
+      incrementalCron:
+        schedule: ""
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: nfs-target-ns
+      namespace: pushkar
+      resourceVersion: "95621771"
+      uid: 4517fc76-0a3d-411e-9935-0ff7b2ceb7b7
+  backupPlanComponents:
+    custom:
+    - matchExpressions:
+      - key: app.kubernetes.io/instance
+        operator: Exists
+      matchLabels:
+        addonmanager.kubernetes.io/mode: Reconcile
+status:
+  applicationType: Custom
+  scope: App
+  status: Available

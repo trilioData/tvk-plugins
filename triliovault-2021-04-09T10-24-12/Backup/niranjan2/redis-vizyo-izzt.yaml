@@ -1,0 +1,151 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Backup
+metadata:
+  creationTimestamp: "2021-02-05T11:27:18Z"
+  finalizers:
+  - backup-cleanup-finalizer
+  generation: 1
+  name: redis-vizyo-izzt
+  namespace: niranjan2
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: redis-vizyo
+    uid: d5c51cfc-2aad-4976-becf-b56752038807
+  resourceVersion: "33830711"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/niranjan2/backups/redis-vizyo-izzt
+  uid: 471d18f0-9d06-49fb-8e02-906d1029d110
+spec:
+  backupPlan:
+    apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: redis-vizyo
+    namespace: niranjan2
+    resourceVersion: "1363029"
+    uid: d5c51cfc-2aad-4976-becf-b56752038807
+  type: Incremental
+status:
+  completionTimestamp: "2021-02-05T11:30:18Z"
+  percentageCompletion: 70
+  size: "421289984"
+  snapshot:
+    helmCharts:
+    - dataSnapshots:
+      - backupType: Full
+        location: a7ec1096-cda7-4315-b2bf-9914d20fd399/2b7e9fcd-2eb8-4f31-9db3-a3ec4821f235/helm/redis/data-snapshot/redis-data-redis-master-0
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"nodes-rkmd"},"creationTimestamp":"2020-11-25T10:04:42Z","finalizers":["kubernetes.io/pvc-protection"],"labels":{"app":"redis","component":"master","heritage":"Helm","release":"redis","role":"master"},"name":"redis-data-redis-master-0","namespace":"apps","resourceVersion":"2421446","selfLink":"/api/v1/namespaces/apps/persistentvolumeclaims/redis-data-redis-master-0","uid":"fe5774c9-f5b0-42ac-afc3-de8f21524934"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"8Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-fe5774c9-f5b0-42ac-afc3-de8f21524934"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"8Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: redis-data-redis-master-0
+        podContainersMap:
+        - containers:
+          - redis
+          podName: redis-master-0
+        size: "140451840"
+        snapshotSize: "8589934592"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: redis-data-redis-master-0-0259d225-7e88-4fd5-a722-677bbd8d48ef
+            namespace: apps
+            resourceVersion: "2422471"
+            uid: 00061592-0c31-4d40-b529-12417642b8e5
+      - backupType: Full
+        location: a7ec1096-cda7-4315-b2bf-9914d20fd399/2b7e9fcd-2eb8-4f31-9db3-a3ec4821f235/helm/redis/data-snapshot/redis-data-redis-slave-0
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"nodes-rkmd"},"creationTimestamp":"2020-11-25T10:04:42Z","finalizers":["kubernetes.io/pvc-protection"],"labels":{"app":"redis","component":"slave","heritage":"Helm","release":"redis","role":"slave"},"name":"redis-data-redis-slave-0","namespace":"apps","resourceVersion":"2421101","selfLink":"/api/v1/namespaces/apps/persistentvolumeclaims/redis-data-redis-slave-0","uid":"badf4958-31c1-4bc7-b9d1-745619e88541"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"8Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-badf4958-31c1-4bc7-b9d1-745619e88541"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"8Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: redis-data-redis-slave-0
+        podContainersMap:
+        - containers:
+          - redis
+          podName: redis-slave-0
+        size: "140386304"
+        snapshotSize: "8589934592"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: redis-data-redis-slave-0-fee9c95a-fa57-4b53-9185-61df9ba15ac3
+            namespace: apps
+            resourceVersion: "2422456"
+            uid: cfd6e929-d406-4277-a198-a98180b2a666
+      - backupType: Full
+        location: a7ec1096-cda7-4315-b2bf-9914d20fd399/2b7e9fcd-2eb8-4f31-9db3-a3ec4821f235/helm/redis/data-snapshot/redis-data-redis-slave-1
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"nodes-rkmd"},"creationTimestamp":"2020-11-25T10:05:26Z","finalizers":["kubernetes.io/pvc-protection"],"labels":{"app":"redis","component":"slave","heritage":"Helm","release":"redis","role":"slave"},"name":"redis-data-redis-slave-1","namespace":"apps","resourceVersion":"2421434","selfLink":"/api/v1/namespaces/apps/persistentvolumeclaims/redis-data-redis-slave-1","uid":"a3dd9b53-a029-4ec2-90ed-1d6377dadaad"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"8Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-a3dd9b53-a029-4ec2-90ed-1d6377dadaad"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"8Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: redis-data-redis-slave-1
+        podContainersMap:
+        - containers:
+          - redis
+          podName: redis-slave-1
+        size: "140451840"
+        snapshotSize: "8589934592"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: redis-data-redis-slave-1-7da6a55d-082f-425b-96df-77e815b71f04
+            namespace: apps
+            resourceVersion: "2422150"
+            uid: 75a680b9-1866-41f7-8ea9-685265c9f785
+      release: redis
+      resources:
+      - groupVersionKind:
+          kind: Secret
+          version: v1
+        objects:
+        - redis
+        - sh.helm.release.v1.redis.v1
+      - groupVersionKind:
+          kind: ConfigMap
+          version: v1
+        objects:
+        - redis
+        - redis-health
+      - groupVersionKind:
+          kind: Service
+          version: v1
+        objects:
+        - redis-headless
+        - redis-master
+        - redis-slave
+      - groupVersionKind:
+          group: apps
+          kind: StatefulSet
+          version: v1
+        objects:
+        - redis-master
+        - redis-slave
+      revision: 1
+      storageBackend: Secret
+      version: v3
+  startTimestamp: "2021-02-05T11:27:18Z"
+  stats:
+    applicationType: Helm
+    backupNamespace: niranjan2
+    hookExists: false
+    latestCompletedRestore:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Restore
+      name: redis-vizyo-wezu
+      namespace: niranjan2
+      resourceVersion: "1364093"
+      uid: 3f4e94db-87dd-4c5a-8907-f9c727994c3a
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-targetqhbkwmj-injector
+      namespace: niranjan2
+      resourceVersion: "1362960"
+      uid: 9d0e0651-0fce-47fe-9a92-9339f468a34d
+  status: Available
+  type: Incremental

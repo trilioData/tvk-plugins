@@ -1,0 +1,56 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  creationTimestamp: "2021-02-05T11:27:17Z"
+  generation: 1
+  name: redis-vizyo
+  namespace: niranjan2
+  resourceVersion: "33830587"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/niranjan2/backupplans/redis-vizyo
+  uid: d5c51cfc-2aad-4976-becf-b56752038807
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: 0 10 15 * *
+      incrementalCron:
+        schedule: 0 10 15 * *
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-targetqhbkwmj-injector
+      namespace: niranjan2
+      resourceVersion: "1362960"
+      uid: 9d0e0651-0fce-47fe-9a92-9339f468a34d
+  backupNamespace: niranjan2
+  backupPlanComponents:
+    helmReleases:
+    - redis
+status:
+  stats:
+    backupSummary:
+      inProgressBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: redis-vizyo-ceqn
+        namespace: niranjan2
+        resourceVersion: "33826460"
+        uid: b575ac58-b050-4580-a431-8daa93e7e921
+      lastSuccessfulBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: redis-vizyo-izzt
+        namespace: niranjan2
+        resourceVersion: "15191884"
+        uid: 471d18f0-9d06-49fb-8e02-906d1029d110
+      latestBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: redis-vizyo-ceqn
+        namespace: niranjan2
+        resourceVersion: "33826460"
+        uid: b575ac58-b050-4580-a431-8daa93e7e921
+      totalAvailableBackups: 1
+      totalInProgressBackups: 1
+    restoreSummary: {}
+  status: Available

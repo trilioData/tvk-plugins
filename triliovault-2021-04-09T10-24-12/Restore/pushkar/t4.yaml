@@ -1,0 +1,104 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Restore
+metadata:
+  annotations:
+    triliovault.trilio.io/drplan: drplan-ns-aws-multiple-bplan-multiple-ns
+  creationTimestamp: "2021-04-06T12:50:43Z"
+  finalizers:
+  - child-delete-finalizer
+  generation: 1
+  labels:
+    app.kubernetes.io/managed-by: k8s-triliovault-ui
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: t4
+  namespace: pushkar
+  resourceVersion: "95808657"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pushkar/restores/t4
+  uid: d940e924-017d-48e3-a80c-be3dba33d174
+spec:
+  disableIgnoreResources: true
+  hookConfig:
+    hooks:
+    - containerRegex: regex*
+      hook:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Hook
+        name: hook-ns
+        namespace: pushkar
+        resourceVersion: "95382125"
+        uid: 0e3bfb48-bcf9-4cb8-9a4e-40e37d2b3498
+      podSelector:
+        labels:
+        - matchLabels:
+            addonmanager.kubernetes.io/mode: Reconcile
+        regex: mongo*
+    mode: Sequential
+    podReadyWaitSeconds: 120
+  omitMetadata: true
+  patchIfAlreadyExists: true
+  restoreNamespace: pushkar
+  skipOperatorResources: true
+  source:
+    location: 86043f5b-c1bc-4ff6-9a14-789e6d0bdaf7/a5ddc632-310c-47b2-b452-d400792cd2ad
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: aws-target-ns
+      namespace: pushkar
+      resourceVersion: "95645170"
+      uid: 2db4f14b-846f-45ee-8e1b-440f7811ca98
+    type: Location
+  transformComponents:
+    custom:
+    - jsonPatches:
+      - op: add
+        path: test
+        value: 12
+      resources:
+        groupVersionKind:
+          kind: Secret
+          version: v1
+        objects:
+        - default-token-cd6lb
+        - gcecreds
+        - ssl-certs
+      transformName: test
+status:
+  completionTimestamp: "2021-04-06T12:50:57Z"
+  condition:
+  - phase: Validation
+    reason: Validation InProgress
+    status: InProgress
+    timestamp: "2021-04-06T12:50:43Z"
+  - phase: Validation
+    reason: Validation Failed
+    status: Failed
+    timestamp: "2021-04-06T12:50:57Z"
+  phase: Validation
+  phaseStatus: Failed
+  restoreApplication:
+    custom:
+      status:
+        phase: Validation
+        phaseStatus: Failed
+        transformStatus:
+        - reason: 'Transformation failed for default-token-cd6lb: add operation does
+            not apply: doc is missing path: "test": missing value;Transformation failed
+            for gcecreds: add operation does not apply: doc is missing path: "test":
+            missing value;Transformation failed for ssl-certs: add operation does
+            not apply: doc is missing path: "test": missing value;'
+          status: Failed
+          transformName: test
+          transformedResources:
+          - groupVersionKind:
+              kind: Secret
+              version: v1
+            objects:
+            - default-token-cd6lb
+            - gcecreds
+            - ssl-certs
+  restoreScope: Namespace
+  size: "0"
+  startTimestamp: "2021-04-06T12:50:43Z"
+  status: Failed

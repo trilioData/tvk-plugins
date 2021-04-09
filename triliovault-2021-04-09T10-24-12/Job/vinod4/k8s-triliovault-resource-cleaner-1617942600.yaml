@@ -1,0 +1,94 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  creationTimestamp: "2021-04-09T04:30:12Z"
+  labels:
+    app.kubernetes.io/instance: k8s-triliovault-resource-cleaner
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: k8s-triliovault-resource-cleaner-1617942600
+  namespace: vinod4
+  ownerReferences:
+  - apiVersion: batch/v1beta1
+    blockOwnerDeletion: true
+    controller: true
+    kind: CronJob
+    name: k8s-triliovault-resource-cleaner
+    uid: 04a581a0-098d-4401-843f-d21b2294fa93
+  resourceVersion: "102386667"
+  selfLink: /apis/batch/v1/namespaces/vinod4/jobs/k8s-triliovault-resource-cleaner-1617942600
+  uid: 16607114-b792-462c-8e58-97a53ae5fbde
+spec:
+  backoffLimit: 6
+  completions: 1
+  parallelism: 1
+  selector:
+    matchLabels:
+      controller-uid: 16607114-b792-462c-8e58-97a53ae5fbde
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: k8s-triliovault-resource-cleaner
+        app.kubernetes.io/managed-by: k8s-triliovault
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+        controller-uid: 16607114-b792-462c-8e58-97a53ae5fbde
+        job-name: k8s-triliovault-resource-cleaner-1617942600
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - env:
+        - name: INSTALL_NAMESPACE
+          value: vinod4
+        image: gcr.io/amazing-chalice-243510/resource-cleaner:master
+        imagePullPolicy: Always
+        name: resource-cleaner
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - KILL
+            - AUDIT_WRITE
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1001
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      serviceAccount: k8s-triliovault
+      serviceAccountName: k8s-triliovault
+      terminationGracePeriodSeconds: 30
+status:
+  completionTime: "2021-04-09T04:30:19Z"
+  conditions:
+  - lastProbeTime: "2021-04-09T04:30:19Z"
+    lastTransitionTime: "2021-04-09T04:30:19Z"
+    status: "True"
+    type: Complete
+  startTime: "2021-04-09T04:30:12Z"
+  succeeded: 1

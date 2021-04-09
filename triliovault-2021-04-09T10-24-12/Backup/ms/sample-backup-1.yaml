@@ -1,0 +1,250 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Backup
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"triliovault.trilio.io/v1","kind":"Backup","metadata":{"annotations":{},"name":"sample-backup-1","namespace":"ms"},"spec":{"backupPlan":{"name":"sample-backupplan"},"type":"Full"}}
+  creationTimestamp: "2021-04-05T12:08:45Z"
+  finalizers:
+  - backup-cleanup-finalizer
+  generation: 1
+  name: sample-backup-1
+  namespace: ms
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: sample-backupplan
+    uid: 683e6f3c-7422-4c4a-b174-1ff5b4dddd1c
+  resourceVersion: "93115134"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/ms/backups/sample-backup-1
+  uid: 65545a22-bd70-4aad-91d4-fe0cef57d10b
+spec:
+  backupPlan:
+    apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: sample-backupplan
+    namespace: ms
+    resourceVersion: "92990289"
+    uid: 683e6f3c-7422-4c4a-b174-1ff5b4dddd1c
+  type: Full
+status:
+  applicationType: Operator
+  backupScope: App
+  completionTimestamp: "2021-04-05T12:17:24Z"
+  condition:
+  - phase: MetaSnapshot
+    reason: MetaSnapshot InProgress
+    status: InProgress
+    timestamp: "2021-04-05T12:13:14Z"
+  - phase: MetaSnapshot
+    reason: MetaSnapshot Completed
+    status: Completed
+    timestamp: "2021-04-05T12:13:37Z"
+  - phase: Quiesce
+    reason: Quiesce InProgress
+    status: InProgress
+    timestamp: "2021-04-05T12:13:37Z"
+  - phase: Quiesce
+    reason: Quiesce Completed
+    status: Completed
+    timestamp: "2021-04-05T12:13:46Z"
+  - phase: DataSnapshot
+    reason: DataSnapshot InProgress
+    status: InProgress
+    timestamp: "2021-04-05T12:13:46Z"
+  - phase: DataSnapshot
+    reason: DataSnapshot Completed
+    status: Completed
+    timestamp: "2021-04-05T12:14:51Z"
+  - phase: Unquiesce
+    reason: Unquiesce InProgress
+    status: InProgress
+    timestamp: "2021-04-05T12:14:51Z"
+  - phase: DataUpload
+    reason: DataUpload InProgress
+    status: InProgress
+    timestamp: "2021-04-05T12:14:52Z"
+  - phase: Unquiesce
+    reason: Unquiesce Completed
+    status: Completed
+    timestamp: "2021-04-05T12:14:59Z"
+  - phase: DataUpload
+    reason: DataUpload Completed
+    status: Completed
+    timestamp: "2021-04-05T12:17:09Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload InProgress
+    status: InProgress
+    timestamp: "2021-04-05T12:17:09Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload Completed
+    status: Completed
+    timestamp: "2021-04-05T12:17:24Z"
+  hookStatus:
+    hookPriorityStatus:
+    - hooks:
+      - hook:
+          apiVersion: triliovault.trilio.io/v1
+          kind: Hook
+          name: sample-hookaction
+          namespace: ms
+          resourceVersion: "92797996"
+          uid: f7cffc2a-dec7-4fa0-93ae-22db6a447a6f
+        hookTarget:
+        - containerRegex: redis
+          owner:
+            groupVersionKind:
+              group: apps
+              kind: StatefulSet
+              version: v1
+            name: m-redis-master
+          podHookStatus:
+          - containerHookStatus:
+            - containerName: redis
+              postHookStatus:
+                exitStatus: Hook Execution Completed Successfully
+                status: Completed
+              preHookStatus:
+                exitStatus: Hook Execution Completed Successfully
+                status: Completed
+            podName: m-redis-master-0
+        postHookConf:
+          maxRetryCount: 10
+          timeoutSeconds: 30
+        preHookConf:
+          maxRetryCount: 10
+          timeoutSeconds: 30
+      priority: 0
+    podReadyWaitSeconds: 120
+  location: 683e6f3c-7422-4c4a-b174-1ff5b4dddd1c/65545a22-bd70-4aad-91d4-fe0cef57d10b
+  percentageCompletion: 100
+  phase: MetadataUpload
+  phaseStatus: Completed
+  size: "140320768"
+  snapshot:
+    operators:
+    - applicationResources:
+      - groupVersionKind:
+          group: storage.k8s.io
+          kind: StorageClass
+          version: v1
+        objects:
+        - csi-gce-pd
+      customResources:
+      - groupVersionKind:
+          group: helm.fluxcd.io
+          kind: HelmRelease
+          version: v1
+        objects:
+        - m-redis
+      dataSnapshots:
+      - backupType: Full
+        conditions:
+        - phase: Snapshot
+          reason: Snapshot InProgress
+          status: InProgress
+          timestamp: "2021-04-05T12:13:46Z"
+        - phase: Snapshot
+          reason: Snapshot Completed
+          status: Completed
+          timestamp: "2021-04-05T12:14:51Z"
+        - phase: Upload
+          reason: Upload InProgress
+          status: InProgress
+          timestamp: "2021-04-05T12:14:52Z"
+        - phase: Upload
+          reason: Upload Completed
+          status: Completed
+          timestamp: "2021-04-05T12:17:09Z"
+        location: 683e6f3c-7422-4c4a-b174-1ff5b4dddd1c/65545a22-bd70-4aad-91d4-fe0cef57d10b/operator/sample-fluxcd-helm-release/data-snapshot/redis-data-m-redis-master-0
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"gke-dev-cluster-dev-cluster-pool-eab0992b-5s14"},"creationTimestamp":"2021-04-05T10:37:52Z","finalizers":["kubernetes.io/pvc-protection"],"labels":{"app":"redis","component":"master","heritage":"Helm","release":"m-redis","role":"master"},"name":"redis-data-m-redis-master-0","namespace":"ms","resourceVersion":"92940128","selfLink":"/api/v1/namespaces/ms/persistentvolumeclaims/redis-data-m-redis-master-0","uid":"8a244c22-befa-44c9-9768-a8d4aa918897"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"8Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-8a244c22-befa-44c9-9768-a8d4aa918897"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"8Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: redis-data-m-redis-master-0
+        podContainersMap:
+        - containers:
+          - redis
+          - volume-permissions
+          podName: m-redis-master-0
+        size: "140320768"
+        snapshotSize: "8589934592"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: redis-data-m-redis-master--f8d4c6c5-0004-4290-b0ae-a0ba369e7996
+            namespace: ms
+            resourceVersion: "93110234"
+            uid: 34157a28-a7a9-4fd0-96ec-9eae618bced4
+      operatorId: sample-fluxcd-helm-release
+      operatorResources:
+      - groupVersionKind:
+          kind: Secret
+          version: v1
+        objects:
+        - ho-helm-operator-git-deploy
+        - redis-auth
+      - groupVersionKind:
+          kind: ConfigMap
+          version: v1
+        objects:
+        - ho-helm-operator-kube-config
+      - groupVersionKind:
+          kind: ServiceAccount
+          version: v1
+        objects:
+        - ho-helm-operator
+      - groupVersionKind:
+          kind: Service
+          version: v1
+        objects:
+        - ho-helm-operator
+      - groupVersionKind:
+          group: apps
+          kind: Deployment
+          version: v1
+        objects:
+        - ho-helm-operator
+      - groupVersionKind:
+          group: rbac.authorization.k8s.io
+          kind: ClusterRoleBinding
+          version: v1
+        objects:
+        - ho-helm-operator
+        - ho-helm-operator-coos
+        - ho-helm-operator-daph
+        - ho-helm-operator-imbq
+        - ho-helm-operator-ldbt
+        - ho-helm-operator-nzke
+        - ho-helm-operator-ozcs
+        - ho-helm-operator-scwl
+        - ho-helm-operator-tbjs
+        - ho-helm-operator-ujds
+        - ho-helm-operator-wfai
+        - ho-helm-operator-wffe
+      - groupVersionKind:
+          group: rbac.authorization.k8s.io
+          kind: ClusterRole
+          version: v1
+        objects:
+        - ho-helm-operator
+      - groupVersionKind:
+          group: apiextensions.k8s.io
+          kind: CustomResourceDefinition
+          version: v1beta1
+        objects:
+        - helmreleases.helm.fluxcd.io
+  startTimestamp: "2021-04-05T12:13:14Z"
+  stats:
+    hookExists: true
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-target
+      namespace: ms
+      resourceVersion: "92917892"
+      uid: 19c135cf-8f5e-4086-ae45-7053602b1c34
+  status: Available
+  type: Full

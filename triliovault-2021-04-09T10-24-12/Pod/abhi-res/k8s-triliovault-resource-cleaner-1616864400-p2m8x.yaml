@@ -1,0 +1,136 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2021-03-27T17:00:00Z"
+  generateName: k8s-triliovault-resource-cleaner-1616864400-
+  labels:
+    app.kubernetes.io/instance: k8s-triliovault-resource-cleaner
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    controller-uid: 874ac959-cb71-4b00-93e5-814ebcc0ab0c
+    job-name: k8s-triliovault-resource-cleaner-1616864400
+  name: k8s-triliovault-resource-cleaner-1616864400-p2m8x
+  namespace: abhi-res
+  ownerReferences:
+  - apiVersion: batch/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Job
+    name: k8s-triliovault-resource-cleaner-1616864400
+    uid: 874ac959-cb71-4b00-93e5-814ebcc0ab0c
+  resourceVersion: "76116329"
+  selfLink: /api/v1/namespaces/abhi-res/pods/k8s-triliovault-resource-cleaner-1616864400-p2m8x
+  uid: ef376a87-0fb0-4699-9105-04ca9773e4a7
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/arch
+            operator: In
+            values:
+            - amd64
+  containers:
+  - env:
+    - name: INSTALL_NAMESPACE
+      value: abhi-res
+    image: gcr.io/amazing-chalice-243510/resource-cleaner:e323b5b92b3f507c994d9bc8b53e7ac36b355dc7
+    imagePullPolicy: IfNotPresent
+    name: resource-cleaner
+    resources:
+      limits:
+        cpu: 200m
+        memory: 512Mi
+      requests:
+        cpu: 10m
+        memory: 10Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        add:
+        - KILL
+        - AUDIT_WRITE
+        drop:
+        - ALL
+      privileged: false
+      readOnlyRootFilesystem: false
+      runAsNonRoot: true
+      runAsUser: 1001
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: k8s-triliovault-token-2hp76
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: gke-dev-cluster-dev-cluster-pool-eab0992b-v6j2
+  priority: 0
+  restartPolicy: Never
+  schedulerName: default-scheduler
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+  serviceAccount: k8s-triliovault
+  serviceAccountName: k8s-triliovault
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: k8s-triliovault-token-2hp76
+    secret:
+      defaultMode: 420
+      secretName: k8s-triliovault-token-2hp76
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2021-03-27T17:00:00Z"
+    reason: PodCompleted
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2021-03-27T17:00:00Z"
+    reason: PodCompleted
+    status: "False"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2021-03-27T17:00:00Z"
+    reason: PodCompleted
+    status: "False"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2021-03-27T17:00:00Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: docker://f8793aaef3111c780931bb7a7c43a08ac778ef3248d426ea0b146fc47e1e7de6
+    image: gcr.io/amazing-chalice-243510/resource-cleaner:004b62c38994107b4c9a51300bebf993295611cb
+    imageID: docker-pullable://gcr.io/amazing-chalice-243510/resource-cleaner@sha256:fd8f33b6b0d5d0890a0932e099878ebb5a0f2d9fb7997c16cbf81ce053a78507
+    lastState: {}
+    name: resource-cleaner
+    ready: false
+    restartCount: 0
+    started: false
+    state:
+      terminated:
+        containerID: docker://f8793aaef3111c780931bb7a7c43a08ac778ef3248d426ea0b146fc47e1e7de6
+        exitCode: 0
+        finishedAt: "2021-03-27T17:00:32Z"
+        reason: Completed
+        startedAt: "2021-03-27T17:00:30Z"
+  hostIP: 10.142.0.102
+  phase: Succeeded
+  podIP: 10.92.0.133
+  podIPs:
+  - ip: 10.92.0.133
+  qosClass: Burstable
+  startTime: "2021-03-27T17:00:00Z"

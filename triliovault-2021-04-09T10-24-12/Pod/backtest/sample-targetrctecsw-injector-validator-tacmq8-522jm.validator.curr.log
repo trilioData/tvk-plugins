@@ -1,0 +1,44 @@
+INFO:root:Calling crd-parser to get the datastore
+INFO:root:Parsing the target-crd to get the list of datastores
+INFO:root:Fetched the list of datastores to be mounted
+INFO:root:mounting datastore of type nfs
+INFO:root:mounting the NFS datastore by the name sample-targetrctecsw-injector
+INFO:root:Executing command rpc.statd &
+INFO:root:rpc.statd & command execution starting time: 2021-03-01 11:15:40.432870
+INFO:root:rpc.statd & command execution completion time: 2021-03-01 11:15:40.449048
+INFO:root:Command:rpc.statd &, ExitCode:0
+
+INFO:root:Executing command rpcbind -f &
+INFO:root:rpcbind -f & command execution starting time: 2021-03-01 11:15:40.449655
+INFO:root:waiting for command to complete...
+INFO:root:rpcbind -f & command execution completion time: 2021-03-01 11:15:42.461217
+INFO:root:Command:rpcbind -f &, ExitCode:0
+
+INFO:root:Executing command mount -t nfs -o nfsvers\\=4 34.66.17.160:/src/nfs/kubedata /triliodata -v
+INFO:root:mount -t nfs -o nfsvers\\=4 34.66.17.160:/src/nfs/kubedata /triliodata -v command execution starting time: 2021-03-01 11:15:42.461855
+INFO:root:waiting for command to complete...
+mount.nfs: mount(2): Invalid argument
+mount.nfs: mount(2): Invalid argument
+mount.nfs: an incorrect mount option was specified
+mount.nfs: timeout set for Mon Mar  1 11:17:42 2021
+mount.nfs: trying text-based options 'nfsvers\=4,vers=4.1,addr=34.66.17.160,clientaddr=10.92.0.48'
+mount.nfs: trying text-based options 'nfsvers\=4,vers=4.0,addr=34.66.17.160,clientaddr=10.92.0.48'
+
+
+
+
+
+
+INFO:root:mount -t nfs -o nfsvers\\=4 34.66.17.160:/src/nfs/kubedata /triliodata -v command execution completion time: 2021-03-01 11:15:44.473986
+CRITICAL:root:command :mount -t nfs -o nfsvers\\=4 34.66.17.160:/src/nfs/kubedata /triliodata -v, exitcode :32
+ERROR:root:command :mount -t nfs -o nfsvers\\=4 34.66.17.160:/src/nfs/kubedata /triliodata -v, exitcode :32
+Traceback (most recent call last):
+  File "/opt/tvk/datastore-attacher/mount_utility/mount_by_target_crd/mount_datastores.py", line 210, in main
+    mount_datastore(metadata, datastore.get(constants.DATASTORE_TYPE), ds_base_path)
+  File "/opt/tvk/datastore-attacher/mount_utility/mount_by_target_crd/mount_datastores.py", line 187, in mount_datastore
+    mount_NFS_datastore(metadata_list, ds_base_path)
+  File "/opt/tvk/datastore-attacher/mount_utility/mount_by_target_crd/mount_datastores.py", line 118, in mount_NFS_datastore
+    utilities.run_cmd(cmd)
+  File "/opt/tvk/datastore-attacher/mount_utility/utilities.py", line 97, in run_cmd
+    raise Exception(errMsg)
+Exception: command :mount -t nfs -o nfsvers\\=4 34.66.17.160:/src/nfs/kubedata /triliodata -v, exitcode :32

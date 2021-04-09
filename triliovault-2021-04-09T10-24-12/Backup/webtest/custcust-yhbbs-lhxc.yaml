@@ -1,0 +1,269 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Backup
+metadata:
+  annotations:
+    scheduleType: Periodic
+  creationTimestamp: "2021-02-23T02:53:07Z"
+  finalizers:
+  - backup-cleanup-finalizer
+  generation: 1
+  name: custcust-yhbbs-lhxc
+  namespace: webtest
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: custcust-yhbbs
+    uid: 7da0c002-c49f-4473-b24d-aebafdc454a7
+  resourceVersion: "33830675"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/webtest/backups/custcust-yhbbs-lhxc
+  uid: b2531931-37c7-4149-a629-3ec771a65a63
+spec:
+  backupPlan:
+    apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: custcust-yhbbs
+    namespace: webtest
+    resourceVersion: "19953945"
+    uid: 7da0c002-c49f-4473-b24d-aebafdc454a7
+  type: Incremental
+status:
+  completionTimestamp: "2021-02-23T02:56:07Z"
+  percentageCompletion: 70
+  size: "73547776"
+  snapshot:
+    custom:
+      dataSnapshots:
+      - backupType: Full
+        location: 6675a2ee-238f-4e93-a28a-76be234f90d8/b3f90f19-096e-4267-b788-c972a2267790/custom/data-snapshot/app-pod-pvc
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"PersistentVolumeClaim\",\"metadata\":{\"annotations\":{},\"name\":\"app-pod-pvc\",\"namespace\":\"apps\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"1Gi\"}},\"storageClassName\":\"csi-gce-pd\"}}\n","pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"nodes-rkmd"},"creationTimestamp":"2020-11-26T06:39:34Z","finalizers":["kubernetes.io/pvc-protection"],"name":"app-pod-pvc","namespace":"apps","resourceVersion":"2414379","selfLink":"/api/v1/namespaces/apps/persistentvolumeclaims/app-pod-pvc","uid":"f27523a8-ec1e-40f4-a05a-2dd7e8e10ded"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-f27523a8-ec1e-40f4-a05a-2dd7e8e10ded"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"1Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: app-pod-pvc
+        podContainersMap:
+        - containers:
+          - fsfreeze
+          - nginx
+          podName: app-nginx-pod
+        size: "18354176"
+        snapshotSize: "1073741824"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: app-pod-pvc-530c13d2-dbfb-450e-8290-87759657cc50
+            namespace: apps
+            resourceVersion: "2419067"
+            uid: 0f41a98a-32ee-4a32-b786-bf28c36b9c14
+      - backupType: Full
+        location: 6675a2ee-238f-4e93-a28a-76be234f90d8/b3f90f19-096e-4267-b788-c972a2267790/custom/data-snapshot/app-nginx-rc-pvc
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"PersistentVolumeClaim\",\"metadata\":{\"annotations\":{},\"name\":\"app-nginx-rc-pvc\",\"namespace\":\"apps\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"1Gi\"}},\"storageClassName\":\"csi-gce-pd\"}}\n","pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"nodes-rkmd"},"creationTimestamp":"2020-11-26T06:39:32Z","finalizers":["kubernetes.io/pvc-protection"],"name":"app-nginx-rc-pvc","namespace":"apps","resourceVersion":"2414386","selfLink":"/api/v1/namespaces/apps/persistentvolumeclaims/app-nginx-rc-pvc","uid":"14beacb7-eb73-46cc-b485-69ea0771df67"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-14beacb7-eb73-46cc-b485-69ea0771df67"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"1Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: app-nginx-rc-pvc
+        podContainersMap:
+        - containers:
+          - nginx-rc
+          podName: app-nginx-rc-dcs2w
+        size: "18419712"
+        snapshotSize: "1073741824"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: app-nginx-rc-pvc-e759b105-bd2a-4864-b75e-a2db073b3a69
+            namespace: apps
+            resourceVersion: "2419367"
+            uid: 6ac51db6-38f2-4847-befb-21bdffcd1272
+      - backupType: Full
+        location: 6675a2ee-238f-4e93-a28a-76be234f90d8/b3f90f19-096e-4267-b788-c972a2267790/custom/data-snapshot/app-pod-pvc
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"PersistentVolumeClaim\",\"metadata\":{\"annotations\":{},\"name\":\"app-pod-pvc\",\"namespace\":\"apps\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"1Gi\"}},\"storageClassName\":\"csi-gce-pd\"}}\n","pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"nodes-rkmd"},"creationTimestamp":"2020-11-26T06:39:34Z","finalizers":["kubernetes.io/pvc-protection"],"name":"app-pod-pvc","namespace":"apps","resourceVersion":"2414379","selfLink":"/api/v1/namespaces/apps/persistentvolumeclaims/app-pod-pvc","uid":"f27523a8-ec1e-40f4-a05a-2dd7e8e10ded"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-f27523a8-ec1e-40f4-a05a-2dd7e8e10ded"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"1Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: app-pod-pvc
+        podContainersMap:
+        - containers:
+          - fsfreeze
+          - nginx
+          podName: app-nginx-pod
+        size: "18354176"
+        snapshotSize: "1073741824"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: app-pod-pvc-530c13d2-dbfb-450e-8290-87759657cc50
+            namespace: apps
+            resourceVersion: "2419067"
+            uid: 0f41a98a-32ee-4a32-b786-bf28c36b9c14
+      - backupType: Full
+        location: 6675a2ee-238f-4e93-a28a-76be234f90d8/b3f90f19-096e-4267-b788-c972a2267790/custom/data-snapshot/app-nginx-rc-pvc
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"PersistentVolumeClaim\",\"metadata\":{\"annotations\":{},\"name\":\"app-nginx-rc-pvc\",\"namespace\":\"apps\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"1Gi\"}},\"storageClassName\":\"csi-gce-pd\"}}\n","pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"nodes-rkmd"},"creationTimestamp":"2020-11-26T06:39:32Z","finalizers":["kubernetes.io/pvc-protection"],"name":"app-nginx-rc-pvc","namespace":"apps","resourceVersion":"2414386","selfLink":"/api/v1/namespaces/apps/persistentvolumeclaims/app-nginx-rc-pvc","uid":"14beacb7-eb73-46cc-b485-69ea0771df67"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-14beacb7-eb73-46cc-b485-69ea0771df67"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"1Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: app-nginx-rc-pvc
+        podContainersMap:
+        - containers:
+          - nginx-rc
+          podName: app-nginx-rc-dcs2w
+        size: "18419712"
+        snapshotSize: "1073741824"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: app-nginx-rc-pvc-e759b105-bd2a-4864-b75e-a2db073b3a69
+            namespace: apps
+            resourceVersion: "2419367"
+            uid: 6ac51db6-38f2-4847-befb-21bdffcd1272
+      resources:
+      - groupVersionKind:
+          kind: Service
+          version: v1
+        objects:
+        - app-nginx-pod-svc
+        - app-nginx-rc-svc
+        - app-nginx-rs-svc
+      - groupVersionKind:
+          kind: ConfigMap
+          version: v1
+        objects:
+        - app-configmap-test
+      - groupVersionKind:
+          kind: Pod
+          version: v1
+        objects:
+        - app-nginx-pod
+      - groupVersionKind:
+          kind: ReplicationController
+          version: v1
+        objects:
+        - app-nginx-rc
+      - groupVersionKind:
+          group: apps
+          kind: DaemonSet
+          version: v1
+        objects:
+        - app-fluentd-elasticsearch
+      - groupVersionKind:
+          group: networking.k8s.io
+          kind: NetworkPolicy
+          version: v1
+        objects:
+        - app-network-policy
+      - groupVersionKind:
+          group: policy
+          kind: PodSecurityPolicy
+          version: v1beta1
+        objects:
+        - app-pod-sec-policy
+      - groupVersionKind:
+          group: rbac.authorization.k8s.io
+          kind: ClusterRole
+          version: v1
+        objects:
+        - app-clusterrole-test
+      - groupVersionKind:
+          group: rbac.authorization.k8s.io
+          kind: ClusterRoleBinding
+          version: v1
+        objects:
+        - app-clusterrolebinding-test
+      - groupVersionKind:
+          group: storage.k8s.io
+          kind: StorageClass
+          version: v1
+        objects:
+        - app-sc-test
+        - csi-gce-pd
+      - groupVersionKind:
+          kind: Service
+          version: v1
+        objects:
+        - app-nginx-pod-svc
+        - app-nginx-rc-svc
+        - app-nginx-rs-svc
+      - groupVersionKind:
+          kind: ConfigMap
+          version: v1
+        objects:
+        - app-configmap-test
+      - groupVersionKind:
+          kind: Pod
+          version: v1
+        objects:
+        - app-nginx-pod
+      - groupVersionKind:
+          kind: ReplicationController
+          version: v1
+        objects:
+        - app-nginx-rc
+      - groupVersionKind:
+          group: apps
+          kind: DaemonSet
+          version: v1
+        objects:
+        - app-fluentd-elasticsearch
+      - groupVersionKind:
+          group: networking.k8s.io
+          kind: NetworkPolicy
+          version: v1
+        objects:
+        - app-network-policy
+      - groupVersionKind:
+          group: policy
+          kind: PodSecurityPolicy
+          version: v1beta1
+        objects:
+        - app-pod-sec-policy
+      - groupVersionKind:
+          group: rbac.authorization.k8s.io
+          kind: ClusterRole
+          version: v1
+        objects:
+        - app-clusterrole-test
+      - groupVersionKind:
+          group: rbac.authorization.k8s.io
+          kind: ClusterRoleBinding
+          version: v1
+        objects:
+        - app-clusterrolebinding-test
+      - groupVersionKind:
+          group: storage.k8s.io
+          kind: StorageClass
+          version: v1
+        objects:
+        - app-sc-test
+        - csi-gce-pd
+      warnings:
+      - |
+        Found Dependent Resource:
+        GVK: [storage.k8s.io/v1, Kind=StorageClass]
+        Name: [csi-gce-pd]
+  startTimestamp: "2021-02-23T02:53:07Z"
+  stats:
+    backupNamespace: webtest
+    hookExists: false
+    latestInProgressRestore:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Restore
+      name: custcust-yhbbs-uqwc
+      namespace: webtest
+      resourceVersion: "19953992"
+      uid: 5dae9f66-ef48-43e2-aade-8c4d91438a90
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: target-sample
+      namespace: webtest
+      resourceVersion: "19945531"
+      uid: ad77678f-2fa9-4776-a41c-4608a873db3e
+  status: Available
+  type: Incremental

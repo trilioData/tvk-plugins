@@ -1,0 +1,14 @@
+apiVersion: snapshot.storage.k8s.io/v1beta1
+deletionPolicy: Delete
+driver: pd.csi.storage.gke.io
+kind: VolumeSnapshotClass
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"snapshot.storage.k8s.io/v1beta1","deletionPolicy":"Delete","driver":"pd.csi.storage.gke.io","kind":"VolumeSnapshotClass","metadata":{"annotations":{},"name":"default-snapshot-class"}}
+  creationTimestamp: "2021-04-02T11:04:59Z"
+  generation: 1
+  name: default-snapshot-class
+  resourceVersion: "84162444"
+  selfLink: /apis/snapshot.storage.k8s.io/v1beta1/volumesnapshotclasses/default-snapshot-class
+  uid: 7858ef12-df56-48b8-988d-5a3b471010c8

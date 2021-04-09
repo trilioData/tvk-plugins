@@ -1,0 +1,146 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    prometheus.io/path: /metrics
+    prometheus.io/port: "8080"
+    prometheus.io/scrape: "true"
+  creationTimestamp: "2021-02-05T11:16:04Z"
+  generateName: k8s-triliovault-exporter-6cb59c848b-
+  labels:
+    app: k8s-triliovault-exporter
+    app.kubernetes.io/instance: k8s-triliovault-exporter
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    pod-template-hash: 6cb59c848b
+    rel: nir-tvk2
+  name: k8s-triliovault-exporter-6cb59c848b-29bf8
+  namespace: niranjan2
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: k8s-triliovault-exporter-6cb59c848b
+    uid: de0c3dd4-0fa6-45ff-bf59-a284618205b3
+  resourceVersion: "1357287"
+  selfLink: /api/v1/namespaces/niranjan2/pods/k8s-triliovault-exporter-6cb59c848b-29bf8
+  uid: 10586174-686e-40f0-8d41-85791c1eec17
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: beta.kubernetes.io/arch
+            operator: In
+            values:
+            - amd64
+        - matchExpressions:
+          - key: kubernetes.io/arch
+            operator: In
+            values:
+            - amd64
+  containers:
+  - env:
+    - name: INSTALL_NAMESPACE
+      value: niranjan2
+    - name: RELEASE_TAG
+      value: master
+    - name: APP_SCOPE
+      value: Namespaced
+    image: gcr.io/amazing-chalice-243510/exporter:master
+    imagePullPolicy: IfNotPresent
+    name: triliovault-exporter
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 200m
+        memory: 512Mi
+      requests:
+        cpu: 10m
+        memory: 10Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        add:
+        - KILL
+        - AUDIT_WRITE
+        drop:
+        - ALL
+      privileged: false
+      readOnlyRootFilesystem: false
+      runAsNonRoot: true
+      runAsUser: 1001
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: k8s-triliovault-token-29p7g
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: gke-dev-cluster-dev-cluster-pool-eab0992b-v6j2
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+  serviceAccount: k8s-triliovault
+  serviceAccountName: k8s-triliovault
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: k8s-triliovault-token-29p7g
+    secret:
+      defaultMode: 420
+      secretName: k8s-triliovault-token-29p7g
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2021-02-05T11:16:04Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2021-02-05T11:16:07Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2021-02-05T11:16:07Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2021-02-05T11:16:04Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: docker://dcbc0b9033ef329a78d46de84bceff39cced0b03700061111c693c27fef0c0ce
+    image: gcr.io/amazing-chalice-243510/exporter:master
+    imageID: docker-pullable://gcr.io/amazing-chalice-243510/exporter@sha256:c0eecebba3909b1b9b426016711e10d6dd4f0550de7df3c2f0acb987a477dc42
+    lastState: {}
+    name: triliovault-exporter
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2021-02-05T11:16:06Z"
+  hostIP: 10.142.0.102
+  phase: Running
+  podIP: 10.92.0.174
+  podIPs:
+  - ip: 10.92.0.174
+  qosClass: Burstable
+  startTime: "2021-02-05T11:16:04Z"

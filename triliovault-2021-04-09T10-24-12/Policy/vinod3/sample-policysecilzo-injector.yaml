@@ -1,0 +1,18 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Policy
+metadata:
+  creationTimestamp: "2021-03-16T05:26:46Z"
+  generation: 1
+  name: sample-policysecilzo-injector
+  namespace: vinod3
+  resourceVersion: "56726566"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/vinod3/policies/sample-policysecilzo-injector
+  uid: 5573ebda-8a46-4118-981b-72fb46552971
+spec:
+  cleanupConfig:
+    backupDays: 5
+  default: false
+  retentionConfig:
+    latest: 1
+  timeoutConfig: {}
+  type: Cleanup

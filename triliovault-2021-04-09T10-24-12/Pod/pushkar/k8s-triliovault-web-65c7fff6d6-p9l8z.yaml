@@ -1,0 +1,137 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2021-04-05T16:56:17Z"
+  generateName: k8s-triliovault-web-65c7fff6d6-
+  labels:
+    app: k8s-triliovault-web
+    app.kubernetes.io/instance: k8s-triliovault-web
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    pod-template-hash: 65c7fff6d6
+    release: k8s-triliovault-1617641738
+  name: k8s-triliovault-web-65c7fff6d6-p9l8z
+  namespace: pushkar
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: k8s-triliovault-web-65c7fff6d6
+    uid: f50d22b7-046f-4dcb-b6b0-8cc5b76a126a
+  resourceVersion: "93636902"
+  selfLink: /api/v1/namespaces/pushkar/pods/k8s-triliovault-web-65c7fff6d6-p9l8z
+  uid: 09fe4b5a-e15c-4a01-aaac-97e6aadb426d
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/arch
+            operator: In
+            values:
+            - amd64
+  containers:
+  - env:
+    - name: INSTALL_NAMESPACE
+      value: pushkar
+    - name: APP_SCOPE
+      value: Namespaced
+    - name: RELEASE
+      value: k8s-triliovault-1617641738
+    image: eu.gcr.io/amazing-chalice-243510/web:v2.1.0-beta.6
+    imagePullPolicy: IfNotPresent
+    name: triliovault-web
+    ports:
+    - containerPort: 9443
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 200m
+        memory: 512Mi
+      requests:
+        cpu: 10m
+        memory: 10Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        add:
+        - KILL
+        - AUDIT_WRITE
+        drop:
+        - ALL
+      privileged: false
+      readOnlyRootFilesystem: false
+      runAsNonRoot: true
+      runAsUser: 1001
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: k8s-triliovault-token-xhbx4
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: gke-dev-cluster-dev-cluster-pool-eab0992b-5s14
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+  serviceAccount: k8s-triliovault
+  serviceAccountName: k8s-triliovault
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: k8s-triliovault-token-xhbx4
+    secret:
+      defaultMode: 420
+      secretName: k8s-triliovault-token-xhbx4
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2021-04-05T16:56:17Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2021-04-05T16:56:32Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2021-04-05T16:56:32Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2021-04-05T16:56:17Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: docker://437f031dc702d2f36b83233a7b5cf95d1199ea77f60debfd9c90ee7818607213
+    image: eu.gcr.io/amazing-chalice-243510/web:v2.1.0-beta.6
+    imageID: docker-pullable://eu.gcr.io/amazing-chalice-243510/web@sha256:78ebf72a3b0932c2650f0804a68c52266b1884916959915bc22f4ddb3d23d73b
+    lastState: {}
+    name: triliovault-web
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2021-04-05T16:56:32Z"
+  hostIP: 10.142.0.107
+  phase: Running
+  podIP: 10.92.1.225
+  podIPs:
+  - ip: 10.92.1.225
+  qosClass: Burstable
+  startTime: "2021-04-05T16:56:17Z"

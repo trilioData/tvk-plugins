@@ -1,0 +1,78 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"triliovault.trilio.io/v1","kind":"BackupPlan","metadata":{"annotations":{},"name":"sample-application-custom-operator","namespace":"pmath"},"spec":{"backupConfig":{"retentionPolicy":{"name":"sample-policy"},"target":{"name":"sample-target"}},"backupPlanComponents":{"operators":[{"applicationResourceSelector":[{"matchLabels":{"app.kubernetes.io/managed-by":"mysql.presslabs.org","app.kubernetes.io/name":"mysql"}}],"customResources":[{"groupVersionKind":{"group":"mysql.presslabs.org","kind":"MysqlCluster","version":"v1alpha1"},"objects":["log-collector-sample-mysqlcluster"]},{"groupVersionKind":{"group":"mysql.presslabs.org","kind":"MysqlBackup","version":"v1alpha1"}}],"operatorId":"log-collector-mysql-operator","operatorResourceSelector":[{"matchLabels":{"app":"mysql-operator","release":"log-collector-mysql-operator"}}]}]}}}
+  creationTimestamp: "2021-03-24T02:37:41Z"
+  finalizers:
+  - backupplan-delete-finalizer
+  generation: 2
+  name: sample-application-custom-operator
+  namespace: pmath
+  resourceVersion: "70689180"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pmath/backupplans/sample-application-custom-operator
+  uid: fda30d0c-b700-43bd-aaf9-4a3cd5e0091b
+spec:
+  backupConfig:
+    retentionPolicy:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Policy
+      name: sample-policy
+      namespace: pmath
+      resourceVersion: "70552608"
+      uid: 57ac948e-318f-4862-bccb-43a26e1d3ae9
+    schedulePolicy:
+      fullBackupCron:
+        schedule: ""
+      incrementalCron:
+        schedule: ""
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-target
+      namespace: pmath
+      resourceVersion: "70552758"
+      uid: 7a03157a-9f04-4119-94a7-463bbe36807e
+  backupPlanComponents:
+    operators:
+    - applicationResourceSelector:
+      - matchLabels:
+          app.kubernetes.io/managed-by: mysql.presslabs.org
+          app.kubernetes.io/name: mysql
+      customResources:
+      - groupVersionKind:
+          group: mysql.presslabs.org
+          kind: MysqlCluster
+          version: v1alpha1
+        objects:
+        - log-collector-sample-mysqlcluster
+      - groupVersionKind:
+          group: mysql.presslabs.org
+          kind: MysqlBackup
+          version: v1alpha1
+      operatorId: log-collector-mysql-operator
+      operatorResourceSelector:
+      - matchLabels:
+          app: mysql-operator
+          release: log-collector-mysql-operator
+status:
+  stats:
+    backupSummary:
+      lastSuccessfulBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: sample-backup-custom-operator
+        namespace: pmath
+        resourceVersion: "70556455"
+        uid: f86e303c-9017-4159-bad4-385ab5a3ca67
+      latestBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: sample-backup-custom-operator
+        namespace: pmath
+        resourceVersion: "70556455"
+        uid: f86e303c-9017-4159-bad4-385ab5a3ca67
+      totalAvailableBackups: 1
+    restoreSummary: {}
+  status: Available

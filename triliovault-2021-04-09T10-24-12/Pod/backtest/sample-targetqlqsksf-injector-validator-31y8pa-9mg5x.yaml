@@ -1,0 +1,145 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2021-03-01T11:15:30Z"
+  generateName: sample-targetqlqsksf-injector-validator-31y8pa-
+  labels:
+    app.kubernetes.io/instance: sample-targetqlqsksf-injector-validator-31y8pa
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    controller-uid: 940d1b61-e124-447f-b29e-a7bd2b4177cd
+    job-name: sample-targetqlqsksf-injector-validator-31y8pa
+    owner-gen-id: "1"
+  name: sample-targetqlqsksf-injector-validator-31y8pa-9mg5x
+  namespace: backtest
+  ownerReferences:
+  - apiVersion: batch/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Job
+    name: sample-targetqlqsksf-injector-validator-31y8pa
+    uid: 940d1b61-e124-447f-b29e-a7bd2b4177cd
+  resourceVersion: "33831750"
+  selfLink: /api/v1/namespaces/backtest/pods/sample-targetqlqsksf-injector-validator-31y8pa-9mg5x
+  uid: 095d98a9-414c-44be-bbb1-70c0ce73abbd
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: beta.kubernetes.io/arch
+            operator: In
+            values:
+            - amd64
+        - matchExpressions:
+          - key: kubernetes.io/arch
+            operator: In
+            values:
+            - amd64
+  containers:
+  - command:
+    - /bin/sh
+    - -c
+    - python /opt/tvk/datastore-attacher/mount_utility/mount_by_target_crd/mount_datastores.py
+      --namespace=backtest --target-name=sample-targetqlqsksf-injector && python /opt/tvk/datastore-attacher/scripts/target_validations.py
+      --target-name=sample-targetqlqsksf-injector --namespace=backtest
+    image: gcr.io/amazing-chalice-243510/datastore-attacher:7804eefd998678018a022bc805dffceb5a5146e1
+    imagePullPolicy: IfNotPresent
+    name: validator
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 10m
+        memory: 10Mi
+    securityContext:
+      allowPrivilegeEscalation: true
+      capabilities:
+        add:
+        - SYS_ADMIN
+        drop:
+        - ALL
+      privileged: true
+      readOnlyRootFilesystem: false
+      runAsNonRoot: false
+      runAsUser: 0
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: k8s-triliovault-token-fx7gr
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: gke-dev-cluster-dev-cluster-pool-eab0992b-v6j2
+  priority: 0
+  restartPolicy: Never
+  schedulerName: default-scheduler
+  securityContext:
+    runAsNonRoot: false
+    runAsUser: 0
+  serviceAccount: k8s-triliovault
+  serviceAccountName: k8s-triliovault
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: k8s-triliovault-token-fx7gr
+    secret:
+      defaultMode: 420
+      secretName: k8s-triliovault-token-fx7gr
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2021-03-01T11:15:30Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2021-03-01T11:17:37Z"
+    message: 'containers with unready status: [validator]'
+    reason: ContainersNotReady
+    status: "False"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2021-03-01T11:17:37Z"
+    message: 'containers with unready status: [validator]'
+    reason: ContainersNotReady
+    status: "False"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2021-03-01T11:15:30Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: docker://e3e13591310e5d1c3327ba8076f635953ed6b1ecce997bd8459810fe34011ea9
+    image: gcr.io/amazing-chalice-243510/datastore-attacher:126c322adaea2ca1900887888190de541ab70b92
+    imageID: docker-pullable://gcr.io/amazing-chalice-243510/datastore-attacher@sha256:2baa664ba28f36dd37c3c5534e21b66ce6dffdce808487e33b641953dafc0641
+    lastState: {}
+    name: validator
+    ready: false
+    restartCount: 0
+    started: false
+    state:
+      terminated:
+        containerID: docker://e3e13591310e5d1c3327ba8076f635953ed6b1ecce997bd8459810fe34011ea9
+        exitCode: 1
+        finishedAt: "2021-03-01T11:17:37Z"
+        reason: Error
+        startedAt: "2021-03-01T11:15:32Z"
+  hostIP: 10.142.0.102
+  phase: Failed
+  podIP: 10.92.0.43
+  podIPs:
+  - ip: 10.92.0.43
+  qosClass: Burstable
+  startTime: "2021-03-01T11:15:30Z"

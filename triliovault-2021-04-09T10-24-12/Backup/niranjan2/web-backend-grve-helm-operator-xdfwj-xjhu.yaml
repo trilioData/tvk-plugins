@@ -1,0 +1,178 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Backup
+metadata:
+  creationTimestamp: "2021-02-05T11:27:16Z"
+  finalizers:
+  - backup-cleanup-finalizer
+  generation: 1
+  name: web-backend-grve-helm-operator-xdfwj-xjhu
+  namespace: niranjan2
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: web-backend-grve-helm-operator-xdfwj
+    uid: f7eb182b-95aa-4e86-a9e7-35feb54f673e
+  resourceVersion: "33830688"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/niranjan2/backups/web-backend-grve-helm-operator-xdfwj-xjhu
+  uid: db4a89ed-a78b-4667-8790-2e2c98819b94
+spec:
+  backupPlan:
+    apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: web-backend-grve-helm-operator-xdfwj
+    namespace: niranjan2
+    resourceVersion: "1362998"
+    uid: f7eb182b-95aa-4e86-a9e7-35feb54f673e
+  type: Incremental
+status:
+  completionTimestamp: "2021-02-05T11:30:16Z"
+  percentageCompletion: 70
+  size: "421224448"
+  snapshot:
+    operators:
+    - customResources:
+      - groupVersionKind:
+          group: helm.fluxcd.io
+          kind: HelmRelease
+          version: v1
+        objects:
+        - app-redis
+      dataSnapshots:
+      - backupType: Full
+        location: 3ccb2ff0-d0f8-44b8-9854-ee6af46d0efb/748e1692-5f61-413b-85f2-c5aacf5318fc/operator/sample-fluxcd-helm-release/data-snapshot/redis-data-redis-master-0
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"nodes-rkmd"},"creationTimestamp":"2020-11-25T10:04:42Z","finalizers":["kubernetes.io/pvc-protection"],"labels":{"app":"redis","component":"master","heritage":"Helm","release":"redis","role":"master"},"name":"redis-data-redis-master-0","namespace":"apps","resourceVersion":"2533120","selfLink":"/api/v1/namespaces/apps/persistentvolumeclaims/redis-data-redis-master-0","uid":"fe5774c9-f5b0-42ac-afc3-de8f21524934"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"8Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-fe5774c9-f5b0-42ac-afc3-de8f21524934"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"8Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: redis-data-redis-master-0
+        podContainersMap:
+        - containers:
+          - redis
+          podName: redis-master-0
+        size: "140386304"
+        snapshotSize: "8589934592"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: redis-data-redis-master-0-0015bd23-3261-4e87-9244-5240581bf5ae
+            namespace: apps
+            resourceVersion: "2559297"
+            uid: 31efcb9d-44a8-4be4-9ae0-6036df5b79d2
+      - backupType: Full
+        location: 3ccb2ff0-d0f8-44b8-9854-ee6af46d0efb/748e1692-5f61-413b-85f2-c5aacf5318fc/operator/sample-fluxcd-helm-release/data-snapshot/redis-data-redis-slave-0
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"nodes-rkmd"},"creationTimestamp":"2020-11-25T10:04:42Z","finalizers":["kubernetes.io/pvc-protection"],"labels":{"app":"redis","component":"slave","heritage":"Helm","release":"redis","role":"slave"},"name":"redis-data-redis-slave-0","namespace":"apps","resourceVersion":"2533139","selfLink":"/api/v1/namespaces/apps/persistentvolumeclaims/redis-data-redis-slave-0","uid":"badf4958-31c1-4bc7-b9d1-745619e88541"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"8Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-badf4958-31c1-4bc7-b9d1-745619e88541"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"8Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: redis-data-redis-slave-0
+        podContainersMap:
+        - containers:
+          - redis
+          podName: redis-slave-0
+        size: "140451840"
+        snapshotSize: "8589934592"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: redis-data-redis-slave-0-318a2b82-b5bb-4c8d-9d75-8929503423de
+            namespace: apps
+            resourceVersion: "2559330"
+            uid: 249dcce9-37d9-490d-8441-f66dcde8f414
+      - backupType: Full
+        location: 3ccb2ff0-d0f8-44b8-9854-ee6af46d0efb/748e1692-5f61-413b-85f2-c5aacf5318fc/operator/sample-fluxcd-helm-release/data-snapshot/redis-data-redis-slave-1
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"nodes-rkmd"},"creationTimestamp":"2020-11-25T10:05:26Z","finalizers":["kubernetes.io/pvc-protection"],"labels":{"app":"redis","component":"slave","heritage":"Helm","release":"redis","role":"slave"},"name":"redis-data-redis-slave-1","namespace":"apps","resourceVersion":"2533130","selfLink":"/api/v1/namespaces/apps/persistentvolumeclaims/redis-data-redis-slave-1","uid":"a3dd9b53-a029-4ec2-90ed-1d6377dadaad"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"8Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-a3dd9b53-a029-4ec2-90ed-1d6377dadaad"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"8Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: redis-data-redis-slave-1
+        podContainersMap:
+        - containers:
+          - redis
+          podName: redis-slave-1
+        size: "140386304"
+        snapshotSize: "8589934592"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: redis-data-redis-slave-1-29cda23b-0ee0-4a1e-a5f3-e9d03e351ef8
+            namespace: apps
+            resourceVersion: "2559313"
+            uid: f3f62976-0954-465d-8bec-7b790cc373d4
+      helm:
+        release: helm-operator
+        resources:
+        - groupVersionKind:
+            kind: Secret
+            version: v1
+          objects:
+          - helm-operator-git-deploy
+          - sh.helm.release.v1.helm-operator.v1
+        - groupVersionKind:
+            kind: ConfigMap
+            version: v1
+          objects:
+          - helm-operator-kube-config
+        - groupVersionKind:
+            kind: ServiceAccount
+            version: v1
+          objects:
+          - helm-operator
+        - groupVersionKind:
+            group: rbac.authorization.k8s.io
+            kind: ClusterRole
+            version: v1beta1
+          objects:
+          - helm-operator
+        - groupVersionKind:
+            group: rbac.authorization.k8s.io
+            kind: ClusterRoleBinding
+            version: v1beta1
+          objects:
+          - helm-operator
+        - groupVersionKind:
+            kind: Service
+            version: v1
+          objects:
+          - helm-operator
+        - groupVersionKind:
+            group: apps
+            kind: Deployment
+            version: v1
+          objects:
+          - helm-operator
+        revision: 1
+        storageBackend: Secret
+        version: v3
+        warnings:
+        - |
+          Found Pods are not in Running/Succeeded state:
+          GVK: [apps/v1, Kind=Deployment]
+          Name: [helm-operator]
+      operatorId: sample-fluxcd-helm-release
+      operatorResources:
+      - groupVersionKind:
+          group: apiextensions.k8s.io
+          kind: CustomResourceDefinition
+          version: v1beta1
+        objects:
+        - helmreleases.helm.fluxcd.io
+  startTimestamp: "2021-02-05T11:27:16Z"
+  stats:
+    applicationType: Operator
+    backupNamespace: niranjan2
+    hookExists: false
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-targetqhbkwmj-injector
+      namespace: niranjan2
+      resourceVersion: "1362960"
+      uid: 9d0e0651-0fce-47fe-9a92-9339f468a34d
+  status: Available
+  type: Incremental

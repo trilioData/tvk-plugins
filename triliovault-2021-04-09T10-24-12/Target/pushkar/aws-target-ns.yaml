@@ -1,0 +1,57 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Target
+metadata:
+  annotations:
+    targetSpecHash: "1632539888"
+  creationTimestamp: "2021-04-06T08:51:42Z"
+  finalizers:
+  - target-delete-finalizer
+  generation: 2
+  labels:
+    app.kubernetes.io/managed-by: k8s-triliovault-ui
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: aws-target-ns
+  namespace: pushkar
+  resourceVersion: "95645170"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pushkar/targets/aws-target-ns
+  uid: 2db4f14b-846f-45ee-8e1b-440f7811ca98
+spec:
+  enableBrowsing: true
+  nfsCredentials:
+    nfsExport: ""
+  objectStoreCredentials:
+    accessKey: AKIAS5B35DGFSTY7T55D
+    bucketName: trilio-browser-test
+    secretKey: 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
+  thresholdCapacity: 6Gi
+  type: ObjectStore
+  vendor: AWS
+status:
+  browsingEnabled: true
+  condition:
+  - reason: Target credentials changed.
+    timestamp: "2021-04-06T08:51:43Z"
+  - phase: Validation
+    reason: Validation InProgress
+    status: InProgress
+    timestamp: "2021-04-06T08:51:43Z"
+  - phase: Validation
+    reason: Validation Completed
+    status: Completed
+    timestamp: "2021-04-06T08:52:11Z"
+  - phase: TargetBrowsing
+    reason: Browsing is enabled, waiting for target browser deployment and service
+      to come up.
+    status: InProgress
+    timestamp: "2021-04-06T10:13:55Z"
+  - phase: TargetBrowsing
+    reason: Successfully enabled target browser
+    status: Completed
+    timestamp: "2021-04-06T10:14:17Z"
+  stats:
+    applicationCapacity: "0"
+    applicationCapacityConsumed: "0"
+    capacityOccupied: "0"
+    totalBackupPlans: 8
+  status: Available

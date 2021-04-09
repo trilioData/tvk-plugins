@@ -1,0 +1,40 @@
+apiVersion: triliovault.trilio.io/v1
+kind: License
+metadata:
+  annotations:
+    generation: "1"
+  creationTimestamp: "2021-04-06T05:54:47Z"
+  generation: 1
+  name: test-license-1
+  namespace: ajay
+  resourceVersion: "98384061"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/ajay/licenses/test-license-1
+  uid: 0c68bc6e-675b-4f8a-9efd-d7d2bc5ebb6c
+spec:
+  key: xY8NDgwKD3jajZFRa4MwFIXf8ysCe74QrRot+NDZdEidHVP7OmK8ZYFWJWpZ//3sOlippew8heTc7+ae+5QPSBetodSjzJq7ztzm1Ga2RSKDstdNvZQ90j+F50dgDjCPiEqfHfRG4cog5kbLPZGq10ekE0dvBiR7rbDucIumu6aENnmVuu6xlrVC8dVqc7p84re3C4yTqDm0sj5NyPl7nMQbWBfPIhW5yCCJI5FmAl5ECqt3IT5GxyIh6XAo0Wx2RTe2v6oHi2Rojmji5S3acpFx9Nk4fSnB8XgFQeUjuIiBCkqblXxGMpHSOwrHe/DVTFUeQwi8QIFlYTmeOAemlMNlsKscH0lySeW2fZhvF0WSXxg+Zw8ZP6HJyW6u83sbjPqUHT5Yb6aaFu+MUssDdq1UWJH1UGIxSeqfUUVyhOj+NClmjNEzmaZNhd03WoalhzAsAhQV8XyylN2rtEDzA7DZRWBkiJLrDAIUY3Ke10iWtltJpy8gnHsre9gIc/4=X02gg
+status:
+  condition:
+  - message: License Key changed
+    timestamp: "2021-04-06T05:54:47Z"
+  - message: Cluster License Activated successfully.
+    status: Active
+    timestamp: "2021-04-06T05:54:47Z"
+  currentNodeCount: 12
+  message: Cluster License Activated successfully.
+  properties:
+    active: true
+    capacity: 1000
+    company: TRILIO-KUBENETES-LICENSE-GEN-FREE_TRIAL
+    creationTimestamp: "2021-04-06T00:00:00Z"
+    edition: FreeTrial
+    expirationTimestamp: "2021-05-07T00:00:00Z"
+    kubeUID: 15e07e80-04ba-467d-9d8e-5ee9c9b20b73
+    licenseID: TVAULT-8c3cd870-969c-11eb-9677-0cc47a9fd48e
+    maintenanceExpiryTimestamp: "2021-05-07T00:00:00Z"
+    numberOfUsers: -1
+    purchaseTimestamp: "2021-04-06T00:00:00Z"
+    scope: Namespaced
+    sen: SEN-8c3cd60e-969c-11eb-9677-0cc47a9fd48e
+    serverID: 15e07e80-04ba-467d-9d8e-5ee9c9b20b73
+    version: "2"
+  status: Active

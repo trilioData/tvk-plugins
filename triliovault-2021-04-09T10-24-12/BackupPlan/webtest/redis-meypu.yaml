@@ -1,0 +1,55 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  creationTimestamp: "2021-02-23T02:52:56Z"
+  generation: 1
+  name: redis-meypu
+  namespace: webtest
+  resourceVersion: "33830589"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/webtest/backupplans/redis-meypu
+  uid: 8d3a30f4-322b-4748-a9f2-9416bab700ed
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: 0 10 15 * *
+      incrementalCron:
+        schedule: 0 10 15 * *
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: target-sample
+      namespace: webtest
+      resourceVersion: "19945531"
+      uid: ad77678f-2fa9-4776-a41c-4608a873db3e
+  backupPlanComponents:
+    helmReleases:
+    - redis
+status:
+  stats:
+    backupSummary:
+      inProgressBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: redis-meypu-vctq
+        namespace: webtest
+        resourceVersion: "33826950"
+        uid: fbe26a4b-0261-4e63-aef7-56677edc3204
+      lastSuccessfulBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: redis-meypu-zbig
+        namespace: webtest
+        resourceVersion: "33826115"
+        uid: 8562fc4a-efe7-4330-bdea-bcd02460b30a
+      latestBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: redis-meypu-vctq
+        namespace: webtest
+        resourceVersion: "33826950"
+        uid: fbe26a4b-0261-4e63-aef7-56677edc3204
+      totalAvailableBackups: 1
+      totalInProgressBackups: 1
+    restoreSummary: {}
+  status: Available

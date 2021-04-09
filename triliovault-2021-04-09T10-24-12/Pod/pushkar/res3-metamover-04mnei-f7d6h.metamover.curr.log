@@ -1,0 +1,82 @@
+INFO:root:Calling crd-parser to get the datastore
+INFO:root:Parsing the target-crd to get the list of datastores
+INFO:root:Fetched the list of datastores to be mounted
+INFO:root:mounting datastore of type nfs
+INFO:root:mounting the NFS datastore by the name nfs-target-ns
+INFO:root:Executing command rpc.statd &
+INFO:root:rpc.statd & command execution starting time: 2021-04-06 12:56:42.927463
+INFO:root:waiting for command to complete...
+INFO:root:rpc.statd & command execution completion time: 2021-04-06 12:56:44.946315
+INFO:root:Command:rpc.statd &, ExitCode:0
+
+INFO:root:Executing command rpcbind -f &
+INFO:root:rpcbind -f & command execution starting time: 2021-04-06 12:56:44.946812
+INFO:root:waiting for command to complete...
+INFO:root:rpcbind -f & command execution completion time: 2021-04-06 12:56:46.955244
+INFO:root:Command:rpcbind -f &, ExitCode:0
+
+INFO:root:Executing command mount -t nfs -o nfsvers=4 34.66.17.160:/src/nfs/targetbrowser /triliodata -v
+INFO:root:mount -t nfs -o nfsvers=4 34.66.17.160:/src/nfs/targetbrowser /triliodata -v command execution starting time: 2021-04-06 12:56:46.956377
+INFO:root:waiting for command to complete...
+mount.nfs: timeout set for Tue Apr  6 12:58:46 2021
+mount.nfs: trying text-based options 'vers=4.1,addr=34.66.17.160,clientaddr=10.92.0.208'
+INFO:root:mount -t nfs -o nfsvers=4 34.66.17.160:/src/nfs/targetbrowser /triliodata -v command execution completion time: 2021-04-06 12:56:48.968280
+INFO:root:Command:mount -t nfs -o nfsvers=4 34.66.17.160:/src/nfs/targetbrowser /triliodata -v, ExitCode:0
+
+INFO:root:2021-04-06 12:56:48.968730: waiting for mount operation to complete.
+INFO:root:2021-04-06 12:56:49.005832: target mounted successfully.
+
+
+
+
+
+
+I0406 12:56:50.477766      20 request.go:655] Throttling request took 1.026836616s, request: GET:https://10.96.0.1:443/apis/networking.gke.io/v1beta1?timeout=32s
+{"component":"meta-mover","file":"cmd/metamover/metamover.go:10","func":"main.main","level":"info","msg":"Starting the Metadata Processing","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"cmd/metamover/app/restore.go:53","func":"github.com/trilioData/k8s-triliovault/cmd/metamover/app.runRestoreE","level":"info","msg":"starting restore for res3, from namespace: pushkar","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/restore.go:40","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.Do","level":"info","msg":"Starting the restore process of the metadata from namespace: pushkar, restore resource: res3","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/restore.go:64","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.Do","level":"info","msg":"prepared the backup location: /triliodata/05911af8-04d3-46be-a976-5d572ba096e5/14b90ea4-29db-460f-bdc0-e34e56737b12","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/commons.go:848","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.retrieveBackupInfoFromRestore","level":"info","msg":"Backup namespace [pushkar] extracted from backupPlan.json present on target","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"internal/helpers/commons.go:103","func":"github.com/trilioData/k8s-triliovault/internal/helpers.ValidateBackupLocation","level":"info","msg":"Checking if location present: /triliodata/05911af8-04d3-46be-a976-5d572ba096e5/14b90ea4-29db-460f-bdc0-e34e56737b12","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"internal/helpers/commons.go:108","func":"github.com/trilioData/k8s-triliovault/internal/helpers.ValidateBackupLocation","level":"info","msg":"Location /triliodata/05911af8-04d3-46be-a976-5d572ba096e5/14b90ea4-29db-460f-bdc0-e34e56737b12 present","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"internal/apis/snapshot_manager.go:226","func":"github.com/trilioData/k8s-triliovault/internal/apis.(*FullSnapshot).PullFromTarget","level":"info","msg":"Reading custom snapshot from /triliodata/05911af8-04d3-46be-a976-5d572ba096e5/14b90ea4-29db-460f-bdc0-e34e56737b12/custom","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/restore.go:103","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.Do","level":"info","msg":"found custom snapshot on target, starting restore...","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/custom.go:19","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.(*Custom).Restore","level":"info","msg":"starting restore process for custom label-based application, in namespace: pushkar","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/commons.go:431","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.restoreComponentMetadata","level":"info","msg":"Restoring category: [ClusterRole.rbac.authorization.k8s.io ClusterRoleBinding.rbac.authorization.k8s.io CustomResourceDefinition.apiextensions.k8s.io NetworkPolicy.networking.k8s.io PriorityClass.scheduling.k8s.io Role.rbac.authorization.k8s.io RoleBinding.rbac.authorization.k8s.io Secret SecurityContextConstraints ServiceAccount]","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"internal/decorator/decorator.go:240","func":"github.com/trilioData/k8s-triliovault/internal/decorator.(*UnstructResource).Cleanup","level":"info","msg":"cleaning metadata of resource to have --export functionality","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"internal/decorator/decorator.go:315","func":"github.com/trilioData/k8s-triliovault/internal/decorator.(*UnstructResource).ExportMetadata","level":"info","msg":"cleaning the clustered level fields which are irrelevant and mutated by kube-apiserver","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"internal/decorator/decorator.go:244","func":"github.com/trilioData/k8s-triliovault/internal/decorator.(*UnstructResource).Cleanup","level":"info","msg":"Cleaning the namespaced scope mutated metadata","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/commons.go:583","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.createOrUpdateOrDuplicateResource","level":"warning","msg":"object: /v1, Kind=ServiceAccount, name: default, already exists, applying the 'patch' policy","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/commons.go:450","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.restoreComponentMetadata","level":"info","msg":"Restoring category: [ConfigMap LimitRange MutatingWebhookConfiguration.admissionregistration.k8s.io ResourceQuota ValidatingWebhookConfiguration.admissionregistration.k8s.io]","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"internal/decorator/decorator.go:240","func":"github.com/trilioData/k8s-triliovault/internal/decorator.(*UnstructResource).Cleanup","level":"info","msg":"cleaning metadata of resource to have --export functionality","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"internal/decorator/decorator.go:315","func":"github.com/trilioData/k8s-triliovault/internal/decorator.(*UnstructResource).ExportMetadata","level":"info","msg":"cleaning the clustered level fields which are irrelevant and mutated by kube-apiserver","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"internal/decorator/decorator.go:244","func":"github.com/trilioData/k8s-triliovault/internal/decorator.(*UnstructResource).Cleanup","level":"info","msg":"Cleaning the namespaced scope mutated metadata","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/commons.go:583","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.createOrUpdateOrDuplicateResource","level":"warning","msg":"object: /v1, Kind=ResourceQuota, name: gke-resource-quotas, already exists, applying the 'patch' policy","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/commons.go:469","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.restoreComponentMetadata","level":"info","msg":"Restoring category: [Alertmanager.monitoring.coreos.com EgressNetworkPolicy.network.openshift.io Ingress.config.openshift.io Ingress.extensions Ingress.networking.k8s.io Pod PodMonitor.monitoring.coreos.com Prometheus.monitoring.coreos.com PrometheusRule.monitoring.coreos.com Route.route.openshift.io ServiceMonitor.monitoring.coreos.com]","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/commons.go:498","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.restoreComponentMetadata","level":"info","msg":"Restoring final category: []","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"internal/helpers/restore.go:263","func":"github.com/trilioData/k8s-triliovault/internal/helpers.UpdateRestoreStatus","level":"info","msg":"Updated restore status: InProgress name: res3 namespace: pushkar","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/restore.go:124","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.Do","level":"info","msg":"Metadata restored in [pushkar]","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/restore.go:134","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.Do","level":"info","msg":"hook execution is needed for  res3","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"internal/apis/snapshot_manager.go:327","func":"github.com/trilioData/k8s-triliovault/internal/apis.(*FullSnapshot).CheckAndGetHookStatus","level":"info","msg":"res3 needs hook[mode Sequential] implementation","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"internal/apis/snapshot_manager.go:381","func":"github.com/trilioData/k8s-triliovault/internal/apis.(*FullSnapshot).identifyHookResources","level":"info","msg":"identifying hook target resources","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"internal/apis/snapshot_manager.go:390","func":"github.com/trilioData/k8s-triliovault/internal/apis.(*FullSnapshot).identifyHookResources","level":"info","msg":"identifying hook resources for custom","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"internal/apis/snapshot_manager.go:353","func":"github.com/trilioData/k8s-triliovault/internal/apis.(*FullSnapshot).CheckAndGetHookStatus","level":"error","msg":"no matching resources found for hook hook-ns, mode Sequential","time":"2021-04-06T12:56:52Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/restore.go:147","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.Do","level":"error","msg":"no matching resources found for hook hook-ns, mode Sequential","time":"2021-04-06T12:56:52Z"}
+Error: restore metadata failed, with error: no matching resources found for hook hook-ns, mode Sequential
+Usage:
+  metaMover restore [flags]
+
+Flags:
+  -h, --help                    help for restore
+      --name string             Name of the Restore CR from which the metadata is to be applied to the cluster [Required]
+      --run-primitive-restore   Runs restores for all category GKs except primitiveCategoryGK in 'Restore' phase
+                                which restores objects depending upon value set for this flag.
+                                
+                                If '--run-primitive-restore' flag is set then, restore for primitiveCategoryGK such as storageClass, etc. will be done.
+                                If '--run-primitive-restore' flag is not set then, restore will run for all category GKs except primitiveCategoryGK such
+                                as storageClass, etc.
+
+Global Flags:
+  -n, --namespace string   Namespace from which the restore CR is to be fetched, default value is: [default] (default "default")
+
+{"component":"meta-mover","file":"cmd/metamover/app/root.go:46","func":"github.com/trilioData/k8s-triliovault/cmd/metamover/app.Execute","level":"fatal","msg":"restore metadata failed, with error: no matching resources found for hook hook-ns, mode Sequential","time":"2021-04-06T12:56:52Z"}

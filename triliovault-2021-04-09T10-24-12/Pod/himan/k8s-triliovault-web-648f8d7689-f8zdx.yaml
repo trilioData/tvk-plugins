@@ -1,0 +1,137 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2021-03-17T05:40:51Z"
+  generateName: k8s-triliovault-web-648f8d7689-
+  labels:
+    app: k8s-triliovault-web
+    app.kubernetes.io/instance: k8s-triliovault-web
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    pod-template-hash: 648f8d7689
+    release: tvk
+  name: k8s-triliovault-web-648f8d7689-f8zdx
+  namespace: himan
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: k8s-triliovault-web-648f8d7689
+    uid: aba98c0b-998a-4bf0-8cc0-74263a78e1c1
+  resourceVersion: "58361929"
+  selfLink: /api/v1/namespaces/himan/pods/k8s-triliovault-web-648f8d7689-f8zdx
+  uid: e55a4060-78af-4a0a-b688-0f49eabad326
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/arch
+            operator: In
+            values:
+            - amd64
+  containers:
+  - env:
+    - name: INSTALL_NAMESPACE
+      value: himan
+    - name: APP_SCOPE
+      value: Namespaced
+    - name: RELEASE
+      value: tvk
+    image: gcr.io/amazing-chalice-243510/web:a61e4233600e039ce9f15c71a76345731476dd8b
+    imagePullPolicy: IfNotPresent
+    name: triliovault-web
+    ports:
+    - containerPort: 9443
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 200m
+        memory: 512Mi
+      requests:
+        cpu: 10m
+        memory: 10Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        add:
+        - KILL
+        - AUDIT_WRITE
+        drop:
+        - ALL
+      privileged: false
+      readOnlyRootFilesystem: false
+      runAsNonRoot: true
+      runAsUser: 1001
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: k8s-triliovault-token-mt98c
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: gke-dev-cluster-dev-cluster-pool-eab0992b-5s14
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+  serviceAccount: k8s-triliovault
+  serviceAccountName: k8s-triliovault
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: k8s-triliovault-token-mt98c
+    secret:
+      defaultMode: 420
+      secretName: k8s-triliovault-token-mt98c
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2021-03-17T05:40:52Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2021-03-17T05:41:20Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2021-03-17T05:41:20Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2021-03-17T05:40:52Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: docker://a6912af1fc8165b8509f6af81e5e6c9c122b84a839e42377599273bb8ad5c7cb
+    image: gcr.io/amazing-chalice-243510/web:a61e4233600e039ce9f15c71a76345731476dd8b
+    imageID: docker-pullable://gcr.io/amazing-chalice-243510/web@sha256:5fd66234ae8f852a6f058923d607f874ca306145d5eacc68045bbb5d46fa3ac4
+    lastState: {}
+    name: triliovault-web
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2021-03-17T05:41:20Z"
+  hostIP: 10.142.0.107
+  phase: Running
+  podIP: 10.92.1.117
+  podIPs:
+  - ip: 10.92.1.117
+  qosClass: Burstable
+  startTime: "2021-03-17T05:40:52Z"

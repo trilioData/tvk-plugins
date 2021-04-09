@@ -1,0 +1,21 @@
+apiVersion: v1
+data:
+  dataJobLimits: |-
+    cpu: 1000m
+    memory: 1536Mi
+  metadataJobLimits: |-
+    cpu: 500m
+    memory: 512Mi
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2021-02-04T06:28:58Z"
+  labels:
+    app.kubernetes.io/instance: k8s-triliovault-config
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: k8s-triliovault-config
+  namespace: vinod
+  resourceVersion: "591306"
+  selfLink: /api/v1/namespaces/vinod/configmaps/k8s-triliovault-config
+  uid: f6a21728-3af5-40fe-a4e7-59ad72c232f6

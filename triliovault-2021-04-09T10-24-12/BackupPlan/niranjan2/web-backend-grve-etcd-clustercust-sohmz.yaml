@@ -1,0 +1,66 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  creationTimestamp: "2021-02-05T11:27:20Z"
+  generation: 1
+  name: web-backend-grve-etcd-clustercust-sohmz
+  namespace: niranjan2
+  resourceVersion: "33830665"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/niranjan2/backupplans/web-backend-grve-etcd-clustercust-sohmz
+  uid: 5a44a3af-f908-47fa-9312-6c616f875fb5
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: 0 10 15 * *
+      incrementalCron:
+        schedule: 0 10 15 * *
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-targetqhbkwmj-injector
+      namespace: niranjan2
+      resourceVersion: "1362960"
+      uid: 9d0e0651-0fce-47fe-9a92-9339f468a34d
+  backupNamespace: niranjan2
+  backupPlanComponents:
+    custom:
+    - matchLabels:
+        triliobackupall: web-backend-grve
+    operators:
+    - applicationResourceSelector:
+      - matchLabels:
+          app: etcd
+          etcd_cluster: etcd-cluster
+      customResources:
+      - groupVersionKind:
+          group: etcd.database.coreos.com
+          kind: EtcdCluster
+          version: v1beta2
+        objects:
+        - web-backend-grve-etcd-cluster
+      operatorId: web-backend-grve-etcd-cluster
+      operatorResourceSelector:
+      - matchLabels:
+          app: etcd-operator
+          release: web-backend-grve-etcd-operator
+status:
+  stats:
+    backupSummary:
+      lastSuccessfulBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: web-backend-grve-etcd-clustercust-sohmz-qnyd
+        namespace: niranjan2
+        resourceVersion: "15191890"
+        uid: 7dbb7d41-a5d0-4619-8a63-2bd6ce4ca41a
+      latestBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: web-backend-grve-etcd-clustercust-sohmz-qnyd
+        namespace: niranjan2
+        resourceVersion: "15191890"
+        uid: 7dbb7d41-a5d0-4619-8a63-2bd6ce4ca41a
+      totalAvailableBackups: 1
+    restoreSummary: {}
+  status: Available

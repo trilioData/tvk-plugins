@@ -1,0 +1,118 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    app-component: custom
+    component-identifier: ""
+    operation: data-upload
+    upload-pvc-name: fs-pvc
+  creationTimestamp: "2021-04-08T11:01:55Z"
+  labels:
+    app.kubernetes.io/instance: bk2-datamover-deql0n
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: bk2-datamover-deql0n
+  namespace: ajay
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Backup
+    name: bk2
+    uid: 69be9316-daae-4c67-a604-fc6d343bbb00
+  resourceVersion: "100634895"
+  selfLink: /apis/batch/v1/namespaces/ajay/jobs/bk2-datamover-deql0n
+  uid: 827f14d0-a04f-4615-9ca1-593e983719d9
+spec:
+  activeDeadlineSeconds: 43200
+  backoffLimit: 0
+  completions: 1
+  parallelism: 1
+  selector:
+    matchLabels:
+      controller-uid: 827f14d0-a04f-4615-9ca1-593e983719d9
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: bk2-datamover-deql0n
+        app.kubernetes.io/managed-by: k8s-triliovault
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+        controller-uid: 827f14d0-a04f-4615-9ca1-593e983719d9
+        job-name: bk2-datamover-deql0n
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - command:
+        - /bin/sh
+        - -c
+        - ' python /opt/tvk/datastore-attacher/mount_utility/mount_by_target_crd/mount_datastores.py
+          --namespace=ajay --target-name=s3 && /opt/tvk/datamover --action=backup-data
+          --namespace=ajay --backup-name=bk2 --previous-backup-name= --target-name=s3
+          --app-component=custom --component-identifier= --pvc-name=fs-pvc --volume-path=/src/data'
+        env:
+        - name: DM_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        image: eu.gcr.io/amazing-chalice-243510/datamover:v2.1.0-beta.6
+        imagePullPolicy: IfNotPresent
+        name: datamover
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1560Mi
+          requests:
+            cpu: 100m
+            memory: 800Mi
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - SYS_ADMIN
+            drop:
+            - ALL
+          privileged: true
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+          runAsUser: 0
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /src/data
+          name: raw-volume
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+      serviceAccount: triliovault-backup-69be9316-daae-4c67-a604-fc6d343bbb00
+      serviceAccountName: triliovault-backup-69be9316-daae-4c67-a604-fc6d343bbb00
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: raw-volume
+        persistentVolumeClaim:
+          claimName: fs-pvc-7da0c9be-5ad1-45f3-90f3-e8540def3d5c
+          readOnly: true
+status:
+  conditions:
+  - lastProbeTime: "2021-04-08T11:06:29Z"
+    lastTransitionTime: "2021-04-08T11:06:29Z"
+    message: Job has reached the specified backoff limit
+    reason: BackoffLimitExceeded
+    status: "True"
+    type: Failed
+  failed: 1
+  startTime: "2021-04-08T11:01:55Z"

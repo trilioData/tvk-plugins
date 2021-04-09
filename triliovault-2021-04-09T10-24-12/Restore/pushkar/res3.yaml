@@ -1,0 +1,139 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Restore
+metadata:
+  annotations:
+    triliovault.trilio.io/drplan: drplan-nfs-with-multiple-bplan-multiple-ns
+  creationTimestamp: "2021-04-06T12:56:23Z"
+  finalizers:
+  - child-delete-finalizer
+  generation: 1
+  labels:
+    app.kubernetes.io/managed-by: k8s-triliovault-ui
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: res3
+  namespace: pushkar
+  resourceVersion: "95819511"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pushkar/restores/res3
+  uid: 6ff7e08c-5e9b-485e-a5fd-8c02e7470494
+spec:
+  disableIgnoreResources: true
+  excludeResources:
+  - groupVersionKind:
+      kind: Secret
+      version: v1
+    objects:
+    - default-token-cd6lb
+    - gcecreds
+    - ssl-certs
+  hookConfig:
+    hooks:
+    - containerRegex: regex*
+      hook:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Hook
+        name: hook-ns
+        namespace: pushkar
+        resourceVersion: "95382125"
+        uid: 0e3bfb48-bcf9-4cb8-9a4e-40e37d2b3498
+      podSelector:
+        labels:
+        - matchExpressions:
+          - key: app.kubernetes.io/instance
+            operator: Exists
+          matchLabels:
+            addonmanager.kubernetes.io/mode: Reconcile
+        regex: mongo*
+    mode: Sequential
+    podReadyWaitSeconds: 120
+  omitMetadata: true
+  patchIfAlreadyExists: true
+  restoreNamespace: pushkar
+  skipOperatorResources: true
+  source:
+    location: 05911af8-04d3-46be-a976-5d572ba096e5/14b90ea4-29db-460f-bdc0-e34e56737b12
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: nfs-target-ns
+      namespace: pushkar
+      resourceVersion: "95644314"
+      uid: 4517fc76-0a3d-411e-9935-0ff7b2ceb7b7
+    type: Location
+  transformComponents:
+    custom:
+    - jsonPatches:
+      - op: add
+        path: tet
+        value: 12
+      resources:
+        groupVersionKind:
+          kind: Secret
+          version: v1
+        objects:
+        - default-token-cd6lb
+        - gcecreds
+        - ssl-certs
+      transformName: test
+status:
+  completionTimestamp: "2021-04-06T12:56:54Z"
+  condition:
+  - phase: Validation
+    reason: Validation InProgress
+    status: InProgress
+    timestamp: "2021-04-06T12:56:23Z"
+  - phase: Validation
+    reason: Validation Completed
+    status: Completed
+    timestamp: "2021-04-06T12:56:38Z"
+  - phase: MetadataRestore
+    reason: MetadataRestore InProgress
+    status: InProgress
+    timestamp: "2021-04-06T12:56:38Z"
+  - phase: MetadataRestore
+    reason: MetadataRestore Failed
+    status: Failed
+    timestamp: "2021-04-06T12:56:54Z"
+  phase: MetadataRestore
+  phaseStatus: Failed
+  restoreApplication:
+    custom:
+      snapshot:
+        resources:
+        - groupVersionKind:
+            kind: ServiceAccount
+            version: v1
+          objects:
+          - default
+        - groupVersionKind:
+            kind: ResourceQuota
+            version: v1
+          objects:
+          - gke-resource-quotas
+      status:
+        excludedResources:
+        - groupVersionKind:
+            kind: Secret
+            version: v1
+          objects:
+          - default-token-cd6lb
+          - gcecreds
+          - ssl-certs
+        existingResource:
+        - groupVersionKind:
+            kind: ServiceAccount
+            version: v1
+          objects:
+          - default
+        - groupVersionKind:
+            kind: ResourceQuota
+            version: v1
+          objects:
+          - gke-resource-quotas
+        phase: MetadataRestore
+        phaseStatus: Completed
+        reason: Restore MetaData Operation Successful
+  restoreScope: Namespace
+  size: "0"
+  startTimestamp: "2021-04-06T12:56:23Z"
+  status: Failed

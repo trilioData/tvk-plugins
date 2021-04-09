@@ -1,0 +1,9 @@
+I0323 20:03:18.180257       1 request.go:655] Throttling request took 1.001873554s, request: GET:https://10.96.0.1:443/apis/etcd.database.coreos.com/v1beta2?timeout=32s
+time="2021-03-23T20:03:19Z" level=info msg="Setting up the APP_SCOPE environment"
+TargetCollector is collecting from namespace:  
+ApplicationCollector is collecting from namespace:  
+BackupCollector is collecting from namespace:  
+RestoreCollector is collecting from namespace:  
+Suggestion: set the env CLUSTER_NAME to provide custom cluster name.
+Scope Namespaced DeployNs backtest clusterNS be9e1d20-258e-4dda-b851-866cbe898bbe
+ServerCollector is collecting from namespace:  backtest

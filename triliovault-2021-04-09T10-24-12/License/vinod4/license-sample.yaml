@@ -1,0 +1,16 @@
+apiVersion: triliovault.trilio.io/v1
+kind: License
+metadata:
+  creationTimestamp: "2021-03-30T17:38:11Z"
+  generation: 1
+  name: license-sample
+  namespace: vinod4
+  resourceVersion: "80426887"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/vinod4/licenses/license-sample
+  uid: 195ed186-d8a9-479d-b11c-7b888913ee18
+spec:
+  key: |
+    xLcNDgwKD3jafVLRasIwFH3PVwT2HEhabVOhD0MdjKkbs/p+055iQNuStjL/fu3cmLTizUu49+Tcc+7NU9KCr8lxX3LPn0k9U91FeorNHaixZbGgBvw/4r4opC98yZaZ7RF8EPGLAxJn6cgobewZfIRoXAt2tCmKGnu4+pYl9tiabNGgoCLF8quy7nIV0feeCDkVMmTz8lRRcRkxfyI7UMM27cnAvee7umO/KQvFtnBnuNfF8KXxlAoDBCJSIYRSMCLy/Vzkfm6iUOeqO2y73PA7EXd58UugHxKsrqaH7eNk/7xbJX8c0WMRaVnhjoiCTqgrSpGxt9ZgN/LYmUQElXlSeFMNMckyEkZPldBBkBroSBsD9jNzGq32dvwfrUsPVOPB75hTJ8U2wxV1EN6r45syQ/0NOHic1zBEAiAZ/LvUZzF9Ugr20EjdEmwKceXgsp5c6iZeTXdKvk/TLwIgOBFqw/nXvvBoASk2/Aw1NbfwzTAAZoNyCtWYaCzRUyk=X02gg
+status:
+  properties: {}
+  status: Active

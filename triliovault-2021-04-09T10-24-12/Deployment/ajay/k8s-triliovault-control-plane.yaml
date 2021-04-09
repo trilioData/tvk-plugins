@@ -1,0 +1,189 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    meta.helm.sh/release-name: tvm-ajay
+    meta.helm.sh/release-namespace: ajay
+  creationTimestamp: "2021-04-06T06:36:21Z"
+  generation: 1
+  labels:
+    app: k8s-triliovault-control-plane
+    app.kubernetes.io/instance: k8s-triliovault-control-plane
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    rel: tvm-ajay
+  name: k8s-triliovault-control-plane
+  namespace: ajay
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: TrilioVaultManager
+    name: tvm
+    uid: 2718d341-fa05-469a-a862-c9b0e63787a9
+  resourceVersion: "95139016"
+  selfLink: /apis/apps/v1/namespaces/ajay/deployments/k8s-triliovault-control-plane
+  uid: 94e78f73-c3bb-4114-a948-382dc6b0ea1a
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: k8s-triliovault-control-plane
+      rel: tvm-ajay
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: k8s-triliovault-control-plane
+        app.kubernetes.io/instance: k8s-triliovault-control-plane
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+        rel: tvm-ajay
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - env:
+        - name: IMAGE_PULL_POLICY
+          value: IfNotPresent
+        - name: INSTALL_NAMESPACE
+          value: ajay
+        - name: RELEASE_TAG
+          value: v2.1.0-beta.6
+        - name: APP_SCOPE
+          value: Namespaced
+        - name: TVK_CONFIG
+          value: k8s-triliovault-config
+        - name: WEB_SESSION_ACCESS_TTL
+          value: 1h
+        - name: WEB_SESSION_REFRESH_TTL
+          value: 24h
+        - name: RELATED_IMAGE_METAMOVER
+          value: eu.gcr.io/amazing-chalice-243510/metamover:v2.1.0-beta.6
+        - name: RELATED_IMAGE_DATAMOVER
+          value: eu.gcr.io/amazing-chalice-243510/datamover:v2.1.0-beta.6
+        - name: RELATED_IMAGE_DATASTORE_ATTACHER
+          value: eu.gcr.io/amazing-chalice-243510/datastore-attacher:v2.1.0-beta.6
+        - name: RELATED_IMAGE_BACKUP_SCHEDULER
+          value: eu.gcr.io/amazing-chalice-243510/backup-scheduler:v2.1.0-beta.6
+        - name: RELATED_IMAGE_BACKUP_CLEANER
+          value: eu.gcr.io/amazing-chalice-243510/backup-cleaner:v2.1.0-beta.6
+        - name: RELATED_IMAGE_BACKUP_RETENTION
+          value: eu.gcr.io/amazing-chalice-243510/backup-retention:v2.1.0-beta.6
+        - name: RELATED_IMAGE_TARGET_BROWSER
+          value: eu.gcr.io/amazing-chalice-243510/target-browser:v2.1.0-beta.6
+        - name: RELATED_IMAGE_HOOK
+          value: eu.gcr.io/amazing-chalice-243510/hook-executor:v2.1.0-beta.6
+        image: eu.gcr.io/amazing-chalice-243510/control-plane:v2.1.0-beta.6
+        imagePullPolicy: IfNotPresent
+        name: triliovault-control-plane
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - KILL
+            - AUDIT_WRITE
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1001
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /opt/tvk/config
+          name: tvk-config
+      - env:
+        - name: IMAGE_PULL_POLICY
+          value: IfNotPresent
+        - name: INSTALL_NAMESPACE
+          value: ajay
+        - name: RELEASE_TAG
+          value: v2.1.0-beta.6
+        - name: APP_SCOPE
+          value: Namespaced
+        - name: TVK_CONFIG
+          value: k8s-triliovault-config
+        image: eu.gcr.io/amazing-chalice-243510/analyzer:v2.1.0-beta.6
+        imagePullPolicy: IfNotPresent
+        name: triliovault-analyzer
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - KILL
+            - AUDIT_WRITE
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1001
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      serviceAccount: k8s-triliovault
+      serviceAccountName: k8s-triliovault
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: k8s-triliovault-config
+        name: tvk-config
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2021-04-06T06:36:55Z"
+    lastUpdateTime: "2021-04-06T06:36:55Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2021-04-06T06:36:21Z"
+    lastUpdateTime: "2021-04-06T06:36:55Z"
+    message: ReplicaSet "k8s-triliovault-control-plane-6f4494744d" has successfully
+      progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

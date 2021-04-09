@@ -1,0 +1,9 @@
+I0405 12:11:53.678152       1 request.go:655] Throttling request took 1.039802126s, request: GET:https://10.96.0.1:443/apis/snapshot.storage.k8s.io/v1beta1?timeout=32s
+time="2021-04-05T12:11:55Z" level=info msg="Setting up the APP_SCOPE environment"
+TargetCollector is collecting from namespace:  
+ApplicationCollector is collecting from namespace:  
+BackupCollector is collecting from namespace:  
+RestoreCollector is collecting from namespace:  
+Suggestion: set the env CLUSTER_NAME to provide custom cluster name.
+Scope Namespaced DeployNs ms clusterNS be9e1d20-258e-4dda-b851-866cbe898bbe
+ServerCollector is collecting from namespace:  ms

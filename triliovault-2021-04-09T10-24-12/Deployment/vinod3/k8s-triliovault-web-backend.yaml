@@ -1,0 +1,125 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "7"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{"deployment.kubernetes.io/revision":"6"},"creationTimestamp":"2021-03-11T06:11:12Z","generation":6,"labels":{"app":"k8s-triliovault-web-backend","app.kubernetes.io/instance":"k8s-triliovault-web-backend","app.kubernetes.io/managed-by":"Helm","app.kubernetes.io/name":"k8s-triliovault","app.kubernetes.io/part-of":"k8s-triliovault","release":"k8s-triliovault-1615443035"},"name":"k8s-triliovault-web-backend","namespace":"vinod3","selfLink":"/apis/apps/v1/namespaces/vinod3/deployments/k8s-triliovault-web-backend","uid":"be2ec643-59a4-4c3d-9b57-915b39507495"},"spec":{"progressDeadlineSeconds":600,"replicas":1,"revisionHistoryLimit":10,"selector":{"matchLabels":{"app":"k8s-triliovault-web-backend","release":"k8s-triliovault-1615443035"}},"strategy":{"rollingUpdate":{"maxSurge":"25%","maxUnavailable":"25%"},"type":"RollingUpdate"},"template":{"metadata":{"creationTimestamp":null,"labels":{"app":"k8s-triliovault-web-backend","app.kubernetes.io/instance":"k8s-triliovault-web-backend","app.kubernetes.io/managed-by":"Helm","app.kubernetes.io/name":"k8s-triliovault","app.kubernetes.io/part-of":"k8s-triliovault","release":"k8s-triliovault-1615443035"}},"spec":{"affinity":{"nodeAffinity":{"requiredDuringSchedulingIgnoredDuringExecution":{"nodeSelectorTerms":[{"matchExpressions":[{"key":"kubernetes.io/arch","operator":"In","values":["amd64"]}]}]}}},"containers":[{"env":[{"name":"INSTALL_NAMESPACE","value":"vinod3"},{"name":"APP_SCOPE","value":"Namespaced"},{"name":"RELEASE","value":"k8s-triliovault-1615443035"},{"name":"RELEASE_TAG","value":"7e27caa91f28226dfdd56d485a0c84cc8947799c"},{"name":"RESTORE_NAMESPACES","value":"res-1,res-2"},{"name":"WEB_SESSION_ACCESS_TTL","value":"1h"},{"name":"WEB_SESSION_REFRESH_TTL","value":"24h"},{"name":"WEB_SESSION_MAX_INACTIVITY_TTL","value":"15m"}],"image":"gcr.io/amazing-chalice-243510/web-backend:517740e8ad8bd25df55c9515257d94d0ea295488","imagePullPolicy":"Always","name":"triliovault-backend","resources":{"limits":{"cpu":"200m","memory":"512Mi"},"requests":{"cpu":"10m","memory":"10Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"add":["KILL","AUDIT_WRITE"],"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":false,"runAsNonRoot":true,"runAsUser":1001},"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File"}],"dnsPolicy":"ClusterFirst","restartPolicy":"Always","schedulerName":"default-scheduler","securityContext":{"runAsNonRoot":true,"runAsUser":1001},"serviceAccount":"k8s-triliovault","serviceAccountName":"k8s-triliovault","terminationGracePeriodSeconds":30}}}}
+  creationTimestamp: "2021-03-11T06:11:12Z"
+  generation: 7
+  labels:
+    app: k8s-triliovault-web-backend
+    app.kubernetes.io/instance: k8s-triliovault-web-backend
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    release: k8s-triliovault-1615443035
+  name: k8s-triliovault-web-backend
+  namespace: vinod3
+  resourceVersion: "70257027"
+  selfLink: /apis/apps/v1/namespaces/vinod3/deployments/k8s-triliovault-web-backend
+  uid: be2ec643-59a4-4c3d-9b57-915b39507495
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: k8s-triliovault-web-backend
+      release: k8s-triliovault-1615443035
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: k8s-triliovault-web-backend
+        app.kubernetes.io/instance: k8s-triliovault-web-backend
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+        release: k8s-triliovault-1615443035
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - env:
+        - name: INSTALL_NAMESPACE
+          value: vinod3
+        - name: APP_SCOPE
+          value: Namespaced
+        - name: RELEASE
+          value: k8s-triliovault-1615443035
+        - name: RELEASE_TAG
+          value: 7e27caa91f28226dfdd56d485a0c84cc8947799c
+        - name: RESTORE_NAMESPACES
+          value: res-1,res-2
+        - name: WEB_SESSION_ACCESS_TTL
+          value: 1h
+        - name: WEB_SESSION_REFRESH_TTL
+          value: 24h
+        - name: WEB_SESSION_MAX_INACTIVITY_TTL
+          value: 15m
+        image: gcr.io/amazing-chalice-243510/web-backend:517740e8ad8bd25df55c9515257d94d0ea295488
+        imagePullPolicy: Always
+        name: triliovault-backend
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - KILL
+            - AUDIT_WRITE
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1001
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      serviceAccount: k8s-triliovault
+      serviceAccountName: k8s-triliovault
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2021-03-11T06:11:12Z"
+    lastUpdateTime: "2021-03-22T12:42:13Z"
+    message: ReplicaSet "k8s-triliovault-web-backend-759f9d95bd" has successfully
+      progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  - lastTransitionTime: "2021-03-23T20:02:50Z"
+    lastUpdateTime: "2021-03-23T20:02:50Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  observedGeneration: 7
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

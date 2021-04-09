@@ -1,0 +1,47 @@
+INFO:root:Calling crd-parser to get the datastore
+INFO:root:Parsing the target-crd to get the list of datastores
+INFO:root:Fetched the list of datastores to be mounted
+INFO:root:mounting datastore of type s3
+INFO:root:mounting the S3 datastore by the name aws-target-ns
+INFO:root:writing the conf data to the conf file: aws-target-ns_vault.conf
+
+INFO:root:command: /usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/aws-target-ns_vault.conf &
+INFO:root:Executing command /usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/aws-target-ns_vault.conf &
+INFO:root:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/aws-target-ns_vault.conf & command execution starting time: 2021-04-06 12:50:46.875350
+INFO:root:waiting for command to complete...
+INFO:root:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/aws-target-ns_vault.conf & command execution completion time: 2021-04-06 12:50:48.882289
+INFO:root:Command:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/aws-target-ns_vault.conf &, ExitCode:0
+
+INFO:root:2021-04-06 12:50:48.882715: waiting for mount operation to complete.
+INFO:root:2021-04-06 12:50:50.884130: waiting for mount operation to complete.
+INFO:root:2021-04-06 12:50:50.885167: target mounted successfully.
+INFO:root:Removing all the vault files from the ./tmp directory
+
+
+I0406 12:50:52.202659      30 request.go:655] Throttling request took 1.028545534s, request: GET:https://10.96.0.1:443/apis/rbacmanager.reactiveops.io/v1beta1?timeout=32s
+{"component":"meta-mover","file":"cmd/metamover/metamover.go:10","func":"main.main","level":"info","msg":"Starting the Metadata Processing","time":"2021-04-06T12:50:53Z"}
+{"component":"meta-mover","file":"cmd/metamover/app/validation.go:51","func":"github.com/trilioData/k8s-triliovault/cmd/metamover/app.runValidateE","level":"info","msg":"Validating the resources from target before the restore operation","time":"2021-04-06T12:50:53Z"}
+{"component":"meta-mover","file":"pkg/metamover/validation/validation.go:35","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/validation.Do","level":"info","msg":"Starting the Validation before restore operation with restoreName: t4, trilio resource namespace: pushkar","time":"2021-04-06T12:50:53Z"}
+2021-04-06 12:50:54.223 12 INFO s3 [-] Starting worker thread[7f24777fe700].[00m
+2021-04-06 12:50:54.249 12 INFO s3 [-] Starting worker thread[7f2476ffd700].[00m
+2021-04-06 12:50:54.275 12 INFO s3 [-] Starting worker thread[7f24767fc700].[00m
+2021-04-06 12:50:54.347 12 INFO s3 [-] Starting worker thread[7f2475ffb700].[00m
+2021-04-06 12:50:54.359 12 INFO s3 [-] Starting worker thread[7f24757fa700].[00m
+{"component":"meta-mover","file":"pkg/metamover/validation/utils.go:538","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/validation.updateRestoreScopeAppType","level":"info","msg":"Restore scope [Namespace] extracted from target location - backup.json","time":"2021-04-06T12:50:54Z"}
+{"component":"meta-mover","file":"pkg/metamover/validation/utils.go:548","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/validation.updateRestoreScopeAppType","level":"info","msg":"Setting Restore scope [Namespace] and app [] extracted from target location - backup.json","time":"2021-04-06T12:50:54Z"}
+{"component":"meta-mover","file":"internal/helpers/commons.go:103","func":"github.com/trilioData/k8s-triliovault/internal/helpers.ValidateBackupLocation","level":"info","msg":"Checking if location present: /triliodata/86043f5b-c1bc-4ff6-9a14-789e6d0bdaf7/a5ddc632-310c-47b2-b452-d400792cd2ad","time":"2021-04-06T12:50:54Z"}
+{"component":"meta-mover","file":"internal/helpers/commons.go:108","func":"github.com/trilioData/k8s-triliovault/internal/helpers.ValidateBackupLocation","level":"info","msg":"Location /triliodata/86043f5b-c1bc-4ff6-9a14-789e6d0bdaf7/a5ddc632-310c-47b2-b452-d400792cd2ad present","time":"2021-04-06T12:50:54Z"}
+{"component":"meta-mover","file":"internal/apis/snapshot_manager.go:226","func":"github.com/trilioData/k8s-triliovault/internal/apis.(*FullSnapshot).PullFromTarget","level":"info","msg":"Reading custom snapshot from /triliodata/86043f5b-c1bc-4ff6-9a14-789e6d0bdaf7/a5ddc632-310c-47b2-b452-d400792cd2ad/custom","time":"2021-04-06T12:50:54Z"}
+2021-04-06 12:50:55.200 12 INFO s3 [-] Starting worker thread[7f245bfff700].[00m
+2021-04-06 12:50:55.215 12 INFO s3 [-] Starting worker thread[7f2474ff9700].[00m
+2021-04-06 12:50:55.253 12 INFO s3 [-] Starting worker thread[7f2476ffd700].[00m
+2021-04-06 12:50:55.267 12 INFO s3 [-] Starting worker thread[7f24777fe700].[00m
+2021-04-06 12:50:55.333 12 INFO s3 [-] Starting worker thread[7f24767fc700].[00m
+{"component":"meta-mover","file":"internal/apis/custom.go:288","func":"github.com/trilioData/k8s-triliovault/internal/apis.transformMetaSnapshots","level":"info","msg":"Transforming resource [default-token-cd6lb] with GVK [/v1, Kind=Secret]","time":"2021-04-06T12:50:56Z"}
+{"component":"meta-mover","file":"internal/decorator/decorator.go:406","func":"github.com/trilioData/k8s-triliovault/internal/decorator.(*UnstructResource).Transform","level":"error","msg":"add operation does not apply: doc is missing path: \"test\": missing valueError while applying patches: add operation does not apply: doc is missing path: \"test\": missing value","time":"2021-04-06T12:50:56Z"}
+{"component":"meta-mover","file":"internal/apis/custom.go:288","func":"github.com/trilioData/k8s-triliovault/internal/apis.transformMetaSnapshots","level":"info","msg":"Transforming resource [gcecreds] with GVK [/v1, Kind=Secret]","time":"2021-04-06T12:50:56Z"}
+{"component":"meta-mover","file":"internal/decorator/decorator.go:406","func":"github.com/trilioData/k8s-triliovault/internal/decorator.(*UnstructResource).Transform","level":"error","msg":"add operation does not apply: doc is missing path: \"test\": missing valueError while applying patches: add operation does not apply: doc is missing path: \"test\": missing value","time":"2021-04-06T12:50:56Z"}
+{"component":"meta-mover","file":"internal/apis/custom.go:288","func":"github.com/trilioData/k8s-triliovault/internal/apis.transformMetaSnapshots","level":"info","msg":"Transforming resource [ssl-certs] with GVK [/v1, Kind=Secret]","time":"2021-04-06T12:50:56Z"}
+{"component":"meta-mover","file":"internal/decorator/decorator.go:406","func":"github.com/trilioData/k8s-triliovault/internal/decorator.(*UnstructResource).Transform","level":"error","msg":"add operation does not apply: doc is missing path: \"test\": missing valueError while applying patches: add operation does not apply: doc is missing path: \"test\": missing value","time":"2021-04-06T12:50:56Z"}
+{"component":"meta-mover","file":"internal/helpers/restore.go:263","func":"github.com/trilioData/k8s-triliovault/internal/helpers.UpdateRestoreStatus","level":"info","msg":"Updated restore status: InProgress name: t4 namespace: pushkar","time":"2021-04-06T12:50:56Z"}
+{"component":"meta-mover","file":"pkg/metamover/validation/validation.go:41","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/validation.Do","level":"fatal","msg":"restore validations failed : error while performing transformations transformation failed","time":"2021-04-06T12:50:56Z"}

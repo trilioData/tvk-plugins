@@ -1,0 +1,82 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Restore
+metadata:
+  annotations:
+    triliovault.trilio.io/drplan: drplan-ns-install-aws-single-bplan-single-res
+  creationTimestamp: "2021-04-06T12:47:02Z"
+  finalizers:
+  - child-delete-finalizer
+  generation: 1
+  labels:
+    app.kubernetes.io/managed-by: k8s-triliovault-ui
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: t223
+  namespace: pushkar
+  resourceVersion: "95802611"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pushkar/restores/t223
+  uid: edc18a61-3a9c-4137-9434-c748659c2654
+spec:
+  disableIgnoreResources: true
+  hookConfig:
+    hooks:
+    - containerRegex: regex*
+      hook:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Hook
+        name: hook-ns
+        namespace: pushkar
+        resourceVersion: "95382125"
+        uid: 0e3bfb48-bcf9-4cb8-9a4e-40e37d2b3498
+      podSelector:
+        labels:
+        - matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: Exists
+          matchLabels:
+            addonmanager.kubernetes.io/mode: Reconcile
+        regex: mongo*
+    mode: Sequential
+    podReadyWaitSeconds: 120
+  omitMetadata: true
+  patchIfAlreadyExists: true
+  restoreNamespace: pushkar
+  skipOperatorResources: true
+  source:
+    location: 497ed961-4a58-4618-ba17-62441d8c4c09/017a96a7-9e1a-409f-8fe8-f8a80d7248af
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: aws-target-ns
+      namespace: pushkar
+      resourceVersion: "95645170"
+      uid: 2db4f14b-846f-45ee-8e1b-440f7811ca98
+    type: Location
+  transformComponents: {}
+status:
+  applicationType: Custom
+  completionTimestamp: "2021-04-06T12:47:30Z"
+  condition:
+  - phase: Validation
+    reason: Validation InProgress
+    status: InProgress
+    timestamp: "2021-04-06T12:47:03Z"
+  - phase: Validation
+    reason: Validation Completed
+    status: Completed
+    timestamp: "2021-04-06T12:47:18Z"
+  - phase: MetadataRestore
+    reason: MetadataRestore InProgress
+    status: InProgress
+    timestamp: "2021-04-06T12:47:18Z"
+  - phase: MetadataRestore
+    reason: MetadataRestore Failed
+    status: Failed
+    timestamp: "2021-04-06T12:47:30Z"
+  phase: MetadataRestore
+  phaseStatus: Failed
+  restoreApplication: {}
+  restoreScope: App
+  size: "0"
+  startTimestamp: "2021-04-06T12:47:03Z"
+  status: Failed

@@ -1,0 +1,39 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Target
+metadata:
+  annotations:
+    targetSpecHash: "373379123"
+  creationTimestamp: "2021-02-25T02:41:47Z"
+  deletionGracePeriodSeconds: 0
+  deletionTimestamp: "2021-03-26T13:56:21Z"
+  finalizers:
+  - target-delete-finalizer
+  generation: 2
+  name: sample-targetqlqsksf-injector
+  namespace: backtest
+  resourceVersion: "74471715"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/backtest/targets/sample-targetqlqsksf-injector
+  uid: 6dd8174d-cbd1-494c-94b9-ea102fee64b6
+spec:
+  nfsCredentials:
+    nfsExport: ""
+  objectStoreCredentials:
+    accessKey: AKIAS5B35DGFSTY7T55D
+    bucketName: trilio-fuse-bucket
+    region: '"us-east-1"'
+    secretKey: '"xWBupfGvkgkhaH8ansJU1wRhFoGoWFPmhXD6/vVD"'
+  type: ObjectStore
+  vendor: AWS
+status:
+  condition:
+  - reason: Target credentials changed.
+    timestamp: "2021-03-01T11:15:28Z"
+  - phase: Validation
+    reason: Validation InProgress
+    status: InProgress
+    timestamp: "2021-03-01T11:15:28Z"
+  - phase: Validation
+    reason: Validation Failed
+    status: Failed
+    timestamp: "2021-03-01T11:17:42Z"
+  status: Unavailable

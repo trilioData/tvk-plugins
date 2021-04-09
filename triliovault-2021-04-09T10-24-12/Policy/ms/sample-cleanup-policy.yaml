@@ -1,0 +1,18 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Policy
+metadata:
+  creationTimestamp: "2021-03-17T12:11:04Z"
+  generation: 1
+  name: sample-cleanup-policy
+  namespace: ms
+  resourceVersion: "58835382"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/ms/policies/sample-cleanup-policy
+  uid: ca818285-af4f-4adf-b310-74a8f044ff89
+spec:
+  cleanupConfig:
+    backupDays: 1
+  default: true
+  retentionConfig:
+    latest: 1
+  timeoutConfig: {}
+  type: Cleanup

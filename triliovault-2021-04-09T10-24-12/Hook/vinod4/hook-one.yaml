@@ -1,0 +1,27 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Hook
+metadata:
+  creationTimestamp: "2021-03-30T17:38:13Z"
+  generation: 1
+  name: hook-one
+  namespace: vinod4
+  resourceVersion: "80426911"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/vinod4/hooks/hook-one
+  uid: ea433931-1f8f-48c5-af32-776cd0fbc036
+spec:
+  post:
+    execAction:
+      command:
+      - /bin/bash
+      - -c
+      - /sbin/fsfreeze --unfreeze /var/log/nginx
+    maxRetryCount: 1
+    timeoutSeconds: 60
+  pre:
+    execAction:
+      command:
+      - /bin/bash
+      - -c
+      - /sbin/fsfreeze --freeze /var/log/nginx
+    maxRetryCount: 5
+    timeoutSeconds: 120

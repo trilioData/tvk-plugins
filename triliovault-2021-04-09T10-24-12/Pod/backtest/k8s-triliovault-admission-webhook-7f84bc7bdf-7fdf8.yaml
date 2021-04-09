@@ -1,0 +1,228 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2021-02-25T02:04:19Z"
+  generateName: k8s-triliovault-admission-webhook-7f84bc7bdf-
+  labels:
+    app: k8s-triliovault-admission-webhook
+    app.kubernetes.io/instance: k8s-triliovault-admission-webhook
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    pod-template-hash: 7f84bc7bdf
+    release: k8s-triliovault-1614218621
+  name: k8s-triliovault-admission-webhook-7f84bc7bdf-7fdf8
+  namespace: backtest
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: k8s-triliovault-admission-webhook-7f84bc7bdf
+    uid: 8511f445-be71-4b16-b2f8-c7bbda924c63
+  resourceVersion: "22743578"
+  selfLink: /api/v1/namespaces/backtest/pods/k8s-triliovault-admission-webhook-7f84bc7bdf-7fdf8
+  uid: 01fa04a1-d298-4453-a467-69b89288a134
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: beta.kubernetes.io/arch
+            operator: In
+            values:
+            - amd64
+        - matchExpressions:
+          - key: kubernetes.io/arch
+            operator: In
+            values:
+            - amd64
+  containers:
+  - args:
+    - --tlsCertFile=/etc/webhook/certs/tls.crt
+    - --tlsKeyFile=/etc/webhook/certs/tls.key
+    env:
+    - name: INSTALL_NAMESPACE
+      value: backtest
+    - name: APP_SCOPE
+      value: Namespaced
+    - name: RESTORE_NAMESPACES
+      value: res-1,res-2
+    image: gcr.io/amazing-chalice-243510/trilio-admission-webhook:master
+    imagePullPolicy: Always
+    name: triliovault-admission-webhook
+    resources:
+      limits:
+        cpu: 200m
+        memory: 512Mi
+      requests:
+        cpu: 10m
+        memory: 10Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        add:
+        - KILL
+        - AUDIT_WRITE
+        drop:
+        - ALL
+      privileged: false
+      readOnlyRootFilesystem: false
+      runAsNonRoot: true
+      runAsUser: 1001
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /etc/webhook/certs
+      name: webhook-certs
+      readOnly: true
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: k8s-triliovault-token-fx7gr
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  initContainers:
+  - env:
+    - name: IMAGE_PULL_POLICY
+      value: Always
+    - name: MUTATE_CONFIG
+      value: k8s-triliovault-mutating-webhook
+    - name: VALIDATE_CONFIG
+      value: k8s-triliovault-validating-webhook
+    - name: WEBHOOK_SERVICE
+      value: k8s-triliovault-admission-webhook
+    - name: INSTALL_NAMESPACE
+      value: backtest
+    - name: SECRET_NAME
+      value: k8s-triliovault-webhook-certs
+    - name: APP
+      value: k8s-triliovault-admission-webhook
+    - name: RELEASE
+      value: k8s-triliovault-1614218621
+    - name: APP_SCOPE
+      value: Namespaced
+    - name: RESOURCE_CLEANER_CRON_NAME
+      value: k8s-triliovault-resource-cleaner
+    - name: RESOURCE_CLEANER_CRON_SCHEDULE
+      value: '*/30 * * * *'
+    - name: RELATED_RESOURCE_CLEANER_IMAGE
+      value: gcr.io/amazing-chalice-243510/resource-cleaner:master
+    - name: RELATED_INGRESS_CONTROLLER_IMAGE
+      value: gcr.io/amazing-chalice-243510/ingress-controller:v2.0.0
+    - name: WEB_SERVICE
+      value: k8s-triliovault-web
+    - name: BACKEND_SERVICE
+      value: k8s-triliovault-web-backend
+    - name: INGRESS_SERVICE
+      value: k8s-triliovault-ingress-controller
+    - name: TVK_CONFIG
+      value: k8s-triliovault-config
+    image: gcr.io/amazing-chalice-243510/trilio-webhook-init:master
+    imagePullPolicy: Always
+    name: webhook-init
+    resources:
+      limits:
+        cpu: 200m
+        memory: 512Mi
+      requests:
+        cpu: 10m
+        memory: 10Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        add:
+        - KILL
+        - AUDIT_WRITE
+        drop:
+        - ALL
+      privileged: false
+      readOnlyRootFilesystem: false
+      runAsNonRoot: true
+      runAsUser: 1001
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: k8s-triliovault-token-fx7gr
+      readOnly: true
+  nodeName: gke-dev-cluster-dev-cluster-pool-eab0992b-v6j2
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+  serviceAccount: k8s-triliovault
+  serviceAccountName: k8s-triliovault
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: webhook-certs
+    secret:
+      defaultMode: 420
+      secretName: k8s-triliovault-webhook-certs
+  - name: k8s-triliovault-token-fx7gr
+    secret:
+      defaultMode: 420
+      secretName: k8s-triliovault-token-fx7gr
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2021-02-25T02:05:12Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2021-02-25T02:05:17Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2021-02-25T02:05:17Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2021-02-25T02:04:19Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: docker://ca58f12a12801d1a6248882dc2bde0a2f4ba69bcf51c23ab3fae2d493c906f55
+    image: gcr.io/amazing-chalice-243510/trilio-admission-webhook:master
+    imageID: docker-pullable://gcr.io/amazing-chalice-243510/trilio-admission-webhook@sha256:8b00bb3a83841d7b76b6c6c13d82cbac79fa56b7c968fdd1f09f66f48a0675df
+    lastState: {}
+    name: triliovault-admission-webhook
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2021-02-25T02:05:16Z"
+  hostIP: 10.142.0.102
+  initContainerStatuses:
+  - containerID: docker://c6ff74c3637a3259e48f9d512dfef70bb23cf3e716823c7b0caabf0c6f4befe4
+    image: gcr.io/amazing-chalice-243510/trilio-webhook-init:master
+    imageID: docker-pullable://gcr.io/amazing-chalice-243510/trilio-webhook-init@sha256:b9c3983b8f46b8a6a2c3ede3c775077c2d82c457cfd66f49eb4a8d1b4df47f6a
+    lastState: {}
+    name: webhook-init
+    ready: true
+    restartCount: 0
+    state:
+      terminated:
+        containerID: docker://c6ff74c3637a3259e48f9d512dfef70bb23cf3e716823c7b0caabf0c6f4befe4
+        exitCode: 0
+        finishedAt: "2021-02-25T02:05:12Z"
+        reason: Completed
+        startedAt: "2021-02-25T02:04:24Z"
+  phase: Running
+  podIP: 10.92.0.8
+  podIPs:
+  - ip: 10.92.0.8
+  qosClass: Burstable
+  startTime: "2021-02-25T02:04:19Z"

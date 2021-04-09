@@ -1,0 +1,97 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    controller-owner-name: custcust-ksnum-wzjg
+    controller-owner-namespace: niranjan2
+    operation: metadata-restore-validation
+  creationTimestamp: "2021-02-05T11:29:13Z"
+  labels:
+    app.kubernetes.io/instance: custcust-ksnum-wzjg-metamover-vhzkpp
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    controller-owner-uid: f05913c7-fb94-4049-9c33-719493e4b0ad
+  name: custcust-ksnum-wzjg-metamover-vhzkpp
+  namespace: niranjan-res
+  resourceVersion: "1364144"
+  selfLink: /apis/batch/v1/namespaces/niranjan-res/jobs/custcust-ksnum-wzjg-metamover-vhzkpp
+  uid: ba93c0e7-5992-43d3-bb2c-c5b4e79b0e09
+spec:
+  activeDeadlineSeconds: 43200
+  backoffLimit: 0
+  completions: 1
+  parallelism: 1
+  selector:
+    matchLabels:
+      controller-uid: ba93c0e7-5992-43d3-bb2c-c5b4e79b0e09
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: custcust-ksnum-wzjg-metamover-vhzkpp
+        app.kubernetes.io/managed-by: k8s-triliovault
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+        controller-owner-uid: f05913c7-fb94-4049-9c33-719493e4b0ad
+        controller-uid: ba93c0e7-5992-43d3-bb2c-c5b4e79b0e09
+        job-name: custcust-ksnum-wzjg-metamover-vhzkpp
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - command:
+        - /bin/sh
+        - -c
+        - python /opt/tvk/datastore-attacher/mount_utility/mount_by_target_crd/mount_datastores.py
+          --namespace=niranjan2 --target-name=sample-targetqhbkwmj-injector && /opt/tvk/metamover
+          validate --name custcust-ksnum-wzjg --run-primitive-restore --namespace
+          niranjan2
+        env:
+        - name: HELM_VERSION
+          value: v3
+        image: gcr.io/amazing-chalice-243510/metamover:master
+        imagePullPolicy: IfNotPresent
+        name: metamover
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - SYS_ADMIN
+            drop:
+            - ALL
+          privileged: true
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+          runAsUser: 0
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+      serviceAccount: triliovault-restore-f05913c7-fb94-4049-9c33-719493e4b0ad
+      serviceAccountName: triliovault-restore-f05913c7-fb94-4049-9c33-719493e4b0ad
+      terminationGracePeriodSeconds: 30
+status: {}

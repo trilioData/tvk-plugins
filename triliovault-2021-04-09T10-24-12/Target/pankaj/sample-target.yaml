@@ -1,0 +1,37 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Target
+metadata:
+  annotations:
+    targetSpecHash: "3725611344"
+  creationTimestamp: "2021-03-30T05:46:44Z"
+  finalizers:
+  - target-delete-finalizer
+  generation: 2
+  name: sample-target
+  namespace: pankaj
+  resourceVersion: "79740267"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pankaj/targets/sample-target
+  uid: f4caa4c6-26d9-405a-adb6-b071db980000
+spec:
+  nfsCredentials:
+    nfsExport: 34.66.17.160:/src/nfs/kubedata
+    nfsOptions: nfsvers=4
+  objectStoreCredentials:
+    accessKey: ""
+    bucketName: ""
+    secretKey: ""
+  type: NFS
+  vendor: Other
+status:
+  condition:
+  - reason: Target credentials changed.
+    timestamp: "2021-03-30T05:46:44Z"
+  - phase: Validation
+    reason: Validation InProgress
+    status: InProgress
+    timestamp: "2021-03-30T05:46:44Z"
+  - phase: Validation
+    reason: Validation Completed
+    status: Completed
+    timestamp: "2021-03-30T05:47:50Z"
+  status: Available

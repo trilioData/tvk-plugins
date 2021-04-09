@@ -1,0 +1,45 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  creationTimestamp: "2021-02-23T02:53:06Z"
+  generation: 1
+  name: custcust-yhbbs
+  namespace: webtest
+  resourceVersion: "33830593"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/webtest/backupplans/custcust-yhbbs
+  uid: 7da0c002-c49f-4473-b24d-aebafdc454a7
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: 0 10 15 * *
+      incrementalCron:
+        schedule: 5 4 * * *
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: target-sample
+      namespace: webtest
+      resourceVersion: "19945531"
+      uid: ad77678f-2fa9-4776-a41c-4608a873db3e
+  backupPlanComponents: {}
+status:
+  stats:
+    backupSummary:
+      lastSuccessfulBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: custcust-yhbbs-lhxc
+        namespace: webtest
+        resourceVersion: "33826949"
+        uid: b2531931-37c7-4149-a629-3ec771a65a63
+      latestBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: custcust-yhbbs-lhxc
+        namespace: webtest
+        resourceVersion: "33826949"
+        uid: b2531931-37c7-4149-a629-3ec771a65a63
+      totalAvailableBackups: 1
+    restoreSummary: {}
+  status: Available

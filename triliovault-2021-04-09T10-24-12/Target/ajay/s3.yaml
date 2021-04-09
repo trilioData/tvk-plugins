@@ -1,0 +1,43 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Target
+metadata:
+  annotations:
+    targetSpecHash: "2948516995"
+  creationTimestamp: "2021-04-06T05:52:20Z"
+  finalizers:
+  - target-delete-finalizer
+  generation: 2
+  name: s3
+  namespace: ajay
+  resourceVersion: "100625628"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/ajay/targets/s3
+  uid: 29af3228-93bf-45fc-943a-7f7fe23fd6fc
+spec:
+  nfsCredentials:
+    nfsExport: ""
+  objectStoreCredentials:
+    accessKey: AKIAS5B35DGFQ2G6OWZH
+    bucketName: prafs-bucket
+    region: us-east-2
+    secretKey: W3LcCjqMJra+rkf+81EUP2o2xrQkRL5tXiKKl6aU
+    url: https://s3.amazonaws.com
+  type: ObjectStore
+  vendor: AWS
+status:
+  condition:
+  - reason: Target credentials changed.
+    timestamp: "2021-04-06T05:52:20Z"
+  - phase: Validation
+    reason: Validation InProgress
+    status: InProgress
+    timestamp: "2021-04-06T05:52:20Z"
+  - phase: Validation
+    reason: Validation Completed
+    status: Completed
+    timestamp: "2021-04-06T05:52:47Z"
+  stats:
+    applicationCapacity: "21474836480"
+    applicationCapacityConsumed: "21474836480"
+    capacityOccupied: "5511577600"
+    totalBackupPlans: 1
+  status: Available

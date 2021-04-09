@@ -1,0 +1,6 @@
+BackupCollector is collecting from namespace:  default
+ApplicationCollector is collecting from namespace:  default
+RestoreCollector is collecting from namespace:  default
+Suggestion: set the env CLUSTER_NAME to provide custom cluster name.
+ServerCollector is collecting from namespace:  niranjan2
+TargetCollector is collecting from namespace:  niranjan2

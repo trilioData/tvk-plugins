@@ -1,0 +1,173 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    deployment.kubernetes.io/desired-replicas: "0"
+    deployment.kubernetes.io/max-replicas: "0"
+    deployment.kubernetes.io/revision: "1"
+  creationTimestamp: "2021-02-22T04:44:43Z"
+  generation: 24
+  labels:
+    app: k8s-triliovault-control-plane
+    app.kubernetes.io/instance: k8s-triliovault-control-plane
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+    pod-template-hash: 687d5bd5cb
+    rel: k8s-triliovault-1613969040
+  name: k8s-triliovault-control-plane-687d5bd5cb
+  namespace: webtest
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: k8s-triliovault-control-plane
+    uid: 7986f2ca-811f-4375-8c8c-d7a302a42975
+  resourceVersion: "19931387"
+  selfLink: /apis/apps/v1/namespaces/webtest/replicasets/k8s-triliovault-control-plane-687d5bd5cb
+  uid: 1be0f1de-d41b-46c4-9414-de0526f0deaf
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: k8s-triliovault-control-plane
+      pod-template-hash: 687d5bd5cb
+      rel: k8s-triliovault-1613969040
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: k8s-triliovault-control-plane
+        app.kubernetes.io/instance: k8s-triliovault-control-plane
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+        pod-template-hash: 687d5bd5cb
+        rel: k8s-triliovault-1613969040
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - env:
+        - name: IMAGE_PULL_POLICY
+          value: Always
+        - name: INSTALL_NAMESPACE
+          value: webtest
+        - name: RELEASE_TAG
+          value: master
+        - name: APP_SCOPE
+          value: Namespaced
+        - name: TVK_CONFIG
+          value: k8s-triliovault-config
+        - name: WEB_SESSION_ACCESS_TTL
+          value: 1h
+        - name: WEB_SESSION_REFRESH_TTL
+          value: 24h
+        - name: RELATED_IMAGE_METAMOVER
+          value: gcr.io/amazing-chalice-243510/metamover:master
+        - name: RELATED_IMAGE_DATAMOVER
+          value: gcr.io/amazing-chalice-243510/datamover:master
+        - name: RELATED_IMAGE_DATASTORE_ATTACHER
+          value: gcr.io/amazing-chalice-243510/datastore-attacher:master
+        - name: RELATED_IMAGE_BACKUP_SCHEDULER
+          value: gcr.io/amazing-chalice-243510/backup-scheduler:master
+        - name: RELATED_IMAGE_BACKUP_CLEANER
+          value: gcr.io/amazing-chalice-243510/backup-cleaner:master
+        - name: RELATED_IMAGE_BACKUP_RETENTION
+          value: gcr.io/amazing-chalice-243510/backup-retention:master
+        - name: RELATED_IMAGE_TARGET_BROWSER
+          value: gcr.io/amazing-chalice-243510/target-browser:master
+        - name: RELATED_IMAGE_HOOK
+          value: gcr.io/amazing-chalice-243510/hook-executor:master
+        image: gcr.io/amazing-chalice-243510/control-plane:master
+        imagePullPolicy: Always
+        name: triliovault-control-plane
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - KILL
+            - AUDIT_WRITE
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1001
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /opt/tvk/config
+          name: tvk-config
+      - env:
+        - name: IMAGE_PULL_POLICY
+          value: Always
+        - name: INSTALL_NAMESPACE
+          value: webtest
+        - name: RELEASE_TAG
+          value: master
+        - name: APP_SCOPE
+          value: Namespaced
+        - name: TVK_CONFIG
+          value: k8s-triliovault-config
+        image: gcr.io/amazing-chalice-243510/analyzer:master
+        imagePullPolicy: Always
+        name: triliovault-analyzer
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - KILL
+            - AUDIT_WRITE
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1001
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      serviceAccount: k8s-triliovault
+      serviceAccountName: k8s-triliovault
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: k8s-triliovault-config
+        name: tvk-config
+status:
+  observedGeneration: 24
+  replicas: 0

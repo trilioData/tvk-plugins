@@ -1,0 +1,63 @@
+apiVersion: triliovault.trilio.io/v1
+kind: License
+metadata:
+  annotations:
+    generation: "2"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"triliovault.trilio.io/v1","kind":"License","metadata":{"annotations":{},"name":"license-sample","namespace":"pushkar"},"spec":{"key":"xLUNDgwKD3jafVJLa8MwDL77Vxh2NthukjmFHErbwVjbjfVxl22FGlonOElZ//2SdWMlKfmOlvQ9JD+tC09nZaA0plJOo+cp51RyKcg8INSu8Auokf4j64qMR4zHZGld10F7yF4C4i44OBEwtbsgHXTUoUFycgZ9hQcM1T1LJskanK/Rgze4/CpduN5MdNqdMBMTMi/OJfjrgPkT7RFqsmnOGsN7vq9a9rsyE2SL4YLhddGf1NoIk6SGpclEMiFQM6VsxKTIxYQLq3kuyXa5oQ+Qte/slwBHCVa30H35bHeY7Ve7P4583IQpSnxgwsMZqxIMWvLWaNwPMrYhMUVhJWcyVsgia4FpFQumksRoVKnSGsnPzmFw2vv1fzTBHKHCkd8xh9aKq/snygSnnTu6KSxW38uFnGUwLAIUbEBh6HS6f/faeL4iewUu9WSWb8MCFAXVPb73fG8rdPRPKUf+Y3iyST1mX02fb"}}
+  creationTimestamp: "2021-04-05T15:28:11Z"
+  generation: 2
+  name: license-sample
+  namespace: pushkar
+  resourceVersion: "98384069"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pushkar/licenses/license-sample
+  uid: 5b9365ac-9207-4506-9403-163b2d639527
+spec:
+  key: xLUNDgwKD3jafVJLa8MwDL77Vxh2NthukjmFHErbwVjbjfVxl22FGlonOElZ//2SdWMlKfmOlvQ9JD+tC09nZaA0plJOo+cp51RyKcg8INSu8Auokf4j64qMR4zHZGld10F7yF4C4i44OBEwtbsgHXTUoUFycgZ9hQcM1T1LJskanK/Rgze4/CpduN5MdNqdMBMTMi/OJfjrgPkT7RFqsmnOGsN7vq9a9rsyE2SL4YLhddGf1NoIk6SGpclEMiFQM6VsxKTIxYQLq3kuyXa5oQ+Qte/slwBHCVa30H35bHeY7Ve7P4583IQpSnxgwsMZqxIMWvLWaNwPMrYhMUVhJWcyVsgia4FpFQumksRoVKnSGsnPzmFw2vv1fzTBHKHCkd8xh9aKq/snygSnnTu6KSxW38uFnGUwLAIUbEBh6HS6f/faeL4iewUu9WSWb8MCFAXVPb73fG8rdPRPKUf+Y3iyST1mX02fb
+status:
+  condition:
+  - message: License Key changed
+    timestamp: "2021-04-05T15:28:11Z"
+  - message: Cluster License Activated successfully.
+    status: Active
+    timestamp: "2021-04-05T15:28:11Z"
+  - message: Unable to decode license key
+    status: Invalid
+    timestamp: "2021-04-05T16:56:37Z"
+  - message: Cluster License Activated successfully.
+    status: Active
+    timestamp: "2021-04-05T17:17:44Z"
+  - message: Cluster with capacity 12 nodes crossed max capacity 10 nodes
+    status: Error
+    timestamp: "2021-04-07T04:07:19Z"
+  - message: Cluster with capacity 14 nodes crossed max capacity 10 nodes
+    status: Error
+    timestamp: "2021-04-07T04:10:42Z"
+  - message: Cluster with capacity 16 nodes crossed max capacity 10 nodes
+    status: Error
+    timestamp: "2021-04-07T04:12:30Z"
+  - message: Cluster with capacity 14 nodes crossed max capacity 10 nodes
+    status: Error
+    timestamp: "2021-04-07T13:12:55Z"
+  - message: Cluster with capacity 12 nodes crossed max capacity 10 nodes
+    status: Error
+    timestamp: "2021-04-07T13:13:52Z"
+  currentNodeCount: 12
+  message: Cluster with capacity 12 nodes crossed max capacity 10 nodes
+  properties:
+    active: true
+    capacity: 10
+    company: Redhat
+    creationTimestamp: "2021-04-05T00:00:00Z"
+    edition: FreeTrial
+    expirationTimestamp: "2024-05-13T00:00:00Z"
+    kubeUID: be9e1d20-258e-4dda-b851-866cbe898bbe
+    licenseID: TVAULT-bbc1c69f-9632-11eb-88d4-21f1301db0f2
+    maintenanceExpiryTimestamp: "2024-05-13T00:00:00Z"
+    numberOfUsers: -1
+    purchaseTimestamp: "2021-04-05T00:00:00Z"
+    scope: Namespaced
+    sen: SEN-bbc1c69e-9632-11eb-88d4-21f1301db0f2
+    serverID: bbc1c69c-9632-11eb-88d4-21f1301db0f2
+    version: "2"
+  status: Error

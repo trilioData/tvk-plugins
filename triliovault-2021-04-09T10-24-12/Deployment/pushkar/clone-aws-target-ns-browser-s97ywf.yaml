@@ -1,0 +1,132 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    ControllerOwnerKind: Target
+    controller-owner-name: clone-aws-target-ns
+    controller-owner-namespace: pushkar
+    deployment.kubernetes.io/revision: "1"
+  creationTimestamp: "2021-04-06T10:15:15Z"
+  generation: 1
+  labels:
+    app: clone-aws-target-ns-browser-s97ywf
+    app.kubernetes.io/instance: clone-aws-target-ns-browser-s97ywf
+    app.kubernetes.io/managed-by: k8s-triliovault
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: clone-aws-target-ns-browser-s97ywf
+  namespace: pushkar
+  resourceVersion: "95530967"
+  selfLink: /apis/apps/v1/namespaces/pushkar/deployments/clone-aws-target-ns-browser-s97ywf
+  uid: 14648d8d-25f7-4264-b532-0cd7aaf5ae59
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: clone-aws-target-ns-browser-s97ywf
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: clone-aws-target-ns-browser-s97ywf
+        app.kubernetes.io/instance: clone-aws-target-ns-browser-s97ywf
+        app.kubernetes.io/managed-by: k8s-triliovault
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+      containers:
+      - command:
+        - /bin/sh
+        - -c
+        - python /opt/tvk/datastore-attacher/mount_utility/mount_by_target_crd/mount_datastores.py
+          --namespace=pushkar --target-name=clone-aws-target-ns && /opt/tvk/target-browser
+        env:
+        - name: TARGET_API_PATH
+          value: /clone-aws-target-ns.pushkar/
+        - name: INSTALL_NAMESPACE
+          value: pushkar
+        - name: TARGET_TYPE
+          value: ObjectStore
+        - name: WEB_SESSION_ACCESS_TTL
+          value: 1h
+        - name: WEB_SESSION_REFRESH_TTL
+          value: 24h
+        image: eu.gcr.io/amazing-chalice-243510/target-browser:v2.1.0-beta.6
+        imagePullPolicy: IfNotPresent
+        name: browser
+        ports:
+        - containerPort: 9090
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /clone-aws-target-ns.pushkar/readyz
+            port: 9090
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            drop:
+            - ALL
+          privileged: true
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+          runAsUser: 0
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+      serviceAccount: k8s-triliovault
+      serviceAccountName: k8s-triliovault
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2021-04-06T10:15:31Z"
+    lastUpdateTime: "2021-04-06T10:15:31Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2021-04-06T10:15:15Z"
+    lastUpdateTime: "2021-04-06T10:15:31Z"
+    message: ReplicaSet "clone-aws-target-ns-browser-s97ywf-5b9c685f7f" has successfully
+      progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

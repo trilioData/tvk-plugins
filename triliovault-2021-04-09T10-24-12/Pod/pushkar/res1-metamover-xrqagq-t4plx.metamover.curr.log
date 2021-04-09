@@ -1,0 +1,54 @@
+INFO:root:Calling crd-parser to get the datastore
+INFO:root:Parsing the target-crd to get the list of datastores
+INFO:root:Fetched the list of datastores to be mounted
+INFO:root:mounting datastore of type nfs
+INFO:root:mounting the NFS datastore by the name nfs-target-ns
+INFO:root:Executing command rpc.statd &
+INFO:root:rpc.statd & command execution starting time: 2021-04-06 12:56:27.951554
+INFO:root:waiting for command to complete...
+INFO:root:rpc.statd & command execution completion time: 2021-04-06 12:56:29.967329
+INFO:root:Command:rpc.statd &, ExitCode:0
+
+INFO:root:Executing command rpcbind -f &
+INFO:root:rpcbind -f & command execution starting time: 2021-04-06 12:56:29.967821
+INFO:root:waiting for command to complete...
+INFO:root:rpcbind -f & command execution completion time: 2021-04-06 12:56:31.980704
+INFO:root:Command:rpcbind -f &, ExitCode:0
+
+INFO:root:Executing command mount -t nfs -o nfsvers=4 34.66.17.160:/src/nfs/targetbrowser /triliodata -v
+INFO:root:mount -t nfs -o nfsvers=4 34.66.17.160:/src/nfs/targetbrowser /triliodata -v command execution starting time: 2021-04-06 12:56:31.981716
+INFO:root:waiting for command to complete...
+mount.nfs: timeout set for Tue Apr  6 12:58:32 2021
+mount.nfs: trying text-based options 'vers=4.1,addr=34.66.17.160,clientaddr=10.92.0.207'
+INFO:root:mount -t nfs -o nfsvers=4 34.66.17.160:/src/nfs/targetbrowser /triliodata -v command execution completion time: 2021-04-06 12:56:34.012057
+INFO:root:Command:mount -t nfs -o nfsvers=4 34.66.17.160:/src/nfs/targetbrowser /triliodata -v, ExitCode:0
+
+INFO:root:2021-04-06 12:56:34.012478: waiting for mount operation to complete.
+INFO:root:2021-04-06 12:56:34.047587: target mounted successfully.
+
+
+
+
+
+
+I0406 12:56:35.482267      19 request.go:655] Throttling request took 1.008439627s, request: GET:https://10.96.0.1:443/apis/rbacmanager.reactiveops.io/v1beta1?timeout=32s
+{"component":"meta-mover","file":"cmd/metamover/metamover.go:10","func":"main.main","level":"info","msg":"Starting the Metadata Processing","time":"2021-04-06T12:56:36Z"}
+{"component":"meta-mover","file":"cmd/metamover/app/validation.go:51","func":"github.com/trilioData/k8s-triliovault/cmd/metamover/app.runValidateE","level":"info","msg":"Validating the resources from target before the restore operation","time":"2021-04-06T12:56:36Z"}
+{"component":"meta-mover","file":"pkg/metamover/validation/validation.go:35","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/validation.Do","level":"info","msg":"Starting the Validation before restore operation with restoreName: res1, trilio resource namespace: pushkar","time":"2021-04-06T12:56:36Z"}
+{"component":"meta-mover","file":"pkg/metamover/validation/utils.go:538","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/validation.updateRestoreScopeAppType","level":"info","msg":"Restore scope [] extracted from target location - backup.json","time":"2021-04-06T12:56:37Z"}
+{"component":"meta-mover","file":"pkg/metamover/validation/utils.go:548","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/validation.updateRestoreScopeAppType","level":"info","msg":"Setting Restore scope [] and app [] extracted from target location - backup.json","time":"2021-04-06T12:56:37Z"}
+{"component":"meta-mover","file":"internal/helpers/commons.go:103","func":"github.com/trilioData/k8s-triliovault/internal/helpers.ValidateBackupLocation","level":"info","msg":"Checking if location present: /triliodata/87994cfb-f6f2-4504-b317-e8f6c2e3b318/ab11b148-b1e9-4016-92c2-e40b352949b5","time":"2021-04-06T12:56:37Z"}
+{"component":"meta-mover","file":"internal/helpers/commons.go:108","func":"github.com/trilioData/k8s-triliovault/internal/helpers.ValidateBackupLocation","level":"info","msg":"Location /triliodata/87994cfb-f6f2-4504-b317-e8f6c2e3b318/ab11b148-b1e9-4016-92c2-e40b352949b5 present","time":"2021-04-06T12:56:37Z"}
+{"component":"meta-mover","file":"internal/helpers/restore.go:263","func":"github.com/trilioData/k8s-triliovault/internal/helpers.UpdateRestoreStatus","level":"info","msg":"Updated restore status: InProgress name: res1 namespace: pushkar","time":"2021-04-06T12:56:37Z"}
+{"component":"meta-mover","file":"pkg/metamover/validation/utils.go:212","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/validation.ValidateDataSnapshots","level":"info","msg":"Validating data snapshots to check if PVC present in namespace pushkar","time":"2021-04-06T12:56:37Z"}
+{"component":"meta-mover","file":"pkg/metamover/validation/utils.go:430","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/validation.ValidateMetaSnapshots","level":"info","msg":"Validating and populating restore cr","time":"2021-04-06T12:56:37Z"}
+{"component":"meta-mover","file":"internal/helpers/restore.go:263","func":"github.com/trilioData/k8s-triliovault/internal/helpers.UpdateRestoreStatus","level":"info","msg":"Updated restore status: InProgress name: res1 namespace: pushkar","time":"2021-04-06T12:56:37Z"}
+{"component":"meta-mover","file":"cmd/metamover/app/validation.go:57","func":"github.com/trilioData/k8s-triliovault/cmd/metamover/app.runValidateE","level":"info","msg":"Validations before restore Completed successfully!!!","time":"2021-04-06T12:56:37Z"}
+{"component":"meta-mover","file":"cmd/metamover/app/validation.go:65","func":"github.com/trilioData/k8s-triliovault/cmd/metamover/app.runValidateE","level":"info","msg":"Starting primitive restore operations after Validation phase","time":"2021-04-06T12:56:37Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/restore.go:40","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.Do","level":"info","msg":"Starting the restore process of the metadata from namespace: pushkar, restore resource: res1","time":"2021-04-06T12:56:37Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/restore.go:64","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.Do","level":"info","msg":"prepared the backup location: /triliodata/87994cfb-f6f2-4504-b317-e8f6c2e3b318/ab11b148-b1e9-4016-92c2-e40b352949b5","time":"2021-04-06T12:56:37Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/commons.go:848","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.retrieveBackupInfoFromRestore","level":"info","msg":"Backup namespace [pre-1376181612844158976] extracted from backupPlan.json present on target","time":"2021-04-06T12:56:37Z"}
+{"component":"meta-mover","file":"internal/helpers/commons.go:103","func":"github.com/trilioData/k8s-triliovault/internal/helpers.ValidateBackupLocation","level":"info","msg":"Checking if location present: /triliodata/87994cfb-f6f2-4504-b317-e8f6c2e3b318/ab11b148-b1e9-4016-92c2-e40b352949b5","time":"2021-04-06T12:56:37Z"}
+{"component":"meta-mover","file":"internal/helpers/commons.go:108","func":"github.com/trilioData/k8s-triliovault/internal/helpers.ValidateBackupLocation","level":"info","msg":"Location /triliodata/87994cfb-f6f2-4504-b317-e8f6c2e3b318/ab11b148-b1e9-4016-92c2-e40b352949b5 present","time":"2021-04-06T12:56:37Z"}
+{"component":"meta-mover","file":"pkg/metamover/restore/restore.go:124","func":"github.com/trilioData/k8s-triliovault/pkg/metamover/restore.Do","level":"info","msg":"Metadata restored in [pushkar]","time":"2021-04-06T12:56:37Z"}
+{"component":"meta-mover","file":"cmd/metamover/app/validation.go:70","func":"github.com/trilioData/k8s-triliovault/cmd/metamover/app.runValidateE","level":"info","msg":"Primitive Restore Metadata operations completed successfully","time":"2021-04-06T12:56:37Z"}

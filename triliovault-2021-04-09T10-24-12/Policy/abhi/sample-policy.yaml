@@ -1,0 +1,18 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Policy
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"triliovault.trilio.io/v1","kind":"Policy","metadata":{"annotations":{},"name":"sample-policy","namespace":"abhi"},"spec":{"default":true,"retentionConfig":{"latest":1},"type":"Retention"}}
+  creationTimestamp: "2021-03-31T16:52:44Z"
+  generation: 2
+  name: sample-policy
+  namespace: abhi
+  resourceVersion: "100967953"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/abhi/policies/sample-policy
+  uid: 4f19f1de-f092-4a1d-ab11-88b1bd3ad5bb
+spec:
+  default: true
+  retentionConfig:
+    latest: 1
+  type: Retention

@@ -1,0 +1,45 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  creationTimestamp: "2021-03-16T05:27:08Z"
+  generation: 1
+  name: custcust-yojsn
+  namespace: vinod3
+  resourceVersion: "78784770"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/vinod3/backupplans/custcust-yojsn
+  uid: 1df4db0b-e1fb-4cbd-a29e-8c32b4d97cd4
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: 0 10 15 * *
+      incrementalCron:
+        schedule: 5 4 * * *
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-targetvbglqvf-injector
+      namespace: vinod3
+      resourceVersion: "56726921"
+      uid: 0d27eb48-c906-47fe-ad43-28166b15497d
+  backupPlanComponents: {}
+status:
+  stats:
+    backupSummary:
+      lastSuccessfulBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: custcust-yojsn-mjku
+        namespace: vinod3
+        resourceVersion: "67038659"
+        uid: aea66f95-c114-471d-abe9-e5f1b3c750e3
+      latestBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: custcust-yojsn-mjku
+        namespace: vinod3
+        resourceVersion: "67038659"
+        uid: aea66f95-c114-471d-abe9-e5f1b3c750e3
+      totalAvailableBackups: 1
+    restoreSummary: {}
+  status: Available

@@ -1,0 +1,279 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Backup
+metadata:
+  creationTimestamp: "2021-03-24T02:41:02Z"
+  finalizers:
+  - backup-cleanup-finalizer
+  generation: 1
+  name: sample-backup-custom
+  namespace: pmath
+  ownerReferences:
+  - apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: sample-application-custom
+    uid: f5159ea9-f899-44b4-8f05-157d147cec9c
+  resourceVersion: "70655478"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pmath/backups/sample-backup-custom
+  uid: e4fdd275-a80e-4bab-bbc3-ec4b3df29746
+spec:
+  backupPlan:
+    apiVersion: triliovault.trilio.io/v1
+    kind: BackupPlan
+    name: sample-application-custom
+    namespace: pmath
+    resourceVersion: "70552742"
+    uid: f5159ea9-f899-44b4-8f05-157d147cec9c
+  type: Incremental
+status:
+  backupScope: Namespace
+  completionTimestamp: "2021-03-24T02:44:31Z"
+  condition:
+  - phase: MetaSnapshot
+    reason: MetaSnapshot InProgress
+    status: InProgress
+    timestamp: "2021-03-24T02:41:02Z"
+  - phase: MetaSnapshot
+    reason: MetaSnapshot Completed
+    status: Completed
+    timestamp: "2021-03-24T02:41:19Z"
+  - phase: DataSnapshot
+    reason: DataSnapshot InProgress
+    status: InProgress
+    timestamp: "2021-03-24T02:41:19Z"
+  - phase: DataUpload
+    reason: DataUpload InProgress
+    status: InProgress
+    timestamp: "2021-03-24T02:42:28Z"
+  - phase: DataSnapshot
+    reason: DataSnapshot Completed
+    status: Completed
+    timestamp: "2021-03-24T02:42:28Z"
+  - phase: DataUpload
+    reason: DataUpload Completed
+    status: Completed
+    timestamp: "2021-03-24T02:44:09Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload InProgress
+    status: InProgress
+    timestamp: "2021-03-24T02:44:09Z"
+  - phase: MetadataUpload
+    reason: MetadataUpload Completed
+    status: Completed
+    timestamp: "2021-03-24T02:44:20Z"
+  - phase: Retention
+    reason: Retention InProgress
+    status: InProgress
+    timestamp: "2021-03-24T02:44:20Z"
+  - phase: Retention
+    reason: Retention Completed
+    status: Completed
+    timestamp: "2021-03-24T02:44:31Z"
+  location: f5159ea9-f899-44b4-8f05-157d147cec9c/e4fdd275-a80e-4bab-bbc3-ec4b3df29746
+  percentageCompletion: 100
+  phase: Retention
+  phaseStatus: Completed
+  size: "62267392"
+  snapshot:
+    custom:
+      dataSnapshots:
+      - backupType: Full
+        conditions:
+        - phase: Snapshot
+          reason: Snapshot InProgress
+          status: InProgress
+          timestamp: "2021-03-24T02:41:20Z"
+        - phase: Snapshot
+          reason: Snapshot Completed
+          status: Completed
+          timestamp: "2021-03-24T02:42:28Z"
+        - phase: Upload
+          reason: Upload InProgress
+          status: InProgress
+          timestamp: "2021-03-24T02:42:28Z"
+        - phase: Upload
+          reason: Upload Completed
+          status: Completed
+          timestamp: "2021-03-24T02:44:05Z"
+        location: f5159ea9-f899-44b4-8f05-157d147cec9c/e4fdd275-a80e-4bab-bbc3-ec4b3df29746/custom/data-snapshot/data-log-collector-mysql-operator-0
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"gke-dev-cluster-dev-cluster-pool-eab0992b-lsr9"},"creationTimestamp":"2021-03-24T02:33:09Z","finalizers":["kubernetes.io/pvc-protection"],"labels":{"app":"mysql-operator","release":"log-collector-mysql-operator"},"name":"data-log-collector-mysql-operator-0","namespace":"pmath","resourceVersion":"70553620","selfLink":"/api/v1/namespaces/pmath/persistentvolumeclaims/data-log-collector-mysql-operator-0","uid":"6c0ac529-4d51-4712-92c9-92e6267a2e16"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-6c0ac529-4d51-4712-92c9-92e6267a2e16"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"1Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: data-log-collector-mysql-operator-0
+        podContainersMap:
+        - containers:
+          - operator
+          - orchestrator
+          podName: log-collector-mysql-operator-0
+        size: "22941696"
+        snapshotSize: "1073741824"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: data-log-collector-mysql-o-e708db38-6aec-4e00-a158-d72e0a8a4cd5
+            namespace: pmath
+            resourceVersion: "70558249"
+            uid: edc30a5a-ff99-4776-b74a-584a06fa46aa
+      - backupType: Full
+        conditions:
+        - phase: Snapshot
+          reason: Snapshot InProgress
+          status: InProgress
+          timestamp: "2021-03-24T02:41:20Z"
+        - phase: Snapshot
+          reason: Snapshot Completed
+          status: Completed
+          timestamp: "2021-03-24T02:42:28Z"
+        - phase: Upload
+          reason: Upload InProgress
+          status: InProgress
+          timestamp: "2021-03-24T02:42:28Z"
+        - phase: Upload
+          reason: Upload Completed
+          status: Completed
+          timestamp: "2021-03-24T02:44:09Z"
+        location: f5159ea9-f899-44b4-8f05-157d147cec9c/e4fdd275-a80e-4bab-bbc3-ec4b3df29746/custom/data-snapshot/pod-raw-pvc
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"gke-dev-cluster-dev-cluster-pool-eab0992b-lsr9"},"creationTimestamp":"2021-03-24T02:32:58Z","finalizers":["kubernetes.io/pvc-protection"],"name":"pod-raw-pvc","namespace":"pmath","resourceVersion":"70547611","selfLink":"/api/v1/namespaces/pmath/persistentvolumeclaims/pod-raw-pvc","uid":"2ae6b3f7-103c-43bb-a6d9-df5c735c41e3"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"100Mi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-2ae6b3f7-103c-43bb-a6d9-df5c735c41e3"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"1Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: pod-raw-pvc
+        podContainersMap:
+        - containers:
+          - data-insertion
+          podName: pod-raw
+        size: "39325696"
+        snapshotSize: "1073741824"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: pod-raw-pvc-756c2821-d148-4548-a5a3-c7387640cee1
+            namespace: pmath
+            resourceVersion: "70558234"
+            uid: a595c324-b24e-4ad0-9d98-37cee1ee6a1c
+      resources:
+      - groupVersionKind:
+          kind: ServiceAccount
+          version: v1
+        objects:
+        - default
+        - log-collector-mysql-operator
+      - groupVersionKind:
+          kind: Pod
+          version: v1
+        objects:
+        - pod-raw
+      - groupVersionKind:
+          kind: Service
+          version: v1
+        objects:
+        - log-collector-mysql-operator
+        - log-collector-mysql-operator-0-svc
+        - mysql
+      - groupVersionKind:
+          kind: ResourceQuota
+          version: v1
+        objects:
+        - gke-resource-quotas
+      - groupVersionKind:
+          kind: ConfigMap
+          version: v1
+        objects:
+        - log-collector-mysql-operator-orc
+        - mysql-operator-leader-election
+        - nginx-ingress-leader-election
+        - log-collector-sample-mysqlcluster-mysql
+      - groupVersionKind:
+          kind: Secret
+          version: v1
+        objects:
+        - default-token-n9jx9
+        - log-collector-mysql-operator-orc
+        - log-collector-mysql-operator-token-cvzz8
+        - log-collector-sample-mysql-cluster-secret
+        - log-collector-sample-mysqlcluster-mysql-operated
+      - groupVersionKind:
+          group: apps
+          kind: StatefulSet
+          version: v1
+        objects:
+        - log-collector-mysql-operator
+      - groupVersionKind:
+          group: mysql.presslabs.org
+          kind: MysqlCluster
+          version: v1alpha1
+        objects:
+        - log-collector-sample-mysqlcluster
+      - groupVersionKind:
+          group: storage.k8s.io
+          kind: StorageClass
+          version: v1
+        objects:
+        - csi-gce-pd
+      - groupVersionKind:
+          group: rbac.authorization.k8s.io
+          kind: ClusterRoleBinding
+          version: v1
+        objects:
+        - log-collector-mysql-operator
+      - groupVersionKind:
+          group: rbac.authorization.k8s.io
+          kind: ClusterRole
+          version: v1
+        objects:
+        - log-collector-mysql-operator
+      - groupVersionKind:
+          group: apiextensions.k8s.io
+          kind: CustomResourceDefinition
+          version: v1beta1
+        objects:
+        - mysqlclusters.mysql.presslabs.org
+      warnings:
+      - |
+        Found Dependant Resource:
+        GVK: [rbac.authorization.k8s.io/v1, Kind=ClusterRole]
+        Name: [log-collector-mysql-operator]
+      - |
+        Found Dependant Resource:
+        GVK: [/v1, Kind=Secret]
+        Name: [log-collector-sample-mysqlcluster-mysql-operated]
+      - |
+        Found Dependant Resource:
+        GVK: [/v1, Kind=ConfigMap]
+        Name: [log-collector-sample-mysqlcluster-mysql]
+      - |
+        Found Dependant Resource:
+        GVK: [apiextensions.k8s.io/v1beta1, Kind=CustomResourceDefinition]
+        Name: [mysqlclusters.mysql.presslabs.org]
+      - |
+        Found Dependant Resource:
+        GVK: [storage.k8s.io/v1, Kind=StorageClass]
+        Name: [csi-gce-pd]
+      - |
+        Found Pods are not in Running/Succeeded state:
+        GVK: [/v1, Kind=Pod]
+        Name: [pod-raw]
+      - |
+        Dependent Resource Not Found In Namespace/Cluster:
+        GVK: [storage.k8s.io/, Kind=StorageClass]
+        Name: [csi-gce-pd]
+      - |
+        Found Dependant Resource:
+        GVK: [rbac.authorization.k8s.io/v1, Kind=ClusterRoleBinding]
+        Name: [log-collector-mysql-operator]
+  startTimestamp: "2021-03-24T02:41:02Z"
+  stats:
+    hookExists: false
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-target
+      namespace: pmath
+      resourceVersion: "70552698"
+      uid: 7a03157a-9f04-4119-94a7-463bbe36807e
+  status: Available
+  type: Full

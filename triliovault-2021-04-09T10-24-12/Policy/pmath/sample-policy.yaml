@@ -1,0 +1,18 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Policy
+metadata:
+  creationTimestamp: "2021-03-24T02:37:35Z"
+  generation: 1
+  name: sample-policy
+  namespace: pmath
+  resourceVersion: "70552608"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/pmath/policies/sample-policy
+  uid: 57ac948e-318f-4862-bccb-43a26e1d3ae9
+spec:
+  cleanupConfig:
+    backupDays: 28
+  default: true
+  retentionConfig:
+    latest: 1
+  timeoutConfig: {}
+  type: Retention

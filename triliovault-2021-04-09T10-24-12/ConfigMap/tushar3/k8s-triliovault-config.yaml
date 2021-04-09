@@ -1,0 +1,21 @@
+apiVersion: v1
+data:
+  dataJobLimits: |-
+    cpu: 1000m
+    memory: 1536Mi
+  metadataJobLimits: |-
+    cpu: 500m
+    memory: 512Mi
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2021-03-15T10:20:22Z"
+  labels:
+    app.kubernetes.io/instance: k8s-triliovault-config
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-triliovault
+    app.kubernetes.io/part-of: k8s-triliovault
+  name: k8s-triliovault-config
+  namespace: tushar3
+  resourceVersion: "55619385"
+  selfLink: /api/v1/namespaces/tushar3/configmaps/k8s-triliovault-config
+  uid: 5d58a1e7-798b-4c87-bd6d-8cbc5775d17d

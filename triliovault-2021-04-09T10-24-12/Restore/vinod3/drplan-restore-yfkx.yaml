@@ -1,0 +1,99 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Restore
+metadata:
+  annotations:
+    triliovault.trilio.io/drplan: drplan2
+  creationTimestamp: "2021-03-16T05:29:47Z"
+  finalizers:
+  - child-delete-finalizer
+  generation: 1
+  name: drplan-restore-yfkx
+  namespace: vinod3
+  resourceVersion: "67038705"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/vinod3/restores/drplan-restore-yfkx
+  uid: 6c443d4d-fd6e-4220-8060-b941d8765cf5
+spec:
+  patchIfAlreadyExists: true
+  restoreNamespace: res-1
+  source:
+    location: 92a18330-f911-4a2a-9021-a5bd382fa3ab/0264030d-4806-4a01-94d4-b8efe5b2fb0d
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: target-sample
+      namespace: vinod3
+      resourceVersion: "56726547"
+      uid: 4631ea18-2625-4d40-bf58-613adb365e71
+    type: Location
+status:
+  completionTimestamp: "2021-03-16T05:32:48Z"
+  percentageCompletion: 100
+  restoreApplication:
+    helmCharts:
+    - snapshot:
+        dataSnapshots:
+        - location: 3ccb2ff0-d0f8-44b8-9854-ee6af46d0efb/748e1692-5f61-413b-85f2-c5aacf5318fc/helm/redis/data-snapshot/redis-data-redis-master-0
+          persistentVolumeClaimMetadata: '{"kind":"PersistentVolumeClaim","apiVersion":"v1","metadata":{"name":"redis-data-rnnln-redis-master-0","creationTimestamp":null,"labels":{"app":"redis","component":"master","heritage":"Helm","release":"rnnln"}},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"8Gi"}},"storageClassName":"csi-gce-pd"},"status":{}}'
+          persistentVolumeClaimName: redis-data-rnnln-redis-master-0
+          podContainersMap:
+          - containers:
+            - redis
+            podName: redis-master-0
+          size: "8370"
+          snapshotSize: "0"
+        - location: 3ccb2ff0-d0f8-44b8-9854-ee6af46d0efb/748e1692-5f61-413b-85f2-c5aacf5318fc/helm/redis/data-snapshot/redis-data-redis-slave-0
+          persistentVolumeClaimMetadata: '{"kind":"PersistentVolumeClaim","apiVersion":"v1","metadata":{"name":"redis-data-rnnln-redis-slave-0","creationTimestamp":null,"labels":{"app":"redis","component":"slave","heritage":"Helm","release":"rnnln"}},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"8Gi"}},"storageClassName":"csi-gce-pd"},"status":{}}'
+          persistentVolumeClaimName: redis-data-rnnln-redis-slave-0
+          podContainersMap:
+          - containers:
+            - redis
+            podName: redis-slave-0
+          size: "8459"
+          snapshotSize: "0"
+        - location: 3ccb2ff0-d0f8-44b8-9854-ee6af46d0efb/748e1692-5f61-413b-85f2-c5aacf5318fc/helm/redis/data-snapshot/redis-data-redis-slave-1
+          persistentVolumeClaimMetadata: '{"kind":"PersistentVolumeClaim","apiVersion":"v1","metadata":{"name":"redis-data-rnnln-redis-slave-1","creationTimestamp":null,"labels":{"app":"redis","component":"slave","heritage":"Helm","release":"rnnln"}},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"8Gi"}},"storageClassName":"csi-gce-pd"},"status":{}}'
+          persistentVolumeClaimName: redis-data-rnnln-redis-slave-1
+          podContainersMap:
+          - containers:
+            - redis
+            podName: redis-slave-1
+          size: "8459"
+          snapshotSize: "0"
+        newRelease: rnnln
+        release: redis
+        resources:
+        - groupVersionKind:
+            kind: Secret
+            version: v1
+          objects:
+          - rnnln-redis
+        - groupVersionKind:
+            kind: ConfigMap
+            version: v1
+          objects:
+          - rnnln-redis
+          - rnnln-redis-health
+        - groupVersionKind:
+            kind: Service
+            version: v1
+          objects:
+          - rnnln-redis-headless
+          - rnnln-redis-master
+          - rnnln-redis-slave
+        - groupVersionKind:
+            group: apps
+            kind: StatefulSet
+            version: v1
+          objects:
+          - rnnln-redis-master
+          - rnnln-redis-slave
+        revision: 1
+        storageBackend: Secret
+        version: v3
+      status:
+        phase: MetadataRestore
+        phaseStatus: Completed
+        reason: Restore MetaData Operation Successful
+  size: "25288"
+  startTimestamp: "2021-03-16T05:29:48Z"
+  status: Completed

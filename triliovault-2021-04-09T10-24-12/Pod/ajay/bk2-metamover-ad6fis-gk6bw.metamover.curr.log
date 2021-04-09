@@ -1,0 +1,44 @@
+INFO:root:Calling crd-parser to get the datastore
+INFO:root:Parsing the target-crd to get the list of datastores
+INFO:root:Fetched the list of datastores to be mounted
+INFO:root:mounting datastore of type s3
+INFO:root:mounting the S3 datastore by the name s3
+INFO:root:writing the conf data to the conf file: s3_vault.conf
+
+INFO:root:command: /usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/s3_vault.conf &
+INFO:root:Executing command /usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/s3_vault.conf &
+INFO:root:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/s3_vault.conf & command execution starting time: 2021-04-08 11:06:31.859800
+INFO:root:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/s3_vault.conf & command execution completion time: 2021-04-08 11:06:31.866274
+INFO:root:Command:/usr/bin/python /opt/tvk/datastore-attacher/mount_utility/run_fuse_in_background.py --conf=./trilio-tmp/s3_vault.conf &, ExitCode:0
+
+INFO:root:2021-04-08 11:06:31.866731: waiting for mount operation to complete.
+INFO:root:2021-04-08 11:06:33.868323: waiting for mount operation to complete.
+INFO:root:2021-04-08 11:06:35.870903: waiting for mount operation to complete.
+INFO:root:2021-04-08 11:06:35.871922: target mounted successfully.
+INFO:root:Removing all the vault files from the ./tmp directory
+
+
+I0408 11:06:37.277585      30 request.go:655] Throttling request took 1.033119154s, request: GET:https://10.96.0.1:443/apis/autoscaling/v2beta2?timeout=32s
+{"component":"meta-mover","file":"cmd/metamover/metamover.go:10","func":"main.main","level":"info","msg":"Starting the Metadata Processing","time":"2021-04-08T11:06:38Z"}
+{"component":"meta-mover","file":"cmd/metamover/app/metadata-upload.go:57","func":"github.com/trilioData/k8s-triliovault/cmd/metamover/app.runMetadataUploadE","level":"info","msg":"starting Metadata Upload","time":"2021-04-08T11:06:38Z"}
+2021-04-08 11:06:41.040 12 INFO s3 [-] Starting worker thread[7f9a80ff9700].[00m
+2021-04-08 11:06:41.058 12 INFO s3 [-] Starting worker thread[7f9a6bfff700].[00m
+2021-04-08 11:06:41.129 12 INFO s3 [-] Starting worker thread[7f9a6b7fe700].[00m
+2021-04-08 11:06:41.140 12 INFO s3 [-] Starting worker thread[7f9a6affd700].[00m
+2021-04-08 11:06:41.151 12 INFO s3 [-] Starting worker thread[7f9a6a7fc700].[00m
+2021-04-08 11:06:44.132 12 INFO s3 [-] Starting worker thread[7f9a6bfff700].[00m
+2021-04-08 11:06:44.146 12 INFO s3 [-] Starting worker thread[7f9a6b7fe700].[00m
+2021-04-08 11:06:44.229 12 INFO s3 [-] Starting worker thread[7f9a6affd700].[00m
+2021-04-08 11:06:44.246 12 INFO s3 [-] Starting worker thread[7f9a6a7fc700].[00m
+2021-04-08 11:06:44.324 12 INFO s3 [-] Starting worker thread[7f9a697fa700].[00m
+2021-04-08 11:06:47.518 12 INFO s3 [-] Starting worker thread[7f9a6b7fe700].[00m
+2021-04-08 11:06:47.531 12 INFO s3 [-] Starting worker thread[7f9a6affd700].[00m
+2021-04-08 11:06:47.545 12 INFO s3 [-] Starting worker thread[7f9a6a7fc700].[00m
+2021-04-08 11:06:47.626 12 INFO s3 [-] Starting worker thread[7f9a697fa700].[00m
+2021-04-08 11:06:47.638 12 INFO s3 [-] Starting worker thread[7f9a467fc700].[00m
+2021-04-08 11:06:50.517 12 INFO s3 [-] Starting worker thread[7f9a6affd700].[00m
+2021-04-08 11:06:50.527 12 INFO s3 [-] Starting worker thread[7f9a6a7fc700].[00m
+2021-04-08 11:06:50.542 12 INFO s3 [-] Starting worker thread[7f9a697fa700].[00m
+2021-04-08 11:06:50.555 12 INFO s3 [-] Starting worker thread[7f9a467fc700].[00m
+2021-04-08 11:06:50.625 12 INFO s3 [-] Starting worker thread[7f9a277fe700].[00m
+{"component":"meta-mover","file":"cmd/metamover/app/metadata-upload.go:69","func":"github.com/trilioData/k8s-triliovault/cmd/metamover/app.runMetadataUploadE","level":"info","msg":"MetaData Upload Completed successfully!!!","time":"2021-04-08T11:06:51Z"}

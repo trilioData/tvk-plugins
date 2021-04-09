@@ -1,0 +1,30 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  creationTimestamp: "2021-02-25T02:42:07Z"
+  generation: 1
+  name: cust-qsfic
+  namespace: backtest
+  resourceVersion: "33841919"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/backtest/backupplans/cust-qsfic
+  uid: 6f71aa77-0114-4d2d-b8d8-f8e1985b9f1e
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: 0 10 15 * *
+      incrementalCron:
+        schedule: 0 10 15 * *
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-targetecyjrbe-injector
+      namespace: backtest
+      resourceVersion: "22782526"
+      uid: 2aafe56e-4dda-445a-8971-e1e4efcba42a
+  backupPlanComponents:
+    custom:
+    - matchLabels:
+        triliobackupall: back-bknd
+status:
+  status: Error

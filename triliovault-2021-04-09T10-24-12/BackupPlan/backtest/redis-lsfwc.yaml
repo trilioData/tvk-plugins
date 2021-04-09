@@ -1,0 +1,55 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  creationTimestamp: "2021-02-25T02:41:52Z"
+  generation: 1
+  name: redis-lsfwc
+  namespace: backtest
+  resourceVersion: "33830618"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/backtest/backupplans/redis-lsfwc
+  uid: 9775ba87-c9e3-4175-a008-89f35bca010b
+spec:
+  backupConfig:
+    schedulePolicy:
+      fullBackupCron:
+        schedule: 0 10 15 * *
+      incrementalCron:
+        schedule: 0 10 15 * *
+    target:
+      apiVersion: triliovault.trilio.io/v1
+      kind: Target
+      name: sample-targetecyjrbe-injector
+      namespace: backtest
+      resourceVersion: "22782526"
+      uid: 2aafe56e-4dda-445a-8971-e1e4efcba42a
+  backupPlanComponents:
+    helmReleases:
+    - redis
+status:
+  stats:
+    backupSummary:
+      inProgressBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: redis-lsfwc-hlae
+        namespace: backtest
+        resourceVersion: "33826956"
+        uid: 7e269698-2657-4991-8797-90e1f4ace701
+      lastSuccessfulBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: redis-lsfwc-rdgw
+        namespace: backtest
+        resourceVersion: "33826772"
+        uid: 3083d572-e02d-4da1-8d31-d22c62db95b1
+      latestBackup:
+        apiVersion: triliovault.trilio.io/v1
+        kind: Backup
+        name: redis-lsfwc-hlae
+        namespace: backtest
+        resourceVersion: "33826956"
+        uid: 7e269698-2657-4991-8797-90e1f4ace701
+      totalAvailableBackups: 1
+      totalInProgressBackups: 1
+    restoreSummary: {}
+  status: Available

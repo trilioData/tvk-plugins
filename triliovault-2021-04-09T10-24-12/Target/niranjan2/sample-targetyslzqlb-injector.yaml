@@ -1,0 +1,39 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Target
+metadata:
+  annotations:
+    targetSpecHash: "3510342691"
+  creationTimestamp: "2021-02-05T11:27:14Z"
+  deletionGracePeriodSeconds: 0
+  deletionTimestamp: "2021-03-26T13:56:21Z"
+  finalizers:
+  - target-delete-finalizer
+  generation: 2
+  name: sample-targetyslzqlb-injector
+  namespace: niranjan2
+  resourceVersion: "74471724"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/niranjan2/targets/sample-targetyslzqlb-injector
+  uid: c75da3cb-cfb0-4a24-890f-c267312f394f
+spec:
+  nfsCredentials:
+    nfsExport: ""
+  objectStoreCredentials:
+    accessKey: AKIAS5B35DGFSTY7T55D
+    bucketName: trilio-fuse-bucket
+    region: us-east-1
+    secretKey: xWBupfGvkgkhaH8ansJU1wRhFoGoWFPmhXD6/vVD
+  type: ObjectStore
+  vendor: AWS
+status:
+  condition:
+  - reason: Target credentials changed.
+    timestamp: "2021-02-05T11:29:12Z"
+  - phase: Validation
+    reason: Validation InProgress
+    status: InProgress
+    timestamp: "2021-02-05T11:29:12Z"
+  - phase: Validation
+    reason: Validation Completed
+    status: Completed
+    timestamp: "2021-02-05T11:29:32Z"
+  status: Available

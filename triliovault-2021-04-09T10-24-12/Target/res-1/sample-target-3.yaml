@@ -1,0 +1,36 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Target
+metadata:
+  annotations:
+    targetSpecHash: "3725611344"
+  creationTimestamp: "2021-02-09T10:22:00Z"
+  deletionGracePeriodSeconds: 0
+  deletionTimestamp: "2021-03-26T13:56:21Z"
+  finalizers:
+  - target-delete-finalizer
+  generation: 3
+  name: sample-target-3
+  namespace: res-1
+  resourceVersion: "74471729"
+  selfLink: /apis/triliovault.trilio.io/v1/namespaces/res-1/targets/sample-target-3
+  uid: f3e91246-2825-481d-bcbf-badead68c69d
+spec:
+  enableBrowsing: true
+  nfsCredentials:
+    nfsExport: 34.66.17.160:/src/nfs/kubedata
+    nfsOptions: nfsvers=4
+  objectStoreCredentials:
+    accessKey: ""
+    bucketName: ""
+    secretKey: ""
+  type: NFS
+  vendor: Other
+status:
+  condition:
+  - reason: Target credentials changed.
+    timestamp: "2021-02-09T10:22:00Z"
+  - phase: Validation
+    reason: Validation InProgress
+    status: InProgress
+    timestamp: "2021-02-09T10:22:01Z"
+  status: InProgress
