@@ -73,12 +73,12 @@ func aggregateEvents(eventObjects unstructured.UnstructuredList,
 		}
 
 		namespace, _, nErr := unstructured.NestedString(eve.Object, "involvedObject", "namespace")
-		if namespace == "" {
-			namespace = "default"
-		}
 		if nErr != nil {
 			log.Errorf("Unable to get event data of Object : %v", nErr)
 			return nil, nErr
+		}
+		if namespace == "" {
+			namespace = "default"
 		}
 
 		kind, _, kErr := unstructured.NestedString(eve.Object, "involvedObject", "kind")
@@ -212,14 +212,20 @@ func getResourceByName(gVResources []apiv1.APIResource, name string) (matchedRes
 // getContainerStatusValue returns whether current and previous container present to capture logs
 func getContainerStatusValue(containerStatus *corev1.ContainerStatus) (conStatObj containerStat) {
 
+	lastState := containerStatus.LastTerminationState
 	currentState := containerStatus.State
 
-	if currentState.Running != nil && currentState.Terminated != nil {
-		conStatObj.prev = true
-		conStatObj.curr = true
-	} else {
-		conStatObj.curr = true
+	if currentState.Waiting == nil {
+		if lastState.Terminated != nil {
+			conStatObj.prev = true
+			conStatObj.curr = true
+		} else {
+			conStatObj.curr = true
+		}
+		return conStatObj
 	}
+
+	log.Errorf(" Container %v is in Waiting State", containerStatus.Name)
 	return conStatObj
 }
 
@@ -245,11 +251,17 @@ func getContainers(podObject *corev1.Pod) map[string]containerStat {
 	containers := make(map[string]containerStat)
 	containerStatuses := podObject.Status.ContainerStatuses
 	for index := range containerStatuses {
-		containers[containerStatuses[index].Name] = getContainerStatusValue(&containerStatuses[index])
+		status := getContainerStatusValue(&containerStatuses[index])
+		if status.curr || status.prev {
+			containers[containerStatuses[index].Name] = status
+		}
 	}
 	containerStatuses = podObject.Status.InitContainerStatuses
 	for index := range containerStatuses {
-		containers[containerStatuses[index].Name] = getContainerStatusValue(&containerStatuses[index])
+		status := getContainerStatusValue(&containerStatuses[index])
+		if status.curr || status.prev {
+			containers[containerStatuses[index].Name] = status
+		}
 	}
 	return containers
 }

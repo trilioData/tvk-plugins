@@ -33,6 +33,7 @@ type LogCollector struct {
 	k8sClientSet *kubernetes.Clientset
 }
 
+// setLogsAndClient sets user bases log level for the log collector such as INFO, ERROR, DEBUG etc
 func (l *LogCollector) setLogsAndClient() error {
 	l.k8sClient, l.disClient, l.k8sClientSet = getClient()
 	l.disClient.LegacyPrefix = "/api/"
@@ -48,6 +49,7 @@ func (l *LogCollector) setLogsAndClient() error {
 	return nil
 }
 
+// CollectLogsAndDump collects call all the related resources of triliovault
 func (l *LogCollector) CollectLogsAndDump() error {
 
 	lErr := l.setLogsAndClient()
@@ -333,6 +335,7 @@ func (l *LogCollector) writeLogs(resourceDir string, obj unstructured.Unstructur
 	err := l.k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: objNs}, &podObj)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			log.Errorf("%v", err)
 			return nil
 		}
 		log.Errorf("Unable to get the object : %v", err)
@@ -357,6 +360,7 @@ func (l *LogCollector) writeLogs(resourceDir string, obj unstructured.Unstructur
 	return nil
 }
 
+// isSubset checks whether the given namespaces is a subset of all Namespaces in cluster
 func (l *LogCollector) isSubset(second []string) bool {
 	set := make(map[string]string)
 	for _, value := range second {
@@ -381,8 +385,8 @@ func (l *LogCollector) writeLog(resourceDir, objNs, objName, container string, i
 	req := l.k8sClientSet.CoreV1().Pods(objNs).GetLogs(objName, &logOption)
 	podLogs, err := req.Stream(context.TODO())
 	if err != nil {
-		log.Errorf("%v", err)
-		return err
+		log.Errorf("Unable to get Logs for container %v : %v", container, err)
+		return nil
 	}
 	defer podLogs.Close()
 
@@ -394,9 +398,9 @@ func (l *LogCollector) writeLog(resourceDir, objNs, objName, container string, i
 
 	var subPath string
 	if isPrevious {
-		subPath = "prev"
+		subPath = "previous"
 	} else {
-		subPath = "curr"
+		subPath = "current"
 	}
 	objectFilepath := fmt.Sprintf("%s.%s.%s.log", filepath.Join(resourceDir, objName), container, subPath)
 	outFile, err := os.Create(objectFilepath)
@@ -535,6 +539,7 @@ func (l *LogCollector) filteringWithLabels(resourceGroup map[string][]apiv1.APIR
 	return resourceMap, nil
 }
 
+// admissionRegistrationGroup gets all the resources related admissionRegistration and writes their YAML
 func (l *LogCollector) admissionRegistrationGroup(apiGroups []*apiv1.APIGroup) error {
 	log.Info("Checking Admission Registration Group")
 	admissionGV := getGVByGroup(apiGroups, AdmissionRegistrationGroup, true)
@@ -560,6 +565,7 @@ func (l *LogCollector) admissionRegistrationGroup(apiGroups []*apiv1.APIGroup) e
 	return nil
 }
 
+// snapshotStorageGroup gets all the resources related snapshot storage and writes their YAML
 func (l *LogCollector) snapshotStorageGroup(apiGroups []*apiv1.APIGroup) error {
 	log.Info("Checking Snapshot Storage Group")
 	snapGV := getGVByGroup(apiGroups, SnapshotStorageGroup, true)
@@ -591,6 +597,7 @@ func (l *LogCollector) snapshotStorageGroup(apiGroups []*apiv1.APIGroup) error {
 	return nil
 }
 
+// getResourceGroup collects all the resources related to basic group such as batch and apps
 func (l *LogCollector) getResourceGroup() (map[string][]apiv1.APIResource, error) {
 
 	resourceGroup := make(map[string][]apiv1.APIResource)
@@ -617,6 +624,7 @@ func (l *LogCollector) getResourceGroup() (map[string][]apiv1.APIResource, error
 	return resourceGroup, nil
 }
 
+// clusterServiceVersion collects all the resources related to CSV and writes the YAML
 func (l *LogCollector) clusterServiceVersion(apiGroups []*apiv1.APIGroup) error {
 
 	log.Info("Checking Cluster Service Version")
@@ -640,6 +648,7 @@ func (l *LogCollector) clusterServiceVersion(apiGroups []*apiv1.APIGroup) error 
 	return nil
 }
 
+// apiExtensionGroup collects all the resources related to api extension and writes the YAML
 func (l *LogCollector) apiExtensionGroup(apiGroups []*apiv1.APIGroup) error {
 	log.Info("Checking API Extension Group")
 	apiExtGV := getGVByGroup(apiGroups, APIExtensionsGroup, true)
@@ -666,6 +675,7 @@ func (l *LogCollector) apiExtensionGroup(apiGroups []*apiv1.APIGroup) error {
 	return nil
 }
 
+// trilioGroup collects all the resources related to trilio and writes the YAML
 func (l *LogCollector) trilioGroup(apiGroups []*apiv1.APIGroup) error {
 	log.Info("Checking Trilio Group")
 	trilioGV := getGVByGroup(apiGroups, TriliovaultGroup, true)
@@ -690,6 +700,7 @@ func (l *LogCollector) trilioGroup(apiGroups []*apiv1.APIGroup) error {
 	return nil
 }
 
+// fetchAPIGroups returns the list of all API Groups of the supported resources for all groups and versions.
 func (l *LogCollector) fetchAPIGroups() (apiGroups []*apiv1.APIGroup, err error) {
 
 	log.Info("Fetching API Group version list")
@@ -706,6 +717,7 @@ func (l *LogCollector) fetchAPIGroups() (apiGroups []*apiv1.APIGroup, err error)
 	return apiGroups, nil
 }
 
+// CheckIsOpenshift checks whether the cluster is Openshift or not
 func (l *LogCollector) CheckIsOpenshift() bool {
 	_, err := l.disClient.ServerResourcesForGroupVersion("security.openshift.io/v1")
 	if err != nil {
@@ -716,6 +728,7 @@ func (l *LogCollector) CheckIsOpenshift() bool {
 	return true
 }
 
+// getResourceObjectsWithOwnerRef return all the objects which has ownerRef of CSV
 func (l *LogCollector) getResourceObjectsWithOwnerRef(resourcePath string,
 	resource *apiv1.APIResource) (objects unstructured.UnstructuredList) {
 	allObjects := l.getResourceObjects(resourcePath, resource)
