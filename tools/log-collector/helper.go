@@ -44,6 +44,8 @@ const (
 	ConversionNamespace = "trilio-conversion"
 	Pod                 = "Pod"
 	ControllerRevision  = "ControllerRevision"
+
+	LicenseKind = "License"
 )
 
 var (
