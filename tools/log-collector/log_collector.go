@@ -690,6 +690,10 @@ func (l *LogCollector) trilioGroup(apiGroups []*apiv1.APIGroup) error {
 			objectList := l.getResourceObjects(getAPIGroupVersionResourcePath(trilioGV[0]), &trilioGVResources[index])
 			resourceDir := filepath.Join(trilioGVResources[index].Kind)
 			for _, obj := range objectList.Items {
+				if obj.GetKind() == LicenseKind {
+					unstructured.RemoveNestedField(obj.Object, "spec", "key")
+					unstructured.RemoveNestedField(obj.Object, "metadata", "annotations")
+				}
 				eLrr := l.writeYaml(resourceDir, obj)
 				if eLrr != nil {
 					return eLrr
