@@ -19,19 +19,21 @@ import (
 )
 
 const (
-	TriliovaultGroup      = "triliovault.trilio.io"
-	CsiStorageGroup       = "csi.storage.k8s.io"
-	SnapshotStorageGroup  = "snapshot.storage.k8s.io"
-	ClusterServiceVersion = "clusterserviceversions"
+	TriliovaultGroup          = "triliovault.trilio.io"
+	CsiStorageGroup           = "csi.storage.k8s.io"
+	SnapshotStorageGroup      = "snapshot.storage.k8s.io"
+	ClusterServiceVersion     = "clusterserviceversions"
+	ClusterServiceVersionKind = "ClusterServiceVersion"
 
 	OperatorGroup              = "operators.coreos.com"
 	APIExtensionsGroup         = "apiextensions.k8s.io"
 	AdmissionRegistrationGroup = "admissionregistration.k8s.io/v1beta1"
 
-	StorageGv = "storage.k8s.io/v1"
-	CoreGv    = "v1"
-	BatchGv   = "batch/v1"
-	AppsGv    = "apps/v1"
+	StorageGv     = "storage.k8s.io/v1"
+	CoreGv        = "v1"
+	BatchGv       = "batch/v1"
+	BatchGv1beta1 = "batch/v1beta1"
+	AppsGv        = "apps/v1"
 
 	Namespaces          = "namespaces"
 	Events              = "events"
@@ -48,7 +50,7 @@ var (
 	scheme = runtime.NewScheme()
 
 	// CoreGRPResources ... List of core group resources collected by log collector
-	CoreGRPResources    = []string{"Pod", "PersistentVolumeClaim", "PersistentVolume", "Service"}
+	CoreGRPResources    = []string{"Pod", "PersistentVolumeClaim", "PersistentVolume", "Service", "ConfigMap"}
 	K8STrilioVaultLabel = map[string]string{"app.kubernetes.io/part-of": "k8s-triliovault"}
 )
 
@@ -59,35 +61,37 @@ type containerStat struct {
 
 // aggregateEvents aggregates events based on involved objects
 func aggregateEvents(eventObjects unstructured.UnstructuredList,
-	resourceMap map[string][]types.NamespacedName) (map[string]map[string]interface{}, error) {
+	resourceMap map[string][]types.NamespacedName) (map[string][]map[string]interface{}, error) {
 
-	eventsData := make(map[string]map[string]interface{})
+	eventsData := make(map[string][]map[string]interface{})
 	for _, eve := range eventObjects.Items {
 
 		apiVersion, _, aErr := unstructured.NestedString(eve.Object, "involvedObject", "apiVersion")
 		if aErr != nil {
-			log.Errorf("Unable to get event data of Object : %v", aErr)
+			log.Errorf("Unable to get event data of Object : %s", aErr.Error())
 			return nil, aErr
 		}
 
 		namespace, _, nErr := unstructured.NestedString(eve.Object, "involvedObject", "namespace")
 		if nErr != nil {
-			log.Errorf("Unable to get event data of Object : %v", nErr)
+			log.Errorf("Unable to get event data of Object : %s", nErr.Error())
 			return nil, nErr
+		}
+		if namespace == "" {
+			namespace = "default"
 		}
 
 		kind, _, kErr := unstructured.NestedString(eve.Object, "involvedObject", "kind")
 		if kErr != nil {
-			log.Errorf("Unable to get event data of Object : %v", kErr)
+			log.Errorf("Unable to get event data of Object : %s", kErr.Error())
 			return nil, kErr
 		}
 
 		name, _, naErr := unstructured.NestedString(eve.Object, "involvedObject", "name")
 		if naErr != nil {
-			log.Errorf("Unable to get event data of Object : %v", naErr)
+			log.Errorf("Unable to get event data of Object : %s", naErr.Error())
 			return nil, naErr
 		}
-
 		namespacedName := getNamespacedName(namespace, name)
 
 		// checking if kind and Namespaced Name exist in resourceMap
@@ -114,9 +118,10 @@ func aggregateEvents(eventObjects unstructured.UnstructuredList,
 			}
 
 			kindNameKey := fmt.Sprintf("%s/%s", strings.ToLower(kind), name)
+
 			tempMap := make(map[string]interface{})
 			tempMap[kindNameKey] = eve.Object
-			eventsData[namespace] = tempMap
+			eventsData[namespace] = append(eventsData[namespace], tempMap)
 		}
 	}
 	return eventsData, nil
@@ -151,7 +156,7 @@ func filterCRD(crdObjs unstructured.UnstructuredList) (unstructured.Unstructured
 		for in := range crdFilterGroup {
 			crdGroup, _, err := unstructured.NestedString(crdObjs.Items[index].Object, "spec", "group")
 			if err != nil {
-				log.Errorf("Unable to get the CRD Group field : %v", err)
+				log.Errorf("Unable to get the CRD Group field : %s", err.Error())
 				return filteredCRDObject, err
 			}
 			if crdFilterGroup[in] == crdGroup {
@@ -168,11 +173,10 @@ func getGVByGroup(apiGVList []*apiv1.APIGroup, groupName string, isPreferredVers
 	for index := range apiGVList {
 		if apiGVList[index].Name == groupName {
 			if isPreferredVersion {
-				return append(gvList, apiGVList[index].PreferredVersion.GroupVersion)
+				gvList = append(gvList, apiGVList[index].PreferredVersion.GroupVersion)
 			}
 			for in := range apiGVList[index].Versions {
 				gvList = append(gvList, apiGVList[index].Versions[in].GroupVersion)
-				return gvList
 			}
 		}
 	}
@@ -211,12 +215,22 @@ func getContainerStatusValue(containerStatus *corev1.ContainerStatus) (conStatOb
 	lastState := containerStatus.LastTerminationState
 	currentState := containerStatus.State
 
-	if lastState.Terminated != nil {
-		conStatObj.prev = true
+	if lastState.Waiting == nil {
+		if lastState.Terminated != nil || lastState.Running != nil {
+			conStatObj.prev = true
+		}
+	} else {
+		log.Errorf("Container %s Previous State is in Waiting", containerStatus.Name)
 	}
-	if currentState.Running != nil || lastState.Terminated != nil {
-		conStatObj.curr = true
+
+	if currentState.Waiting == nil {
+		if currentState.Terminated != nil || currentState.Running != nil {
+			conStatObj.curr = true
+		}
+	} else {
+		log.Errorf("Container %s Current State is in Waiting", containerStatus.Name)
 	}
+
 	return conStatObj
 }
 
@@ -242,11 +256,17 @@ func getContainers(podObject *corev1.Pod) map[string]containerStat {
 	containers := make(map[string]containerStat)
 	containerStatuses := podObject.Status.ContainerStatuses
 	for index := range containerStatuses {
-		containers[containerStatuses[index].Name] = getContainerStatusValue(&containerStatuses[index])
+		status := getContainerStatusValue(&containerStatuses[index])
+		if status.curr || status.prev {
+			containers[containerStatuses[index].Name] = status
+		}
 	}
 	containerStatuses = podObject.Status.InitContainerStatuses
 	for index := range containerStatuses {
-		containers[containerStatuses[index].Name] = getContainerStatusValue(&containerStatuses[index])
+		status := getContainerStatusValue(&containerStatuses[index])
+		if status.curr || status.prev {
+			containers[containerStatuses[index].Name] = status
+		}
 	}
 	return containers
 }
@@ -259,11 +279,11 @@ func getClient() (client.Client, *discovery.DiscoveryClient, *kubernetes.Clients
 
 	clientSet, err := kubernetes.NewForConfig(conFig)
 	if err != nil {
-		log.Fatalf("Unable to get access to K8S : %v", err)
+		log.Fatalf("Unable to get access to K8S : %s", err.Error())
 	}
 	kClient, kErr := client.New(conFig, client.Options{Scheme: scheme})
 	if kErr != nil {
-		log.Fatalf("Unable to get client : %v", kErr)
+		log.Fatalf("Unable to get client : %s", kErr.Error())
 	}
 	discClient, dErr := discovery.NewDiscoveryClientForConfig(conFig)
 	if dErr != nil {
@@ -291,6 +311,8 @@ func filterGroupResources(resources []apiv1.APIResource, group string) (filtered
 		} else if group == AppsGv && resources[index].Kind != ControllerRevision {
 			filteredResources = append(filteredResources, resources[index])
 		} else if group == BatchGv {
+			filteredResources = append(filteredResources, resources[index])
+		} else if group == BatchGv1beta1 {
 			filteredResources = append(filteredResources, resources[index])
 		}
 	}
