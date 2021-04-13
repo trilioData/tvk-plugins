@@ -68,13 +68,13 @@ func aggregateEvents(eventObjects unstructured.UnstructuredList,
 
 		apiVersion, _, aErr := unstructured.NestedString(eve.Object, "involvedObject", "apiVersion")
 		if aErr != nil {
-			log.Errorf("Unable to get event data of Object : %v", aErr)
+			log.Errorf("Unable to get event data of Object : %s", aErr.Error())
 			return nil, aErr
 		}
 
 		namespace, _, nErr := unstructured.NestedString(eve.Object, "involvedObject", "namespace")
 		if nErr != nil {
-			log.Errorf("Unable to get event data of Object : %v", nErr)
+			log.Errorf("Unable to get event data of Object : %s", nErr.Error())
 			return nil, nErr
 		}
 		if namespace == "" {
@@ -83,13 +83,13 @@ func aggregateEvents(eventObjects unstructured.UnstructuredList,
 
 		kind, _, kErr := unstructured.NestedString(eve.Object, "involvedObject", "kind")
 		if kErr != nil {
-			log.Errorf("Unable to get event data of Object : %v", kErr)
+			log.Errorf("Unable to get event data of Object : %s", kErr.Error())
 			return nil, kErr
 		}
 
 		name, _, naErr := unstructured.NestedString(eve.Object, "involvedObject", "name")
 		if naErr != nil {
-			log.Errorf("Unable to get event data of Object : %v", naErr)
+			log.Errorf("Unable to get event data of Object : %s", naErr.Error())
 			return nil, naErr
 		}
 		namespacedName := getNamespacedName(namespace, name)
@@ -156,7 +156,7 @@ func filterCRD(crdObjs unstructured.UnstructuredList) (unstructured.Unstructured
 		for in := range crdFilterGroup {
 			crdGroup, _, err := unstructured.NestedString(crdObjs.Items[index].Object, "spec", "group")
 			if err != nil {
-				log.Errorf("Unable to get the CRD Group field : %v", err)
+				log.Errorf("Unable to get the CRD Group field : %s", err.Error())
 				return filteredCRDObject, err
 			}
 			if crdFilterGroup[in] == crdGroup {
@@ -215,17 +215,22 @@ func getContainerStatusValue(containerStatus *corev1.ContainerStatus) (conStatOb
 	lastState := containerStatus.LastTerminationState
 	currentState := containerStatus.State
 
-	if currentState.Waiting == nil {
-		if lastState.Terminated != nil {
+	if lastState.Waiting == nil {
+		if lastState.Terminated != nil || lastState.Running != nil {
 			conStatObj.prev = true
-			conStatObj.curr = true
-		} else {
-			conStatObj.curr = true
 		}
-		return conStatObj
+	} else {
+		log.Errorf("Container %s Previous State is in Waiting", containerStatus.Name)
 	}
 
-	log.Errorf(" Container %v is in Waiting State", containerStatus.Name)
+	if currentState.Waiting == nil {
+		if currentState.Terminated != nil || currentState.Running != nil {
+			conStatObj.curr = true
+		}
+	} else {
+		log.Errorf("Container %s Current State is in Waiting", containerStatus.Name)
+	}
+
 	return conStatObj
 }
 
@@ -274,11 +279,11 @@ func getClient() (client.Client, *discovery.DiscoveryClient, *kubernetes.Clients
 
 	clientSet, err := kubernetes.NewForConfig(conFig)
 	if err != nil {
-		log.Fatalf("Unable to get access to K8S : %v", err)
+		log.Fatalf("Unable to get access to K8S : %s", err.Error())
 	}
 	kClient, kErr := client.New(conFig, client.Options{Scheme: scheme})
 	if kErr != nil {
-		log.Fatalf("Unable to get client : %v", kErr)
+		log.Fatalf("Unable to get client : %s", kErr.Error())
 	}
 	discClient, dErr := discovery.NewDiscoveryClientForConfig(conFig)
 	if dErr != nil {

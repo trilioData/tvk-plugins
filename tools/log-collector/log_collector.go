@@ -41,7 +41,7 @@ func (l *LogCollector) setLogsAndClient() error {
 	// Setting Log Level
 	level, lErr := log.ParseLevel(l.Loglevel)
 	if lErr != nil {
-		log.Errorf("Unable to Parse Log Level : %v", lErr)
+		log.Errorf("Unable to Parse Log Level : %s", lErr.Error())
 		return lErr
 	}
 	log.SetLevel(level)
@@ -137,7 +137,7 @@ func (l *LogCollector) CollectLogsAndDump() error {
 	log.Info("Writing and Filtering Logs")
 	resourceMap, fErr := l.filteringWithLabels(resourceGroup)
 	if fErr != nil {
-		log.Errorf("Unable to get labeled Objects : %v", fErr)
+		log.Errorf("Unable to get labeled Objects : %s", fErr.Error())
 		return fErr
 	}
 
@@ -146,20 +146,20 @@ func (l *LogCollector) CollectLogsAndDump() error {
 	eventObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(CoreGv), &eventResource)
 	events, aErr := aggregateEvents(eventObjects, resourceMap)
 	if aErr != nil {
-		log.Errorf("Unable to process Events : %v", aErr)
+		log.Errorf("Unable to process Events : %s", aErr.Error())
 		return aErr
 	}
 
 	eErr := l.writeEvents(events)
 	if eErr != nil {
-		log.Errorf("Unable to Write Events : %v", eErr)
+		log.Errorf("Unable to Write Events : %s", eErr.Error())
 		return eErr
 	}
 
 	// Zip Directory
 	zErr := l.zipDir()
 	if zErr != nil {
-		log.Errorf("Unable zip Directory : %v", zErr)
+		log.Errorf("Unable zip Directory : %s", zErr.Error())
 		return zErr
 	}
 
@@ -167,7 +167,7 @@ func (l *LogCollector) CollectLogsAndDump() error {
 	if l.CleanOutput {
 		err := os.RemoveAll(l.OutputDir)
 		if err != nil {
-			log.Errorf("Unable to clean directory : %v", err)
+			log.Errorf("Unable to clean directory : %s", err.Error())
 			return err
 		}
 	}
@@ -256,7 +256,7 @@ func (l *LogCollector) writeEvents(events map[string][]map[string]interface{}) e
 		if _, err := os.Stat(resourceDir); os.IsNotExist(err) {
 			mErr := os.MkdirAll(resourceDir, 0755)
 			if mErr != nil {
-				log.Errorf("Unable to create the directory : %v", mErr)
+				log.Errorf("Unable to create the directory : %s", mErr.Error())
 				return mErr
 			}
 		}
@@ -267,17 +267,17 @@ func (l *LogCollector) writeEvents(events map[string][]map[string]interface{}) e
 				objectFilePath := filepath.Join(resourceDir, key)
 				fp, err := os.Create(objectFilePath + ".yaml")
 				if err != nil {
-					log.Errorf("Unable to create the file : %v", err)
+					log.Errorf("Unable to create the file : %s", err.Error())
 					return err
 				}
 				buf, bErr := yaml.Marshal(value)
 				if bErr != nil {
-					log.Errorf("Unable to marshal the content : %v", bErr)
+					log.Errorf("Unable to marshal the content : %s", bErr.Error())
 					return bErr
 				}
 				_, fErr := fp.Write(buf)
 				if fErr != nil {
-					log.Errorf("Unable to write the contents : %v", fErr)
+					log.Errorf("Unable to write the contents : %s", fErr.Error())
 					return fErr
 				}
 			}
@@ -294,24 +294,24 @@ func (l *LogCollector) writeYaml(resourceDir string, obj unstructured.Unstructur
 	resourcePath := filepath.Join(l.OutputDir, resourceDir, objNs)
 	err := os.MkdirAll(resourcePath, 0755)
 	if err != nil {
-		log.Errorf("Unable to create the directory : %v", err)
+		log.Errorf("Unable to create the directory : %s", err.Error())
 		return err
 	}
 	objFilepath := filepath.Join(resourcePath, objName)
 	fp, fErr := os.Create(objFilepath + ".yaml")
 	if fErr != nil {
-		log.Errorf("Unable to create the file : %v", fErr)
+		log.Errorf("Unable to create the file : %s", fErr.Error())
 		return fErr
 	}
 	defer fp.Close()
 	buf, mErr := yaml.Marshal(obj.Object)
 	if mErr != nil {
-		log.Errorf("Unable to marshal the content : %v", mErr)
+		log.Errorf("Unable to marshal the content : %s", mErr.Error())
 		return mErr
 	}
 	_, bErr := fp.Write(buf)
 	if bErr != nil {
-		log.Errorf("Unable to write the content : %v", bErr)
+		log.Errorf("Unable to write the content : %s", bErr.Error())
 		return bErr
 	}
 	return nil
@@ -326,7 +326,7 @@ func (l *LogCollector) writeLogs(resourceDir string, obj unstructured.Unstructur
 	if _, err := os.Stat(resourcePath); os.IsNotExist(err) {
 		mErr := os.MkdirAll(resourcePath, 0755)
 		if mErr != nil {
-			log.Errorf("Unable to Create the Directory : %v", mErr)
+			log.Errorf("Unable to Create the Directory : %s", mErr.Error())
 			return mErr
 		}
 	}
@@ -335,10 +335,10 @@ func (l *LogCollector) writeLogs(resourceDir string, obj unstructured.Unstructur
 	err := l.k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: objNs}, &podObj)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			log.Errorf("%v", err)
+			log.Errorf("%s", err.Error())
 			return nil
 		}
-		log.Errorf("Unable to get the object : %v", err)
+		log.Errorf("Unable to get the object : %s", err.Error())
 		return err
 	}
 	containers := getContainers(&podObj)
@@ -385,14 +385,14 @@ func (l *LogCollector) writeLog(resourceDir, objNs, objName, container string, i
 	req := l.k8sClientSet.CoreV1().Pods(objNs).GetLogs(objName, &logOption)
 	podLogs, err := req.Stream(context.TODO())
 	if err != nil {
-		log.Errorf("Unable to get Logs for container %v : %v", container, err)
+		log.Errorf("Unable to get Logs for container %s : %s", container, err.Error())
 		return nil
 	}
 	defer podLogs.Close()
 
 	buf, err := ioutil.ReadAll(podLogs)
 	if err != nil {
-		log.Errorf("Error in copy information from podLogs to buffer : %v", err)
+		log.Errorf("Error in copy information from podLogs to buffer : %s", err.Error())
 		return err
 	}
 
@@ -405,13 +405,13 @@ func (l *LogCollector) writeLog(resourceDir, objNs, objName, container string, i
 	objectFilepath := fmt.Sprintf("%s.%s.%s.log", filepath.Join(resourceDir, objName), container, subPath)
 	outFile, err := os.Create(objectFilepath)
 	if err != nil {
-		log.Errorf("Error Creating Log File : %v", err)
+		log.Errorf("Error Creating Log File : %s", err.Error())
 		return err
 	}
 	defer outFile.Close()
 	_, err = outFile.Write(buf)
 	if err != nil {
-		log.Errorf("Unable to Write Pod Logs to the File : %v", err)
+		log.Errorf("Unable to Write Pod Logs to the File : %s", err.Error())
 		return err
 	}
 
@@ -422,10 +422,10 @@ func (l *LogCollector) writeLog(resourceDir, objNs, objName, container string, i
 func (l *LogCollector) zipDir() error {
 
 	file, err := os.Create(l.OutputDir + ".zip")
-	log.Infof("Creating Zip : %v.zip\n", l.OutputDir)
+	log.Infof("Creating Zip : %s.zip\n", l.OutputDir)
 
 	if err != nil {
-		log.Errorf("Error Creating zip File : %v", err)
+		log.Errorf("Error Creating zip File : %s", err.Error())
 		return err
 	}
 	defer file.Close()
@@ -461,13 +461,13 @@ func (l *LogCollector) zipDir() error {
 	}
 	err = filepath.Walk(l.OutputDir, walker)
 	if err != nil {
-		log.Errorf("Unable to walk thorugh directory : %v", err)
+		log.Errorf("Unable to walk thorugh directory : %s", err.Error())
 		return err
 	}
 	if l.CleanOutput {
 		err = os.RemoveAll(l.OutputDir)
 		if err != nil {
-			log.Errorf("Unable to remove directory : %v", err)
+			log.Errorf("Unable to remove directory : %s", err.Error())
 			return err
 		}
 	}
@@ -706,7 +706,7 @@ func (l *LogCollector) fetchAPIGroups() (apiGroups []*apiv1.APIGroup, err error)
 	log.Info("Fetching API Group version list")
 	apiGroups, _, err = l.disClient.ServerGroupsAndResources()
 	if err != nil {
-		log.Errorf("Unable to fetch API group version : %v", err)
+		log.Errorf("Unable to fetch API group version : %s", err.Error())
 		if !discovery.IsGroupDiscoveryFailedError(err) {
 			log.Error(err, "Error while getting the resource list from discovery client")
 			return apiGroups, err
