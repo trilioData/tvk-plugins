@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	apiv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
@@ -56,6 +57,9 @@ func (l *LogCollector) CollectLogsAndDump() error {
 	if lErr != nil {
 		return lErr
 	}
+
+	l.getClusterNodes()
+
 	log.Info("Checking Namespaces")
 	coreGV, cgErr := l.getAPIGVResources(CoreGv)
 	if cgErr != nil {
@@ -68,6 +72,11 @@ func (l *LogCollector) CollectLogsAndDump() error {
 	if len(l.Namespaces) != 0 && !l.isSubset(allNamespaces) {
 		log.Error("Specified namespaces doesn't exists in the cluster")
 		return nil
+	}
+
+	nErr := l.WriteNs(namespaceObjects)
+	if nErr != nil {
+		return nErr
 	}
 
 	if !contains(allNamespaces, ConversionNamespace) {
@@ -484,6 +493,8 @@ func (l *LogCollector) getResourceObjectsWithLabel(resourcePath string,
 			if checkLabelExist(objectLabel, K8STrilioVaultLabel) {
 				objects.Items = append(objects.Items, object)
 			}
+		} else if contains(nonTrilioResources, object.GetKind()) {
+			objects.Items = append(objects.Items, object)
 		}
 	}
 	return objects
@@ -747,4 +758,43 @@ func (l *LogCollector) getResourceObjectsWithOwnerRef(resourcePath string,
 		}
 	}
 	return objects
+}
+
+func (l *LogCollector) getClusterNodes() {
+
+	var nodeList unstructured.UnstructuredList
+	gvk := schema.GroupVersionKind{Kind: NodeKind, Version: CoreGv}
+	nodeList.SetGroupVersionKind(gvk)
+	err := l.k8sClient.List(context.Background(), &nodeList)
+	if err != nil {
+		log.Error("Unable to Fetch Node List")
+	}
+	for _, node := range nodeList.Items {
+		resourceDir := filepath.Join(node.GetKind())
+		yErr := l.writeYaml(resourceDir, node)
+		if yErr != nil {
+			log.Error("Unable to Write Node Yaml")
+		}
+	}
+}
+
+// WriteNs writes yaml of requested namespaces
+func (l *LogCollector) WriteNs(namespaceObjects unstructured.UnstructuredList) error {
+	for _, obj := range namespaceObjects.Items {
+		resourceDir := filepath.Join(obj.GetKind())
+		if !l.Clustered {
+			if contains(l.Namespaces, obj.GetName()) {
+				eLrr := l.writeYaml(resourceDir, obj)
+				if eLrr != nil {
+					return eLrr
+				}
+			}
+		} else {
+			eLrr := l.writeYaml(resourceDir, obj)
+			if eLrr != nil {
+				return eLrr
+			}
+		}
+	}
+	return nil
 }

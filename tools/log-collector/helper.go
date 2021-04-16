@@ -46,14 +46,18 @@ const (
 	ControllerRevision  = "ControllerRevision"
 
 	LicenseKind = "License"
+	NodeKind    = "Node"
 )
 
 var (
 	scheme = runtime.NewScheme()
 
 	// CoreGRPResources ... List of core group resources collected by log collector
-	CoreGRPResources    = []string{"Pod", "PersistentVolumeClaim", "PersistentVolume", "Service", "ConfigMap"}
+	CoreGRPResources = []string{"Pod", "PersistentVolumeClaim", "PersistentVolume", "Service",
+		"ConfigMap", "Namespace", "ResourceQuota", "LimitRange", "Node", "Endpoints"}
 	K8STrilioVaultLabel = map[string]string{"app.kubernetes.io/part-of": "k8s-triliovault"}
+
+	nonTrilioResources = []string{"ResourceQuota", "LimitRange"}
 )
 
 type containerStat struct {
