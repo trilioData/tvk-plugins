@@ -3,6 +3,7 @@ package logcollector
 import (
 	"archive/zip"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,7 +13,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apiv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -34,55 +35,22 @@ type LogCollector struct {
 	k8sClientSet *kubernetes.Clientset
 }
 
-// setLogsAndClient sets user bases log level for the log collector such as INFO, ERROR, DEBUG etc
-func (l *LogCollector) setLogsAndClient() error {
+// setClient initialize clients
+func (l *LogCollector) setClient() {
 	l.k8sClient, l.disClient, l.k8sClientSet = getClient()
 	l.disClient.LegacyPrefix = "/api/"
-
-	// Setting Log Level
-	level, lErr := log.ParseLevel(l.Loglevel)
-	if lErr != nil {
-		log.Errorf("Unable to Parse Log Level : %s", lErr.Error())
-		return lErr
-	}
-	log.SetLevel(level)
-
-	return nil
 }
 
 // CollectLogsAndDump collects call all the related resources of triliovault
 func (l *LogCollector) CollectLogsAndDump() error {
 
-	lErr := l.setLogsAndClient()
-	if lErr != nil {
-		return lErr
-	}
-
+	l.setClient()
 	l.getClusterNodes()
 
-	log.Info("Checking Namespaces")
-	coreGV, cgErr := l.getAPIGVResources(CoreGv)
-	if cgErr != nil {
-		return cgErr
-	}
-	namespaceResource := getResourceByName(coreGV, Namespaces)
-	namespaceObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(CoreGv), &namespaceResource)
-	allNamespaces := getObjectsNames(namespaceObjects)
-
-	if len(l.Namespaces) != 0 && !l.isSubset(allNamespaces) {
-		log.Error("Specified namespaces doesn't exists in the cluster")
+	nsErr := l.checkNamespaces()
+	if nsErr != nil {
+		log.Errorf("%s", nsErr.Error())
 		return nil
-	}
-
-	nErr := l.WriteNs(namespaceObjects)
-	if nErr != nil {
-		return nErr
-	}
-
-	if !contains(allNamespaces, ConversionNamespace) {
-		log.Info("Conversion namespace doesn't exist. Skipping check for its resources")
-	} else if !l.Clustered {
-		l.Namespaces = append(l.Namespaces, ConversionNamespace)
 	}
 
 	apiGroups, apiErr := l.fetchAPIGroups()
@@ -226,7 +194,7 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 			listPath := fmt.Sprintf("%s/namespaces/%s/%s", resourcePath, l.Namespaces[index], resource.Name)
 			err := l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&obj)
 			if err != nil {
-				if errors.IsNotFound(err) || errors.IsForbidden(err) {
+				if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
 					return objects
 				}
 				return unstructured.UnstructuredList{}
@@ -238,7 +206,7 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 	listPath := fmt.Sprintf("%s/%s", resourcePath, resource.Name)
 	err := l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&objects)
 	if err != nil {
-		if errors.IsNotFound(err) || errors.IsForbidden(err) {
+		if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
 			return objects
 		}
 		return unstructured.UnstructuredList{}
@@ -343,7 +311,7 @@ func (l *LogCollector) writeLogs(resourceDir string, obj unstructured.Unstructur
 	var podObj corev1.Pod
 	err := l.k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: objNs}, &podObj)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Errorf("%s", err.Error())
 			return nil
 		}
@@ -736,7 +704,7 @@ func (l *LogCollector) fetchAPIGroups() (apiGroups []*apiv1.APIGroup, err error)
 func (l *LogCollector) CheckIsOpenshift() bool {
 	_, err := l.disClient.ServerResourcesForGroupVersion("security.openshift.io/v1")
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return false
 		}
 	}
@@ -796,5 +764,29 @@ func (l *LogCollector) WriteNs(namespaceObjects unstructured.UnstructuredList) e
 			}
 		}
 	}
+	return nil
+}
+
+// checkNamespaces taken all given ns from user and checks the same in cluster and write it YAML's
+func (l *LogCollector) checkNamespaces() error {
+	log.Info("Checking Namespaces")
+	coreGV, cgErr := l.getAPIGVResources(CoreGv)
+	if cgErr != nil {
+		return cgErr
+	}
+	namespaceResource := getResourceByName(coreGV, Namespaces)
+	namespaceObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(CoreGv), &namespaceResource)
+	allNamespaces := getObjectsNames(namespaceObjects)
+
+	if len(l.Namespaces) != 0 && !l.isSubset(allNamespaces) {
+		err := errors.New("specified namespaces doesn't exists in the cluster")
+		return err
+	}
+
+	nErr := l.WriteNs(namespaceObjects)
+	if nErr != nil {
+		return nErr
+	}
+
 	return nil
 }
