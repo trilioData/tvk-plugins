@@ -593,6 +593,13 @@ func (l *LogCollector) getResourceGroup() (map[string][]apiv1.APIResource, error
 	}
 	resourceGroup[BatchGv1beta1] = batchGV1beta1
 
+	log.Info("Checking Extension Group")
+	extGV, exErr := l.getAPIGVResources(extension)
+	if exErr != nil {
+		return resourceGroup, exErr
+	}
+	resourceGroup[extension] = extGV
+
 	log.Info("Checking Apps Group")
 	appsGv, agErr := l.getAPIGVResources(AppsGv)
 	if agErr != nil {

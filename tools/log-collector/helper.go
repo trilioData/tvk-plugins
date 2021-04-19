@@ -34,6 +34,7 @@ const (
 	BatchGv       = "batch/v1"
 	BatchGv1beta1 = "batch/v1beta1"
 	AppsGv        = "apps/v1"
+	extension     = "extensions/v1beta1"
 
 	Namespaces          = "namespaces"
 	Events              = "events"
@@ -319,6 +320,8 @@ func filterGroupResources(resources []apiv1.APIResource, group string) (filtered
 		} else if group == BatchGv {
 			filteredResources = append(filteredResources, resources[index])
 		} else if group == BatchGv1beta1 {
+			filteredResources = append(filteredResources, resources[index])
+		} else if group == extension {
 			filteredResources = append(filteredResources, resources[index])
 		}
 	}
