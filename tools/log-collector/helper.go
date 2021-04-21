@@ -34,7 +34,7 @@ const (
 	BatchGv       = "batch/v1"
 	BatchGv1beta1 = "batch/v1beta1"
 	AppsGv        = "apps/v1"
-	extension     = "extensions/v1beta1"
+	networkingGv  = "networking.k8s.io/v1beta1"
 
 	Namespaces          = "namespaces"
 	Events              = "events"
@@ -42,12 +42,12 @@ const (
 	StorageClass        = "storageclasses"
 	VolumeSnapshot      = "volumesnapshots"
 	VolumeSnapshotClass = "volumesnapshotclasses"
-	ConversionNamespace = "trilio-conversion"
 	Pod                 = "Pod"
 	ControllerRevision  = "ControllerRevision"
 
 	LicenseKind = "License"
 	NodeKind    = "Node"
+	Verblist    = "list"
 )
 
 var (
@@ -205,17 +205,6 @@ func getResourcesGVByName(resourceMap map[string][]apiv1.APIResource, name strin
 	return gvResourceMap
 }
 
-// getResourceByName returns resource object for given resource name
-func getResourceByName(gVResources []apiv1.APIResource, name string) (matchedResource apiv1.APIResource) {
-
-	for index := range gVResources {
-		if gVResources[index].Name == name {
-			return gVResources[index]
-		}
-	}
-	return matchedResource
-}
-
 // getContainerStatusValue returns whether current and previous container present to capture logs
 func getContainerStatusValue(containerStatus *corev1.ContainerStatus) (conStatObj containerStat) {
 
@@ -242,9 +231,10 @@ func getContainerStatusValue(containerStatus *corev1.ContainerStatus) (conStatOb
 }
 
 // getObjectsNames returns list of names of objects
-func getObjectsNames(objects unstructured.UnstructuredList) (nameList []string) {
+func getObjectsNames(objects unstructured.UnstructuredList) map[string]string {
+	nameList := make(map[string]string)
 	for index := range objects.Items {
-		nameList = append(nameList, objects.Items[index].GetName())
+		nameList[objects.Items[index].GetName()] = objects.Items[index].GetName()
 	}
 	return nameList
 }
@@ -317,11 +307,7 @@ func filterGroupResources(resources []apiv1.APIResource, group string) (filtered
 			filteredResources = append(filteredResources, resources[index])
 		} else if group == AppsGv && resources[index].Kind != ControllerRevision {
 			filteredResources = append(filteredResources, resources[index])
-		} else if group == BatchGv {
-			filteredResources = append(filteredResources, resources[index])
-		} else if group == BatchGv1beta1 {
-			filteredResources = append(filteredResources, resources[index])
-		} else if group == extension {
+		} else if group == BatchGv || group == BatchGv1beta1 || group == networkingGv {
 			filteredResources = append(filteredResources, resources[index])
 		}
 	}

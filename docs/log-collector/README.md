@@ -103,3 +103,9 @@ Namespaces
 Nodes
 ```  
 and ```TrilioVault Resources```
+
+## OCP Specific Resources Considered for Log Collection:
+
+```  
+ClusterServiceVersion  
+```

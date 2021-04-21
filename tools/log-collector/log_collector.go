@@ -45,12 +45,16 @@ func (l *LogCollector) setClient() {
 func (l *LogCollector) CollectLogsAndDump() error {
 
 	l.setClient()
-	l.getClusterNodes()
 
 	nsErr := l.checkNamespaces()
 	if nsErr != nil {
 		log.Errorf("%s", nsErr.Error())
-		return nil
+		return nsErr
+	}
+
+	ndErr := l.getClusterNodes()
+	if ndErr != nil {
+		return ndErr
 	}
 
 	apiGroups, apiErr := l.fetchAPIGroups()
@@ -84,11 +88,11 @@ func (l *LogCollector) CollectLogsAndDump() error {
 	}
 
 	log.Info("Checking Storage Group")
-	storageGVResources, stErr := l.getAPIGVResources(StorageGv)
+	scResource, stErr := l.getAPIGVResource(StorageGv, StorageClass)
 	if stErr != nil {
 		return stErr
 	}
-	scResource := getResourceByName(storageGVResources, StorageClass)
+
 	scObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(StorageGv), &scResource)
 
 	for _, sc := range scObjects.Items {
@@ -119,7 +123,10 @@ func (l *LogCollector) CollectLogsAndDump() error {
 	}
 
 	log.Info("Fetching Resources Events")
-	eventResource := getResourceByName(coreGVResources, Events)
+	eventResource, evErr := l.getAPIGVResource(CoreGv, Events)
+	if evErr != nil {
+		return evErr
+	}
 	eventObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(CoreGv), &eventResource)
 	events, aErr := aggregateEvents(eventObjects, resourceMap)
 	if aErr != nil {
@@ -162,7 +169,7 @@ func (l *LogCollector) getAPIGVResources(apiGroupVersion string) (gVResources []
 
 	for index := range gVResourcesList.APIResources {
 		for in := range gVResourcesList.APIResources[index].Verbs {
-			if gVResourcesList.APIResources[index].Verbs[in] == "list" {
+			if gVResourcesList.APIResources[index].Verbs[in] == Verblist {
 				gVResources = append(gVResources, gVResourcesList.APIResources[index])
 			}
 		}
@@ -195,6 +202,7 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 			err := l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&obj)
 			if err != nil {
 				if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
+					log.Errorf("%s", err.Error())
 					return objects
 				}
 				return unstructured.UnstructuredList{}
@@ -207,6 +215,7 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 	err := l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&objects)
 	if err != nil {
 		if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
+			log.Errorf("%s", err.Error())
 			return objects
 		}
 		return unstructured.UnstructuredList{}
@@ -338,11 +347,7 @@ func (l *LogCollector) writeLogs(resourceDir string, obj unstructured.Unstructur
 }
 
 // isSubset checks whether the given namespaces is a subset of all Namespaces in cluster
-func (l *LogCollector) isSubset(second []string) bool {
-	set := make(map[string]string)
-	for _, value := range second {
-		set[value] = value
-	}
+func (l *LogCollector) isSubset(set map[string]string) bool {
 	for _, v := range l.Namespaces {
 		if _, ok := set[v]; !ok {
 			return false
@@ -485,12 +490,12 @@ func (l *LogCollector) filteringWithLabels(resourceGroup map[string][]apiv1.APIR
 
 		for index := range resources {
 			var resObjects unstructured.UnstructuredList
-			res := getResourceByName(resources, resources[index].Name)
-			resObject := l.getResourceObjectsWithLabel(getAPIGroupVersionResourcePath(group), &res)
+			kind := resources[index].Kind
+			resObject := l.getResourceObjectsWithLabel(getAPIGroupVersionResourcePath(group), &resources[index])
 			resObjects.Items = append(resObjects.Items, resObject.Items...)
 
 			if l.CheckIsOpenshift() {
-				olmObj := l.getResourceObjectsWithOwnerRef(getAPIGroupVersionResourcePath(group), &res)
+				olmObj := l.getResourceObjectsWithOwnerRef(getAPIGroupVersionResourcePath(group), &resources[index])
 				resObjects.Items = append(resObjects.Items, olmObj.Items...)
 			}
 
@@ -499,10 +504,10 @@ func (l *LogCollector) filteringWithLabels(resourceGroup map[string][]apiv1.APIR
 				oName := obj.GetName()
 				oNs := obj.GetNamespace()
 				nsName = append(nsName, types.NamespacedName{Name: oName, Namespace: oNs})
-				resourceMap[res.Kind] = nsName
+				resourceMap[kind] = nsName
 
-				resourceDir := filepath.Join(res.Kind)
-				if res.Kind == Pod {
+				resourceDir := filepath.Join(kind)
+				if kind == Pod {
 					eLrr := l.writeLogs(resourceDir, obj)
 					if eLrr != nil {
 						return nil, eLrr
@@ -549,11 +554,11 @@ func (l *LogCollector) snapshotStorageGroup(apiGroups []*apiv1.APIGroup) error {
 	log.Info("Checking Snapshot Storage Group")
 	snapGV := getGVByGroup(apiGroups, SnapshotStorageGroup, true)
 	if snapGV[0] != "" {
-		snapGVResources, err := l.getAPIGVResources(snapGV[0])
+		volSnapResource, err := l.getAPIGVResource(snapGV[0], VolumeSnapshot)
 		if err != nil {
 			return err
 		}
-		volSnapResource := getResourceByName(snapGVResources, VolumeSnapshot)
+
 		volSnapObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(snapGV[0]), &volSnapResource)
 		for _, obj := range volSnapObjects.Items {
 			resourceDir := filepath.Join(obj.GetKind())
@@ -563,7 +568,11 @@ func (l *LogCollector) snapshotStorageGroup(apiGroups []*apiv1.APIGroup) error {
 			}
 		}
 
-		volSnapClassResource := getResourceByName(snapGVResources, VolumeSnapshotClass)
+		volSnapClassResource, sErr := l.getAPIGVResource(snapGV[0], VolumeSnapshotClass)
+		if sErr != nil {
+			return sErr
+		}
+
 		volSnapClassObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(snapGV[0]), &volSnapClassResource)
 		for _, obj := range volSnapClassObjects.Items {
 			resourceDir := filepath.Join(obj.GetKind())
@@ -594,11 +603,11 @@ func (l *LogCollector) getResourceGroup() (map[string][]apiv1.APIResource, error
 	resourceGroup[BatchGv1beta1] = batchGV1beta1
 
 	log.Info("Checking Extension Group")
-	extGV, exErr := l.getAPIGVResources(extension)
+	extGV, exErr := l.getAPIGVResources(networkingGv)
 	if exErr != nil {
 		return resourceGroup, exErr
 	}
-	resourceGroup[extension] = extGV
+	resourceGroup[networkingGv] = extGV
 
 	log.Info("Checking Apps Group")
 	appsGv, agErr := l.getAPIGVResources(AppsGv)
@@ -639,11 +648,11 @@ func (l *LogCollector) apiExtensionGroup(apiGroups []*apiv1.APIGroup) error {
 	log.Info("Checking API Extension Group")
 	apiExtGV := getGVByGroup(apiGroups, APIExtensionsGroup, true)
 	if len(apiExtGV) != 0 {
-		apiExtGVResources, apErr := l.getAPIGVResources(apiExtGV[0])
+		crdResource, apErr := l.getAPIGVResource(apiExtGV[0], CRD)
 		if apErr != nil {
 			return apErr
 		}
-		crdResource := getResourceByName(apiExtGVResources, CRD)
+
 		crdObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(apiExtGV[0]), &crdResource)
 		crdObjects, cErr := filterCRD(crdObjects)
 		if cErr != nil {
@@ -735,7 +744,7 @@ func (l *LogCollector) getResourceObjectsWithOwnerRef(resourcePath string,
 	return objects
 }
 
-func (l *LogCollector) getClusterNodes() {
+func (l *LogCollector) getClusterNodes() error {
 
 	var nodeList unstructured.UnstructuredList
 	gvk := schema.GroupVersionKind{Kind: NodeKind, Version: CoreGv}
@@ -743,14 +752,18 @@ func (l *LogCollector) getClusterNodes() {
 	err := l.k8sClient.List(context.Background(), &nodeList)
 	if err != nil {
 		log.Error("Unable to Fetch Node List")
+		return err
 	}
 	for _, node := range nodeList.Items {
 		resourceDir := filepath.Join(node.GetKind())
 		yErr := l.writeYaml(resourceDir, node)
 		if yErr != nil {
 			log.Error("Unable to Write Node Yaml")
+			return yErr
 		}
 	}
+
+	return nil
 }
 
 // WriteNs writes yaml of requested namespaces
@@ -777,11 +790,11 @@ func (l *LogCollector) WriteNs(namespaceObjects unstructured.UnstructuredList) e
 // checkNamespaces taken all given ns from user and checks the same in cluster and write it YAML's
 func (l *LogCollector) checkNamespaces() error {
 	log.Info("Checking Namespaces")
-	coreGV, cgErr := l.getAPIGVResources(CoreGv)
+	namespaceResource, cgErr := l.getAPIGVResource(CoreGv, Namespaces)
 	if cgErr != nil {
 		return cgErr
 	}
-	namespaceResource := getResourceByName(coreGV, Namespaces)
+
 	namespaceObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(CoreGv), &namespaceResource)
 	allNamespaces := getObjectsNames(namespaceObjects)
 
@@ -796,4 +809,25 @@ func (l *LogCollector) checkNamespaces() error {
 	}
 
 	return nil
+}
+
+// getApiGVResource returns resource for given resourceName
+func (l *LogCollector) getAPIGVResource(apiGroupVersion, resourceName string) (gVResources apiv1.APIResource, err error) {
+
+	var gVResourcesList *apiv1.APIResourceList
+	gVResourcesList, err = l.disClient.ServerResourcesForGroupVersion(apiGroupVersion)
+	if err != nil {
+		return gVResources, err
+	}
+
+	for index := range gVResourcesList.APIResources {
+		if resourceName == gVResourcesList.APIResources[index].Name {
+			for in := range gVResourcesList.APIResources[index].Verbs {
+				if gVResourcesList.APIResources[index].Verbs[in] == Verblist {
+					return gVResourcesList.APIResources[index], nil
+				}
+			}
+		}
+	}
+	return gVResources, nil
 }

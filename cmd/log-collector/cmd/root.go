@@ -95,6 +95,7 @@ func runLogCollector(*cobra.Command, []string) error {
 	}
 	err := logCollector.CollectLogsAndDump()
 	if err != nil {
+		log.Errorf("%s", err.Error())
 		return err
 	}
 
