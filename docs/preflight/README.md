@@ -91,5 +91,19 @@ The following checks included in preflight:
 | Parameter                 | Default       | Description   |    
 | :------------------------ |:-------------:| :-------------|  
 | --storageclass          |             |Name of storage class being used in k8s cluster (Needed)
-| --snapshotclass          |            |Name of volume snapshot class being used in k8s cluster (Needed)
+| --snapshotclass          |            |Name of volume snapshot class being used in k8s cluster (Optional)
 | --kubeconfig            |   ~/.kube/config             |Kubeconfig path, if not given default is used by kubectl (Optional)
+
+## Examples
+
+- With `--snapshotclass`:
+
+```shell script
+kubectl tvk-preflight --storageclass <storageclass name> --snapshotclass <volumeSnapshotClass name>
+```
+
+- Without `--snapshotclass`:
+
+```shell script
+kubectl tvk-preflight --storageclass <storageclass name>
+```
