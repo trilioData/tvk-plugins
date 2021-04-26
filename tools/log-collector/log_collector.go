@@ -48,7 +48,6 @@ func (l *LogCollector) CollectLogsAndDump() error {
 
 	nsErr := l.checkNamespaces()
 	if nsErr != nil {
-		log.Errorf("%s", nsErr.Error())
 		return nsErr
 	}
 
@@ -87,20 +86,9 @@ func (l *LogCollector) CollectLogsAndDump() error {
 		return tErr
 	}
 
-	log.Info("Checking Storage Group")
-	scResource, stErr := l.getAPIGVResource(StorageGv, StorageClass)
+	stErr := l.checkingStorageGroup()
 	if stErr != nil {
 		return stErr
-	}
-
-	scObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(StorageGv), &scResource)
-
-	for _, sc := range scObjects.Items {
-		resourceDir := filepath.Join(scResource.Kind)
-		eLrr := l.writeYaml(resourceDir, sc)
-		if eLrr != nil {
-			return eLrr
-		}
 	}
 
 	resourceGroup, rErr := l.getResourceGroup()
@@ -115,35 +103,19 @@ func (l *LogCollector) CollectLogsAndDump() error {
 	}
 	resourceGroup[CoreGv] = coreGVResources
 
-	log.Info("Writing and Filtering Logs")
 	resourceMap, fErr := l.filteringWithLabels(resourceGroup)
 	if fErr != nil {
-		log.Errorf("Unable to get labeled Objects : %s", fErr.Error())
 		return fErr
 	}
 
-	log.Info("Fetching Resources Events")
-	eventResource, evErr := l.getAPIGVResource(CoreGv, Events)
+	evErr := l.getResourceEvents(resourceMap)
 	if evErr != nil {
 		return evErr
-	}
-	eventObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(CoreGv), &eventResource)
-	events, aErr := aggregateEvents(eventObjects, resourceMap)
-	if aErr != nil {
-		log.Errorf("Unable to process Events : %s", aErr.Error())
-		return aErr
-	}
-
-	eErr := l.writeEvents(events)
-	if eErr != nil {
-		log.Errorf("Unable to Write Events : %s", eErr.Error())
-		return eErr
 	}
 
 	// Zip Directory
 	zErr := l.zipDir()
 	if zErr != nil {
-		log.Errorf("Unable zip Directory : %s", zErr.Error())
 		return zErr
 	}
 
@@ -151,7 +123,6 @@ func (l *LogCollector) CollectLogsAndDump() error {
 	if l.CleanOutput {
 		err := os.RemoveAll(l.OutputDir)
 		if err != nil {
-			log.Errorf("Unable to clean directory : %s", err.Error())
 			return err
 		}
 	}
@@ -202,7 +173,7 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 			err := l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&obj)
 			if err != nil {
 				if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
-					log.Errorf("%s", err.Error())
+					log.Warnf("%s", err.Error())
 					return objects
 				}
 				return unstructured.UnstructuredList{}
@@ -215,7 +186,7 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 	err := l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&objects)
 	if err != nil {
 		if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
-			log.Errorf("%s", err.Error())
+			log.Warnf("%s", err.Error())
 			return objects
 		}
 		return unstructured.UnstructuredList{}
@@ -321,7 +292,7 @@ func (l *LogCollector) writeLogs(resourceDir string, obj unstructured.Unstructur
 	err := l.k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: objNs}, &podObj)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			log.Errorf("%s", err.Error())
+			log.Warnf("%s", err.Error())
 			return nil
 		}
 		log.Errorf("Unable to get the object : %s", err.Error())
@@ -483,6 +454,7 @@ func (l *LogCollector) filteringWithLabels(resourceGroup map[string][]apiv1.APIR
 	// 4. Collecting pod names specifically that is later required by events
 	// 5. Collecting list of all resource objects and printing their yamls in their respective resource folder under
 	//    their respective namespaces. In case of pods, logs are also collected
+	log.Info("Writing and Filtering Logs")
 	resourceMap := make(map[string][]types.NamespacedName)
 	var nsName []types.NamespacedName
 	for group, resList := range resourceGroup {
@@ -705,7 +677,6 @@ func (l *LogCollector) fetchAPIGroups() (apiGroups []*apiv1.APIGroup, err error)
 	log.Info("Fetching API Group version list")
 	apiGroups, _, err = l.disClient.ServerGroupsAndResources()
 	if err != nil {
-		log.Errorf("Unable to fetch API group version : %s", err.Error())
 		if !discovery.IsGroupDiscoveryFailedError(err) {
 			log.Error(err, "Error while getting the resource list from discovery client")
 			return apiGroups, err
@@ -812,12 +783,12 @@ func (l *LogCollector) checkNamespaces() error {
 }
 
 // getApiGVResource returns resource for given resourceName
-func (l *LogCollector) getAPIGVResource(apiGroupVersion, resourceName string) (gVResources apiv1.APIResource, err error) {
+func (l *LogCollector) getAPIGVResource(apiGroupVersion, resourceName string) (gVResource apiv1.APIResource, err error) {
 
 	var gVResourcesList *apiv1.APIResourceList
 	gVResourcesList, err = l.disClient.ServerResourcesForGroupVersion(apiGroupVersion)
 	if err != nil {
-		return gVResources, err
+		return gVResource, err
 	}
 
 	for index := range gVResourcesList.APIResources {
@@ -829,5 +800,46 @@ func (l *LogCollector) getAPIGVResource(apiGroupVersion, resourceName string) (g
 			}
 		}
 	}
-	return gVResources, nil
+	return gVResource, nil
+}
+
+// checkingStorageGroup get all storage classes and Write it's YAML
+func (l *LogCollector) checkingStorageGroup() error {
+	log.Info("Checking Storage Group")
+	scResource, stErr := l.getAPIGVResource(StorageGv, StorageClass)
+	if stErr != nil {
+		return stErr
+	}
+	scObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(StorageGv), &scResource)
+
+	for _, sc := range scObjects.Items {
+		resourceDir := filepath.Join(scResource.Kind)
+		eLrr := l.writeYaml(resourceDir, sc)
+		if eLrr != nil {
+			return eLrr
+		}
+	}
+	return nil
+}
+
+// getResourceEvents write YAML's for all events of resources related to trilio
+func (l *LogCollector) getResourceEvents(resourceMap map[string][]types.NamespacedName) error {
+	log.Info("Fetching Resources Events")
+	eventResource, evErr := l.getAPIGVResource(CoreGv, Events)
+	if evErr != nil {
+		return evErr
+	}
+	eventObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(CoreGv), &eventResource)
+	events, aErr := aggregateEvents(eventObjects, resourceMap)
+	if aErr != nil {
+		log.Errorf("Unable to process Events : %s", aErr.Error())
+		return aErr
+	}
+
+	eErr := l.writeEvents(events)
+	if eErr != nil {
+		log.Errorf("Unable to Write Events : %s", eErr.Error())
+		return eErr
+	}
+	return nil
 }
