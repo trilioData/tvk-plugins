@@ -326,8 +326,8 @@ func (l *LogCollector) filterResourceObjects(resourcePath string,
 	var allObjects unstructured.UnstructuredList
 
 	if (!resource.Namespaced && contains(clusteredResources, resource.Kind)) ||
-		resource.Namespaced {
-
+		(resource.Namespaced && !contains(excludeResources, resource.Kind)) {
+		log.Infof("Fetching '%s' Resource", resource.Kind)
 		allObjects = l.getResourceObjects(resourcePath, resource)
 
 		if resource.Name == CRD {
@@ -391,7 +391,10 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 			resObjects.Items = append(resObjects.Items, resObject.Items...)
 
 			if l.CheckIsOpenshift() {
-				olmObj := l.getResourceObjectsWithOwnerRef(getAPIGroupVersionResourcePath(groupVersion), &resources[index])
+				olmObj, oErr := l.getResourceObjectsWithOwnerRef(getAPIGroupVersionResourcePath(groupVersion), &resources[index])
+				if oErr != nil {
+					return oErr
+				}
 				resObjects.Items = append(resObjects.Items, olmObj.Items...)
 			}
 
@@ -504,19 +507,43 @@ func (l *LogCollector) CheckIsOpenshift() bool {
 
 // getResourceObjectsWithOwnerRef return all the objects which has ownerRef of CSV
 func (l *LogCollector) getResourceObjectsWithOwnerRef(resourcePath string,
-	resource *apiv1.APIResource) (objects unstructured.UnstructuredList) {
+	resource *apiv1.APIResource) (objects unstructured.UnstructuredList, err error) {
 	allObjects := l.getResourceObjects(resourcePath, resource)
 
 	for _, object := range allObjects.Items {
+
+		if object.GetKind() == SubscriptionKind {
+			startingCSV, _, err := unstructured.NestedString(object.Object, "spec", "startingCSV")
+			if err != nil {
+				log.Errorf("Unable to get startingCSV : %s", err.Error())
+				return objects, err
+			}
+			name, _, nErr := unstructured.NestedString(object.Object, "spec", "name")
+			if nErr != nil {
+				log.Errorf("Unable to get name : %s", nErr.Error())
+				return objects, err
+			}
+
+			if strings.HasPrefix(startingCSV, TrilioPrefix) &&
+				strings.HasPrefix(name, TrilioPrefix) {
+				objects.Items = append(objects.Items, object)
+			}
+		}
+
 		ownerRefs := object.GetOwnerReferences()
 		for idx := range ownerRefs {
-			if strings.HasPrefix(ownerRefs[idx].Name, "k8s-triliovault") &&
-				ownerRefs[idx].Kind == ClusterServiceVersionKind {
+			// Condition Check for CSV as OwnerRef or Subscription as OwnerRef (In Case of InstallPlan)
+			if (strings.HasPrefix(ownerRefs[idx].Name, TrilioPrefix) &&
+				ownerRefs[idx].Kind == ClusterServiceVersionKind &&
+				!contains(excludeResources, object.GetKind())) ||
+				(ownerRefs[idx].Kind == SubscriptionKind &&
+					strings.HasPrefix(ownerRefs[idx].Name, TrilioPrefix) &&
+					object.GetKind() == InstallPlanKind) {
 				objects.Items = append(objects.Items, object)
 			}
 		}
 	}
-	return objects
+	return objects, nil
 }
 
 // checkNamespaces taken all given ns from user and checks the same in cluster and write it YAML's

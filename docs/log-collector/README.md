@@ -93,12 +93,15 @@ StatefulSet
 PersistentVolumeClaims  
 PersistentVolumes  
 Services  
+ServiceAccounts
 Endpoints
 Ingress
 Events
 ConfigMap
 LimitRange
 ResourceQuota
+Role
+RoleBinding
 Namespaces
 Nodes
 ```  
@@ -108,4 +111,9 @@ and ```TrilioVault Resources```
 
 ```  
 ClusterServiceVersion  
+CatalogSource
+InstallPlan
+OperatorCondition
+Route
+Subscription
 ```

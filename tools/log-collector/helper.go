@@ -25,23 +25,28 @@ const (
 	ClusterServiceVersionKind = "ClusterServiceVersion"
 	TriliovaultGroupVersion   = "triliovault.trilio.io/v1"
 
-	CoreGv     = "v1"
-	Events     = "events"
-	CRD        = "customresourcedefinitions"
-	Namespaces = "namespaces"
-	Pod        = "Pod"
+	CoreGv           = "v1"
+	Events           = "events"
+	CRD              = "customresourcedefinitions"
+	Namespaces       = "namespaces"
+	Pod              = "Pod"
+	SubscriptionKind = "Subscription"
+	InstallPlanKind  = "InstallPlan"
 
 	LicenseKind = "License"
 	Verblist    = "list"
+
+	TrilioPrefix = "k8s-triliovault"
 )
 
 var (
 	scheme = runtime.NewScheme()
 
-	K8STrilioVaultLabel = map[string]string{"app.kubernetes.io/part-of": "k8s-triliovault"}
+	K8STrilioVaultLabel = map[string]string{"app.kubernetes.io/part-of": TrilioPrefix}
 	nonLabeledResources = []string{"ResourceQuota", "LimitRange", "VolumeSnapshot", "ClusterServiceVersion"}
 	clusteredResources  = []string{"Node", "Namespace", "CustomResourceDefinition", "StorageClass",
 		"VolumeSnapshotClass"}
+	excludeResources = []string{"Secret", "PackageManifest"}
 )
 
 type containerStat struct {
@@ -131,7 +136,7 @@ func filterCSV(csvObjects unstructured.UnstructuredList) unstructured.Unstructur
 
 	var filteredCSVObject unstructured.UnstructuredList
 	for index := range csvObjects.Items {
-		if strings.HasPrefix(csvObjects.Items[index].GetName(), "k8s-triliovault") {
+		if strings.HasPrefix(csvObjects.Items[index].GetName(), TrilioPrefix) {
 			filteredCSVObject.Items = append(filteredCSVObject.Items, csvObjects.Items[index])
 		}
 	}
@@ -274,7 +279,6 @@ func filterObjectsOnLabel(allObjects unstructured.UnstructuredList) (objects uns
 	for _, object := range allObjects.Items {
 		objectLabel := object.GetLabels()
 		if len(objectLabel) != 0 && checkLabelExist(objectLabel, K8STrilioVaultLabel) {
-			log.Infof("Fetching '%s' Resource", object.GetKind())
 			objects.Items = append(objects.Items, object)
 		}
 		if contains(nonLabeledResources, object.GetKind()) {
