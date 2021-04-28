@@ -3,6 +3,7 @@ package logcollector
 import (
 	"archive/zip"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,7 +13,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apiv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,133 +34,35 @@ type LogCollector struct {
 	k8sClientSet *kubernetes.Clientset
 }
 
-// setLogsAndClient sets user bases log level for the log collector such as INFO, ERROR, DEBUG etc
-func (l *LogCollector) setLogsAndClient() error {
+// setClient initialize clients
+func (l *LogCollector) setClient() {
 	l.k8sClient, l.disClient, l.k8sClientSet = getClient()
 	l.disClient.LegacyPrefix = "/api/"
-
-	// Setting Log Level
-	level, lErr := log.ParseLevel(l.Loglevel)
-	if lErr != nil {
-		log.Errorf("Unable to Parse Log Level : %s", lErr.Error())
-		return lErr
-	}
-	log.SetLevel(level)
-
-	return nil
 }
 
 // CollectLogsAndDump collects call all the related resources of triliovault
 func (l *LogCollector) CollectLogsAndDump() error {
 
-	lErr := l.setLogsAndClient()
-	if lErr != nil {
-		return lErr
-	}
-	log.Info("Checking Namespaces")
-	coreGV, cgErr := l.getAPIGVResources(CoreGv)
-	if cgErr != nil {
-		return cgErr
-	}
-	namespaceResource := getResourceByName(coreGV, Namespaces)
-	namespaceObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(CoreGv), &namespaceResource)
-	allNamespaces := getObjectsNames(namespaceObjects)
+	l.setClient()
 
-	if len(l.Namespaces) != 0 && !l.isSubset(allNamespaces) {
-		log.Error("Specified namespaces doesn't exists in the cluster")
-		return nil
+	nsErr := l.checkNamespaces()
+	if nsErr != nil {
+		return nsErr
 	}
 
-	if !contains(allNamespaces, ConversionNamespace) {
-		log.Info("Conversion namespace doesn't exist. Skipping check for its resources")
-	} else if !l.Clustered {
-		l.Namespaces = append(l.Namespaces, ConversionNamespace)
-	}
-
-	apiGroups, apiErr := l.fetchAPIGroups()
+	resourceMapList, apiErr := l.getAPIResourceList()
 	if apiErr != nil {
 		return apiErr
 	}
 
-	cErr := l.clusterServiceVersion(apiGroups)
-	if cErr != nil {
-		return cErr
-	}
-
-	apErr := l.apiExtensionGroup(apiGroups)
-	if apErr != nil {
-		return apErr
-	}
-
-	sErr := l.snapshotStorageGroup(apiGroups)
-	if sErr != nil {
-		return sErr
-	}
-
-	arErr := l.admissionRegistrationGroup(apiGroups)
-	if arErr != nil {
-		return arErr
-	}
-
-	tErr := l.trilioGroup(apiGroups)
-	if tErr != nil {
-		return tErr
-	}
-
-	log.Info("Checking Storage Group")
-	storageGVResources, stErr := l.getAPIGVResources(StorageGv)
-	if stErr != nil {
-		return stErr
-	}
-	scResource := getResourceByName(storageGVResources, StorageClass)
-	scObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(StorageGv), &scResource)
-
-	for _, sc := range scObjects.Items {
-		resourceDir := filepath.Join(scResource.Kind)
-		eLrr := l.writeYaml(resourceDir, sc)
-		if eLrr != nil {
-			return eLrr
-		}
-	}
-
-	resourceGroup, rErr := l.getResourceGroup()
-	if rErr != nil {
-		return rErr
-	}
-
-	log.Info("Checking Core Group")
-	coreGVResources, cgvErr := l.getAPIGVResources(CoreGv)
-	if cgvErr != nil {
-		return cgvErr
-	}
-	resourceGroup[CoreGv] = coreGVResources
-
-	log.Info("Writing and Filtering Logs")
-	resourceMap, fErr := l.filteringWithLabels(resourceGroup)
+	fErr := l.filteringResources(resourceMapList)
 	if fErr != nil {
-		log.Errorf("Unable to get labeled Objects : %s", fErr.Error())
 		return fErr
-	}
-
-	log.Info("Fetching Resources Events")
-	eventResource := getResourceByName(coreGVResources, Events)
-	eventObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(CoreGv), &eventResource)
-	events, aErr := aggregateEvents(eventObjects, resourceMap)
-	if aErr != nil {
-		log.Errorf("Unable to process Events : %s", aErr.Error())
-		return aErr
-	}
-
-	eErr := l.writeEvents(events)
-	if eErr != nil {
-		log.Errorf("Unable to Write Events : %s", eErr.Error())
-		return eErr
 	}
 
 	// Zip Directory
 	zErr := l.zipDir()
 	if zErr != nil {
-		log.Errorf("Unable zip Directory : %s", zErr.Error())
 		return zErr
 	}
 
@@ -167,47 +70,12 @@ func (l *LogCollector) CollectLogsAndDump() error {
 	if l.CleanOutput {
 		err := os.RemoveAll(l.OutputDir)
 		if err != nil {
-			log.Errorf("Unable to clean directory : %s", err.Error())
 			return err
 		}
 	}
 	return nil
 }
 
-// getApiGVResources returns list of resources for given group version
-func (l *LogCollector) getAPIGVResources(apiGroupVersion string) (gVResources []apiv1.APIResource, err error) {
-
-	var gVResourcesList *apiv1.APIResourceList
-	gVResourcesList, err = l.disClient.ServerResourcesForGroupVersion(apiGroupVersion)
-	if err != nil {
-		return gVResources, err
-	}
-
-	for index := range gVResourcesList.APIResources {
-		for in := range gVResourcesList.APIResources[index].Verbs {
-			if gVResourcesList.APIResources[index].Verbs[in] == "list" {
-				gVResources = append(gVResources, gVResourcesList.APIResources[index])
-			}
-		}
-	}
-	return gVResources, nil
-}
-
-// getApiGVResourcesMap returns list of resources for given group version
-func (l *LogCollector) getAPIGVResourcesMap(gvList []string) (map[string][]apiv1.APIResource, error) {
-
-	resourceMap := make(map[string][]apiv1.APIResource)
-	for index := range gvList {
-		resources, err := l.getAPIGVResources(gvList[index])
-		if err != nil {
-			return resourceMap, err
-		}
-		resourceMap[gvList[index]] = resources
-	}
-	return resourceMap, nil
-}
-
-// TODO()
 // getGVResourcesObjects returns list of objects for given resource_path
 func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.APIResource) (objects unstructured.UnstructuredList) {
 
@@ -217,7 +85,8 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 			listPath := fmt.Sprintf("%s/namespaces/%s/%s", resourcePath, l.Namespaces[index], resource.Name)
 			err := l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&obj)
 			if err != nil {
-				if errors.IsNotFound(err) || errors.IsForbidden(err) {
+				if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
+					log.Warnf("%s", err.Error())
 					return objects
 				}
 				return unstructured.UnstructuredList{}
@@ -229,23 +98,13 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 	listPath := fmt.Sprintf("%s/%s", resourcePath, resource.Name)
 	err := l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&objects)
 	if err != nil {
-		if errors.IsNotFound(err) || errors.IsForbidden(err) {
+		if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
+			log.Warnf("%s", err.Error())
 			return objects
 		}
 		return unstructured.UnstructuredList{}
 	}
 	return objects
-}
-
-// getResourceObjects returns list of objects for given resource_path
-func (l *LogCollector) getGVResourceObjects(gvResourceMap map[string]apiv1.APIResource) unstructured.UnstructuredList {
-
-	resourceObject := unstructured.UnstructuredList{}
-	for gv := range gvResourceMap {
-		gvResource := gvResourceMap[gv]
-		resourceObject.Items = append(resourceObject.Items, l.getResourceObjects(getAPIGroupVersionResourcePath(gv), &gvResource).Items...)
-	}
-	return resourceObject
 }
 
 // writeEvents writes events
@@ -334,8 +193,8 @@ func (l *LogCollector) writeLogs(resourceDir string, obj unstructured.Unstructur
 	var podObj corev1.Pod
 	err := l.k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: objNs}, &podObj)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			log.Errorf("%s", err.Error())
+		if apierrors.IsNotFound(err) {
+			log.Warnf("%s", err.Error())
 			return nil
 		}
 		log.Errorf("Unable to get the object : %s", err.Error())
@@ -358,20 +217,6 @@ func (l *LogCollector) writeLogs(resourceDir string, obj unstructured.Unstructur
 		}
 	}
 	return nil
-}
-
-// isSubset checks whether the given namespaces is a subset of all Namespaces in cluster
-func (l *LogCollector) isSubset(second []string) bool {
-	set := make(map[string]string)
-	for _, value := range second {
-		set[value] = value
-	}
-	for _, v := range l.Namespaces {
-		if _, ok := set[v]; !ok {
-			return false
-		}
-	}
-	return true
 }
 
 // writeLog writes logs of a pod object
@@ -474,258 +319,183 @@ func (l *LogCollector) zipDir() error {
 	return nil
 }
 
-// TODO()
-func (l *LogCollector) getResourceObjectsWithLabel(resourcePath string,
-	resource *apiv1.APIResource) (objects unstructured.UnstructuredList) {
-	allObjects := l.getResourceObjects(resourcePath, resource)
-	for _, object := range allObjects.Items {
-		objectLabel := object.GetLabels()
-		if len(objectLabel) != 0 {
-			if checkLabelExist(objectLabel, K8STrilioVaultLabel) {
-				objects.Items = append(objects.Items, object)
+// filterResourceObjects filter objects on the basis of some conditions
+func (l *LogCollector) filterResourceObjects(resourcePath string,
+	resource *apiv1.APIResource) (objects unstructured.UnstructuredList, err error) {
+
+	var allObjects unstructured.UnstructuredList
+
+	if (!resource.Namespaced && contains(clusteredResources, resource.Kind)) ||
+		resource.Namespaced {
+
+		allObjects = l.getResourceObjects(resourcePath, resource)
+
+		if resource.Name == CRD {
+			allObjects, err = filterCRD(allObjects)
+			if err != nil {
+				return objects, err
 			}
 		}
+
+		if resource.Name == Namespaces && !l.Clustered {
+			allObjects = filterNS(allObjects, l.Namespaces)
+		}
+
+		if resource.Name == ClusterServiceVersion {
+			allObjects = filterCSV(allObjects)
+		}
 	}
-	return objects
+
+	objects = filterObjectsOnLabel(allObjects)
+	return objects, nil
 }
 
-func (l *LogCollector) filteringWithLabels(resourceGroup map[string][]apiv1.APIResource) (map[string][]types.NamespacedName, error) {
+func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIResource) error {
 	// These operations are performed in the following lines:
-	// 1. Iterating through all the resources from batch, apps and core groups.
+	// 1. Iterating through all the resources.
 	// 2. Filtering only those resources that we need from all the available resources obtained above.
 	// 3. Iterating through the filtered resources to fetch their respective objects based on the group from which
 	//    they belong and labels
 	//    e.g. fetching all pods from core group with the label 'app.kubernetes.io/part-of':'k8s-triliovault'
 	// 4. Collecting pod names specifically that is later required by events
-	// 5. Collecting list of all resource objects and printing their yamls in their respective resource folder under
+	// 5. Collecting list of all resource objects and printing their YAML's in their respective resource folder under
 	//    their respective namespaces. In case of pods, logs are also collected
-	resourceMap := make(map[string][]types.NamespacedName)
-	var nsName []types.NamespacedName
-	for group, resList := range resourceGroup {
-		resources := filterGroupResources(resList, group)
+
+	log.Info("Filtering Resources")
+
+	resourceMapList := make(map[string][]types.NamespacedName)
+	var eventResource apiv1.APIResource
+
+	for groupVersion, resources := range resourceGroup {
+
+		if groupVersion == TriliovaultGroupVersion {
+			err := l.trilioGroup(resources, groupVersion)
+			if err != nil {
+				return err
+			}
+			continue
+		}
 
 		for index := range resources {
+
+			if resources[index].Name == Events {
+				eventResource = resources[index]
+				continue
+			}
+
 			var resObjects unstructured.UnstructuredList
-			res := getResourceByName(resources, resources[index].Name)
-			resObject := l.getResourceObjectsWithLabel(getAPIGroupVersionResourcePath(group), &res)
+			resObject, err := l.filterResourceObjects(getAPIGroupVersionResourcePath(groupVersion), &resources[index])
+			if err != nil {
+				return err
+			}
 			resObjects.Items = append(resObjects.Items, resObject.Items...)
 
 			if l.CheckIsOpenshift() {
-				olmObj := l.getResourceObjectsWithOwnerRef(getAPIGroupVersionResourcePath(group), &res)
+				olmObj := l.getResourceObjectsWithOwnerRef(getAPIGroupVersionResourcePath(groupVersion), &resources[index])
 				resObjects.Items = append(resObjects.Items, olmObj.Items...)
 			}
 
-			for _, obj := range resObjects.Items {
+			resourceMap, err := l.writeObjectsAndLogs(resObjects, resources[index].Kind)
+			if err != nil {
+				return err
+			}
 
-				oName := obj.GetName()
-				oNs := obj.GetNamespace()
-				nsName = append(nsName, types.NamespacedName{Name: oName, Namespace: oNs})
-				resourceMap[res.Kind] = nsName
-
-				resourceDir := filepath.Join(res.Kind)
-				if res.Kind == Pod {
-					eLrr := l.writeLogs(resourceDir, obj)
-					if eLrr != nil {
-						return nil, eLrr
-					}
-				}
-				eLrr := l.writeYaml(resourceDir, obj)
-				if eLrr != nil {
-					return nil, eLrr
-				}
+			for kind, NsName := range resourceMap {
+				resourceMapList[kind] = NsName
 			}
 		}
 	}
+
+	err := l.getResourceEvents(&eventResource, resourceMapList)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (l *LogCollector) writeObjectsAndLogs(objects unstructured.UnstructuredList, kind string) (map[string][]types.NamespacedName, error) {
+
+	var nsName []types.NamespacedName
+	resourceMap := make(map[string][]types.NamespacedName)
+
+	for _, obj := range objects.Items {
+		oName := obj.GetName()
+		oNs := obj.GetNamespace()
+
+		nsName = append(nsName, types.NamespacedName{Name: oName, Namespace: oNs})
+		resourceMap[kind] = nsName
+
+		resourceDir := filepath.Join(kind)
+		if kind == Pod {
+			eLrr := l.writeLogs(resourceDir, obj)
+			if eLrr != nil {
+				return resourceMap, eLrr
+			}
+		}
+		eLrr := l.writeYaml(resourceDir, obj)
+		if eLrr != nil {
+			return resourceMap, eLrr
+		}
+	}
+
 	return resourceMap, nil
 }
 
-// admissionRegistrationGroup gets all the resources related admissionRegistration and writes their YAML
-func (l *LogCollector) admissionRegistrationGroup(apiGroups []*apiv1.APIGroup) error {
-	log.Info("Checking Admission Registration Group")
-	admissionGV := getGVByGroup(apiGroups, AdmissionRegistrationGroup, true)
-	if len(admissionGV) != 0 {
-		admissionGVResources, agErr := l.getAPIGVResources(admissionGV[0])
-		if agErr != nil {
-			return agErr
-		}
-		for index := range admissionGVResources {
-			objectList := l.getResourceObjects(getAPIGroupVersionResourcePath(admissionGV[0]), &admissionGVResources[index])
-			resourceDir := filepath.Join(admissionGVResources[index].Kind)
-
-			for _, obj := range objectList.Items {
-				if strings.HasPrefix(obj.GetName(), "k8s-triliovault") {
-					eLrr := l.writeYaml(resourceDir, obj)
-					if eLrr != nil {
-						return eLrr
-					}
-				}
-			}
-		}
-	}
-	return nil
-}
-
-// snapshotStorageGroup gets all the resources related snapshot storage and writes their YAML
-func (l *LogCollector) snapshotStorageGroup(apiGroups []*apiv1.APIGroup) error {
-	log.Info("Checking Snapshot Storage Group")
-	snapGV := getGVByGroup(apiGroups, SnapshotStorageGroup, true)
-	if snapGV[0] != "" {
-		snapGVResources, err := l.getAPIGVResources(snapGV[0])
-		if err != nil {
-			return err
-		}
-		volSnapResource := getResourceByName(snapGVResources, VolumeSnapshot)
-		volSnapObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(snapGV[0]), &volSnapResource)
-		for _, obj := range volSnapObjects.Items {
-			resourceDir := filepath.Join(obj.GetKind())
-			eLrr := l.writeYaml(resourceDir, obj)
-			if eLrr != nil {
-				return eLrr
-			}
-		}
-
-		volSnapClassResource := getResourceByName(snapGVResources, VolumeSnapshotClass)
-		volSnapClassObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(snapGV[0]), &volSnapClassResource)
-		for _, obj := range volSnapClassObjects.Items {
-			resourceDir := filepath.Join(obj.GetKind())
-			eLrr := l.writeYaml(resourceDir, obj)
-			if eLrr != nil {
-				return eLrr
-			}
-		}
-	}
-	return nil
-}
-
-// getResourceGroup collects all the resources related to basic group such as batch and apps
-func (l *LogCollector) getResourceGroup() (map[string][]apiv1.APIResource, error) {
-
-	resourceGroup := make(map[string][]apiv1.APIResource)
-	log.Info("Checking Batch Group")
-	batchGV, bgErr := l.getAPIGVResources(BatchGv)
-	if bgErr != nil {
-		return resourceGroup, bgErr
-	}
-	resourceGroup[BatchGv] = batchGV
-
-	batchGV1beta1, bg1Err := l.getAPIGVResources(BatchGv1beta1)
-	if bg1Err != nil {
-		return resourceGroup, bg1Err
-	}
-	resourceGroup[BatchGv1beta1] = batchGV1beta1
-
-	log.Info("Checking Apps Group")
-	appsGv, agErr := l.getAPIGVResources(AppsGv)
-	if agErr != nil {
-		return resourceGroup, agErr
-	}
-	resourceGroup[AppsGv] = appsGv
-
-	return resourceGroup, nil
-}
-
-// clusterServiceVersion collects all the resources related to CSV and writes the YAML
-func (l *LogCollector) clusterServiceVersion(apiGroups []*apiv1.APIGroup) error {
-
-	log.Info("Checking Cluster Service Version")
-	operatorGVList := getGVByGroup(apiGroups, OperatorGroup, false)
-	operatorGVResourceMap, oErr := l.getAPIGVResourcesMap(operatorGVList)
-	if oErr != nil {
-		return oErr
-	}
-	csvResourceMap := getResourcesGVByName(operatorGVResourceMap, ClusterServiceVersion)
-	csvObjects := l.getGVResourceObjects(csvResourceMap)
-	csvObjects = filterCSV(csvObjects)
-
-	for _, csv := range csvObjects.Items {
-		resourceDir := filepath.Join(csv.GetKind())
-		eLrr := l.writeYaml(resourceDir, csv)
-		if eLrr != nil {
-			return eLrr
-		}
-	}
-
-	return nil
-}
-
-// apiExtensionGroup collects all the resources related to api extension and writes the YAML
-func (l *LogCollector) apiExtensionGroup(apiGroups []*apiv1.APIGroup) error {
-	log.Info("Checking API Extension Group")
-	apiExtGV := getGVByGroup(apiGroups, APIExtensionsGroup, true)
-	if len(apiExtGV) != 0 {
-		apiExtGVResources, apErr := l.getAPIGVResources(apiExtGV[0])
-		if apErr != nil {
-			return apErr
-		}
-		crdResource := getResourceByName(apiExtGVResources, CRD)
-		crdObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(apiExtGV[0]), &crdResource)
-		crdObjects, cErr := filterCRD(crdObjects)
-		if cErr != nil {
-			return cErr
-		}
-
-		for _, crd := range crdObjects.Items {
-			resourceDir := filepath.Join(crd.GetKind())
-			eLrr := l.writeYaml(resourceDir, crd)
-			if eLrr != nil {
-				return eLrr
-			}
-		}
-	}
-	return nil
-}
-
 // trilioGroup collects all the resources related to trilio and writes the YAML
-func (l *LogCollector) trilioGroup(apiGroups []*apiv1.APIGroup) error {
+func (l *LogCollector) trilioGroup(trilioGVResources []apiv1.APIResource, groupVersion string) error {
 	log.Info("Checking Trilio Group")
-	trilioGV := getGVByGroup(apiGroups, TriliovaultGroup, true)
-
-	if len(trilioGV) != 0 {
-		trilioGVResources, err := l.getAPIGVResources(trilioGV[0])
-		if err != nil {
-			return err
-		}
-
-		for index := range trilioGVResources {
-			objectList := l.getResourceObjects(getAPIGroupVersionResourcePath(trilioGV[0]), &trilioGVResources[index])
-			resourceDir := filepath.Join(trilioGVResources[index].Kind)
-			for _, obj := range objectList.Items {
-				if obj.GetKind() == LicenseKind {
-					unstructured.RemoveNestedField(obj.Object, "spec", "key")
-					unstructured.RemoveNestedField(obj.Object, "metadata", "annotations")
-				}
-				eLrr := l.writeYaml(resourceDir, obj)
-				if eLrr != nil {
-					return eLrr
-				}
+	for index := range trilioGVResources {
+		objectList := l.getResourceObjects(getAPIGroupVersionResourcePath(groupVersion), &trilioGVResources[index])
+		resourceDir := filepath.Join(trilioGVResources[index].Kind)
+		for _, obj := range objectList.Items {
+			if obj.GetKind() == LicenseKind {
+				unstructured.RemoveNestedField(obj.Object, "spec", "key")
+				unstructured.RemoveNestedField(obj.Object, "metadata", "annotations")
+			}
+			eLrr := l.writeYaml(resourceDir, obj)
+			if eLrr != nil {
+				return eLrr
 			}
 		}
 	}
 	return nil
 }
 
-// fetchAPIGroups returns the list of all API Groups of the supported resources for all groups and versions.
-func (l *LogCollector) fetchAPIGroups() (apiGroups []*apiv1.APIGroup, err error) {
+// getAPIResourceList returns the list of all API Groups of the supported resources for all groups and versions.
+func (l *LogCollector) getAPIResourceList() (map[string][]apiv1.APIResource, error) {
 
+	resourceMapList := make(map[string][]apiv1.APIResource)
 	log.Info("Fetching API Group version list")
-	apiGroups, _, err = l.disClient.ServerGroupsAndResources()
+	_, resourceList, err := l.disClient.ServerGroupsAndResources()
 	if err != nil {
-		log.Errorf("Unable to fetch API group version : %s", err.Error())
 		if !discovery.IsGroupDiscoveryFailedError(err) {
 			log.Error(err, "Error while getting the resource list from discovery client")
-			return apiGroups, err
+			return resourceMapList, err
 		}
 		log.Warnf("The Kubernetes server has an orphaned API service. Server reports: %s", err.Error())
 		log.Warn("To fix this, kubectl delete apiservice <service-name>")
 	}
-	return apiGroups, nil
+
+	for _, resources := range resourceList {
+		for idx := range resources.APIResources {
+			for _, verb := range resources.APIResources[idx].Verbs {
+				if verb == Verblist {
+					resourceMapList[resources.GroupVersion] = append(resourceMapList[resources.GroupVersion],
+						resources.APIResources[idx])
+				}
+			}
+		}
+	}
+
+	return resourceMapList, nil
 }
 
 // CheckIsOpenshift checks whether the cluster is Openshift or not
 func (l *LogCollector) CheckIsOpenshift() bool {
 	_, err := l.disClient.ServerResourcesForGroupVersion("security.openshift.io/v1")
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return false
 		}
 	}
@@ -747,4 +517,48 @@ func (l *LogCollector) getResourceObjectsWithOwnerRef(resourcePath string,
 		}
 	}
 	return objects
+}
+
+// checkNamespaces taken all given ns from user and checks the same in cluster and write it YAML's
+func (l *LogCollector) checkNamespaces() error {
+	log.Info("Checking Namespaces")
+	nsMap := make(map[string]bool)
+
+	var namespaces corev1.NamespaceList
+	err := l.k8sClient.List(context.Background(), &namespaces)
+	if err != nil {
+		log.Errorf("%s", err.Error())
+		return err
+	}
+
+	for idx := range namespaces.Items {
+		nsMap[namespaces.Items[idx].Name] = true
+	}
+
+	for _, ns := range l.Namespaces {
+		if _, ok := nsMap[ns]; !ok {
+			eNrr := errors.New("specified namespaces doesn't exists in the cluster")
+			return eNrr
+		}
+	}
+
+	return nil
+}
+
+// getResourceEvents write YAML's for all events of resources related to trilio
+func (l *LogCollector) getResourceEvents(eventResource *apiv1.APIResource, resourceMap map[string][]types.NamespacedName) error {
+
+	eventObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(CoreGv), eventResource)
+	events, aErr := aggregateEvents(eventObjects, resourceMap)
+	if aErr != nil {
+		log.Errorf("Unable to process Events : %s", aErr.Error())
+		return aErr
+	}
+
+	eErr := l.writeEvents(events)
+	if eErr != nil {
+		log.Errorf("Unable to Write Events : %s", eErr.Error())
+		return eErr
+	}
+	return nil
 }

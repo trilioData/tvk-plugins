@@ -49,7 +49,7 @@ Arch:
 ## Usage:
 
     kubectl tvk-log-collector [flags]
-  
+
 - Flags:
 
 | Parameter                 | Default       | Description   |    
@@ -58,7 +58,22 @@ Arch:
 | --namespaces          | []           |list of namespaces to look for resources separated by commas
 | --kubeconfig            |   ~/.kube/config             |path to the kubernetes config
 | --keep-source-folder            | false            | Keep source directory and Zip both
-| --log-level                | INFO             | log level for debugging
+| --log-level                | INFO             | log level for debugging ( INFO ERROR DEBUG WARNING DEBUG )
+
+## Examples
+
+- To collect logs & YAML from multiple namespaces:
+
+        kubectl tvk-log-collector --namespaces <ns1>, <ns2> --log-level info
+
+- To collect logs & YAML from all over the cluster:
+
+        kubectl tvk-log-collector --clustered --log-level info
+
+- To collect logs with log level error and to keep the folder with & without zip:
+
+        kubectl tvk-log-collector --clustered --keep-source-folder --log-level error
+
 
 ## Output
 This command will create `triliovault-<date-time>.zip` zip file containing cluster debugging information.
@@ -78,5 +93,19 @@ StatefulSet
 PersistentVolumeClaims  
 PersistentVolumes  
 Services  
+Endpoints
+Ingress
+Events
+ConfigMap
+LimitRange
+ResourceQuota
+Namespaces
+Nodes
 ```  
 and ```TrilioVault Resources```
+
+## OCP Specific Resources Considered for Log Collection:
+
+```  
+ClusterServiceVersion  
+```
