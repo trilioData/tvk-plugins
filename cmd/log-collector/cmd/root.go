@@ -95,8 +95,7 @@ func runLogCollector(*cobra.Command, []string) error {
 	}
 	err := logCollector.CollectLogsAndDump()
 	if err != nil {
-		log.Errorf("%s", err.Error())
-		return err
+		log.Fatalf("%s", err.Error())
 	}
 
 	log.Info("---------    FINISHED COLLECTING LOGS    --------- ")
@@ -116,8 +115,7 @@ func preRun(*cobra.Command, []string) error {
 	// Setting Log Level
 	level, lErr := log.ParseLevel(logLevel)
 	if lErr != nil {
-		log.Errorf("Unable to Parse Log Level : %s", lErr.Error())
-		return lErr
+		log.Fatalf("Unable to Parse Log Level : %s", lErr.Error())
 	}
 	log.SetLevel(level)
 	return nil

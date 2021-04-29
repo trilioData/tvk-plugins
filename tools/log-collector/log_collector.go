@@ -3,7 +3,6 @@ package logcollector
 import (
 	"archive/zip"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -79,38 +78,49 @@ func (l *LogCollector) CollectLogsAndDump() error {
 }
 
 // getGVResourcesObjects returns list of objects for given resource_path
-func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.APIResource) (objects unstructured.UnstructuredList) {
+func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.APIResource) (objects unstructured.UnstructuredList,
+	err error) {
 
 	if resource.Namespaced && !l.Clustered {
 		for index := range l.Namespaces {
 			var obj unstructured.UnstructuredList
 			listPath := fmt.Sprintf("%s/namespaces/%s/%s", resourcePath, l.Namespaces[index], resource.Name)
-			err := l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&obj)
+			err = l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&obj)
 			if err != nil {
 				if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
 					log.Warnf("%s", err.Error())
-					return objects
+					return objects, nil
 				}
-				return unstructured.UnstructuredList{}
+				if !discovery.IsGroupDiscoveryFailedError(err) {
+					log.Errorf("%s", err.Error())
+					return objects, err
+				}
+				log.Errorf("%s", err.Error())
+				return unstructured.UnstructuredList{}, err
 			}
 			objects.Items = append(objects.Items, obj.Items...)
 		}
-		return objects
+		return objects, nil
 	}
 	listPath := fmt.Sprintf("%s/%s", resourcePath, resource.Name)
-	err := l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&objects)
+	err = l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&objects)
 	if err != nil {
 		if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
 			log.Warnf("%s", err.Error())
-			return objects
+			return objects, nil
 		}
-		return unstructured.UnstructuredList{}
+		if !discovery.IsGroupDiscoveryFailedError(err) {
+			log.Errorf("%s", err.Error())
+			return objects, err
+		}
+		log.Errorf("%s", err.Error())
+		return unstructured.UnstructuredList{}, err
 	}
-	return objects
+	return objects, nil
 }
 
 // writeEvents writes events
-func (l *LogCollector) writeEvents(events map[string][]map[string]interface{}) error {
+func (l *LogCollector) writeEventsToFile(events map[string][]map[string]interface{}) error {
 
 	for k, v := range events {
 		resourceDir := filepath.Join(l.OutputDir, "Events", k)
@@ -321,7 +331,7 @@ func (l *LogCollector) zipDir() error {
 	return nil
 }
 
-// filterResourceObjects filter objects on the basis of some conditions
+// filterResourceObjects filter objects on the basis of resource Type.
 func (l *LogCollector) filterResourceObjects(resourcePath string,
 	resource *apiv1.APIResource) (objects unstructured.UnstructuredList, err error) {
 
@@ -330,25 +340,28 @@ func (l *LogCollector) filterResourceObjects(resourcePath string,
 	if (!resource.Namespaced && clusteredResources.Has(resource.Kind)) ||
 		(resource.Namespaced && !excludeResources.Has(resource.Kind)) {
 		log.Infof("Fetching '%s' Resource", resource.Kind)
-		allObjects = l.getResourceObjects(resourcePath, resource)
+		allObjects, err = l.getResourceObjects(resourcePath, resource)
+		if err != nil {
+			return objects, err
+		}
 
 		if resource.Name == CRD {
-			allObjects, err = filterCRD(allObjects)
+			allObjects, err = filterRelatedCRD(allObjects)
 			if err != nil {
 				return objects, err
 			}
 		}
 
 		if resource.Name == Namespaces && !l.Clustered {
-			allObjects = filterNS(allObjects, l.Namespaces)
+			allObjects = filterInputNS(allObjects, l.Namespaces)
 		}
 
 		if resource.Name == ClusterServiceVersion {
-			allObjects = filterCSV(allObjects)
+			allObjects = filterTvkCSV(allObjects)
 		}
 	}
 
-	objects = filterObjectsOnLabel(allObjects)
+	objects = filterTvkResourcesByLabel(allObjects)
 	return objects, nil
 }
 
@@ -371,7 +384,7 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 	for groupVersion, resources := range resourceGroup {
 
 		if groupVersion == TriliovaultGroupVersion {
-			err := l.trilioGroup(resources, groupVersion)
+			err := l.getTrilioGroupResources(resources, groupVersion)
 			if err != nil {
 				return err
 			}
@@ -393,7 +406,7 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 			resObjects.Items = append(resObjects.Items, resObject.Items...)
 
 			if l.CheckIsOpenshift() {
-				ocpObj, oErr := l.getResourceObjectsWithOwnerRef(getAPIGroupVersionResourcePath(groupVersion), &resources[index])
+				ocpObj, oErr := l.getOcpResourcesByOwnerRef(getAPIGroupVersionResourcePath(groupVersion), &resources[index])
 				if oErr != nil {
 					return oErr
 				}
@@ -448,10 +461,13 @@ func (l *LogCollector) writeObjectsAndLogs(objects unstructured.UnstructuredList
 }
 
 // trilioGroup collects all the resources related to trilio and writes the YAML
-func (l *LogCollector) trilioGroup(trilioGVResources []apiv1.APIResource, groupVersion string) error {
+func (l *LogCollector) getTrilioGroupResources(trilioGVResources []apiv1.APIResource, groupVersion string) error {
 	log.Info("Checking Trilio Group")
 	for index := range trilioGVResources {
-		objectList := l.getResourceObjects(getAPIGroupVersionResourcePath(groupVersion), &trilioGVResources[index])
+		objectList, err := l.getResourceObjects(getAPIGroupVersionResourcePath(groupVersion), &trilioGVResources[index])
+		if err != nil {
+			return err
+		}
 		resourceDir := filepath.Join(trilioGVResources[index].Kind)
 		for _, obj := range objectList.Items {
 			if obj.GetKind() == LicenseKind {
@@ -508,9 +524,13 @@ func (l *LogCollector) CheckIsOpenshift() bool {
 }
 
 // getResourceObjectsWithOwnerRef return all the objects which has ownerRef of CSV
-func (l *LogCollector) getResourceObjectsWithOwnerRef(resourcePath string,
+func (l *LogCollector) getOcpResourcesByOwnerRef(resourcePath string,
 	resource *apiv1.APIResource) (objects unstructured.UnstructuredList, err error) {
-	allObjects := l.getResourceObjects(resourcePath, resource)
+
+	allObjects, err := l.getResourceObjects(resourcePath, resource)
+	if err != nil {
+		return objects, err
+	}
 
 	for _, object := range allObjects.Items {
 
@@ -551,7 +571,7 @@ func (l *LogCollector) getResourceObjectsWithOwnerRef(resourcePath string,
 // checkIfNamespacesExist take all given namespaces from user and checks the same in cluster if it exist
 func (l *LogCollector) checkIfNamespacesExist() (err error) {
 
-	log.Info("Checking Namespaces")
+	log.Info("Checking if given namespaces are valid")
 	set := make(sets.String)
 	var nonExistNs []string
 
@@ -574,8 +594,7 @@ func (l *LogCollector) checkIfNamespacesExist() (err error) {
 	}
 
 	if len(nonExistNs) != 0 {
-		errMsg := fmt.Sprintf("Specified namespaces doesn't exists in the cluster : %s", nonExistNs)
-		return errors.New(errMsg)
+		return fmt.Errorf("specified namespaces doesn't exists in the cluster : %s", nonExistNs)
 	}
 
 	return nil
@@ -584,14 +603,18 @@ func (l *LogCollector) checkIfNamespacesExist() (err error) {
 // getResourceEvents write YAML's for all events of resources related to trilio
 func (l *LogCollector) getResourceEvents(eventResource *apiv1.APIResource, resourceMap map[string][]types.NamespacedName) error {
 
-	eventObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(CoreGv), eventResource)
+	eventObjects, err := l.getResourceObjects(getAPIGroupVersionResourcePath(CoreGv), eventResource)
+	if err != nil {
+		log.Errorf("Unable to Write Events : %s", err.Error())
+		return err
+	}
 	events, aErr := aggregateEvents(eventObjects, resourceMap)
 	if aErr != nil {
 		log.Errorf("Unable to process Events : %s", aErr.Error())
 		return aErr
 	}
 
-	eErr := l.writeEvents(events)
+	eErr := l.writeEventsToFile(events)
 	if eErr != nil {
 		log.Errorf("Unable to Write Events : %s", eErr.Error())
 		return eErr

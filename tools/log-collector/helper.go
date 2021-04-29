@@ -133,8 +133,8 @@ func getNamespacedName(namespace, name string) types.NamespacedName {
 	}
 }
 
-// filterCSV returns list of openshift csv created by triliovault
-func filterCSV(csvObjects unstructured.UnstructuredList) unstructured.UnstructuredList {
+// filterTvkCSV returns list of openshift csv created by triliovault
+func filterTvkCSV(csvObjects unstructured.UnstructuredList) unstructured.UnstructuredList {
 
 	var filteredCSVObject unstructured.UnstructuredList
 	for index := range csvObjects.Items {
@@ -145,33 +145,28 @@ func filterCSV(csvObjects unstructured.UnstructuredList) unstructured.Unstructur
 	return filteredCSVObject
 }
 
-// filterCRD returns list of crds created by given set of groups
-func filterCRD(crdObjs unstructured.UnstructuredList) (unstructured.UnstructuredList, error) {
-	crdFilterGroup := []string{TriliovaultGroup, SnapshotStorageGroup, CsiStorageGroup}
+// filterRelatedCRD returns list of crds created by given set of groups
+func filterRelatedCRD(crdObjs unstructured.UnstructuredList) (unstructured.UnstructuredList, error) {
+	crdFilterGroup := sets.NewString(TriliovaultGroup, SnapshotStorageGroup, CsiStorageGroup)
 	var filteredCRDObjects unstructured.UnstructuredList
 	for index := range crdObjs.Items {
-		for in := range crdFilterGroup {
-			crdGroup, _, err := unstructured.NestedString(crdObjs.Items[index].Object, "spec", "group")
-			if err != nil {
-				log.Errorf("Unable to get the CRD Group field : %s", err.Error())
-				return filteredCRDObjects, err
-			}
-			if crdFilterGroup[in] == crdGroup {
-				filteredCRDObjects.Items = append(filteredCRDObjects.Items, crdObjs.Items[index])
-			}
+		crdGroup, _, err := unstructured.NestedString(crdObjs.Items[index].Object, "spec", "group")
+		if err != nil {
+			log.Errorf("Unable to get the CRD Group field : %s", err.Error())
+			return filteredCRDObjects, err
+		}
+		if crdFilterGroup.Has(crdGroup) {
+			filteredCRDObjects.Items = append(filteredCRDObjects.Items, crdObjs.Items[index])
 		}
 	}
 	return filteredCRDObjects, nil
 }
 
-// filterNS returns list of Namespaces Object given by user input in --namespaces flag
-func filterNS(nsObjs unstructured.UnstructuredList, namespaces []string) unstructured.UnstructuredList {
+// filterInputNS returns list of Namespaces Object given by user input in --namespaces flag
+func filterInputNS(nsObjs unstructured.UnstructuredList, namespaces []string) unstructured.UnstructuredList {
 	var filteredNSObjects unstructured.UnstructuredList
 
-	nsNames := make(sets.String)
-	for _, name := range namespaces {
-		nsNames.Insert(name)
-	}
+	nsNames := sets.NewString(namespaces...)
 
 	for _, nsObj := range nsObjs.Items {
 		if nsNames.Has(nsObj.GetName()) {
@@ -271,8 +266,8 @@ func checkLabelExist(givenLabel, toCheckInLabel map[string]string) (exist bool) 
 	return exist
 }
 
-// filterObjectsOnLabel filter objects on the basis of Labels
-func filterObjectsOnLabel(allObjects unstructured.UnstructuredList) (objects unstructured.UnstructuredList) {
+// filterTvkResourcesByLabel filter objects on the basis of Labels
+func filterTvkResourcesByLabel(allObjects unstructured.UnstructuredList) (objects unstructured.UnstructuredList) {
 
 	for _, object := range allObjects.Items {
 		objectLabel := object.GetLabels()
