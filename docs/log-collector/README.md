@@ -62,9 +62,9 @@ Arch:
 
 ## Examples
 
-- To collect logs & YAML from multiple namespaces:
+- To collect logs & YAML from multiple namespaces (separated by commas in double quotes):
 
-        kubectl tvk-log-collector --namespaces <ns1>, <ns2> --log-level info
+        kubectl tvk-log-collector --namespaces "<ns1>,<ns2>" --log-level info
 
 - To collect logs & YAML from all over the cluster:
 

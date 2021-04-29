@@ -12,11 +12,13 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apiv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -325,8 +327,8 @@ func (l *LogCollector) filterResourceObjects(resourcePath string,
 
 	var allObjects unstructured.UnstructuredList
 
-	if (!resource.Namespaced && contains(clusteredResources, resource.Kind)) ||
-		(resource.Namespaced && !contains(excludeResources, resource.Kind)) {
+	if (!resource.Namespaced && clusteredResources.Has(resource.Kind)) ||
+		(resource.Namespaced && !excludeResources.Has(resource.Kind)) {
 		log.Infof("Fetching '%s' Resource", resource.Kind)
 		allObjects = l.getResourceObjects(resourcePath, resource)
 
@@ -391,11 +393,11 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 			resObjects.Items = append(resObjects.Items, resObject.Items...)
 
 			if l.CheckIsOpenshift() {
-				olmObj, oErr := l.getResourceObjectsWithOwnerRef(getAPIGroupVersionResourcePath(groupVersion), &resources[index])
+				ocpObj, oErr := l.getResourceObjectsWithOwnerRef(getAPIGroupVersionResourcePath(groupVersion), &resources[index])
 				if oErr != nil {
 					return oErr
 				}
-				resObjects.Items = append(resObjects.Items, olmObj.Items...)
+				resObjects.Items = append(resObjects.Items, ocpObj.Items...)
 			}
 
 			resourceMap, err := l.writeObjectsAndLogs(resObjects, resources[index].Kind)
@@ -535,7 +537,7 @@ func (l *LogCollector) getResourceObjectsWithOwnerRef(resourcePath string,
 			// Condition Check for CSV as OwnerRef or Subscription as OwnerRef (In Case of InstallPlan)
 			if (strings.HasPrefix(ownerRefs[idx].Name, TrilioPrefix) &&
 				ownerRefs[idx].Kind == ClusterServiceVersionKind &&
-				!contains(excludeResources, object.GetKind())) ||
+				!excludeResources.Has(object.GetKind())) ||
 				(ownerRefs[idx].Kind == SubscriptionKind &&
 					strings.HasPrefix(ownerRefs[idx].Name, TrilioPrefix) &&
 					object.GetKind() == InstallPlanKind) {
@@ -547,26 +549,33 @@ func (l *LogCollector) getResourceObjectsWithOwnerRef(resourcePath string,
 }
 
 // checkNamespaces taken all given ns from user and checks the same in cluster and write it YAML's
-func (l *LogCollector) checkNamespaces() error {
+func (l *LogCollector) checkNamespaces() (err error) {
+
 	log.Info("Checking Namespaces")
-	nsMap := make(map[string]bool)
+	set := make(sets.String)
+	var nonExistNs []string
 
 	var namespaces corev1.NamespaceList
-	err := l.k8sClient.List(context.Background(), &namespaces)
+	err = l.k8sClient.List(context.Background(), &namespaces)
 	if err != nil {
 		log.Errorf("%s", err.Error())
 		return err
 	}
 
 	for idx := range namespaces.Items {
-		nsMap[namespaces.Items[idx].Name] = true
+		set.Insert(namespaces.Items[idx].Name)
 	}
 
 	for _, ns := range l.Namespaces {
-		if _, ok := nsMap[ns]; !ok {
-			eNrr := errors.New("specified namespaces doesn't exists in the cluster")
-			return eNrr
+		ns = strings.Trim(ns, " ")
+		if !set.Has(ns) {
+			nonExistNs = append(nonExistNs, ns)
 		}
+	}
+
+	if len(nonExistNs) != 0 {
+		errMsg := fmt.Sprintf("Specified namespaces doesn't exists in the cluster : %s", nonExistNs)
+		return errors.New(errMsg)
 	}
 
 	return nil

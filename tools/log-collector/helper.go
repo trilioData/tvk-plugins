@@ -6,10 +6,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	log "github.com/sirupsen/logrus"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	clientGoScheme "k8s.io/client-go/kubernetes/scheme"
@@ -43,10 +45,10 @@ var (
 	scheme = runtime.NewScheme()
 
 	K8STrilioVaultLabel = map[string]string{"app.kubernetes.io/part-of": TrilioPrefix}
-	nonLabeledResources = []string{"ResourceQuota", "LimitRange", "VolumeSnapshot", "ClusterServiceVersion"}
-	clusteredResources  = []string{"Node", "Namespace", "CustomResourceDefinition", "StorageClass",
-		"VolumeSnapshotClass"}
-	excludeResources = []string{"Secret", "PackageManifest"}
+	nonLabeledResources = sets.NewString("ResourceQuota", "LimitRange", "VolumeSnapshot", "ClusterServiceVersion")
+	clusteredResources  = sets.NewString("Node", "Namespace", "CustomResourceDefinition", "StorageClass",
+		"VolumeSnapshotClass")
+	excludeResources = sets.NewString("Secret", "PackageManifest")
 )
 
 type containerStat struct {
@@ -165,8 +167,14 @@ func filterCRD(crdObjs unstructured.UnstructuredList) (unstructured.Unstructured
 // filterNS returns list of Namespaces Object given by user input in --namespaces flag
 func filterNS(nsObjs unstructured.UnstructuredList, namespaces []string) unstructured.UnstructuredList {
 	var filteredNSObjects unstructured.UnstructuredList
+
+	nsNames := make(sets.String)
+	for _, name := range namespaces {
+		nsNames.Insert(name)
+	}
+
 	for _, nsObj := range nsObjs.Items {
-		if contains(namespaces, nsObj.GetName()) {
+		if nsNames.Has(nsObj.GetName()) {
 			filteredNSObjects.Items = append(filteredNSObjects.Items, nsObj)
 		}
 	}
@@ -248,16 +256,6 @@ func getClient() (client.Client, *discovery.DiscoveryClient, *kubernetes.Clients
 	return kClient, discClient, clientSet
 }
 
-// contains checks if a string is present in a slice
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-	return false
-}
-
 // checkLabelExist check if key [value] exist in other map
 func checkLabelExist(givenLabel, toCheckInLabel map[string]string) (exist bool) {
 
@@ -281,10 +279,10 @@ func filterObjectsOnLabel(allObjects unstructured.UnstructuredList) (objects uns
 		if len(objectLabel) != 0 && checkLabelExist(objectLabel, K8STrilioVaultLabel) {
 			objects.Items = append(objects.Items, object)
 		}
-		if contains(nonLabeledResources, object.GetKind()) {
+		if nonLabeledResources.Has(object.GetKind()) {
 			objects.Items = append(objects.Items, object)
 		}
-		if contains(clusteredResources, object.GetKind()) {
+		if clusteredResources.Has(object.GetKind()) {
 			objects.Items = append(objects.Items, object)
 		}
 	}
