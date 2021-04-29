@@ -47,7 +47,7 @@ func (l *LogCollector) CollectLogsAndDump() error {
 
 	l.setClient()
 
-	nsErr := l.checkNamespaces()
+	nsErr := l.checkIfNamespacesExist()
 	if nsErr != nil {
 		return nsErr
 	}
@@ -548,8 +548,8 @@ func (l *LogCollector) getResourceObjectsWithOwnerRef(resourcePath string,
 	return objects, nil
 }
 
-// checkNamespaces taken all given ns from user and checks the same in cluster and write it YAML's
-func (l *LogCollector) checkNamespaces() (err error) {
+// checkIfNamespacesExist take all given namespaces from user and checks the same in cluster if it exist
+func (l *LogCollector) checkIfNamespacesExist() (err error) {
 
 	log.Info("Checking Namespaces")
 	set := make(sets.String)
