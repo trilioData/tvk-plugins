@@ -118,5 +118,9 @@ func preRun(*cobra.Command, []string) error {
 		log.Fatalf("Unable to Parse Log Level : %s", lErr.Error())
 	}
 	log.SetLevel(level)
+
+	if len(namespaces) != 0 && clustered {
+		log.Fatal("Cannot use flag --namespaces and--clustered scope at the same time")
+	}
 	return nil
 }

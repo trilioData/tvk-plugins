@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	corev1 "k8s.io/api/core/v1"
@@ -87,16 +88,16 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 			listPath := fmt.Sprintf("%s/namespaces/%s/%s", resourcePath, l.Namespaces[index], resource.Name)
 			err = l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&obj)
 			if err != nil {
-				if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
-					log.Warnf("%s", err.Error())
-					return objects, nil
-				}
 				if !discovery.IsGroupDiscoveryFailedError(err) {
 					log.Errorf("%s", err.Error())
 					return objects, err
 				}
-				log.Errorf("%s", err.Error())
-				return unstructured.UnstructuredList{}, err
+				if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
+					log.Warnf("%s", err.Error())
+					return objects, nil
+				}
+				log.Warnf("%s", err.Error())
+				return unstructured.UnstructuredList{}, nil
 			}
 			objects.Items = append(objects.Items, obj.Items...)
 		}
@@ -105,16 +106,16 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 	listPath := fmt.Sprintf("%s/%s", resourcePath, resource.Name)
 	err = l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&objects)
 	if err != nil {
-		if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
-			log.Warnf("%s", err.Error())
-			return objects, nil
-		}
 		if !discovery.IsGroupDiscoveryFailedError(err) {
 			log.Errorf("%s", err.Error())
 			return objects, err
 		}
-		log.Errorf("%s", err.Error())
-		return unstructured.UnstructuredList{}, err
+		if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
+			log.Warnf("%s", err.Error())
+			return objects, nil
+		}
+		log.Warnf("%s", err.Error())
+		return unstructured.UnstructuredList{}, nil
 	}
 	return objects, nil
 }
@@ -346,7 +347,7 @@ func (l *LogCollector) filterResourceObjects(resourcePath string,
 		}
 
 		if resource.Name == CRD {
-			allObjects, err = filterRelatedCRD(allObjects)
+			allObjects, err = filterTvkStorageCSICRD(allObjects)
 			if err != nil {
 				return objects, err
 			}
@@ -361,7 +362,14 @@ func (l *LogCollector) filterResourceObjects(resourcePath string,
 		}
 	}
 
-	objects = filterTvkResourcesByLabel(allObjects)
+	if nonLabeledResources.Has(resource.Kind) {
+		objects.Items = append(objects.Items, allObjects.Items...)
+	} else if clusteredResources.Has(resource.Kind) {
+		objects.Items = append(objects.Items, allObjects.Items...)
+	} else {
+		filterTvkResourcesByLabel(&allObjects)
+		return allObjects, nil
+	}
 	return objects, nil
 }
 
@@ -594,7 +602,7 @@ func (l *LogCollector) checkIfNamespacesExist() (err error) {
 	}
 
 	if len(nonExistNs) != 0 {
-		return fmt.Errorf("specified namespaces doesn't exists in the cluster : %s", nonExistNs)
+		return errors.Errorf("specified namespaces doesn't exists in the cluster : %s", nonExistNs)
 	}
 
 	return nil

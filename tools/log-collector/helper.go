@@ -62,7 +62,6 @@ func aggregateEvents(eventObjects unstructured.UnstructuredList,
 
 	eventsData := make(map[string][]map[string]interface{})
 	for _, eve := range eventObjects.Items {
-
 		apiVersion, _, aErr := unstructured.NestedString(eve.Object, "involvedObject", "apiVersion")
 		if aErr != nil {
 			log.Errorf("Unable to get event data of Object : %s", aErr.Error())
@@ -146,7 +145,7 @@ func filterTvkCSV(csvObjects unstructured.UnstructuredList) unstructured.Unstruc
 }
 
 // filterRelatedCRD returns list of crds created by given set of groups
-func filterRelatedCRD(crdObjs unstructured.UnstructuredList) (unstructured.UnstructuredList, error) {
+func filterTvkStorageCSICRD(crdObjs unstructured.UnstructuredList) (unstructured.UnstructuredList, error) {
 	crdFilterGroup := sets.NewString(TriliovaultGroup, SnapshotStorageGroup, CsiStorageGroup)
 	var filteredCRDObjects unstructured.UnstructuredList
 	for index := range crdObjs.Items {
@@ -267,19 +266,14 @@ func checkLabelExist(givenLabel, toCheckInLabel map[string]string) (exist bool) 
 }
 
 // filterTvkResourcesByLabel filter objects on the basis of Labels
-func filterTvkResourcesByLabel(allObjects unstructured.UnstructuredList) (objects unstructured.UnstructuredList) {
+func filterTvkResourcesByLabel(allObjects *unstructured.UnstructuredList) {
+	var objects unstructured.UnstructuredList
 
 	for _, object := range allObjects.Items {
 		objectLabel := object.GetLabels()
 		if len(objectLabel) != 0 && checkLabelExist(objectLabel, K8STrilioVaultLabel) {
 			objects.Items = append(objects.Items, object)
 		}
-		if nonLabeledResources.Has(object.GetKind()) {
-			objects.Items = append(objects.Items, object)
-		}
-		if clusteredResources.Has(object.GetKind()) {
-			objects.Items = append(objects.Items, object)
-		}
 	}
-	return objects
+	allObjects.Items = objects.Items
 }
