@@ -229,23 +229,29 @@ func getContainers(podObject *corev1.Pod) map[string]containerStat {
 	return containers
 }
 
-// getClient Initialize k8s Client, discovery client, k8s Client set
-func getClient() (client.Client, *discovery.DiscoveryClient, *kubernetes.Clientset) {
+// initializeClient Initialize k8s Client, discovery client, k8s Client set
+func initializeClient() (client.Client, *discovery.DiscoveryClient, *kubernetes.Clientset) {
 	conFig := config.GetConfigOrDie()
-	_ = corev1.AddToScheme(scheme)
-	_ = clientGoScheme.AddToScheme(scheme)
+	err := corev1.AddToScheme(scheme)
+	if err != nil {
+		log.Fatalf("%s", err.Error())
+	}
+	err = clientGoScheme.AddToScheme(scheme)
+	if err != nil {
+		log.Fatalf("%s", err.Error())
+	}
 
 	clientSet, err := kubernetes.NewForConfig(conFig)
 	if err != nil {
-		log.Fatalf("Unable to get access to K8S : %s", err.Error())
+		log.Fatalf("Unable to get clientset for the given config. : %s", err.Error())
 	}
 	kClient, kErr := client.New(conFig, client.Options{Scheme: scheme})
 	if kErr != nil {
-		log.Fatalf("Unable to get client : %s", kErr.Error())
+		log.Fatalf("Unable to get client using the provided config and Options : %s", kErr.Error())
 	}
 	discClient, dErr := discovery.NewDiscoveryClientForConfig(conFig)
 	if dErr != nil {
-		log.Fatalf("Unable to create discovery client")
+		log.Fatalf("Unable to get DiscoveryClient for the given config")
 	}
 	return kClient, discClient, clientSet
 }

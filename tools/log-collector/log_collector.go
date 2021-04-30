@@ -38,7 +38,7 @@ type LogCollector struct {
 
 // setClient initialize clients
 func (l *LogCollector) setClient() {
-	l.k8sClient, l.disClient, l.k8sClientSet = getClient()
+	l.k8sClient, l.disClient, l.k8sClientSet = initializeClient()
 	l.disClient.LegacyPrefix = "/api/"
 }
 
