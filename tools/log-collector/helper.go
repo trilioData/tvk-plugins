@@ -145,7 +145,7 @@ func filterTvkCSV(csvObjects unstructured.UnstructuredList) unstructured.Unstruc
 }
 
 // filterRelatedCRD returns list of crds created by given set of groups
-func filterTvkStorageCSICRD(crdObjs unstructured.UnstructuredList) (unstructured.UnstructuredList, error) {
+func filterTvkSnapshotAndCSICRD(crdObjs unstructured.UnstructuredList) (unstructured.UnstructuredList, error) {
 	crdFilterGroup := sets.NewString(TriliovaultGroup, SnapshotStorageGroup, CsiStorageGroup)
 	var filteredCRDObjects unstructured.UnstructuredList
 	for index := range crdObjs.Items {

@@ -120,7 +120,7 @@ func preRun(*cobra.Command, []string) error {
 	log.SetLevel(level)
 
 	if len(namespaces) != 0 && clustered {
-		log.Fatal("Cannot use flag --namespaces and--clustered scope at the same time")
+		log.Fatalf("Cannot use flag %s and %s scope at the same time", namespacesFlag, clusteredFlag)
 	}
 	return nil
 }

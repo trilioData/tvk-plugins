@@ -114,6 +114,7 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 			log.Warnf("%s", err.Error())
 			return objects, nil
 		}
+		// TODO() We will add this feature in future of --continue-on-error type flag
 		log.Warnf("%s", err.Error())
 		return unstructured.UnstructuredList{}, nil
 	}
@@ -334,22 +335,20 @@ func (l *LogCollector) zipDir() error {
 
 // filterResourceObjects filter objects on the basis of resource Type.
 func (l *LogCollector) filterResourceObjects(resourcePath string,
-	resource *apiv1.APIResource) (objects unstructured.UnstructuredList, err error) {
-
-	var allObjects unstructured.UnstructuredList
+	resource *apiv1.APIResource) (allObjects unstructured.UnstructuredList, err error) {
 
 	if (!resource.Namespaced && clusteredResources.Has(resource.Kind)) ||
 		(resource.Namespaced && !excludeResources.Has(resource.Kind)) {
 		log.Infof("Fetching '%s' Resource", resource.Kind)
 		allObjects, err = l.getResourceObjects(resourcePath, resource)
 		if err != nil {
-			return objects, err
+			return allObjects, err
 		}
 
 		if resource.Name == CRD {
-			allObjects, err = filterTvkStorageCSICRD(allObjects)
+			allObjects, err = filterTvkSnapshotAndCSICRD(allObjects)
 			if err != nil {
-				return objects, err
+				return allObjects, err
 			}
 		}
 
@@ -362,15 +361,11 @@ func (l *LogCollector) filterResourceObjects(resourcePath string,
 		}
 	}
 
-	if nonLabeledResources.Has(resource.Kind) {
-		objects.Items = append(objects.Items, allObjects.Items...)
-	} else if clusteredResources.Has(resource.Kind) {
-		objects.Items = append(objects.Items, allObjects.Items...)
-	} else {
+	if !nonLabeledResources.Has(resource.Kind) &&
+		!clusteredResources.Has(resource.Kind) {
 		filterTvkResourcesByLabel(&allObjects)
-		return allObjects, nil
 	}
-	return objects, nil
+	return allObjects, nil
 }
 
 func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIResource) error {
