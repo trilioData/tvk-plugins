@@ -95,7 +95,7 @@ func runLogCollector(*cobra.Command, []string) error {
 	}
 	err := logCollector.CollectLogsAndDump()
 	if err != nil {
-		log.Fatalf("%s", err.Error())
+		log.Fatalf("Log collection failed - %s", err.Error())
 	}
 
 	log.Info("---------    FINISHED COLLECTING LOGS    --------- ")
