@@ -78,7 +78,7 @@ func (l *LogCollector) CollectLogsAndDump() error {
 	return nil
 }
 
-// getGVResourcesObjects returns list of objects for given resource_path
+// getResourceObjects returns list of objects for given resourcePath
 func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.APIResource) (objects unstructured.UnstructuredList,
 	err error) {
 
@@ -96,6 +96,9 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 					log.Warnf("%s", err.Error())
 					return objects, nil
 				}
+				/* TODO() Currently error is ignore here, as we do not want to halt the log-collection utility because of
+				single resources GET err. In future, if we add --continue-on-error type flag then, we'll update it and return
+				error depending on --continue-on-error flag value */
 				log.Warnf("%s", err.Error())
 				return unstructured.UnstructuredList{}, nil
 			}
@@ -114,14 +117,16 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 			log.Warnf("%s", err.Error())
 			return objects, nil
 		}
-		// TODO() We will add this feature in future of --continue-on-error type flag
+		/* TODO() Currently error is ignore here, as we do not want to halt the log-collection utility because of
+		single resources GET err. In future, if we add --continue-on-error type flag then, we'll update it and return
+		error depending on --continue-on-error flag value */
 		log.Warnf("%s", err.Error())
 		return unstructured.UnstructuredList{}, nil
 	}
 	return objects, nil
 }
 
-// writeEvents writes events
+// writeEventsToFile writes events to the file
 func (l *LogCollector) writeEventsToFile(events map[string][]map[string]interface{}) error {
 
 	for k, v := range events {
@@ -435,6 +440,7 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 	return nil
 }
 
+// writeObjectsAndLogs writes objects YAML and logs to file
 func (l *LogCollector) writeObjectsAndLogs(objects unstructured.UnstructuredList, kind string) (map[string][]types.NamespacedName, error) {
 
 	var nsName []types.NamespacedName
@@ -463,7 +469,7 @@ func (l *LogCollector) writeObjectsAndLogs(objects unstructured.UnstructuredList
 	return resourceMap, nil
 }
 
-// trilioGroup collects all the resources related to trilio and writes the YAML
+// getTrilioGroupResources collects all the resources related to trilio and writes the YAML
 func (l *LogCollector) getTrilioGroupResources(trilioGVResources []apiv1.APIResource, groupVersion string) error {
 	log.Info("Checking Trilio Group")
 	for index := range trilioGVResources {
@@ -526,7 +532,7 @@ func (l *LogCollector) CheckIsOpenshift() bool {
 	return true
 }
 
-// getResourceObjectsWithOwnerRef return all the objects which has ownerRef of CSV
+// getOcpResourcesByOwnerRef return all the objects which has ownerRef of CSV
 func (l *LogCollector) getOcpResourcesByOwnerRef(resourcePath string,
 	resource *apiv1.APIResource) (objects unstructured.UnstructuredList, err error) {
 

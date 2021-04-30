@@ -144,7 +144,7 @@ func filterTvkCSV(csvObjects unstructured.UnstructuredList) unstructured.Unstruc
 	return filteredCSVObject
 }
 
-// filterRelatedCRD returns list of crds created by given set of groups
+// filterTvkSnapshotAndCSICRD returns list of crds created by given set of groups
 func filterTvkSnapshotAndCSICRD(crdObjs unstructured.UnstructuredList) (unstructured.UnstructuredList, error) {
 	crdFilterGroup := sets.NewString(TriliovaultGroup, SnapshotStorageGroup, CsiStorageGroup)
 	var filteredCRDObjects unstructured.UnstructuredList
@@ -229,7 +229,7 @@ func getContainers(podObject *corev1.Pod) map[string]containerStat {
 	return containers
 }
 
-// getClientSet Initialize k8s Client, discovery client, k8s Client set
+// getClient Initialize k8s Client, discovery client, k8s Client set
 func getClient() (client.Client, *discovery.DiscoveryClient, *kubernetes.Clientset) {
 	conFig := config.GetConfigOrDie()
 	_ = corev1.AddToScheme(scheme)
