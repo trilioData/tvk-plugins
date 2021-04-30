@@ -58,10 +58,11 @@ func init() {
 
 func logCollectorCommand() *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:   binaryName,
-		Short: shortUsage,
-		Long:  longUsage,
-		RunE:  runLogCollector,
+		Use:               binaryName,
+		Short:             shortUsage,
+		Long:              longUsage,
+		RunE:              runLogCollector,
+		PersistentPreRunE: preRun,
 	}
 
 	cmd.Flags().StringSliceVarP(&namespaces, namespacesFlag, namespacesShort, namespacesDefault, namespacesUsage)
@@ -94,7 +95,7 @@ func runLogCollector(*cobra.Command, []string) error {
 	}
 	err := logCollector.CollectLogsAndDump()
 	if err != nil {
-		return err
+		log.Fatalf("Log collection failed - %s", err.Error())
 	}
 
 	log.Info("---------    FINISHED COLLECTING LOGS    --------- ")
@@ -107,4 +108,19 @@ func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatalf("Unable to execute log-collector : %v", err)
 	}
+}
+
+// preRun runs just before the run for any pre checks and setting up vars
+func preRun(*cobra.Command, []string) error {
+	// Setting Log Level
+	level, lErr := log.ParseLevel(logLevel)
+	if lErr != nil {
+		log.Fatalf("Unable to Parse Log Level : %s", lErr.Error())
+	}
+	log.SetLevel(level)
+
+	if len(namespaces) != 0 && clustered {
+		log.Fatalf("Cannot use flag %s and %s scope at the same time", namespacesFlag, clusteredFlag)
+	}
+	return nil
 }

@@ -6,11 +6,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	log "github.com/sirupsen/logrus"
+
 	corev1 "k8s.io/api/core/v1"
-	apiv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	clientGoScheme "k8s.io/client-go/kubernetes/scheme"
@@ -24,36 +25,30 @@ const (
 	SnapshotStorageGroup      = "snapshot.storage.k8s.io"
 	ClusterServiceVersion     = "clusterserviceversions"
 	ClusterServiceVersionKind = "ClusterServiceVersion"
+	TriliovaultGroupVersion   = "triliovault.trilio.io/v1"
 
-	OperatorGroup              = "operators.coreos.com"
-	APIExtensionsGroup         = "apiextensions.k8s.io"
-	AdmissionRegistrationGroup = "admissionregistration.k8s.io/v1beta1"
-
-	StorageGv     = "storage.k8s.io/v1"
-	CoreGv        = "v1"
-	BatchGv       = "batch/v1"
-	BatchGv1beta1 = "batch/v1beta1"
-	AppsGv        = "apps/v1"
-
-	Namespaces          = "namespaces"
-	Events              = "events"
-	CRD                 = "customresourcedefinitions"
-	StorageClass        = "storageclasses"
-	VolumeSnapshot      = "volumesnapshots"
-	VolumeSnapshotClass = "volumesnapshotclasses"
-	ConversionNamespace = "trilio-conversion"
-	Pod                 = "Pod"
-	ControllerRevision  = "ControllerRevision"
+	CoreGv           = "v1"
+	Events           = "events"
+	CRD              = "customresourcedefinitions"
+	Namespaces       = "namespaces"
+	Pod              = "Pod"
+	SubscriptionKind = "Subscription"
+	InstallPlanKind  = "InstallPlan"
 
 	LicenseKind = "License"
+	Verblist    = "list"
+
+	TrilioPrefix = "k8s-triliovault"
 )
 
 var (
 	scheme = runtime.NewScheme()
 
-	// CoreGRPResources ... List of core group resources collected by log collector
-	CoreGRPResources    = []string{"Pod", "PersistentVolumeClaim", "PersistentVolume", "Service", "ConfigMap"}
-	K8STrilioVaultLabel = map[string]string{"app.kubernetes.io/part-of": "k8s-triliovault"}
+	K8STrilioVaultLabel = map[string]string{"app.kubernetes.io/part-of": TrilioPrefix}
+	nonLabeledResources = sets.NewString("ResourceQuota", "LimitRange", "VolumeSnapshot", "ClusterServiceVersion")
+	clusteredResources  = sets.NewString("Node", "Namespace", "CustomResourceDefinition", "StorageClass",
+		"VolumeSnapshotClass")
+	excludeResources = sets.NewString("Secret", "PackageManifest")
 )
 
 type containerStat struct {
@@ -67,7 +62,6 @@ func aggregateEvents(eventObjects unstructured.UnstructuredList,
 
 	eventsData := make(map[string][]map[string]interface{})
 	for _, eve := range eventObjects.Items {
-
 		apiVersion, _, aErr := unstructured.NestedString(eve.Object, "involvedObject", "apiVersion")
 		if aErr != nil {
 			log.Errorf("Unable to get event data of Object : %s", aErr.Error())
@@ -138,77 +132,47 @@ func getNamespacedName(namespace, name string) types.NamespacedName {
 	}
 }
 
-// filterCSV returns list of openshift csv created by triliovault
-func filterCSV(csvObjects unstructured.UnstructuredList) unstructured.UnstructuredList {
+// filterTvkCSV returns list of openshift csv created by triliovault
+func filterTvkCSV(csvObjects unstructured.UnstructuredList) unstructured.UnstructuredList {
 
 	var filteredCSVObject unstructured.UnstructuredList
 	for index := range csvObjects.Items {
-		if strings.HasPrefix(csvObjects.Items[index].GetName(), "k8s-triliovault") {
+		if strings.HasPrefix(csvObjects.Items[index].GetName(), TrilioPrefix) {
 			filteredCSVObject.Items = append(filteredCSVObject.Items, csvObjects.Items[index])
 		}
 	}
 	return filteredCSVObject
 }
 
-// filterCRD returns list of crds created by given set of groups
-func filterCRD(crdObjs unstructured.UnstructuredList) (unstructured.UnstructuredList, error) {
-	crdFilterGroup := []string{TriliovaultGroup, SnapshotStorageGroup, CsiStorageGroup}
-	var filteredCRDObject unstructured.UnstructuredList
+// filterTvkSnapshotAndCSICRD returns list of crds created by given set of groups
+func filterTvkSnapshotAndCSICRD(crdObjs unstructured.UnstructuredList) (unstructured.UnstructuredList, error) {
+	crdFilterGroup := sets.NewString(TriliovaultGroup, SnapshotStorageGroup, CsiStorageGroup)
+	var filteredCRDObjects unstructured.UnstructuredList
 	for index := range crdObjs.Items {
-		for in := range crdFilterGroup {
-			crdGroup, _, err := unstructured.NestedString(crdObjs.Items[index].Object, "spec", "group")
-			if err != nil {
-				log.Errorf("Unable to get the CRD Group field : %s", err.Error())
-				return filteredCRDObject, err
-			}
-			if crdFilterGroup[in] == crdGroup {
-				filteredCRDObject.Items = append(filteredCRDObject.Items, crdObjs.Items[index])
-			}
+		crdGroup, _, err := unstructured.NestedString(crdObjs.Items[index].Object, "spec", "group")
+		if err != nil {
+			log.Errorf("Unable to get the CRD Group field : %s", err.Error())
+			return filteredCRDObjects, err
+		}
+		if crdFilterGroup.Has(crdGroup) {
+			filteredCRDObjects.Items = append(filteredCRDObjects.Items, crdObjs.Items[index])
 		}
 	}
-	return filteredCRDObject, nil
+	return filteredCRDObjects, nil
 }
 
-// getGVByGroup returns group_version matched for given group
-func getGVByGroup(apiGVList []*apiv1.APIGroup, groupName string, isPreferredVersion bool) (gvList []string) {
+// filterInputNS returns list of Namespaces Object given by user input in --namespaces flag
+func filterInputNS(nsObjs unstructured.UnstructuredList, namespaces []string) unstructured.UnstructuredList {
+	var filteredNSObjects unstructured.UnstructuredList
 
-	for index := range apiGVList {
-		if apiGVList[index].Name == groupName {
-			if isPreferredVersion {
-				gvList = append(gvList, apiGVList[index].PreferredVersion.GroupVersion)
-			}
-			for in := range apiGVList[index].Versions {
-				gvList = append(gvList, apiGVList[index].Versions[in].GroupVersion)
-			}
+	nsNames := sets.NewString(namespaces...)
+
+	for _, nsObj := range nsObjs.Items {
+		if nsNames.Has(nsObj.GetName()) {
+			filteredNSObjects.Items = append(filteredNSObjects.Items, nsObj)
 		}
 	}
-	return gvList
-}
-
-// getResourcesGVByName resource object and gv for given resource name
-func getResourcesGVByName(resourceMap map[string][]apiv1.APIResource, name string) map[string]apiv1.APIResource {
-
-	gvResourceMap := make(map[string]apiv1.APIResource)
-	for gv, resource := range resourceMap {
-		for index := range resource {
-			if resource[index].Name == name {
-				gvResourceMap[gv] = resource[index]
-				continue
-			}
-		}
-	}
-	return gvResourceMap
-}
-
-// getResourceByName returns resource object for given resource name
-func getResourceByName(gVResources []apiv1.APIResource, name string) (matchedResource apiv1.APIResource) {
-
-	for index := range gVResources {
-		if gVResources[index].Name == name {
-			return gVResources[index]
-		}
-	}
-	return matchedResource
+	return filteredNSObjects
 }
 
 // getContainerStatusValue returns whether current and previous container present to capture logs
@@ -234,14 +198,6 @@ func getContainerStatusValue(containerStatus *corev1.ContainerStatus) (conStatOb
 	}
 
 	return conStatObj
-}
-
-// getObjectsNames returns list of names of objects
-func getObjectsNames(objects unstructured.UnstructuredList) (nameList []string) {
-	for index := range objects.Items {
-		nameList = append(nameList, objects.Items[index].GetName())
-	}
-	return nameList
 }
 
 // getAPIGroupVersionResourcePath returns api resource path for given groupVersion
@@ -273,52 +229,31 @@ func getContainers(podObject *corev1.Pod) map[string]containerStat {
 	return containers
 }
 
-// getClientSet Initialize k8s Client, discovery client, k8s Client set
-func getClient() (client.Client, *discovery.DiscoveryClient, *kubernetes.Clientset) {
+// initializeClient Initialize k8s Client, discovery client, k8s Client set
+func initializeClient() (client.Client, *discovery.DiscoveryClient, *kubernetes.Clientset) {
 	conFig := config.GetConfigOrDie()
-	_ = corev1.AddToScheme(scheme)
-	_ = clientGoScheme.AddToScheme(scheme)
+	err := corev1.AddToScheme(scheme)
+	if err != nil {
+		log.Fatalf("%s", err.Error())
+	}
+	err = clientGoScheme.AddToScheme(scheme)
+	if err != nil {
+		log.Fatalf("%s", err.Error())
+	}
 
 	clientSet, err := kubernetes.NewForConfig(conFig)
 	if err != nil {
-		log.Fatalf("Unable to get access to K8S : %s", err.Error())
+		log.Fatalf("Unable to get clientset for the given config. : %s", err.Error())
 	}
 	kClient, kErr := client.New(conFig, client.Options{Scheme: scheme})
 	if kErr != nil {
-		log.Fatalf("Unable to get client : %s", kErr.Error())
+		log.Fatalf("Unable to get client using the provided config and Options : %s", kErr.Error())
 	}
 	discClient, dErr := discovery.NewDiscoveryClientForConfig(conFig)
 	if dErr != nil {
-		log.Fatalf("Unable to create discovery client")
+		log.Fatalf("Unable to get DiscoveryClient for the given config")
 	}
 	return kClient, discClient, clientSet
-}
-
-// contains checks if a string is present in a slice
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-	return false
-}
-
-// filterGroupResources returns list of filtered resources fetched from each group
-func filterGroupResources(resources []apiv1.APIResource, group string) (filteredResources []apiv1.APIResource) {
-
-	for index := range resources {
-		if group == CoreGv && contains(CoreGRPResources, resources[index].Kind) {
-			filteredResources = append(filteredResources, resources[index])
-		} else if group == AppsGv && resources[index].Kind != ControllerRevision {
-			filteredResources = append(filteredResources, resources[index])
-		} else if group == BatchGv {
-			filteredResources = append(filteredResources, resources[index])
-		} else if group == BatchGv1beta1 {
-			filteredResources = append(filteredResources, resources[index])
-		}
-	}
-	return filteredResources
 }
 
 // checkLabelExist check if key [value] exist in other map
@@ -334,4 +269,17 @@ func checkLabelExist(givenLabel, toCheckInLabel map[string]string) (exist bool) 
 		}
 	}
 	return exist
+}
+
+// filterTvkResourcesByLabel filter objects on the basis of Labels
+func filterTvkResourcesByLabel(allObjects *unstructured.UnstructuredList) {
+	var objects unstructured.UnstructuredList
+
+	for _, object := range allObjects.Items {
+		objectLabel := object.GetLabels()
+		if len(objectLabel) != 0 && checkLabelExist(objectLabel, K8STrilioVaultLabel) {
+			objects.Items = append(objects.Items, object)
+		}
+	}
+	allObjects.Items = objects.Items
 }
