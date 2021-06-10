@@ -17,7 +17,6 @@ type ListOptions struct {
 	TvkInstanceUID string `url:"tvkInstanceUID"`
 }
 
-
 // GetBackupPlans returns backupPlan with available options
 func (c *Client) GetBackupPlans(options *ListOptions) error {
 	values, err := query.Values(options)
@@ -25,7 +24,7 @@ func (c *Client) GetBackupPlans(options *ListOptions) error {
 		return err
 	}
 	queryParam := values.Encode()
-	req, err := http.NewRequest("GET",fmt.Sprintf("%sbackupplan?%s", c.baseURL, queryParam), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%sbackupplan?%s", c.baseURL, queryParam), nil)
 	if err != nil {
 		return err
 	}
@@ -38,5 +37,5 @@ func (c *Client) GetBackupPlans(options *ListOptions) error {
 	gojsonq.New().FromString(res).From("results").Select(backupPlanSelector...).Writer(&backupPlanBytes)
 	fmt.Printf("%s\n", backupPlanBytes.String())
 
-	return  nil
+	return nil
 }

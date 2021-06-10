@@ -2,7 +2,6 @@ package targetbrowser
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -49,7 +48,7 @@ func (c *Client) sendRequest(req *http.Request) (string, error) {
 		if err = json.NewDecoder(res.Body).Decode(&errRes); err == nil {
 			return "", errors.New(errRes.Message)
 		}
-		return "", fmt.Errorf("error is %v, status code: %d", err, res.StatusCode)
+		return "", errors.Errorf("error is %v, status code: %d", err, res.StatusCode)
 	}
 
 	body, err := ioutil.ReadAll(res.Body)

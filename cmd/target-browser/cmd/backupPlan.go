@@ -5,8 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	targetBrowser "github.com/trilioData/tvk-plugins/tools/targetbrowser"
 
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"    // GCP auth lib for GKE
-
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth lib for GKE
 )
 
 func init() {
