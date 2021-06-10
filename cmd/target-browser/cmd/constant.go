@@ -38,8 +38,56 @@ const (
 	pageSizeFlag    = "page-size"
 	pageSizeDefault = 10
 	pageSizeUsage   = "Maximum number of results in a single page"
+	pageSizeShort   = "s"
 
 	orderByFlag    = "order-by"
 	orderByDefault = "name"
 	orderByUsage   = "Parameter to use for ordering the paginated result set"
+
+	shortUsage = "API to perform Read operations on BackupPlan"
+	longUsage  = "API to perform Read operations on BackupPlan"
+
+	metadataShortUsage = "API to perform Read operations on Backup high level metadata"
+	metadataLongUsage  = "API to perform Read operations on Backup high level metadata"
+
+	pageFlag    = "page"
+	pageDefault = 1
+	pageShort   = "p"
+	pageUsage   = "A page number within the paginated result set."
+
+	orderingFlag    = "ordering"
+	orderingDefault = "name"
+	orderingShort   = "o"
+	orderingUsage   = "ordering"
+
+	tvkInstanceUIDFlag    = "tvkInstanceUID"
+	tvkInstanceUIDDefault = ""
+	tvkInstanceUIDShort   = "t"
+	tvkInstanceUIDUsage   = "TVK instance id to filter for."
+
+	backupPlanUIDFlag    = "backupPlanUID"
+	backupPlanUIDDefault = ""
+	backupPlanUIDShort   = "u"
+	backupPlanUIDUsage   = "backupPlanUID to get all backup related to UID"
+
+	backupStatusFlag    = "backupStatus"
+	backupStatusDefault = ""
+	backupStatusShort   = "b"
+	backupStatusUsage   = "Status of Backup to filter for [Success, InProgress, Failed]"
+
+	backupUIDFlag    = "backupUID"
+	backupUIDDefault = ""
+	backupUIDShort   = "a"
+	backupUIDUsage   = "backupUID to get all backup related to UID"
+)
+
+var (
+	pageSize       int
+	page           int
+	ordering       string
+	tvkInstanceUID string
+	backupPlanUID  string
+	backupStatus   string
+	backupUID      string
+	APIKey         = ""
 )

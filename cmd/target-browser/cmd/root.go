@@ -1,21 +1,22 @@
 package cmd
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"github.com/trilioData/tvk-plugins/internal"
+	targetbrowser "github.com/trilioData/tvk-plugins/tools/target-browser"
 
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth lib for GKE
 
-	"github.com/spf13/cobra"
-
-	"github.com/trilioData/tvk-plugins/internal"
-	targetbrowser "github.com/trilioData/tvk-plugins/tools/target-browser"
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
+
 	Use:   "target-browser",
 	Short: "target-browser cli utility queries content of mounted target",
 	Long: `target-browser cli utility can query content of mounted target location to get details of backup, backupPlan and

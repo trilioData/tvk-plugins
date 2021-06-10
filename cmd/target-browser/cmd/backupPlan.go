@@ -1,27 +1,47 @@
 package cmd
 
 import (
-	"fmt"
-
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	targetBrowser "github.com/trilioData/tvk-plugins/tools/targetbrowser"
+
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"    // GCP auth lib for GKE
+
 )
 
-// backupPlanCmd represents the backupPlan command
-var backupPlanCmd = &cobra.Command{
-	Use:     backupPlanCmdName,
-	Aliases: []string{backupPlanCmdPluralName, backupPlanCmdAlias, backupPlanCmdAliasPlural},
-	Short:   "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("backupPlan called")
-	},
+func init() {
+	getCmd.AddCommand(backupPlanCmd())
 }
 
-func init() {
-	getCmd.AddCommand(backupPlanCmd)
+func backupPlanCmd() *cobra.Command {
+	var cmd = &cobra.Command{
+		Use:     backupPlanCmdName,
+		Aliases: []string{backupPlanCmdPluralName, backupPlanCmdAlias, backupPlanCmdAliasPlural},
+		Short: shortUsage,
+		Long:  longUsage,
+		RunE:  runBackupPlan,
+	}
+
+	cmd.Flags().IntVarP(&pageSize, pageSizeFlag, pageSizeShort, pageSizeDefault, pageSizeUsage)
+	cmd.Flags().IntVarP(&page, pageFlag, pageShort, pageDefault, pageUsage)
+	cmd.Flags().StringVarP(&ordering, orderingFlag, orderingShort, orderingDefault, orderingUsage)
+	cmd.Flags().StringVarP(&tvkInstanceUID, tvkInstanceUIDFlag, tvkInstanceUIDShort, tvkInstanceUIDDefault, tvkInstanceUIDUsage)
+	return cmd
+}
+
+func runBackupPlan(*cobra.Command, []string) error {
+	log.Info("---------    BackupPlan List start  --------- ")
+
+	bpOptions := targetBrowser.ListOptions{
+		Page:           page,
+		PageSize:       pageSize,
+		Ordering:       ordering,
+		TvkInstanceUID: tvkInstanceUID,
+	}
+	err := targetBrowser.NewClient(APIKey).GetBackupPlans(&bpOptions)
+	if err != nil {
+		log.Fatalf("backupplan failed - %s", err.Error())
+	}
+	log.Info("---------    BackupPlan List end   --------- ")
+	return nil
 }
