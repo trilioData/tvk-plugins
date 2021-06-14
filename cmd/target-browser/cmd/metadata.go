@@ -3,9 +3,9 @@ package cmd
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	targetBrowser "github.com/trilioData/tvk-plugins/tools/targetbrowser"
-
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth lib for GKE
+
+	targetBrowser "github.com/trilioData/tvk-plugins/tools/targetbrowser"
 )
 
 func init() {
@@ -25,17 +25,18 @@ func metadataCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&backupUID, backupUIDFlag, backupUIDShort, backupUIDDefault, backupUIDUsage)
 	err := cmd.MarkFlagRequired(backupPlanUIDFlag)
 	if err != nil {
+		log.Fatalf("Invalid option or missing required flag %s and Error is %s", backupPlanUIDFlag, err.Error())
 		return nil
 	}
 	err = cmd.MarkFlagRequired(backupUIDFlag)
 	if err != nil {
+		log.Fatalf("Invalid option or missing required flag %s and Error is %s", backupUIDFlag, err.Error())
 		return nil
 	}
 	return cmd
 }
 
 func runMetadata(*cobra.Command, []string) error {
-	log.Info("---------    Metadata List start   --------- ")
 
 	mdOptions := targetBrowser.MetadataListOptions{
 		BackupPlanUID: backupPlanUID,
@@ -43,9 +44,8 @@ func runMetadata(*cobra.Command, []string) error {
 	}
 	err := targetBrowser.NewClient(APIKey).GetMetadata(&mdOptions)
 	if err != nil {
-		log.Fatalf("metadata failed - %s", err.Error())
+		return err
 	}
-	log.Info("---------  metadata List end   --------- ")
 	return nil
 
 }

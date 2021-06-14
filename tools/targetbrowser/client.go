@@ -15,14 +15,21 @@ type Client struct {
 	HTTPClient *http.Client
 }
 
-// NewClient creates new trilio backend client with given API key
+const (
+	acceptHeader = "application/json"
+	contentType  = "application/json"
+	MethodGet    = "GET"
+	baseURL      = ""
+)
+
+// NewClient Create new HTTP client
 func NewClient(apiKey string) *Client {
 	return &Client{
 		apiKey: apiKey,
 		HTTPClient: &http.Client{
-			Timeout: 5 * time.Minute,
+			Timeout: 30 * time.Second,
 		},
-		baseURL: "http://pankaj1.k8s-tvk.com/sample-target.pankaj1/",
+		baseURL: baseURL,
 	}
 }
 
@@ -31,10 +38,10 @@ type errorResponse struct {
 	Message string `json:"message"`
 }
 
-// Content-type and body should be already added to req
+// Content-type and body should be already added to request
 func (c *Client) sendRequest(req *http.Request) (string, error) {
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", acceptHeader)
+	req.Header.Set("Content-Type", contentType)
 	req.Header.Add("jweToken", c.apiKey)
 	res, err := c.HTTPClient.Do(req)
 	if err != nil {
@@ -48,7 +55,7 @@ func (c *Client) sendRequest(req *http.Request) (string, error) {
 		if err = json.NewDecoder(res.Body).Decode(&errRes); err == nil {
 			return "", errors.New(errRes.Message)
 		}
-		return "", errors.Errorf("error is %v, status code: %d", err, res.StatusCode)
+		return "", errors.Errorf("error is %s, status code: %d", err.Error(), res.StatusCode)
 	}
 
 	body, err := ioutil.ReadAll(res.Body)

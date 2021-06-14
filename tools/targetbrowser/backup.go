@@ -6,7 +6,13 @@ import (
 	"net/http"
 
 	"github.com/google/go-querystring/query"
+	log "github.com/sirupsen/logrus"
 	"github.com/thedevsaddam/gojsonq"
+)
+
+const (
+	backupEndPoint = "backup"
+	Results        = "results"
 )
 
 // BackupListOptions for backup
@@ -25,8 +31,13 @@ func (c *Client) GetBackups(options *BackupListOptions) error {
 		return err
 	}
 	queryParam := values.Encode()
-	fmt.Printf("\n Backup URL: %s\n", fmt.Sprintf("%s/backup?%s", c.baseURL, queryParam))
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/backup?%s", c.baseURL, queryParam), nil)
+	return c.TriggerAPI(backupEndPoint, queryParam)
+
+}
+
+func (c *Client) TriggerAPI(apiEndPoint, queryParam string) error {
+	log.Debugf("Base URL of target-Browser: %s, API endPoint is %s and Query Param is %s.", c.baseURL, apiEndPoint, queryParam)
+	req, err := http.NewRequest(MethodGet, fmt.Sprintf("%s/%s?%s", c.baseURL, apiEndPoint, queryParam), nil)
 	if err != nil {
 		return err
 	}
@@ -36,7 +47,7 @@ func (c *Client) GetBackups(options *BackupListOptions) error {
 		return err
 	}
 	var backupBytes bytes.Buffer
-	gojsonq.New().FromString(res).From("results").Select(backupSelector...).Writer(&backupBytes)
+	gojsonq.New().FromString(res).From(Results).Select(backupSelector...).Writer(&backupBytes)
 	fmt.Printf("%s\n", backupBytes.String())
 	return nil
 }

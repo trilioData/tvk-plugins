@@ -35,6 +35,12 @@ const (
 	pagesDefault = 1
 	pagesUsage   = "Number of Pages to display within the paginated result set"
 
+	shortUsage = "Retrieve a list of BackupPlans in that target store."
+	longUsage  = "Retrieve a list of BackupPlans in that target store using options."
+
+	backupShortUsage = "Retrieve a list of Backup in that target store."
+	backupLongUsage  = "Retrieve a list of Backup in that target store."
+
 	pageSizeFlag    = "page-size"
 	pageSizeDefault = 10
 	pageSizeUsage   = "Maximum number of results in a single page"
@@ -43,9 +49,6 @@ const (
 	orderByFlag    = "order-by"
 	orderByDefault = "name"
 	orderByUsage   = "Parameter to use for ordering the paginated result set"
-
-	shortUsage = "API to perform Read operations on BackupPlan"
-	longUsage  = "API to perform Read operations on BackupPlan"
 
 	metadataShortUsage = "API to perform Read operations on Backup high level metadata"
 	metadataLongUsage  = "API to perform Read operations on Backup high level metadata"
@@ -60,24 +63,24 @@ const (
 	orderingShort   = "o"
 	orderingUsage   = "ordering"
 
-	tvkInstanceUIDFlag    = "tvkInstanceUID"
+	tvkInstanceUIDFlag    = "tvk-instance-uid"
 	tvkInstanceUIDDefault = ""
 	tvkInstanceUIDShort   = "t"
 	tvkInstanceUIDUsage   = "TVK instance id to filter for."
 
-	backupPlanUIDFlag    = "backupPlanUID"
+	backupPlanUIDFlag    = "backup-plan-uid"
 	backupPlanUIDDefault = ""
-	backupPlanUIDShort   = "u"
+	backupPlanUIDShort   = ""
 	backupPlanUIDUsage   = "backupPlanUID to get all backup related to UID"
 
-	backupStatusFlag    = "backupStatus"
+	backupStatusFlag    = "backup-status"
 	backupStatusDefault = ""
-	backupStatusShort   = "b"
+	backupStatusShort   = ""
 	backupStatusUsage   = "Status of Backup to filter for [Success, InProgress, Failed]"
 
-	backupUIDFlag    = "backupUID"
+	backupUIDFlag    = "backup-uid"
 	backupUIDDefault = ""
-	backupUIDShort   = "a"
+	backupUIDShort   = ""
 	backupUIDUsage   = "backupUID to get all backup related to UID"
 )
 

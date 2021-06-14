@@ -1,11 +1,10 @@
 package cmd
 
 import (
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	targetBrowser "github.com/trilioData/tvk-plugins/tools/targetbrowser"
-
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth lib for GKE
+
+	targetBrowser "github.com/trilioData/tvk-plugins/tools/targetbrowser"
 )
 
 func init() {
@@ -29,9 +28,8 @@ func backupPlanCmd() *cobra.Command {
 }
 
 func runBackupPlan(*cobra.Command, []string) error {
-	log.Info("---------    BackupPlan List start  --------- ")
 
-	bpOptions := targetBrowser.ListOptions{
+	bpOptions := targetBrowser.BackupPlanListOptions{
 		Page:           page,
 		PageSize:       pageSize,
 		Ordering:       ordering,
@@ -39,8 +37,7 @@ func runBackupPlan(*cobra.Command, []string) error {
 	}
 	err := targetBrowser.NewClient(APIKey).GetBackupPlans(&bpOptions)
 	if err != nil {
-		log.Fatalf("backupplan failed - %s", err.Error())
+		return err
 	}
-	log.Info("---------    BackupPlan List end   --------- ")
 	return nil
 }

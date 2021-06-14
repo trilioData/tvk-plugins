@@ -3,9 +3,9 @@ package cmd
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	targetBrowser "github.com/trilioData/tvk-plugins/tools/targetbrowser"
-
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth lib for GKE
+
+	targetBrowser "github.com/trilioData/tvk-plugins/tools/targetbrowser"
 )
 
 func init() {
@@ -18,9 +18,9 @@ func backupCmd() *cobra.Command {
 	var cmd = &cobra.Command{
 		Aliases: []string{backupCmdPluralName},
 		Use:     backupCmdName,
-		Short:   shortUsage,
-		Long:    longUsage,
-		RunE:    runBackup,
+		Short: backupShortUsage,
+		Long:  backupLongUsage,
+		RunE:  runBackup,
 	}
 
 	cmd.Flags().IntVarP(&pageSize, pageSizeFlag, pageSizeShort, pageSizeDefault, pageSizeUsage)
@@ -30,13 +30,13 @@ func backupCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&backupStatus, backupStatusFlag, backupStatusShort, backupStatusDefault, backupStatusUsage)
 	err := cmd.MarkFlagRequired(backupPlanUIDFlag)
 	if err != nil {
+		log.Fatalf("Invalid option or missing required flag %s and Error is %s", backupPlanUIDFlag, err.Error())
 		return nil
 	}
 	return cmd
 }
 
 func runBackup(*cobra.Command, []string) error {
-	log.Info("---------    BackupPlan List start     --------- ")
 
 	bpOptions := targetBrowser.BackupListOptions{
 		Page:          page,
@@ -47,8 +47,7 @@ func runBackup(*cobra.Command, []string) error {
 	}
 	err := targetBrowser.NewClient(APIKey).GetBackups(&bpOptions)
 	if err != nil {
-		log.Fatalf("backup failed - %s", err.Error())
+		return err
 	}
-	log.Info("---------    Backup List end   --------- ")
 	return nil
 }
