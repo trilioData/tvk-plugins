@@ -21,5 +21,5 @@ func (c *Client) GetBackupPlans(options *BackupPlanListOptions) error {
 		return err
 	}
 	queryParam := values.Encode()
-	return c.TriggerAPI(backupPlanEndPoint, queryParam)
+	return c.TriggerAPI(backupPlanEndPoint, queryParam, backupPlanSelector)
 }

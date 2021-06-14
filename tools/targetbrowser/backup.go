@@ -31,11 +31,11 @@ func (c *Client) GetBackups(options *BackupListOptions) error {
 		return err
 	}
 	queryParam := values.Encode()
-	return c.TriggerAPI(backupEndPoint, queryParam)
+	return c.TriggerAPI(backupEndPoint, queryParam, backupSelector)
 
 }
 
-func (c *Client) TriggerAPI(apiEndPoint, queryParam string) error {
+func (c *Client) TriggerAPI(apiEndPoint, queryParam string, selector []string) error {
 	log.Debugf("Base URL of target-Browser: %s, API endPoint is %s and Query Param is %s.", c.baseURL, apiEndPoint, queryParam)
 	req, err := http.NewRequest(MethodGet, fmt.Sprintf("%s/%s?%s", c.baseURL, apiEndPoint, queryParam), nil)
 	if err != nil {
@@ -47,7 +47,7 @@ func (c *Client) TriggerAPI(apiEndPoint, queryParam string) error {
 		return err
 	}
 	var backupBytes bytes.Buffer
-	gojsonq.New().FromString(res).From(Results).Select(backupSelector...).Writer(&backupBytes)
+	gojsonq.New().FromString(res).From(Results).Select(selector...).Writer(&backupBytes)
 	fmt.Printf("%s\n", backupBytes.String())
 	return nil
 }
