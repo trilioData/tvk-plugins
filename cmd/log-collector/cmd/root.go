@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth lib for GKE
 
+	"github.com/trilioData/tvk-plugins/tools"
 	logcollector "github.com/trilioData/tvk-plugins/tools/log-collector"
 )
 
@@ -31,7 +32,6 @@ const (
 	clusteredDefault  = false
 	clusteredShort    = "c"
 	kubeconfigUsage   = "specifies the custom path for your kubeconfig"
-	kubeconfigDefault = "~/.kube/config"
 	kubeconfigShort   = "k"
 	keepSourceUsage   = "Keep source directory and Zip both"
 	keepSourceDefault = false
@@ -67,7 +67,7 @@ func logCollectorCommand() *cobra.Command {
 
 	cmd.Flags().StringSliceVarP(&namespaces, namespacesFlag, namespacesShort, namespacesDefault, namespacesUsage)
 	cmd.Flags().BoolVarP(&clustered, clusteredFlag, clusteredShort, clusteredDefault, clusteredUsage)
-	cmd.Flags().StringVarP(&kubeConfig, kubeConfigFlag, kubeconfigShort, kubeconfigDefault, kubeconfigUsage)
+	cmd.Flags().StringVarP(&kubeConfig, kubeConfigFlag, kubeconfigShort, tools.KubeConfigDefault, kubeconfigUsage)
 	cmd.Flags().BoolVarP(&keepSource, keepSourceFlag, keepSourceShort, keepSourceDefault, keepSourceUsage)
 	cmd.Flags().StringVarP(&logLevel, logLevelFlag, loglevelShort, loglevelDefault, logLevelUsage)
 
@@ -87,6 +87,7 @@ func runLogCollector(*cobra.Command, []string) error {
 		t.Hour(), t.Minute(), t.Second())
 
 	logCollector := logcollector.LogCollector{
+		KubeConfig:  kubeConfig,
 		OutputDir:   "triliovault-" + formatted,
 		CleanOutput: !keepSource,
 		Clustered:   clustered,

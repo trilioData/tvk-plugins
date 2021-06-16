@@ -10,19 +10,24 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
-
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/api/extensions/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apiv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
+
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/trilioData/tvk-plugins/tools"
 )
 
 type LogCollector struct {
@@ -34,18 +39,30 @@ type LogCollector struct {
 	k8sClient    client.Client
 	disClient    *discovery.DiscoveryClient
 	k8sClientSet *kubernetes.Clientset
+	KubeConfig   string
 }
 
-// setClient initialize clients
-func (l *LogCollector) setClient() {
-	l.k8sClient, l.disClient, l.k8sClientSet = initializeClient()
+// initializeKubeClients initialize clients for kubernetes environment
+func (l *LogCollector) initializeKubeClients() error {
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(v1beta1.AddToScheme(scheme))
+
+	acc, err := tools.NewEnv(l.KubeConfig, scheme)
+	if err != nil {
+		return err
+	}
+	l.k8sClient, l.disClient, l.k8sClientSet = acc.GetRuntimeClient(), acc.GetDiscoveryClient(), acc.GetClientset()
 	l.disClient.LegacyPrefix = "/api/"
+
+	return nil
 }
 
 // CollectLogsAndDump collects call all the related resources of triliovault
 func (l *LogCollector) CollectLogsAndDump() error {
 
-	l.setClient()
+	if err := l.initializeKubeClients(); err != nil {
+		return err
+	}
 
 	nsErr := l.checkIfNamespacesExist()
 	if nsErr != nil {
