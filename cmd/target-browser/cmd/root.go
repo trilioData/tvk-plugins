@@ -10,7 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/trilioData/tvk-plugins/tools"
+	"github.com/trilioData/tvk-plugins/internal"
 	targetbrowser "github.com/trilioData/tvk-plugins/tools/target-browser"
 )
 
@@ -37,7 +37,7 @@ var (
 )
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&TargetBrowser.KubeConfig, kubeConfigFlag, tools.KubeConfigDefault, kubeConfigUsage)
+	rootCmd.PersistentFlags().StringVar(&TargetBrowser.KubeConfig, kubeConfigFlag, internal.KubeConfigDefault, kubeConfigUsage)
 	rootCmd.PersistentFlags().BoolVar(&TargetBrowser.InsecureSkipTLS, insecureSkipTLSFlag, false, insecureSkipTLSUsage)
 	rootCmd.PersistentFlags().StringVar(&TargetBrowser.CaCert, certificateAuthorityFlag, "", certificateAuthorityUsage)
 	rootCmd.PersistentFlags().StringVar(&TargetBrowser.ClientCert, clientCertificateFlag, "", clientCertificateUsage)

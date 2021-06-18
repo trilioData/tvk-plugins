@@ -14,7 +14,7 @@ import (
 
 	"github.com/thedevsaddam/gojsonq"
 
-	"github.com/trilioData/tvk-plugins/tools"
+	"github.com/trilioData/tvk-plugins/internal"
 )
 
 // Login generates '/login' endpoint path from TvkHost and returns JWT by and calling that API endpoint. Also returns http
@@ -25,8 +25,8 @@ func (targetBrowserConfig *Config) Login(tvkHost string) (string, *http.Client, 
 		return "", nil, err
 	}
 
-	tvkURL.Path = path.Join(tvkURL.Path, tools.APIPath, tools.V1Version, tools.LoginPath)
-	tvkURL.Scheme = tools.HTTPScheme
+	tvkURL.Path = path.Join(tvkURL.Path, internal.APIPath, internal.V1Version, internal.LoginPath)
+	tvkURL.Scheme = internal.HTTPScheme
 
 	kubeConfigBytes, err := ioutil.ReadFile(targetBrowserConfig.KubeConfig)
 	if err != nil {
@@ -34,7 +34,7 @@ func (targetBrowserConfig *Config) Login(tvkHost string) (string, *http.Client, 
 	}
 
 	postBody, err := json.Marshal(map[string]string{
-		tools.KubeConfigParam: string(kubeConfigBytes),
+		internal.KubeConfigParam: string(kubeConfigBytes),
 	})
 	if err != nil {
 		return "", nil, err
@@ -67,7 +67,7 @@ func (targetBrowserConfig *Config) GetAuthJWT(loginURL string, postBody []byte) 
 	if err != nil {
 		return "", nil, err
 	}
-	req.Header.Set(tools.ContentType, tools.ContentApplicationJSON)
+	req.Header.Set(internal.ContentType, internal.ContentApplicationJSON)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -84,9 +84,9 @@ func (targetBrowserConfig *Config) GetAuthJWT(loginURL string, postBody []byte) 
 		return "", nil, err
 	}
 
-	jweBytes := gojsonq.New().FromString(string(body)).Find(tools.JweToken)
+	jweBytes := gojsonq.New().FromString(string(body)).Find(internal.JweToken)
 	if jweBytes == nil {
-		return "", nil, fmt.Errorf("%s %s failed to retrieve %s from response body", http.MethodPost, loginURL, tools.JweToken)
+		return "", nil, fmt.Errorf("%s %s failed to retrieve %s from response body", http.MethodPost, loginURL, internal.JweToken)
 	}
 
 	return jweBytes.(string), client, nil

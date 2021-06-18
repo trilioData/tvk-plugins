@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth lib for GKE
 
-	"github.com/trilioData/tvk-plugins/tools"
+	"github.com/trilioData/tvk-plugins/internal"
 	logcollector "github.com/trilioData/tvk-plugins/tools/log-collector"
 )
 
@@ -67,7 +67,7 @@ func logCollectorCommand() *cobra.Command {
 
 	cmd.Flags().StringSliceVarP(&namespaces, namespacesFlag, namespacesShort, namespacesDefault, namespacesUsage)
 	cmd.Flags().BoolVarP(&clustered, clusteredFlag, clusteredShort, clusteredDefault, clusteredUsage)
-	cmd.Flags().StringVarP(&kubeConfig, kubeConfigFlag, kubeconfigShort, tools.KubeConfigDefault, kubeconfigUsage)
+	cmd.Flags().StringVarP(&kubeConfig, kubeConfigFlag, kubeconfigShort, internal.KubeConfigDefault, kubeconfigUsage)
 	cmd.Flags().BoolVarP(&keepSource, keepSourceFlag, keepSourceShort, keepSourceDefault, keepSourceUsage)
 	cmd.Flags().StringVarP(&logLevel, logLevelFlag, loglevelShort, loglevelDefault, logLevelUsage)
 

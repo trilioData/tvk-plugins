@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/trilioData/tvk-plugins/tools"
+	"github.com/trilioData/tvk-plugins/internal"
 )
 
 type Config struct {
@@ -26,9 +26,9 @@ func (targetBrowserConfig *Config) validateTarget(ctx context.Context, cl client
 	// get target
 	target := &unstructured.Unstructured{}
 	target.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   tools.TriliovaultGroup,
-		Version: tools.V1Version,
-		Kind:    tools.TargetKind,
+		Group:   internal.TriliovaultGroup,
+		Version: internal.V1Version,
+		Kind:    internal.TargetKind,
 	})
 
 	if err := cl.Get(ctx, types.NamespacedName{Namespace: targetBrowserConfig.TargetNamespace, Name: targetBrowserConfig.TargetName},
@@ -65,7 +65,7 @@ func (targetBrowserConfig *Config) getTvkHostAndTargetBrowserAPIPath(ctx context
 		ownerRefs := ing.GetOwnerReferences()
 		for j := range ownerRefs {
 			ownerRef := ownerRefs[j]
-			if ownerRef.Kind == tools.TargetKind && ownerRef.UID == target.GetUID() {
+			if ownerRef.Kind == internal.TargetKind && ownerRef.UID == target.GetUID() {
 				tvkHost = ing.Spec.Rules[0].Host
 				targetBrowserPath = ing.Spec.Rules[0].HTTP.Paths[0].Path
 				if tvkHost == "" || targetBrowserPath == "" {

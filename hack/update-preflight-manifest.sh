@@ -27,10 +27,16 @@ repoURL=$(git config --get remote.origin.url)
 preflightSha256File="preflight-sha256.txt"
 
 preflightSha256URI="$repoURL/releases/download/${PREFLIGHT_VERSION}/$preflightSha256File"
-
-curl -fsSL "$preflightSha256URI" >"$build_dir"/$preflightSha256File
-
 preflightSha256FilePath=$build_dir/$preflightSha256File
+
+curl -fsSL "$preflightSha256URI" >"${preflightSha256FilePath}"
+
+if [ -s "${preflightSha256FilePath}" ]; then
+  echo "File ${preflightSha256FilePath} successfully downloaded and contains data"
+else
+  echo "File ${preflightSha256FilePath} does not contain any data. Exiting..."
+  exit 1
+fi
 
 preflight_sha=$(awk '{print $1}' "$preflightSha256FilePath")
 

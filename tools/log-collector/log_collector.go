@@ -27,7 +27,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/trilioData/tvk-plugins/tools"
+	"github.com/trilioData/tvk-plugins/internal"
 )
 
 type LogCollector struct {
@@ -47,7 +47,7 @@ func (l *LogCollector) initializeKubeClients() error {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(v1beta1.AddToScheme(scheme))
 
-	acc, err := tools.NewEnv(l.KubeConfig, scheme)
+	acc, err := internal.NewEnv(l.KubeConfig, scheme)
 	if err != nil {
 		return err
 	}

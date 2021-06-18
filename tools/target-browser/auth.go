@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/trilioData/tvk-plugins/tools"
+	"github.com/trilioData/tvk-plugins/internal"
 )
 
 // AuthInfo contains http client, JWT, TvkHost, TargetBrowserPath for further use in sub-commands of getCmd
@@ -17,7 +17,7 @@ type AuthInfo struct {
 // backupPlan, metadata].
 func (targetBrowserConfig *Config) Authenticate(ctx context.Context) (*AuthInfo, error) {
 
-	acc, err := tools.NewEnv(targetBrowserConfig.KubeConfig, targetBrowserConfig.Scheme)
+	acc, err := internal.NewEnv(targetBrowserConfig.KubeConfig, targetBrowserConfig.Scheme)
 	if err != nil {
 		return nil, err
 	}

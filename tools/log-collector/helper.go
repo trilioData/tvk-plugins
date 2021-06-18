@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	"github.com/trilioData/tvk-plugins/tools"
+	"github.com/trilioData/tvk-plugins/internal"
 )
 
 const (
@@ -97,7 +97,7 @@ func aggregateEvents(eventObjects unstructured.UnstructuredList,
 				}
 			}
 		}
-		if strings.HasPrefix(apiVersion, tools.TriliovaultGroup) || (kindExist && nameNsExist) {
+		if strings.HasPrefix(apiVersion, internal.TriliovaultGroup) || (kindExist && nameNsExist) {
 
 			_, ok := eve.Object["metadata"]
 			if ok {
@@ -142,7 +142,7 @@ func filterTvkCSV(csvObjects unstructured.UnstructuredList) unstructured.Unstruc
 
 // filterTvkSnapshotAndCSICRD returns list of crds created by given set of groups
 func filterTvkSnapshotAndCSICRD(crdObjs unstructured.UnstructuredList) (unstructured.UnstructuredList, error) {
-	crdFilterGroup := sets.NewString(tools.TriliovaultGroup, SnapshotStorageGroup, CsiStorageGroup)
+	crdFilterGroup := sets.NewString(internal.TriliovaultGroup, SnapshotStorageGroup, CsiStorageGroup)
 	var filteredCRDObjects unstructured.UnstructuredList
 	for index := range crdObjs.Items {
 		crdGroup, _, err := unstructured.NestedString(crdObjs.Items[index].Object, "spec", "group")

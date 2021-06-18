@@ -9,8 +9,8 @@ files.txt
 *~
 
 # Test binary, build with `go test -c`
-*.test
-*junit.xml
+**.test
+**junit.xml
 
 vendor/**/PROJECT
 

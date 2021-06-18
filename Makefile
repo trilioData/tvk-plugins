@@ -77,5 +77,12 @@ update-log-collector-manifest:
 
 update-plugin-manifests: update-preflight-manifest update-log-collector-manifest
 
+build-target-browser:
+	goreleaser release --snapshot --skip-publish --rm-dist
+
+test-target-browser-integration:
+	./hack/run-integration-tests.sh tests/target-browser/...
+
+test-target-browser: clean build-target-browser test-target-browser-integration
 
 .PHONY: clean fmt vet go-lint shell-lint go-lint-fix yaml-lint go-test test coverage build run-log-collector
