@@ -6,7 +6,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth lib for GKE
 
 	"github.com/trilioData/tvk-plugins/internal"
 	logcollector "github.com/trilioData/tvk-plugins/tools/log-collector"

@@ -14,8 +14,8 @@ import (
 	"k8s.io/client-go/discovery"
 	client "k8s.io/client-go/kubernetes"
 
-	// To authenticate kubeEnv on gke cluster
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	// To authenticate kubeEnv for fcp, azure, etc. cluster
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 

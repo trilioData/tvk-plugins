@@ -11,6 +11,6 @@ import (
 
 func TestTargetBrowser(t *testing.T) {
 	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("junit.xml")
+	junitReporter := reporters.NewJUnitReporter("target-browser-junit.xml")
 	RunSpecsWithCustomReporters(t, "TargetBrowser Suite", []Reporter{junitReporter})
 }
