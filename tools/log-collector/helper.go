@@ -12,15 +12,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/kubernetes"
-	clientGoScheme "k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
+
+	"github.com/trilioData/tvk-plugins/internal"
 )
 
 const (
-	TriliovaultGroup          = "triliovault.trilio.io"
 	CsiStorageGroup           = "csi.storage.k8s.io"
 	SnapshotStorageGroup      = "snapshot.storage.k8s.io"
 	ClusterServiceVersion     = "clusterserviceversions"
@@ -101,7 +97,7 @@ func aggregateEvents(eventObjects unstructured.UnstructuredList,
 				}
 			}
 		}
-		if strings.HasPrefix(apiVersion, TriliovaultGroup) || (kindExist && nameNsExist) {
+		if strings.HasPrefix(apiVersion, internal.TriliovaultGroup) || (kindExist && nameNsExist) {
 
 			_, ok := eve.Object["metadata"]
 			if ok {
@@ -146,7 +142,7 @@ func filterTvkCSV(csvObjects unstructured.UnstructuredList) unstructured.Unstruc
 
 // filterTvkSnapshotAndCSICRD returns list of crds created by given set of groups
 func filterTvkSnapshotAndCSICRD(crdObjs unstructured.UnstructuredList) (unstructured.UnstructuredList, error) {
-	crdFilterGroup := sets.NewString(TriliovaultGroup, SnapshotStorageGroup, CsiStorageGroup)
+	crdFilterGroup := sets.NewString(internal.TriliovaultGroup, SnapshotStorageGroup, CsiStorageGroup)
 	var filteredCRDObjects unstructured.UnstructuredList
 	for index := range crdObjs.Items {
 		crdGroup, _, err := unstructured.NestedString(crdObjs.Items[index].Object, "spec", "group")
@@ -227,33 +223,6 @@ func getContainers(podObject *corev1.Pod) map[string]containerStat {
 		}
 	}
 	return containers
-}
-
-// initializeClient Initialize k8s Client, discovery client, k8s Client set
-func initializeClient() (client.Client, *discovery.DiscoveryClient, *kubernetes.Clientset) {
-	conFig := config.GetConfigOrDie()
-	err := corev1.AddToScheme(scheme)
-	if err != nil {
-		log.Fatalf("%s", err.Error())
-	}
-	err = clientGoScheme.AddToScheme(scheme)
-	if err != nil {
-		log.Fatalf("%s", err.Error())
-	}
-
-	clientSet, err := kubernetes.NewForConfig(conFig)
-	if err != nil {
-		log.Fatalf("Unable to get clientset for the given config. : %s", err.Error())
-	}
-	kClient, kErr := client.New(conFig, client.Options{Scheme: scheme})
-	if kErr != nil {
-		log.Fatalf("Unable to get client using the provided config and Options : %s", kErr.Error())
-	}
-	discClient, dErr := discovery.NewDiscoveryClientForConfig(conFig)
-	if dErr != nil {
-		log.Fatalf("Unable to get DiscoveryClient for the given config")
-	}
-	return kClient, discClient, clientSet
 }
 
 // checkLabelExist check if key [value] exist in other map

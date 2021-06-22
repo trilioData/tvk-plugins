@@ -24,19 +24,25 @@ cp "$log_collector_template_manifest" $build_dir/$log_collector_yaml
 log_collector_template_manifest=$build_dir/$log_collector_yaml
 
 repoURL=$(git config --get remote.origin.url)
-log_collector_sha256_file="log-collector-sha256.txt"
+log_collector_sha256_file="tvk-plugins-sha256.txt"
+log_collector_sha256_filePath=$build_dir/$log_collector_sha256_file
 
 log_collector_sha256_URI="$repoURL/releases/download/${LOG_COLLECTOR_VERSION}/$log_collector_sha256_file"
 
-curl -fsSL "$log_collector_sha256_URI" >"$build_dir"/$log_collector_sha256_file
+curl -fsSL "$log_collector_sha256_URI" >"${log_collector_sha256_filePath}"
 
-log_collector_sha256_filePath=$build_dir/$log_collector_sha256_file
+if [ -s "${log_collector_sha256_filePath}" ]; then
+  echo "File ${log_collector_sha256_filePath} successfully downloaded and contains data"
+else
+  echo "File ${log_collector_sha256_filePath} does not contain any data. Exiting..."
+  exit 1
+fi
 
-log_collector_linux_sha=$(awk '/linux/{ print $1 }' "$log_collector_sha256_filePath")
+log_collector_linux_sha=$(awk '/log-collector/ && /linux/ { print $1 }' "$log_collector_sha256_filePath")
 # shellcheck disable=SC2086
-log_collector_darwin_sha=$(awk '/darwin/{ print $1 }' $log_collector_sha256_filePath)
+log_collector_darwin_sha=$(awk '/log-collector/ && /darwin/ { print $1 }' $log_collector_sha256_filePath)
 # shellcheck disable=SC2086
-log_collector_windows_sha=$(awk '/windows/{ print $1 }' $log_collector_sha256_filePath)
+log_collector_windows_sha=$(awk '/log-collector/ && /windows/ { print $1 }' $log_collector_sha256_filePath)
 
 sed -i "s/LOG_COLLECTOR_VERSION/$LOG_COLLECTOR_VERSION/g" "$log_collector_template_manifest"
 

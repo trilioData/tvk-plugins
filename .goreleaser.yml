@@ -12,6 +12,18 @@ builds:
   goarch:
     - amd64
 
+- id: target-browser
+  main: ./cmd/target-browser/
+  binary: target-browser
+  env:
+    - CGO_ENABLED=0
+  goos:
+    - linux
+    - darwin
+    - windows
+  goarch:
+    - amd64
+
 archives:
 - id: log-collector-archive
   name_template: |-
@@ -23,8 +35,18 @@ archives:
       format: zip
   files: ["LICENSE.md"]
 
+- id: target-browser-archive
+  name_template: |-
+    target-browser_{{ .Tag }}_{{ .Os }}_{{ .Arch -}}
+  builds:
+    - target-browser
+  format_overrides:
+    - goos: windows
+      format: zip
+  files: ["LICENSE.md"]
+
 checksum:
-  name_template: "log-collector-sha256.txt"
+  name_template: "tvk-plugins-sha256.txt"
   algorithm: sha256
 
 release:
@@ -33,3 +55,6 @@ release:
   # If set to true, will mark the release as not ready for production.
   # Default is false.
   prerelease: true
+  # TODO: remove 'ids' section, once target-browser is ready for release
+  ids:
+    - log-collector-archive
