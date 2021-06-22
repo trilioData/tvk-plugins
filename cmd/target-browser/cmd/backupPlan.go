@@ -13,21 +13,23 @@ func init() {
 
 func backupPlanCmd() *cobra.Command {
 	var cmd = &cobra.Command{
+
 		Use:     backupPlanCmdName,
 		Aliases: []string{backupPlanCmdPluralName, backupPlanCmdAlias, backupPlanCmdAliasPlural},
+
 		Short: shortUsage,
 		Long:  longUsage,
-		RunE:  runBackupPlan,
+		RunE:  getBackupPlanList,
 	}
 
-	cmd.Flags().IntVarP(&pageSize, pageSizeFlag, pageSizeShort, pageSizeDefault, pageSizeUsage)
+	cmd.Flags().IntVarP(&pageSize, PageSizeFlag, pageSizeShort, pageSizeDefault, pageSizeUsage)
 	cmd.Flags().IntVarP(&page, pageFlag, pageShort, pageDefault, pageUsage)
-	cmd.Flags().StringVarP(&ordering, orderingFlag, orderingShort, orderingDefault, orderingUsage)
-	cmd.Flags().StringVarP(&tvkInstanceUID, tvkInstanceUIDFlag, tvkInstanceUIDShort, tvkInstanceUIDDefault, tvkInstanceUIDUsage)
+	cmd.Flags().StringVarP(&ordering, OrderingFlag, orderingShort, orderingDefault, orderingUsage)
+	cmd.Flags().StringVarP(&tvkInstanceUID, TvkInstanceUIDFlag, tvkInstanceUIDShort, tvkInstanceUIDDefault, tvkInstanceUIDUsage)
 	return cmd
 }
 
-func runBackupPlan(*cobra.Command, []string) error {
+func getBackupPlanList(*cobra.Command, []string) error {
 
 	bpOptions := targetBrowser.BackupPlanListOptions{
 		Page:           page,

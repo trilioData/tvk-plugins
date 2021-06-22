@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/google/go-querystring/query"
-	log "github.com/sirupsen/logrus"
 	"github.com/thedevsaddam/gojsonq"
 )
 
@@ -21,7 +20,7 @@ type BackupListOptions struct {
 	PageSize      int    `url:"pageSize"`
 	Ordering      string `url:"ordering"`
 	BackupPlanUID string `url:"backupPlanUID"`
-	BackupStatus  string `url:"backupStatus"`
+	BackupStatus  string `url:"status"`
 }
 
 // GetBackups returns backup with available options
@@ -36,7 +35,6 @@ func (c *Client) GetBackups(options *BackupListOptions) error {
 }
 
 func (c *Client) TriggerAPI(apiEndPoint, queryParam string, selector []string) error {
-	log.Debugf("Base URL of target-Browser: %s, API endPoint is %s and Query Param is %s.", c.baseURL, apiEndPoint, queryParam)
 	req, err := http.NewRequest(MethodGet, fmt.Sprintf("%s/%s?%s", c.baseURL, apiEndPoint, queryParam), nil)
 	if err != nil {
 		return err
@@ -48,6 +46,6 @@ func (c *Client) TriggerAPI(apiEndPoint, queryParam string, selector []string) e
 	}
 	var backupBytes bytes.Buffer
 	gojsonq.New().FromString(res).From(Results).Select(selector...).Writer(&backupBytes)
-	fmt.Printf("%s\n", backupBytes.String())
+	fmt.Println(backupBytes.String())
 	return nil
 }

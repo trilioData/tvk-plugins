@@ -1,0 +1,12 @@
+apiVersion: triliovault.trilio.io/v1
+kind: TrilioVaultManager
+metadata:
+  labels:
+    triliovault: triliovault
+  name: triliovault-manager
+  namespace: pankaj1
+spec:
+  trilioVaultAppVersion: v2.1.0
+  helmVersion:
+    version: v3
+  applicationScope: Namespaced

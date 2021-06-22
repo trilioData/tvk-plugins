@@ -35,13 +35,19 @@ const (
 	pagesDefault = 1
 	pagesUsage   = "Number of Pages to display within the paginated result set"
 
-	shortUsage = "Retrieve a list of BackupPlans in that target store."
-	longUsage  = "Retrieve a list of BackupPlans in that target store using options."
+
+	shortUsage           = "Retrieve a list of BackupPlans in that target store."
+	longUsage            = `Retrieve a list of BackupPlans in that target store using options.
+		Order backupPlan in ascending or descending order,
+		Filter backupPlan using flag tvk-instance-uid.`
 
 	backupShortUsage = "Retrieve a list of Backup in that target store."
-	backupLongUsage  = "Retrieve a list of Backup in that target store."
+	backupLongUsage  = `Retrieve a list of Backup in that target store for specific backupPlan.
+			Filter backup using flag backup-status,
+			Order backup  in ascending or descending order.`
 
-	pageSizeFlag    = "page-size"
+	PageSizeFlag = "page-size"
+	MetadataBinaryName = "metadata"
 	pageSizeDefault = 10
 	pageSizeUsage   = "Maximum number of results in a single page"
 	pageSizeShort   = "s"
@@ -58,27 +64,27 @@ const (
 	pageShort   = "p"
 	pageUsage   = "A page number within the paginated result set."
 
-	orderingFlag    = "ordering"
+	OrderingFlag    = "ordering"
 	orderingDefault = "name"
 	orderingShort   = "o"
 	orderingUsage   = "ordering"
 
-	tvkInstanceUIDFlag    = "tvk-instance-uid"
+	TvkInstanceUIDFlag    = "tvk-instance-uid"
 	tvkInstanceUIDDefault = ""
 	tvkInstanceUIDShort   = "t"
 	tvkInstanceUIDUsage   = "TVK instance id to filter for."
 
-	backupPlanUIDFlag    = "backup-plan-uid"
+	BackupPlanUIDFlag    = "backup-plan-uid"
 	backupPlanUIDDefault = ""
 	backupPlanUIDShort   = ""
 	backupPlanUIDUsage   = "backupPlanUID to get all backup related to UID"
 
-	backupStatusFlag    = "backup-status"
+	BackupStatusFlag    = "backup-status"
 	backupStatusDefault = ""
 	backupStatusShort   = ""
 	backupStatusUsage   = "Status of Backup to filter for [Success, InProgress, Failed]"
 
-	backupUIDFlag    = "backup-uid"
+	BackupUIDFlag    = "backup-uid"
 	backupUIDDefault = ""
 	backupUIDShort   = ""
 	backupUIDUsage   = "backupUID to get all backup related to UID"

@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "name": "bp11",
+    "namespace": "default",
+    "selfLink": "/apis/triliovault.trilio.io/v1/namespaces/default/backupplans/bp11",
+    "uid": "BACKUPPLAN-UUID",
+    "resourceVersion": "22823",
+    "generation": 1,
+    "creationTimestamp": "2021-05-31T13:03:39Z",
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"triliovault.trilio.io/v1\",\"kind\":\"BackupPlan\",\"metadata\":{\"annotations\":{},\"name\":\"bp11\",\"namespace\":\"default\"},\"spec\":{\"backupConfig\":{\"target\":{\"name\":\"target-sample\"}},\"backupPlanComponents\":{\"custom\":[{\"matchLabels\":{\"random\":\"random\"}}]}}}\n"
+    }
+  },
+  "spec": {
+    "backupConfig": {
+      "target": {
+        "kind": "Target",
+        "namespace": "default",
+        "name": "target-sample",
+        "uid": "176a72d8-6f01-446b-9c39-844b8857e96c",
+        "apiVersion": "triliovault.trilio.io/v1",
+        "resourceVersion": "16195"
+      },
+      "schedulePolicy": {
+        "incrementalCron": {
+          "schedule": ""
+        },
+        "fullBackupCron": {
+          "schedule": ""
+        }
+      }
+    },
+    "backupPlanComponents": {
+      "custom": [
+        {
+          "matchLabels": {
+            "random": "random"
+          }
+        }
+      ]
+    }
+  },
+  "status": {
+    "status": "Available",
+    "scope": "App",
+    "applicationType": "Custom",
+    "stats": {
+      "backupSummary": {
+        "inProgressBackup": {
+          "kind": "Backup",
+          "namespace": "default",
+          "name": "test1-backup2",
+          "uid": "BACKUP-UUID",
+          "apiVersion": "triliovault.trilio.io/v1",
+          "resourceVersion": "22821"
+        },
+        "latestBackup": {
+          "kind": "Backup",
+          "namespace": "default",
+          "name": "test1-backup2",
+          "uid": "BACKUP-UUID",
+          "apiVersion": "triliovault.trilio.io/v1",
+          "resourceVersion": "22821"
+        },
+        "totalInProgressBackups": 1,
+        "totalFailedBackups": 2
+      },
+      "restoreSummary": {}
+    }
+  }
+}

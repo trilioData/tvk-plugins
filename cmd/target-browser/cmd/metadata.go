@@ -15,28 +15,28 @@ func init() {
 // metadataCmd represents the metadata command
 func metadataCmd() *cobra.Command {
 	var cmd = &cobra.Command{
+
 		Use:   metadataCmdName,
+
 		Short: metadataShortUsage,
 		Long:  metadataLongUsage,
-		RunE:  runMetadata,
+		RunE:  getMetadata,
 	}
 
-	cmd.Flags().StringVarP(&backupPlanUID, backupPlanUIDFlag, backupPlanUIDShort, backupPlanUIDDefault, backupPlanUIDUsage)
-	cmd.Flags().StringVarP(&backupUID, backupUIDFlag, backupUIDShort, backupUIDDefault, backupUIDUsage)
-	err := cmd.MarkFlagRequired(backupPlanUIDFlag)
+	cmd.Flags().StringVarP(&backupPlanUID, BackupPlanUIDFlag, backupPlanUIDShort, backupPlanUIDDefault, backupPlanUIDUsage)
+	cmd.Flags().StringVarP(&backupUID, BackupUIDFlag, backupUIDShort, backupUIDDefault, backupUIDUsage)
+	err := cmd.MarkFlagRequired(BackupPlanUIDFlag)
 	if err != nil {
-		log.Fatalf("Invalid option or missing required flag %s and Error is %s", backupPlanUIDFlag, err.Error())
-		return nil
+		log.Fatalf("Invalid option or missing required flag %s and Error is %s", BackupPlanUIDFlag, err.Error())
 	}
-	err = cmd.MarkFlagRequired(backupUIDFlag)
+	err = cmd.MarkFlagRequired(BackupUIDFlag)
 	if err != nil {
-		log.Fatalf("Invalid option or missing required flag %s and Error is %s", backupUIDFlag, err.Error())
-		return nil
+		log.Fatalf("Invalid option or missing required flag %s and Error is %s", BackupUIDFlag, err.Error())
 	}
 	return cmd
 }
 
-func runMetadata(*cobra.Command, []string) error {
+func getMetadata(*cobra.Command, []string) error {
 
 	mdOptions := targetBrowser.MetadataListOptions{
 		BackupPlanUID: backupPlanUID,

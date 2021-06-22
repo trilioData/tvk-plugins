@@ -19,7 +19,7 @@ const (
 	acceptHeader = "application/json"
 	contentType  = "application/json"
 	MethodGet    = "GET"
-	baseURL      = ""
+	baseURL      = "http://pankaj-tb.k8s-tvk.com/sample-target.pankaj-tb/"
 )
 
 // NewClient Create new HTTP client

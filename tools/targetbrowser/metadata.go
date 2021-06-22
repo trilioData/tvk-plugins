@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/google/go-querystring/query"
-	log "github.com/sirupsen/logrus"
 )
 
 const metaDataEndPoint = "metadata"
@@ -22,7 +21,6 @@ func (c *Client) GetMetadata(options *MetadataListOptions) error {
 		return err
 	}
 	queryParam := values.Encode()
-	log.Debugf("Base URL of target-Browser: %s, API endPoint is %s and Query Param is %s.", c.baseURL, metaDataEndPoint, queryParam)
 	req, err := http.NewRequest(MethodGet, fmt.Sprintf("%s/%s?%s", c.baseURL, metaDataEndPoint, queryParam), nil)
 	if err != nil {
 		return err
