@@ -1,0 +1,61 @@
+apiVersion: krew.googlecontainertools.github.com/v1alpha2
+kind: Plugin
+metadata:
+  name: tvk-target-browser
+spec:
+  homepage: https://github.com/trilioData/tvk-plugins/blob/master/docs/target-browser/README.md
+  shortDescription: TVK Target Browser queries mounted target to get details of backup, backupPlan, backup metadata, etc.
+  version: TARGET_BROWSER_VERSION
+  caveats: |
+    Curl and Git neeed to be installed on system for Krew index update to work properly
+  platforms:
+  - selector:
+      matchLabels:
+        os: linux
+        arch: amd64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/TARGET_BROWSER_VERSION/target-browser_TARGET_BROWSER_VERSION_linux_amd64.tar.gz
+    sha256: TARGET_BROWSER_LINUX_TAR_CHECKSUM
+    bin: target-browser
+    files:
+    - from: '*'
+      to: .
+
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: amd64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/TARGET_BROWSER_VERSION/target-browser_TARGET_BROWSER_VERSION_darwin_amd64.tar.gz
+    sha256: TARGET_BROWSER_DARWIN_TAR_CHECKSUM
+    bin: target-browser
+    files:
+    - from: '*'
+      to: .
+
+  - selector:
+      matchLabels:
+        os: windows
+        arch: amd64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/TARGET_BROWSER_VERSION/target-browser_TARGET_BROWSER_VERSION_windows_amd64.zip
+    sha256: TARGET_BROWSER_WINDOWS_TAR_CHECKSUM
+    bin: target-browser.exe
+    files:
+    - from: '*'
+      to: .
+
+  description: |
+    tvk-target-browser is a kubectl plugin which can query content of mounted target location to get details of backup,
+    backupPlan and metadata details of backup via HTTP/HTTPS calls to target-browser server.
+
+    > Check available commands, flags & options for tvk-target-browser plugin with :-
+    kubectl tvk-target-browser --help
+
+    > Usage :-
+
+    # List of backupPlans
+    kubectl tvk-target-browser get backupPlan
+
+    # List of backups
+    kubectl tvk-target-browser get backup --backupplan-uid <uid>
+
+    # Metadata of specific backup object
+    kubectl tvk-target-browser get metadata --backup-uid <uid> --backupplan-uid <uid>

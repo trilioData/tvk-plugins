@@ -237,6 +237,9 @@ jobs:
           build_id: tb-${{ github.run_id }}
           nfs_server_ip: ${{ secrets.NFS_SERVER_IP }}
 
+      - name: Test Target-Browser Plugin Locally
+        run: make test-target-browser-plugin-locally
+
   # pre-release job determines whether to create release or not and sets job variables which will be used to decide
   # what packages(preflight, log-collector, target-browser) should be included in release
   pre-release:

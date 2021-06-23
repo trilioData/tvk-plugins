@@ -19,6 +19,8 @@ template_manifest_dir="$SRC_ROOT"/.krew
 log_collector_yaml="tvk-log-collector.yaml"
 log_collector_template_manifest=$template_manifest_dir/$log_collector_yaml
 
+mkdir -p "${build_dir}"
+
 # shellcheck disable=SC2086
 cp "$log_collector_template_manifest" $build_dir/$log_collector_yaml
 log_collector_template_manifest=$build_dir/$log_collector_yaml

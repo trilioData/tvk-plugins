@@ -25,12 +25,6 @@ go-lint-fix:
 
 lint: yaml-lint shell-lint go-lint
 
-build-log-collector:
-	goreleaser release --snapshot --skip-publish --rm-dist
-
-run-log-collector:
-	go run ./cmd/log-collector/main.go
-
 install-required-utilities:
 	./hack/install-required-utilities.sh
 
@@ -42,7 +36,16 @@ install: install-required-utilities
 build-preflight:
 	./hack/build-preflight-artifacts.sh
 
-build: build-preflight build-log-collector
+build-log-collector:
+	find . -name .goreleaser.yml -exec sed -i '/binary: target-browser/a \ \ skip: true' {} +
+	goreleaser release --snapshot --skip-publish --rm-dist
+
+build-target-browser:
+	find . -name .goreleaser.yml -exec sed -i '/binary: log-collector/a \ \ skip: true' {} +
+	goreleaser release --snapshot --skip-publish --rm-dist
+
+build: build-preflight
+	goreleaser release --snapshot --skip-publish --rm-dist
 
 test-preflight-plugin-locally:
 	./hack/generate-test-preflight-plugin-manifest.sh
@@ -52,16 +55,27 @@ test-log-collector-plugin-locally:
 	./hack/generate-test-log-collector-plugin-manifest.sh
 	./hack/test-log-collector-plugin-locally.sh
 
+test-target-browser-plugin-locally:
+	./hack/generate-test-target-browser-plugin-manifest.sh
+	./hack/test-target-browser-plugin-locally.sh
+
 test-preflight-integration:
 	./tests/preflight/preflight_test.sh
+
+test-target-browser-integration:
+	./hack/run-integration-tests.sh tests/target-browser/...
+
+test: test-preflight-integration test-target-browser-integration
 
 test-preflight: clean build-preflight test-preflight-plugin-locally
 
 test-log-collector: clean build-log-collector test-log-collector-plugin-locally
 
-test-plugins-locally: test-preflight-plugin-locally test-log-collector-plugin-locally
+test-target-browser: clean build-target-browser test-target-browser-integration test-target-browser-plugin-locally
 
-test-plugins-packages: test-preflight test-log-collector
+test-plugins-locally: test-preflight-plugin-locally test-log-collector-plugin-locally test-target-browser-plugin-locally
+
+test-plugins-packages: test-preflight test-log-collector test-target-browser
 
 validate-plugin-manifests:
 	./hack/validate-plugin-manifests.sh
@@ -75,14 +89,11 @@ update-preflight-manifest:
 update-log-collector-manifest:
 	./hack/update-log-collector-manifest.sh
 
-update-plugin-manifests: update-preflight-manifest update-log-collector-manifest
+update-target-browser-manifest:
+	./hack/update-target-browser-manifest.sh
 
-build-target-browser:
-	goreleaser release --snapshot --skip-publish --rm-dist
+update-plugin-manifests: update-preflight-manifest update-log-collector-manifest update-target-browser-manifest
 
-test-target-browser-integration:
-	./hack/run-integration-tests.sh tests/target-browser/...
-
-test-target-browser: clean build-target-browser test-target-browser-integration
+ready: fmt vet lint verify-code-patterns
 
 .PHONY: clean fmt vet go-lint shell-lint go-lint-fix yaml-lint go-test test coverage build run-log-collector
