@@ -63,12 +63,13 @@ jobs:
               - 'Makefile'
               - 'hack/**'
               - '.goreleaser.yml'
+              - '.github/workflows/plugin-packages.yml'
 
             sharedPreflight: &sharedPreflight
+              - *shared
               - 'tools/preflight/**'
               - 'tests/preflight/**'
             preflight:
-              - *shared
               - *sharedPreflight
               - '.krew/tvk-preflight.yaml'
             testPreflight:
@@ -82,12 +83,12 @@ jobs:
               - 'tools/log-collector/**'
 
             sharedTargetBrowser: &sharedTargetBrowser
+              - *shared
               - 'cmd/target-browser/**'
               - 'tools/log-collector/**'
               - 'internal/**'
               - 'tests/log-collector/**'
             targetBrowser:
-              - *shared
               - *sharedTargetBrowser
               - '.krew/tvk-target-browser.yaml'
             testTargetBrowser:
@@ -213,6 +214,7 @@ jobs:
         run: make install-required-utilities
 
       - name: Set up Cloud SDK
+        if: (needs.pre-build.outputs.testTargetBrowser == 'true') || startsWith(github.ref, 'refs/tags/')
         uses: google-github-actions/setup-gcloud@master
         with:
           project_id: ${{ secrets.GCS_PROJECT_ID }}
@@ -233,6 +235,7 @@ jobs:
         env:
           job_name: target-browser
           build_id: tb-${{ github.run_id }}
+          nfs_server_ip: ${{ secrets.NFS_SERVER_IP }}
 
   # pre-release job determines whether to create release or not and sets job variables which will be used to decide
   # what packages(preflight, log-collector, target-browser) should be included in release
