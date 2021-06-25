@@ -10,23 +10,24 @@ tvk-plugins
  |    └── workflows : github actions workflow files
  |        ├── plugin-manifests.yml : CI workflow for plugin manifest validation
  |        └── plugin-packages.yml : CI workflow for plugin packages(build, test, release)
- ├── cmd : Log-collector executable
+ ├── cmd : Log-collector, Target-Browser executable packages
  ├── .krew : template yamls of plugin manifests(used for update of actual krew manifest and local testing)
  ├── docs : docs of tvk-plugins, contribution and release guidelines
  ├── hack : dir contains helper files for github actions CI workflows
+ ├── internal : dir contains funcs to initialize kube-env clients and other helper funcs
  ├── LICENSE.md : License for tvk-plugins
  ├── Makefile : make targets
  ├── plugins : Krew plugin manifests
  │   ├── tvk-log-collector.yaml 
  │   └── tvk-preflight.yaml
  ├── tests : Integration Test
- │   ├── common : common test packages, files
- │   ├── log-collector : log-collector test files
+ │   ├── target-browser : target-browser test suite
  │   └── preflight : preflight test files
  ├── tools : business logic of plugins
  │   ├── log-collector : business logic of log-collector
  │   └── preflight : preflight executable
- ├── .goreleaser.yml : goreleaser conf file(used for building and releasing of plugin packages)   
+ │   └── target-browser : business logic of target-browser CLI
+ ├── .goreleaser.yml : goreleaser conf file(to build & release plugin packages)   
 ```
 
 ## Setup Local Environment
@@ -48,10 +49,7 @@ If these are not installed then, install using `make install` or choose any othe
 Run following commands before git push to remote:
 
 ```
-make fmt
-make vet
-make lint
-make verify-code-patterns
+make ready
 ```
 
 ### Build and Test:
@@ -91,8 +89,25 @@ make verify-code-patterns
      ```
      make test-log-collector
      ```
+2. **Target-Browser**:
+     
+     Build: 
+     ```
+     make build-target-browser
+     ```
 
-3. **Both Preflight & Log-collector together**:
+     Test:
+     ```
+     make test-target-browser-integration
+     ```   
+    
+     Build and Test together:
+     ```
+     make test-target-browser
+     ```
+
+
+3. **All Preflight, Log-collector and Target-Browser together**:
 
     Build:
     ```
@@ -122,6 +137,7 @@ make verify-code-patterns
     ```
     export PREFLIGHT_VERSION=<preflight-release-tag>
     export LOG_COLLECTOR_VERSION=<log-collector-release-tag>
+    export TARGET_BROWSER_VERSION=<target-browser-release-tag>
     ```
    
     Preflight:
@@ -134,7 +150,12 @@ make verify-code-patterns
     make update-log-collector-manifest
     ```
    
-    Both Preflight & Log-collector:
+    Target-Browser:
+    ```
+    make update-target-browser-manifest
+    ```
+   
+    All Preflight, Log-collector and Target-Browser together:
     ```
     make update-plugin-manifests
     ```
@@ -149,7 +170,7 @@ make verify-code-patterns
 
 #### Run Integration Tests:
    
-   For both preflight & log-collector:
+   For both preflight & target-browser:
    ```
    make test
    ```

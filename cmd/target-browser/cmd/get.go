@@ -17,17 +17,14 @@ var getCmd = &cobra.Command{
 	Long: `Gets specific resource[backup, backupPlan, metadata, etc] which retrieves single
 object or list of objects of that resource.
 `,
-	Example: `  # List of backups	
-  kubectl target-browser get backup
+	Example: `  # List of backupPlans
+  kubectl tvk-target-browser get backupPlan
 
-  # List of backupPlans
-  kubectl target-browser get backupPlan
+  # List of backups
+  kubectl tvk-target-browser get backup --backupplan-uid <uid>
 
   # Metadata of specific backup object
-  kubectl target-browser get metadata
-
-  # Specific backup
-  kubectl target-browser get backup --backup-uid <uid> --backupplan-uid <uid>
+  kubectl tvk-target-browser get metadata --backup-uid <uid> --backupplan-uid <uid>
 `,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error
