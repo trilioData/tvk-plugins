@@ -39,10 +39,12 @@ build-preflight:
 build-log-collector:
 	find . -name .goreleaser.yml -exec sed -i '/binary: target-browser/a \ \ skip: true' {} +
 	goreleaser release --snapshot --skip-publish --rm-dist
+	find . -name .goreleaser.yml -exec sed -i '/skip: true/d' {} +
 
 build-target-browser:
 	find . -name .goreleaser.yml -exec sed -i '/binary: log-collector/a \ \ skip: true' {} +
 	goreleaser release --snapshot --skip-publish --rm-dist
+	find . -name .goreleaser.yml -exec sed -i '/skip: true/d' {} +
 
 build: build-preflight
 	goreleaser release --snapshot --skip-publish --rm-dist
