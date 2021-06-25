@@ -1,7 +1,7 @@
 package cmd
 
 const (
-	kubeConfigFlag  = "kubeconfig"
+	KubeConfigFlag  = "kubeconfig"
 	kubeConfigUsage = "Path to the kubeconfig file to use for CLI requests"
 
 	insecureSkipTLSFlag  = "insecure-skip-tls-verify"
@@ -16,58 +16,47 @@ const (
 	certificateAuthorityFlag  = "certificate-authority"
 	certificateAuthorityUsage = "Path to a cert file for the certificate authority"
 
-	targetNameFlag  = "target-name"
+	TargetNameFlag  = "target-name"
 	targetNameUsage = "Name of target CR to be used to query mounted target"
 
-	targetNamespaceFlag    = "target-namespace"
-	targetNamespaceDefault = "default"
-	targetNamespaceUsage   = "Namespace of specified target CR to be used to query mounted target"
-
-	backupPlanCmdName        = "backupplan"
-	backupPlanCmdPluralName  = backupPlanCmdName + "s"
+	TargetNamespaceFlag      = "target-namespace"
+	targetNamespaceDefault   = "default"
+	targetNamespaceUsage     = "Namespace of specified target CR to be used to query mounted target"
+	GetFlag                  = "get"
+	BackupPlanCmdName        = "backupplan"
+	backupPlanCmdPluralName  = BackupPlanCmdName + "s"
 	backupPlanCmdAlias       = "backupPlan"
 	backupPlanCmdAliasPlural = backupPlanCmdAlias + "s"
-	backupCmdName            = "backup"
-	backupCmdPluralName      = backupCmdName + "s"
+	BackupCmdName            = "backup"
+	backupCmdPluralName      = BackupCmdName + "s"
 	metadataCmdName          = "metadata"
 
-	pagesFlag    = "Pages"
+	PagesFlag    = "Pages"
 	pagesDefault = 1
 	pagesUsage   = "Number of Pages to display within the paginated result set"
 
-
-	shortUsage           = "Retrieve a list of BackupPlans in that target store."
-	longUsage            = `Retrieve a list of BackupPlans in that target store using options.
+	backupPlanShortUsage = "API to perform Read operations on BackupPlans"
+	backupPlanLongUsage  = `API to perform Read operations on BackupPlans. Get a list of BackupPlans from target with using options.
 		Order backupPlan in ascending or descending order,
 		Filter backupPlan using flag tvk-instance-uid.`
 
-	backupShortUsage = "Retrieve a list of Backup in that target store."
-	backupLongUsage  = `Retrieve a list of Backup in that target store for specific backupPlan.
+	backupShortUsage = "API to perform Read operations on Backup"
+	backupLongUsage  = `API to perform Read operations on Backup. Get list of Backup stored on target for specific backupPlan.
 			Filter backup using flag backup-status,
 			Order backup  in ascending or descending order.`
 
-	PageSizeFlag = "page-size"
+	PageSizeFlag       = "page-size"
 	MetadataBinaryName = "metadata"
-	pageSizeDefault = 10
-	pageSizeUsage   = "Maximum number of results in a single page"
-	pageSizeShort   = "s"
+	pageSizeDefault    = 10
+	pageSizeUsage      = "Maximum number of results in a single page"
 
-	orderByFlag    = "order-by"
+	OrderByFlag    = "order-by"
 	orderByDefault = "name"
 	orderByUsage   = "Parameter to use for ordering the paginated result set"
 
 	metadataShortUsage = "API to perform Read operations on Backup high level metadata"
-	metadataLongUsage  = "API to perform Read operations on Backup high level metadata"
-
-	pageFlag    = "page"
-	pageDefault = 1
-	pageShort   = "p"
-	pageUsage   = "A page number within the paginated result set."
-
-	OrderingFlag    = "ordering"
-	orderingDefault = "name"
-	orderingShort   = "o"
-	orderingUsage   = "ordering"
+	metadataLongUsage  = `API to perform Read operations on Backup high level metadata.
+		Get metadata of specific backup using flag backup-plan-uid and backup-uid`
 
 	TvkInstanceUIDFlag    = "tvk-instance-uid"
 	tvkInstanceUIDDefault = ""
@@ -91,12 +80,8 @@ const (
 )
 
 var (
-	pageSize       int
-	page           int
-	ordering       string
 	tvkInstanceUID string
 	backupPlanUID  string
 	backupStatus   string
 	backupUID      string
-	APIKey         = ""
 )

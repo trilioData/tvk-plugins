@@ -6,7 +6,7 @@ spec:
   enableBrowsing: true
   thresholdCapacity: 100Gi
   nfsCredentials:
-    nfsExport: 34.66.17.160:/src/nfs/kubedata
+    nfsExport: NFS_SERVER_IP:NFS_SERVER_BASE_PATH
     nfsOptions: nfsvers=4
   type: NFS
   vendor: Other

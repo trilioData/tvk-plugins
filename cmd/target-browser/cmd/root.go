@@ -37,16 +37,16 @@ var (
 )
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&TargetBrowser.KubeConfig, kubeConfigFlag, internal.KubeConfigDefault, kubeConfigUsage)
+	rootCmd.PersistentFlags().StringVar(&TargetBrowser.KubeConfig, KubeConfigFlag, internal.KubeConfigDefault, kubeConfigUsage)
 	rootCmd.PersistentFlags().BoolVar(&TargetBrowser.InsecureSkipTLS, insecureSkipTLSFlag, false, insecureSkipTLSUsage)
 	rootCmd.PersistentFlags().StringVar(&TargetBrowser.CaCert, certificateAuthorityFlag, "", certificateAuthorityUsage)
 	rootCmd.PersistentFlags().StringVar(&TargetBrowser.ClientCert, clientCertificateFlag, "", clientCertificateUsage)
 	rootCmd.PersistentFlags().StringVar(&TargetBrowser.ClientKey, clientKeyFlag, "", clientKeyUsage)
 
-	rootCmd.PersistentFlags().StringVar(&TargetBrowser.TargetNamespace, targetNamespaceFlag, targetNamespaceDefault, targetNamespaceUsage)
-	rootCmd.PersistentFlags().StringVar(&TargetBrowser.TargetName, targetNameFlag, "", targetNameUsage)
-	if err := rootCmd.MarkPersistentFlagRequired(targetNameFlag); err != nil {
-		log.Fatalf("failed to mark flag %s as required - %s", targetNameFlag, err.Error())
+	rootCmd.PersistentFlags().StringVar(&TargetBrowser.TargetNamespace, TargetNamespaceFlag, targetNamespaceDefault, targetNamespaceUsage)
+	rootCmd.PersistentFlags().StringVar(&TargetBrowser.TargetName, TargetNameFlag, "", targetNameUsage)
+	if err := rootCmd.MarkPersistentFlagRequired(TargetNameFlag); err != nil {
+		log.Fatalf("failed to mark flag %s as required - %s", TargetNameFlag, err.Error())
 	}
 
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))

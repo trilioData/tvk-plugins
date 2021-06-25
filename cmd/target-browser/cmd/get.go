@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+
 	targetbrowser "github.com/trilioData/tvk-plugins/tools/target-browser"
 )
 
@@ -12,20 +13,30 @@ var targetBrowserAuthConfig = &targetbrowser.AuthInfo{}
 
 // getCmd represents the get command
 var getCmd = &cobra.Command{
-	Use:   "get",
+	Use:   GetFlag,
 	Short: "get command retrieves specific resource",
 	Long: `Gets specific resource[backup, backupPlan, metadata, etc] which retrieves single
 object or list of objects of that resource.
 `,
+
 	Example: `  # List of backupPlans
-  kubectl tvk-target-browser get backupPlan
+    kubectl tvk-target-browser get backupPlan
 
-  # List of backups
-  kubectl tvk-target-browser get backup --backupplan-uid <uid>
+    # List of backups
+	kubectl target-browser get backup --backup-uid <uid>
 
-  # Metadata of specific backup object
-  kubectl tvk-target-browser get metadata --backup-uid <uid> --backupplan-uid <uid>
-`,
+
+	# List of backups
+	kubectl tvk-target-browser get backup --backupplan-uid <uid>
+
+	# Metadata of specific backup object
+
+	kubectl tvk-target-browser get metadata --backup-uid <uid> --backupplan-uid <uid>
+
+	kubectl target-browser get metadata
+
+	# Specific metadata
+	kubectl target-browser get metadata --backup-uid <uid> --backupplan-uid <uid>`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error
 		err = validateInput(cmd)
@@ -36,23 +47,21 @@ object or list of objects of that resource.
 		if targetBrowserAuthConfig, err = TargetBrowser.Authenticate(context.Background()); err != nil {
 			return err
 		}
-		// TODO: remove this line and use 'targetBrowserAuthConfig' as a receiver for getCmd's child commands
-		fmt.Println(targetBrowserAuthConfig)
 		return nil
 	},
 }
 
 func init() {
-	getCmd.PersistentFlags().IntVar(&TargetBrowser.Pages, pagesFlag, pagesDefault, pagesUsage)
-	getCmd.PersistentFlags().IntVar(&TargetBrowser.PageSize, pageSizeFlag, pageSizeDefault, pageSizeUsage)
-	getCmd.PersistentFlags().StringVar(&TargetBrowser.OrderBy, orderByFlag, orderByDefault, orderByUsage)
+	getCmd.PersistentFlags().IntVar(&TargetBrowser.Pages, PagesFlag, pagesDefault, pagesUsage)
+	getCmd.PersistentFlags().IntVar(&TargetBrowser.PageSize, PageSizeFlag, pageSizeDefault, pageSizeUsage)
+	getCmd.PersistentFlags().StringVar(&TargetBrowser.OrderBy, OrderByFlag, orderByDefault, orderByUsage)
 
 	rootCmd.AddCommand(getCmd)
 }
 
 func validateInput(cmd *cobra.Command) error {
 	if TargetBrowser.TargetName == "" {
-		return fmt.Errorf("[%s] flag value cannot be empty", targetNameFlag)
+		return fmt.Errorf("[%s] flag value cannot be empty", TargetNameFlag)
 	}
 
 	if cmd.Flags().Changed(certificateAuthorityFlag) && TargetBrowser.CaCert == "" {

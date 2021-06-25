@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth lib for GKE
 
-	targetBrowser "github.com/trilioData/tvk-plugins/tools/targetbrowser"
+	targetBrowser "github.com/trilioData/tvk-plugins/tools/target-browser"
 )
 
 func init() {
@@ -15,9 +15,7 @@ func init() {
 // metadataCmd represents the metadata command
 func metadataCmd() *cobra.Command {
 	var cmd = &cobra.Command{
-
 		Use:   metadataCmdName,
-
 		Short: metadataShortUsage,
 		Long:  metadataLongUsage,
 		RunE:  getMetadata,
@@ -42,7 +40,7 @@ func getMetadata(*cobra.Command, []string) error {
 		BackupPlanUID: backupPlanUID,
 		BackupUID:     backupUID,
 	}
-	err := targetBrowser.NewClient(APIKey).GetMetadata(&mdOptions)
+	err := targetBrowserAuthConfig.GetMetadata(&mdOptions)
 	if err != nil {
 		return err
 	}

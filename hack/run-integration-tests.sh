@@ -2,6 +2,7 @@
 set -o errexit
 set -o pipefail
 set -x
+sudo apt-get install -y nfs-common
 
 COMPONENTS=("$@")
 
@@ -69,7 +70,6 @@ helm_install() {
     node=$(kubectl get pods -o wide -l "$selector" -n "${install_namespace}" | awk '{print $7}' | tail -n +2)
     instance_info=$(gcloud compute instances describe "$node" --zone "${GKE_ZONE}" --format=json | jq '.| "\(.tags.items[0]) \(.networkInterfaces[].network)"')
     IFS=" " read -r -a node_port <<<"$(kubectl get svc k8s-triliovault-ingress-gateway -n "${install_namespace}" --template='{{range .spec.ports}}{{print "\n" .nodePort}}{{end}}' | tr '\n' ' ')"
-    node_external_ip=$(kubectl get no "$node" -o=jsonpath='{.status.addresses[?(@.type=="ExternalIP")].address}')
     port=""
     for ((c = 0; c < ${#node_port}; c++)); do
       if [[ ${node_port[$c]} != "" ]]; then
@@ -77,9 +77,16 @@ helm_install() {
       fi
     done
     gcloud compute firewall-rules create "${JOB_TYPE}"-"${install_namespace}" --allow="$port" --source-ranges="0.0.0.0/0" --target-tags="$(echo "${instance_info}" | awk '{print $1}' | sed 's/"//g')" --network="$(echo "${instance_info}" | awk '{print $2}' | sed 's/"//g' | awk -F'/' '{print $NF}')"
-    if [[ -n "${node_external_ip}" ]]; then
-      sudo -- bash -c "echo \"${node_external_ip} ${INGRESS_HOST}\" >>/etc/hosts"
-    fi
+
+  fi
+  kubectl patch svc k8s-triliovault-ingress-gateway -p '{"spec": {"type": "LoadBalancer"}}' -n "${install_namespace}"
+  node_external_ip=""
+  while [ -z "$node_external_ip" ]; do
+    node_external_ip=$(kubectl get svc k8s-triliovault-ingress-gateway -o=jsonpath='{.status.loadBalancer.ingress[0].ip}' -n "${install_namespace}")
+    sleep 5
+  done
+  if [[ -n "${node_external_ip}" ]]; then
+    sudo -- bash -c "echo \"${node_external_ip} ${INGRESS_HOST}\" >>/etc/hosts"
   fi
 }
 

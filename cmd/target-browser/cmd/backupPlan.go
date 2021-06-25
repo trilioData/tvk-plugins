@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth lib for GKE
 
-	targetBrowser "github.com/trilioData/tvk-plugins/tools/targetbrowser"
+	targetBrowser "github.com/trilioData/tvk-plugins/tools/target-browser"
 )
 
 func init() {
@@ -13,18 +13,13 @@ func init() {
 
 func backupPlanCmd() *cobra.Command {
 	var cmd = &cobra.Command{
-
-		Use:     backupPlanCmdName,
+		Use:     BackupPlanCmdName,
 		Aliases: []string{backupPlanCmdPluralName, backupPlanCmdAlias, backupPlanCmdAliasPlural},
-
-		Short: shortUsage,
-		Long:  longUsage,
-		RunE:  getBackupPlanList,
+		Short:   backupPlanShortUsage,
+		Long:    backupPlanLongUsage,
+		RunE:    getBackupPlanList,
 	}
 
-	cmd.Flags().IntVarP(&pageSize, PageSizeFlag, pageSizeShort, pageSizeDefault, pageSizeUsage)
-	cmd.Flags().IntVarP(&page, pageFlag, pageShort, pageDefault, pageUsage)
-	cmd.Flags().StringVarP(&ordering, OrderingFlag, orderingShort, orderingDefault, orderingUsage)
 	cmd.Flags().StringVarP(&tvkInstanceUID, TvkInstanceUIDFlag, tvkInstanceUIDShort, tvkInstanceUIDDefault, tvkInstanceUIDUsage)
 	return cmd
 }
@@ -32,12 +27,12 @@ func backupPlanCmd() *cobra.Command {
 func getBackupPlanList(*cobra.Command, []string) error {
 
 	bpOptions := targetBrowser.BackupPlanListOptions{
-		Page:           page,
-		PageSize:       pageSize,
-		Ordering:       ordering,
+		Page:           TargetBrowser.Pages,
+		PageSize:       TargetBrowser.PageSize,
+		Ordering:       TargetBrowser.OrderBy,
 		TvkInstanceUID: tvkInstanceUID,
 	}
-	err := targetBrowser.NewClient(APIKey).GetBackupPlans(&bpOptions)
+	err := targetBrowserAuthConfig.GetBackupPlans(&bpOptions)
 	if err != nil {
 		return err
 	}

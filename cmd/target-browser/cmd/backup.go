@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth lib for GKE
 
-	targetBrowser "github.com/trilioData/tvk-plugins/tools/targetbrowser"
+	targetBrowser "github.com/trilioData/tvk-plugins/tools/target-browser"
 )
 
 func init() {
@@ -16,18 +16,13 @@ func init() {
 // backupCmd represents the backup command
 func backupCmd() *cobra.Command {
 	var cmd = &cobra.Command{
-
 		Aliases: []string{backupCmdPluralName},
-		Use:     backupCmdName,
-
-		Short: backupShortUsage,
-		Long:  backupLongUsage,
-		RunE:  getBackupList,
+		Use:     BackupCmdName,
+		Short:   backupShortUsage,
+		Long:    backupLongUsage,
+		RunE:    getBackupList,
 	}
 
-	cmd.Flags().IntVarP(&pageSize, PageSizeFlag, pageSizeShort, pageSizeDefault, pageSizeUsage)
-	cmd.Flags().IntVarP(&page, pageFlag, pageShort, pageDefault, pageUsage)
-	cmd.Flags().StringVarP(&ordering, OrderingFlag, orderingShort, orderingDefault, orderingUsage)
 	cmd.Flags().StringVarP(&backupPlanUID, BackupPlanUIDFlag, backupPlanUIDShort, backupPlanUIDDefault, backupPlanUIDUsage)
 	cmd.Flags().StringVarP(&backupStatus, BackupStatusFlag, backupStatusShort, backupStatusDefault, backupStatusUsage)
 	err := cmd.MarkFlagRequired(BackupPlanUIDFlag)
@@ -40,13 +35,13 @@ func backupCmd() *cobra.Command {
 func getBackupList(*cobra.Command, []string) error {
 
 	bpOptions := targetBrowser.BackupListOptions{
-		Page:          page,
-		PageSize:      pageSize,
-		Ordering:      ordering,
+		Page:          TargetBrowser.Pages,
+		PageSize:      TargetBrowser.PageSize,
+		Ordering:      TargetBrowser.OrderBy,
 		BackupPlanUID: backupPlanUID,
 		BackupStatus:  backupStatus,
 	}
-	err := targetBrowser.NewClient(APIKey).GetBackups(&bpOptions)
+	err := targetBrowserAuthConfig.GetBackups(&bpOptions)
 	if err != nil {
 		return err
 	}

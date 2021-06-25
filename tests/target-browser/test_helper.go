@@ -1,64 +1,47 @@
-package targetbrowser
+package targetbrowsertest
 
 import (
-	"context"
 	cryptorand "crypto/rand"
-	"encoding/json"
 	"fmt"
-	"github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/types"
-	client "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"math/big"
 	"math/rand"
 	"os"
-	"path"
+	"os/exec"
 	"path/filepath"
-	ctrlRuntime "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
+	"strings"
 	"time"
+
+	"github.com/onsi/gomega"
+	log "github.com/sirupsen/logrus"
+	"github.com/trilioData/tvk-plugins/internal"
 )
 
 const (
-	TrilioSecName         = "trilio-secret"
-	NFSServerIPAddress    = "NFS_SERVER_IP_ADDR"
-	NFSServerBasePath     = "NFS_SERVER_BASE_PATH"
-	NFSServerOptions      = "NFS_SERVER_OPTIONS"
-	targetBrowserDataPath = "/src/nfs/ajay" // "/src/nfs/targetbrowsertesting"
-	Py3Path               = "/usr/bin/python3"
-	InstallNamespace      = "INSTALL_NAMESPACE"
-	TargetName            = "target-sample"
-
-	TVKControlPlaneDeployment = "k8s-triliovault-control-plane"
-	targetLocation            = "/triliodata"
-
-	PollingPeriod               = "POLLING_PERIOD"
-	DataStoreAttacherPath       = "/triliodata"
-	TempDataStoreBasePath       = "/triliodata-temp"
-	DataStoreAttacherSecretPath = "/etc/secret"
-	timeout                     = time.Second * 300
-	interval                    = time.Second * 1
+	targetLocation = internal.TargetLocation
+	timeout        = time.Second * 300
+	interval       = time.Second * 1
 )
 
 var (
+	NfsIPAddress    = GetNFSIPAddr()
 	randomDirectory string
-	targetKey       = types.NamespacedName{
-		Name:      TargetName,
-		Namespace: "installNs",
-	}
 )
 
 func GetInstallNamespace() string {
-	namespace, present := os.LookupEnv(InstallNamespace)
+	namespace, present := os.LookupEnv(internal.InstallNamespace)
 	if !present {
 		panic("Install Namespace not found in environment")
 	}
 	return namespace
 }
-
+func GetNFSIPAddr() string {
+	nfsIPAddr, isNFSIPAddrPresent := os.LookupEnv(internal.NFSServerIPAddress)
+	if !isNFSIPAddrPresent {
+		panic("NFS IP address not found in environment.")
+	}
+	return nfsIPAddr
+}
 func GenerateRandomString(n int, isOnlyAlphabetic bool) string {
 	letters := "abcdefghijklmnopqrstuvwxyz"
 	numbers := "1234567890"
@@ -75,21 +58,14 @@ func GenerateRandomString(n int, isOnlyAlphabetic bool) string {
 	return string(b)
 }
 
-func GetUniqueID(suiteName string) string {
-	return suiteName + "-" + GenerateRandomString(4, true)
-}
-func UnMountTarget(mountpoint, locationToDataAttacher string) {
-	if locationToDataAttacher == "" {
-		locationToDataAttacher = "../../../../../"
+func UnMountTarget() {
+	c := fmt.Sprintf("sudo umount %s", targetLocation)
+	command := exec.Command("bash", "-c", c)
+	_, err := command.CombinedOutput()
+	if err != nil {
+		log.Errorf("error %s", err.Error())
 	}
-
-	dataAttacherCommand := fmt.Sprintf("%s "+locationToDataAttacher+"datastore-attacher/mount_utility/unmount_datastore/unmount_datastore.py "+
-		"--mountpoint=%s", Py3Path, mountpoint)
-	log.Infof("Running command: %s", dataAttacherCommand)
-	out, cmdErr := RunCmd(dataAttacherCommand)
-	log.Info(out.Out)
-	Expect(cmdErr).Should(BeNil())
-	log.Info("Target Unmounted")
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 }
 
 func makeRandomDirAndMount() {
@@ -99,193 +75,135 @@ func makeRandomDirAndMount() {
 
 	// making directory of random name
 	err = os.MkdirAll(filepath.Join(targetLocation, randomDirectory), 0777)
-	Expect(err).To(BeNil())
+	gomega.Expect(err).To(gomega.BeNil())
 	_, err = ChmodR(filepath.Join(targetLocation, randomDirectory), "777")
-	Expect(err).To(BeNil())
+	gomega.Expect(err).To(gomega.BeNil())
 	log.Info("directory created:", randomDirectory)
 
 	// unmounting from default target path
-	UnMountTarget(targetLocation, "../../../")
+	UnMountTarget()
 	log.Info("unmounted from default path")
 
 	time.Sleep(time.Second * 10)
 
 	// setting "NFS_SERVER_BASE_PATH" to newly formed directory and mounting to it
-	Expect(os.Setenv(NFSServerBasePath, targetBrowserDataPath+"/"+randomDirectory)).To(BeNil())
-	MountTarget(targetKey.Name, "../../../")
+	gomega.Expect(os.Setenv(internal.NFSServerBasePath, internal.TargetBrowserDataPath+"/"+randomDirectory)).To(gomega.BeNil())
+	MountTarget()
 	log.Info("mounted to new path")
-	Expect(err).To(BeNil())
+	gomega.Expect(err).To(gomega.BeNil())
 
 	time.Sleep(time.Second * 20)
 }
-func MarshalStruct(v interface{}, isYaml bool) string {
 
-	var fstring []byte
-	var err error
-	if isYaml {
-		fstring, err = yaml.Marshal(v)
-	} else {
-		fstring, err = json.Marshal(v)
-	}
-
+func MountTarget() {
+	targetBrowserPath := os.Getenv(internal.NFSServerBasePath)
+	c := fmt.Sprintf("sudo mount -t nfs -o  nfsvers=4 %s:%s %s", NfsIPAddress, targetBrowserPath, targetLocation)
+	fmt.Printf("Mount command %s\n", c)
+	command := exec.Command("bash", "-c", c)
+	_, err := command.CombinedOutput()
 	if err != nil {
-		panic("Error while marshaling")
+		log.Errorf("error %s", err.Error())
 	}
-	return string(fstring)
-}
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-func GetNFSCredentials() (nfsIPAddr, nfsServerPath, nfsOptions string) {
-	nfsIPAddr, isNFSIPAddrPresent := os.LookupEnv(NFSServerIPAddress)
-	nfsServerPath, isNFSServerPathPresent := os.LookupEnv(NFSServerBasePath)
-	nfsOptions, isNFSOptionsPresent := os.LookupEnv(NFSServerOptions)
-	if !isNFSIPAddrPresent || !isNFSServerPathPresent || !isNFSOptionsPresent {
-		panic("NFS Credentials not present in env")
-	}
-
-	return nfsIPAddr, nfsServerPath, nfsOptions
-}
-
-// TODO: Make this as generic solution for multiple targets and of different types
-func CreateTargetSecret(targetName string) string {
-
-	nfsIPAddr, nfsServerPath, nfsOptions := GetNFSCredentials()
-
-	nfsMetadata := map[string]interface{}{
-		"mountOptions": nfsOptions,
-		"server":       nfsIPAddr,
-		"share":        nfsServerPath,
-	}
-
-	nfsdatastore := map[string]interface{}{
-		"name":             targetName,
-		"storageType":      "nfs",
-		"defaultDatastore": "yes",
-		"metaData":         nfsMetadata,
-	}
-
-	datastore := []map[string]interface{}{nfsdatastore}
-
-	return MarshalStruct(map[string]interface{}{"datastore": datastore}, true)
-}
-
-func MountTarget(targetName, locationToDataAttacher string) {
-
-	if locationToDataAttacher == "" {
-		locationToDataAttacher = "../../../../../"
-	}
-
-	log.Info("Creating Secret for data attacher")
-	secret := CreateTargetSecret(targetName)
-
-	out, err := Mkdir(DataStoreAttacherSecretPath)
-	log.Info(out)
-	Expect(err).Should(BeNil())
-
-	secretFilePath := path.Join(DataStoreAttacherSecretPath, TrilioSecName)
-	err = WriteToFile(secretFilePath, secret)
-	Expect(err).Should(BeNil())
-
-	log.Info("Mounting target")
-	log.Infof("Creating data store base directory")
-	_, err = Mkdir(DataStoreAttacherPath)
-	Expect(err).Should(BeNil())
-	log.Infof("Creating temp datastore directory for objectstore")
-	_, err = Mkdir(TempDataStoreBasePath)
-	Expect(err).Should(BeNil())
-	//var cmdErr error
-	go func() {
-		defer ginkgo.GinkgoRecover()
-		dataAttacherCommand := fmt.Sprintf("%s "+locationToDataAttacher+"datastore-attacher/mount_utility/mount_by_secret/mount_datastores.py "+
-			"--target-name=%s", Py3Path, targetName)
-		log.Infof("Running command: %s", dataAttacherCommand)
-
-		output, cmdErr := RunCmd(dataAttacherCommand)
-		log.Info(output)
-		Expect(cmdErr).Should(BeNil())
-		log.Info("Target mounted")
-	}()
 }
 
 func removeRandomDirAndUnmount() {
 
 	// unmounting from random named directory
-	UnMountTarget(targetLocation, "../../../")
-	log.Info("unmounted from random named directory")
+	UnMountTarget()
+	log.Info("unmounted from random named directory", randomDirectory)
 
 	time.Sleep(time.Second * 10)
 
 	// setting "NFS_SERVER_BASE_PATH" to default target path and mounting to it
-	Expect(os.Setenv(NFSServerBasePath, targetBrowserDataPath)).To(BeNil())
-	MountTarget(targetKey.Name, "../../../")
+	gomega.Expect(os.Setenv(internal.NFSServerBasePath, internal.TargetBrowserDataPath)).To(gomega.BeNil())
+	MountTarget()
 	log.Info("mounted to default path")
 
 	time.Sleep(time.Second * 10)
 
 	// removing random named directory
-	RmRf(filepath.Join(targetLocation, randomDirectory))
+	_, _ = RmRf(filepath.Join(targetLocation, randomDirectory))
+
 	log.Info("removed directory")
 }
 
-// Accessor is a helper for accessing Kubernetes programmatically. It bundles some of the high-level
-// operations that is frequently used by the test framework.
-type Accessor struct {
-	restConfig *rest.Config
-	ctl        *kubectl
-	set        *client.Clientset
-	client     ctrlRuntime.Client
-	context    context.Context
-}
-
-func verifyBackupPlansAndBackupsOnNFS(backupPlans, backups int) (backupPlanUIDs, backupUIDs []string) {
+func verifyBackupPlansAndBackupsOnNFS(backupPlans, backups int) (backupPlanUIDs []string) {
 
 	var (
-		err            error
-		tempBackupUIDs []string
+		err                        error
+		tempBackupUIDs, backupUIDs []string
 	)
 
-	Eventually(func() []string {
-		return InterceptGomegaFailures(func() {
+	gomega.Eventually(func() []string {
+		return gomega.InterceptGomegaFailures(func() {
 			backupPlanUIDs, err = ReadChildDir(targetLocation)
-			Expect(err).To(BeNil())
-			fmt.Println(backupPlanUIDs)
+			gomega.Expect(err).To(gomega.BeNil())
 			log.Info(len(backupPlanUIDs), " backupplans present on target location")
-			Expect(len(backupPlanUIDs)).To(Equal(backupPlans))
+			gomega.Expect(len(backupPlanUIDs)).To(gomega.Equal(backupPlans))
 		})
-	}, timeout, interval).Should(BeEmpty())
+	}, timeout, interval).Should(gomega.BeEmpty())
 
-	Eventually(func() []string {
-		return InterceptGomegaFailures(func() {
+	gomega.Eventually(func() []string {
+		return gomega.InterceptGomegaFailures(func() {
 			for i := range backupPlanUIDs {
 				tempBackupUIDs, err = ReadChildDir(targetLocation + "/" + backupPlanUIDs[i])
-				Expect(err).To(BeNil())
+				gomega.Expect(err).To(gomega.BeNil())
 				backupUIDs = append(backupUIDs, tempBackupUIDs...)
 			}
 			log.Info(len(backupUIDs), " backups present on target location")
-			Expect(len(backupUIDs)).To(Equal(backups))
+			gomega.Expect(len(backupUIDs)).To(gomega.Equal(backups))
 		})
-	}, timeout, interval).Should(BeEmpty())
+	}, timeout, interval).Should(gomega.BeEmpty())
 
-	return backupPlanUIDs, backupUIDs
+	return backupPlanUIDs
 
 }
 
-func ReadChildDir(dirPath string) (dirNames []string, err error) {
-	// ReadChildDir reads the dir name from the given path
-	// Input:
-	//		dirPath: Directory path
-	// Output:
-	//		dirNames: Directory name list
-	//		err: Error
+func VerifyTargetStatus(installNs string) {
+	gomega.Eventually(func() bool {
+		getTarget := fmt.Sprintf("kubectl get target %s  --namespace %s -o=jsonpath=\"{.items[*]}{.status.status}\"",
+			internal.TargetName, installNs)
+		cmd := exec.Command("bash", "-c", getTarget)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			log.Errorf("Error to execute command %s", err.Error())
+		}
+		log.Info("Target status is ", string(output))
+		return string(output) == "Available"
+	}, timeout, interval).Should(gomega.BeTrue())
+}
 
-	files, err := ioutil.ReadDir(dirPath)
-	if err != nil {
-		return dirNames, err
+func GetNFSCredentials() (nfsIPAddr, nfsServerPath string) {
+	nfsIPAddr, isNFSIPAddrPresent := os.LookupEnv(internal.NFSServerIPAddress)
+	nfsServerPath, isNFSServerPathPresent := os.LookupEnv(internal.NFSServerBasePath)
+	if !isNFSIPAddrPresent || !isNFSServerPathPresent {
+		panic("NFS Credentials not present in env")
 	}
-	for _, file := range files {
-		if file.IsDir() {
-			dirNames = append(dirNames, file.Name())
+
+	return nfsIPAddr, nfsServerPath
+}
+
+// UpdateYAMLs Update old YAML values with new values
+// kv is map of old value to new value
+func UpdateYAMLs(kv map[string]string, yamlPath string) error {
+	read, readErr := ioutil.ReadFile(yamlPath)
+	if readErr != nil {
+		return readErr
+	}
+	updatedFile := string(read)
+	for placeholder, value := range kv {
+		if strings.Contains(updatedFile, placeholder) && placeholder != "" {
+			updatedFile = strings.ReplaceAll(updatedFile, placeholder, value)
+			log.Infof("Updated the old value: [%s] with new value: [%s] in file [%s]",
+				placeholder, value, yamlPath)
 		}
 	}
 
-	return dirNames, nil
+	if writeErr := ioutil.WriteFile(yamlPath, []byte(updatedFile), 0); writeErr != nil {
+		return writeErr
+	}
+
+	return nil
 }
