@@ -21,6 +21,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/trilioData/tvk-plugins/internal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/trilioData/tvk-plugins/cmd/target-browser/cmd"
+	"github.com/trilioData/tvk-plugins/internal/utils/shell"
 )
 
 type backupPlan struct {
@@ -42,22 +45,36 @@ type backup struct {
 }
 
 const (
-	BackupPlanType    string = "backupPlanType"
-	Name              string = "name"
-	SuccessfulBackups string = "successfulBackups"
-	BackupTimestamp   string = "backupTimestamp"
+	BackupPlanType         = "backupPlanType"
+	Name                   = "name"
+	SuccessfulBackups      = "successfulBackups"
+	BackupTimestamp        = "backupTimestamp"
+	flagPrefix             = "--"
+	cmdBackupPlan          = cmd.BackupPlanCmdName
+	cmdBackup              = cmd.BackupCmdName
+	cmdMetadata            = cmd.MetadataCmdName
+	cmdGet                 = "get"
+	flagOrderBy            = flagPrefix + cmd.OrderByFlag
+	flagTvkInstanceUIDFlag = flagPrefix + cmd.TvkInstanceUIDFlag
+	flagBackupUIDFlag      = flagPrefix + cmd.BackupUIDFlag
+	flagBackupStatus       = flagPrefix + cmd.BackupStatusFlag
+	flagBackupPlanUIDFlag  = flagPrefix + cmd.BackupPlanUIDFlag
+	flagPageSize           = flagPrefix + cmd.PageSizeFlag
+	flagTargetNamespace    = flagPrefix + cmd.TargetNamespaceFlag
+	flagTargetName         = flagPrefix + cmd.TargetNameFlag
+	flagKubeConfig         = flagPrefix + cmd.KubeConfigFlag
 )
 
 var (
 	kubeConf, _               = internal.NewConfigFromCommandline("")
 	targetBrowserBackupStatus = []string{"Available", "Failed", "InProgress"}
-	commonArgs                = []string{flagTargetName, internal.TargetName, flagTargetNamespace,
+	commonArgs                = []string{flagTargetName, targetName, flagTargetNamespace,
 		installNs, flagKubeConfig, kubeConf}
 )
 
 var _ = Describe("Target Browser Tests", func() {
 
-	Context("Sorting Operations on multiple columns of backupplan & backup", func() {
+	Context("Sorting and filtering Operations on multiple columns of backupplan & backup", func() {
 		var (
 			backupPlanUIDs          []string
 			noOfBackupplansToCreate = 8
@@ -87,7 +104,7 @@ var _ = Describe("Target Browser Tests", func() {
 				// delete target & remove all files & directories created for this Context - only once After all It in this context
 				deleteTarget()
 				for _, backupPlans := range backupPlanUIDs {
-					_, err := RmRf(targetLocation + "/" + backupPlans)
+					_, err := shell.RmRf(targetLocation + "/" + backupPlans)
 					Expect(err).To(BeNil())
 				}
 			}
@@ -176,8 +193,6 @@ var _ = Describe("Target Browser Tests", func() {
 			}
 		})
 		It("Should sort backups on name in descending order", func() {
-			// set isLast true here so that cleanup logic placed in AfterEach can run
-			isLast = true
 			args := []string{cmdGet, cmdBackup, flagBackupPlanUIDFlag, backupPlanUIDs[0], flagOrderBy, "-" + Name}
 			backupData := runCmdBackup(args)
 
@@ -185,48 +200,11 @@ var _ = Describe("Target Browser Tests", func() {
 				Expect(backupData[index].BackupName >= backupData[index+1].BackupName).Should(BeTrue())
 			}
 		})
-	})
 
-	Context("Filtering Operations on different fields of backupplan & backup", func() {
-		var (
-			backupPlanUIDs          []string
-			noOfBackupplansToCreate = 1
-			noOfBackupsToCreate     = 1
-			once                    sync.Once
-			isLast                  bool
-		)
-
-		BeforeEach(func() {
-			backupUID := guid.New().String()
-			// once.Do run once for this Context
-			once.Do(func() {
-				//create target with browsing enabled & create all files & directories required for this Context in NFS server
-				//being used by target - only once Before all It in this context
-				createTarget()
-				output, _ := exec.Command(createBackupScript, strconv.Itoa(noOfBackupplansToCreate),
-					strconv.Itoa(noOfBackupsToCreate), "true", backupUID).Output()
-				log.Info("Shell Script Output: ", string(output))
-				backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupplansToCreate, noOfBackupplansToCreate*noOfBackupsToCreate)
-				time.Sleep(2 * time.Minute) //wait to sync data on target browser
-			})
-
-		})
-
-		AfterEach(func() {
-			if isLast {
-				// delete target & remove all files & directories created for this Context - only once After all It in this context
-				deleteTarget()
-				for _, backupPlans := range backupPlanUIDs {
-					_, err := RmRf(targetLocation + "/" + backupPlans)
-					Expect(err).To(BeNil())
-				}
-			}
-		})
 		It("Should filter backupplans on BackupPlan Application Type", func() {
 			// select random backup status for status filter
 			statusFilterValue := targetBrowserBackupStatus[rand.Intn(len(targetBrowserBackupStatus))]
-			backupPlanUID := backupPlanUIDs[0]
-			args := []string{cmdGet, cmdBackup, flagBackupPlanUIDFlag, backupPlanUID, flagBackupStatus, statusFilterValue}
+			args := []string{cmdGet, cmdBackup, flagBackupPlanUIDFlag, backupPlanUIDs[1], flagBackupStatus, statusFilterValue}
 			backupData := runCmdBackup(args)
 			// compare backups status with status value passed as arg
 			for index := 0; index < len(backupData); index++ {
@@ -234,16 +212,15 @@ var _ = Describe("Target Browser Tests", func() {
 			}
 		})
 
-		It("Should get one backupplan", func() {
+		It("Should get one page backupplan", func() {
 			args := []string{cmdGet, cmdBackupPlan, flagPageSize, "1"}
 			backupPlanData := runCmdBackupPlan(args)
 			Expect(len(backupPlanData)).To(Equal(1))
 		})
 
-		It("Should get one backup", func() {
+		It("Should get one page backup", func() {
 			isLast = true
-			backupPlanUID := backupPlanUIDs[0]
-			args := []string{cmdGet, cmdBackup, flagBackupPlanUIDFlag, backupPlanUID, flagPageSize, "1"}
+			args := []string{cmdGet, cmdBackup, flagBackupPlanUIDFlag, backupPlanUIDs[1], flagPageSize, "1"}
 			backupData := runCmdBackup(args)
 			Expect(len(backupData)).To(Equal(1))
 		})
@@ -260,23 +237,28 @@ var _ = Describe("Target Browser Tests", func() {
 		AfterEach(func() {
 			deleteTarget()
 			for _, backupPlans := range backupPlanUIDs {
-				_, err := RmRf(targetLocation + "/" + backupPlans)
+				_, err := shell.RmRf(targetLocation + "/" + backupPlans)
 				Expect(err).To(BeNil())
 			}
 		})
 
 		It("Should filter backupplans on TVK Instance UID", func() {
-
 			// Generating backupplans and backups with different TVK instance UID
-			tvkInstanceIDValue := guid.New().String()
-			_, err := exec.Command(createBackupScript, "1", "1", "mutate-tvk-id", tvkInstanceIDValue).Output()
-			Expect(err).To(BeNil())
+			tvkInstanceIDValues := []string{guid.New().String(),
+				guid.New().String(),
+			}
+			for _, value := range tvkInstanceIDValues {
+				_, err := exec.Command(createBackupScript, "1", "1", "mutate-tvk-id", value).Output()
+				Expect(err).To(BeNil())
+			}
 			time.Sleep(2 * time.Minute) //wait to sync data on target browser
-			backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(1, 1)
-			args := []string{cmdGet, cmdBackupPlan, flagTvkInstanceUIDFlag, tvkInstanceIDValue}
-			backupPlanData := runCmdBackupPlan(args)
-			Expect(len(backupPlanData)).To(Equal(1))
-			Expect(backupPlanData[0].InstanceID).Should(Equal(tvkInstanceIDValue))
+			backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(2, 2)
+			for _, value := range tvkInstanceIDValues {
+				args := []string{cmdGet, cmdBackupPlan, flagTvkInstanceUIDFlag, value}
+				backupPlanData := runCmdBackupPlan(args)
+				Expect(len(backupPlanData)).To(Equal(1))
+				Expect(backupPlanData[0].InstanceID).Should(Equal(value))
+			}
 		})
 
 	})
@@ -311,7 +293,7 @@ var _ = Describe("Target Browser Tests", func() {
 				// delete target & remove all files & directories created for this Context - only once After all It in this context
 				deleteTarget()
 				for _, backupPlans := range backupPlanUIDs {
-					_, err := RmRf(targetLocation + "/" + backupPlans)
+					_, err := shell.RmRf(targetLocation + "/" + backupPlans)
 					Expect(err).To(BeNil())
 				}
 			}
@@ -321,7 +303,7 @@ var _ = Describe("Target Browser Tests", func() {
 			backupPlanUID := backupPlanUIDs[0]
 			args := []string{cmdGet, cmdMetadata, flagBackupPlanUIDFlag, backupPlanUID, flagBackupUIDFlag, backupIDValue}
 			args = append(args, commonArgs...)
-			cmd := exec.Command("./"+path.Join(internal.TargetBrowserBinaryLocation, internal.TargetBrowserBinaryName), args...)
+			cmd := exec.Command(path.Join(targetBrowserBinaryLocation, targetBrowserBinaryName), args...)
 			output, err := cmd.CombinedOutput()
 			if err != nil {
 				Fail(fmt.Sprintf("Error to execute command %s", err.Error()))
@@ -343,19 +325,19 @@ var _ = Describe("Target Browser Tests", func() {
 
 func createTarget() {
 	By("Creating target and marking it available")
-	target := fmt.Sprintf("kubectl apply -f %s --namespace %s", path.Join(currentDir, testDataDirRelPath, targetPath), installNs)
-	cmd := exec.Command("bash", "-c", target)
+	targetCmd := fmt.Sprintf("kubectl apply -f %s --namespace %s", path.Join(currentDir, testDataDirRelPath, targetPath), installNs)
+	cmd := exec.Command("bash", "-c", targetCmd)
 
 	_, err := cmd.CombinedOutput()
 	if err != nil {
 		Fail(fmt.Sprintf("target creation failed %s.", err.Error()))
 	}
-	VerifyTargetStatus(installNs)
+	verifyTargetStatus(ctx, installNs, k8sClient)
 }
 
 func deleteTarget() {
-	target := fmt.Sprintf("kubectl delete -f %s --namespace %s", path.Join(currentDir, testDataDirRelPath, targetPath), installNs)
-	cmd := exec.Command("bash", "-c", target)
+	targetCmd := fmt.Sprintf("kubectl delete -f %s --namespace %s", path.Join(currentDir, testDataDirRelPath, targetPath), installNs)
+	cmd := exec.Command("bash", "-c", targetCmd)
 	_, err := cmd.CombinedOutput()
 	if err != nil {
 		Fail(fmt.Sprintf("target creation failed %s.", err.Error()))
@@ -367,7 +349,7 @@ func runCmdBackupPlan(args []string) []backupPlan {
 	var output []byte
 	var err error
 	Eventually(func() bool {
-		cmd := exec.Command(path.Join(internal.TargetBrowserBinaryLocation, internal.TargetBrowserBinaryName), args...)
+		cmd := exec.Command(path.Join(targetBrowserBinaryLocation, targetBrowserBinaryName), args...)
 		log.Info("BackupPlan command is: ", cmd)
 		output, err = cmd.CombinedOutput()
 		if err != nil {
@@ -375,12 +357,12 @@ func runCmdBackupPlan(args []string) []backupPlan {
 		}
 		log.Infof("BackupPlan data is %s", output)
 		return strings.Contains(string(output), "502 Bad Gateway")
-	}, timeout, interval).Should(BeFalse())
+	}, apiRetryTimeout, interval).Should(BeFalse())
 
 	var backupPlanData []backupPlan
 	err = json.Unmarshal(output, &backupPlanData)
 	if err != nil {
-		log.Errorf(fmt.Sprintf("Failed to get backupplan data from target browser %s.", err.Error()))
+		Fail(fmt.Sprintf("Failed to get backupplan data from target browser %s.", err.Error()))
 	}
 	return backupPlanData
 }
@@ -390,7 +372,7 @@ func runCmdBackup(args []string) []backup {
 	var err error
 	args = append(args, commonArgs...)
 	Eventually(func() bool {
-		cmd := exec.Command(path.Join(internal.TargetBrowserBinaryLocation, internal.TargetBrowserBinaryName), args...)
+		cmd := exec.Command(path.Join(targetBrowserBinaryLocation, targetBrowserBinaryName), args...)
 		log.Info("Backup command is: ", cmd)
 		output, err = cmd.CombinedOutput()
 		if err != nil {
@@ -398,7 +380,7 @@ func runCmdBackup(args []string) []backup {
 		}
 		log.Infof("Backup data is %s", output)
 		return strings.Contains(string(output), "502 Bad Gateway")
-	}, timeout, interval).Should(BeFalse())
+	}, apiRetryTimeout, interval).Should(BeFalse())
 
 	var backupData []backup
 	err = json.Unmarshal(output, &backupData)

@@ -3,14 +3,14 @@ package cmd
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/trilioData/tvk-plugins/internal"
-	targetbrowser "github.com/trilioData/tvk-plugins/tools/target-browser"
 
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth lib for GKE
+
+	"github.com/trilioData/tvk-plugins/internal"
+	targetbrowser "github.com/trilioData/tvk-plugins/tools/target-browser"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -32,24 +32,25 @@ func Execute() {
 }
 
 var (
-	scheme        = runtime.NewScheme()
-	TargetBrowser = &targetbrowser.Config{}
+	scheme              = runtime.NewScheme()
+	targetBrowserConfig = &targetbrowser.Config{}
 )
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&TargetBrowser.KubeConfig, KubeConfigFlag, internal.KubeConfigDefault, kubeConfigUsage)
-	rootCmd.PersistentFlags().BoolVar(&TargetBrowser.InsecureSkipTLS, insecureSkipTLSFlag, false, insecureSkipTLSUsage)
-	rootCmd.PersistentFlags().StringVar(&TargetBrowser.CaCert, certificateAuthorityFlag, "", certificateAuthorityUsage)
-	rootCmd.PersistentFlags().StringVar(&TargetBrowser.ClientCert, clientCertificateFlag, "", clientCertificateUsage)
-	rootCmd.PersistentFlags().StringVar(&TargetBrowser.ClientKey, clientKeyFlag, "", clientKeyUsage)
+	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.KubeConfig, KubeConfigFlag, internal.KubeConfigDefault, kubeConfigUsage)
+	rootCmd.PersistentFlags().BoolVar(&targetBrowserConfig.InsecureSkipTLS, insecureSkipTLSFlag, false, insecureSkipTLSUsage)
+	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.CaCert, certificateAuthorityFlag, "", certificateAuthorityUsage)
+	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.ClientCert, clientCertificateFlag, "", clientCertificateUsage)
+	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.ClientKey, clientKeyFlag, "", clientKeyUsage)
 
-	rootCmd.PersistentFlags().StringVar(&TargetBrowser.TargetNamespace, TargetNamespaceFlag, targetNamespaceDefault, targetNamespaceUsage)
-	rootCmd.PersistentFlags().StringVar(&TargetBrowser.TargetName, TargetNameFlag, "", targetNameUsage)
+	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.TargetNamespace, TargetNamespaceFlag,
+		targetNamespaceDefault, targetNamespaceUsage)
+	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.TargetName, TargetNameFlag, "", targetNameUsage)
 	if err := rootCmd.MarkPersistentFlagRequired(TargetNameFlag); err != nil {
 		log.Fatalf("failed to mark flag %s as required - %s", TargetNameFlag, err.Error())
 	}
 
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(v1beta1.AddToScheme(scheme))
-	TargetBrowser.Scheme = scheme
+	targetBrowserConfig.Scheme = scheme
 }

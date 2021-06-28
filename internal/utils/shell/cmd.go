@@ -1,4 +1,4 @@
-package targetbrowsertest
+package shell
 
 import (
 	"fmt"

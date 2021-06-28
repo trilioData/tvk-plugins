@@ -22,66 +22,60 @@ const (
 	TargetNamespaceFlag      = "target-namespace"
 	targetNamespaceDefault   = "default"
 	targetNamespaceUsage     = "Namespace of specified target CR to be used to query mounted target"
-	GetFlag                  = "get"
 	BackupPlanCmdName        = "backupplan"
 	backupPlanCmdPluralName  = BackupPlanCmdName + "s"
 	backupPlanCmdAlias       = "backupPlan"
 	backupPlanCmdAliasPlural = backupPlanCmdAlias + "s"
 	BackupCmdName            = "backup"
 	backupCmdPluralName      = BackupCmdName + "s"
-	metadataCmdName          = "metadata"
+	MetadataCmdName          = "metadata"
 
-	PagesFlag    = "Pages"
+	pagesFlag    = "pages"
 	pagesDefault = 1
 	pagesUsage   = "Number of Pages to display within the paginated result set"
 
-	backupPlanShortUsage = "API to perform Read operations on BackupPlans"
-	backupPlanLongUsage  = `API to perform Read operations on BackupPlans. Get a list of BackupPlans from target with using options.
-		Order backupPlan in ascending or descending order,
-		Filter backupPlan using flag tvk-instance-uid.`
+	PageSizeFlag = "page-size"
 
-	backupShortUsage = "API to perform Read operations on Backup"
-	backupLongUsage  = `API to perform Read operations on Backup. Get list of Backup stored on target for specific backupPlan.
-			Filter backup using flag backup-status,
-			Order backup  in ascending or descending order.`
-
-	PageSizeFlag       = "page-size"
-	MetadataBinaryName = "metadata"
-	pageSizeDefault    = 10
-	pageSizeUsage      = "Maximum number of results in a single page"
+	pageSizeDefault = 10
+	pageSizeUsage   = "Maximum number of results in a single page"
 
 	OrderByFlag    = "order-by"
 	orderByDefault = "name"
 	orderByUsage   = "Parameter to use for ordering the paginated result set"
 
-	metadataShortUsage = "API to perform Read operations on Backup high level metadata"
-	metadataLongUsage  = `API to perform Read operations on Backup high level metadata.
-		Get metadata of specific backup using flag backup-plan-uid and backup-uid`
-
 	TvkInstanceUIDFlag    = "tvk-instance-uid"
 	tvkInstanceUIDDefault = ""
-	tvkInstanceUIDShort   = "t"
-	tvkInstanceUIDUsage   = "TVK instance id to filter for."
+
+	tvkInstanceUIDUsage = "TVK instance id to filter backupPlan"
 
 	BackupPlanUIDFlag    = "backup-plan-uid"
 	backupPlanUIDDefault = ""
-	backupPlanUIDShort   = ""
 	backupPlanUIDUsage   = "backupPlanUID to get all backup related to UID"
 
 	BackupStatusFlag    = "backup-status"
 	backupStatusDefault = ""
-	backupStatusShort   = ""
 	backupStatusUsage   = "Status of Backup to filter for [Success, InProgress, Failed]"
 
 	BackupUIDFlag    = "backup-uid"
 	backupUIDDefault = ""
-	backupUIDShort   = ""
 	backupUIDUsage   = "backupUID to get all backup related to UID"
+
+	creationDateFlag    = "creation-date"
+	creationDateDefault = ""
+	creationDateUsage   = "Backup creation date"
+
+	expiryDateFlag    = "expiry-date"
+	expiryDateDefault = ""
+	expiryDateUsage   = "Backup expiry date"
 )
 
 var (
-	tvkInstanceUID string
-	backupPlanUID  string
-	backupStatus   string
-	backupUID      string
+	tvkInstanceUID  string
+	backupPlanUID   string
+	backupStatus    string
+	backupUID       string
+	creationDate    string
+	expiryDate      string
+	orderBy         string
+	pages, pageSize int
 )

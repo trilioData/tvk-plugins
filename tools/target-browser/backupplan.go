@@ -2,23 +2,22 @@ package targetbrowser
 
 import (
 	"github.com/google/go-querystring/query"
+
 	"github.com/trilioData/tvk-plugins/internal"
 )
 
 // BackupPlanListOptions for backupPlan
 type BackupPlanListOptions struct {
-	Page           int    `url:"page"`
-	PageSize       int    `url:"pageSize"`
-	Ordering       string `url:"ordering"`
+	CommonListOptions
 	TvkInstanceUID string `url:"tvkInstanceUID"`
 }
 
-// GetBackupPlans returns backupPlan list stored on NFS target with available options
+// GetBackupPlans returns backupPlan list stored on mounted target with available options
 func (auth *AuthInfo) GetBackupPlans(options *BackupPlanListOptions) error {
 	values, err := query.Values(options)
 	if err != nil {
 		return err
 	}
 	queryParam := values.Encode()
-	return auth.TriggerAPI(queryParam, internal.BackupPlanPath, backupPlanSelector)
+	return auth.TriggerAPI(queryParam, internal.BackupPlanAPIPath, backupPlanSelector)
 }

@@ -11,26 +11,31 @@ import (
 
 	"github.com/google/go-querystring/query"
 	"github.com/thedevsaddam/gojsonq"
+
 	"github.com/trilioData/tvk-plugins/internal"
 )
 
-// BackupListOptions for backup
-type BackupListOptions struct {
-	Page          int    `url:"page"`
-	PageSize      int    `url:"pageSize"`
-	Ordering      string `url:"ordering"`
-	BackupPlanUID string `url:"backupPlanUID"`
-	BackupStatus  string `url:"status"`
+type CommonListOptions struct {
+	Page     int    `url:"page"`
+	PageSize int    `url:"pageSize"`
+	OrderBy  string `url:"ordering"`
 }
 
-// GetBackups returns backup list stored on NFS target with available options
+// BackupListOptions for backup
+type BackupListOptions struct {
+	BackupPlanUID string `url:"backupPlanUID"`
+	BackupStatus  string `url:"status"`
+	CommonListOptions
+}
+
+// GetBackups returns backup list stored on mounted target with available options
 func (auth *AuthInfo) GetBackups(options *BackupListOptions) error {
 	values, err := query.Values(options)
 	if err != nil {
 		return err
 	}
 	queryParam := values.Encode()
-	return auth.TriggerAPI(queryParam, internal.BackupPath, backupSelector)
+	return auth.TriggerAPI(queryParam, internal.BackupAPIPath, backupSelector)
 }
 
 func (auth *AuthInfo) TriggerAPI(queryParam, apiPath string, selector []string) error {
@@ -64,14 +69,17 @@ func (auth *AuthInfo) TriggerAPI(queryParam, apiPath string, selector []string) 
 	if err != nil {
 		return err
 	}
-	var backupBytes bytes.Buffer
-	gojsonq.New().FromString(string(body)).From(internal.Results).Select(selector...).Writer(&backupBytes)
-
+	if len(selector) > 0 {
+		var backupBytes bytes.Buffer
+		gojsonq.New().FromString(string(body)).From(internal.Results).Select(selector...).Writer(&backupBytes)
+		body = backupBytes.Bytes()
+	}
 	var prettyJSON bytes.Buffer
-	err = json.Indent(&prettyJSON, backupBytes.Bytes(), "", "\t")
+	err = json.Indent(&prettyJSON, body, "", "  ")
 	if err != nil {
 		return fmt.Errorf("JSON parse error: %s", err.Error())
 	}
 	fmt.Println(prettyJSON.String())
+
 	return nil
 }

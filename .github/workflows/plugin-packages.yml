@@ -104,38 +104,38 @@ jobs:
     # added condition 'startsWith(github.ref, 'refs/tags/')'
     if: (needs.pre-build.outputs.preflight == 'true') || startsWith(github.ref, 'refs/tags/')
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v2
 
-      - name: Build Preflight Package
-        run: make build-preflight
+    - name: Build Preflight Package
+      run: make build-preflight
 
-      - name: Authenticate and Connect to GKE cluster
-        if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
-        uses: google-github-actions/get-gke-credentials@v0.2.1
-        with:
-          cluster_name: ${{ env.GKE_CLUSTER }}
-          location: ${{ env.GKE_ZONE }}
-          credentials: ${{ secrets.GKE_SA_KEY }}
+    - name: Authenticate and Connect to GKE cluster
+      if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
+      uses: google-github-actions/get-gke-credentials@v0.2.1
+      with:
+        cluster_name: ${{ env.GKE_CLUSTER }}
+        location: ${{ env.GKE_ZONE }}
+        credentials: ${{ secrets.GKE_SA_KEY }}
 
-      - name: Run Preflight Integration Tests
-        if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
-        run: make test-preflight-integration
+    - name: Run Preflight Integration Tests
+      if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
+      run: make test-preflight-integration
 
-      - name: Ensure Required Utilities Installed
-        run: make install-required-utilities
+    - name: Ensure Required Utilities Installed
+      run: make install-required-utilities
 
-      - name: Test Preflight Plugin Locally
-        run: make test-preflight-plugin-locally
+    - name: Test Preflight Plugin Locally
+      run: make test-preflight-plugin-locally
 
-      - name: Upload Preflight Plugin Packges to github artifact
-        uses: actions/upload-artifact@v2
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          name: preflight
-          path: |
-            build/preflight.tar.gz
-            build/preflight-sha256.txt
+    - name: Upload Preflight Plugin Packges to github artifact
+      uses: actions/upload-artifact@v2
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        name: preflight
+        path: |
+          build/preflight.tar.gz
+          build/preflight-sha256.txt
 
 
   # build_test_log-collector job builds log-collector package and tests package for plugin creation(install, uninstall)
@@ -237,22 +237,20 @@ jobs:
           build_id: tb-${{ github.run_id }}
           nfs_server_ip: ${{ secrets.NFS_SERVER_IP }}
 
-
-      - name: Test Target-Browser Plugin Locally
-        run: make test-target-browser-plugin-locally
-
       - name: Publish Target-Browser Tests Report
         uses: actions/upload-artifact@v2
         with:
-          commit: ${{ github.event.workflow_run.head_sha }}
-          files: "tests/target-browser/*.xml"
+          name: target-browser-junit
+          files: tests/target-browser/target-browser-junit.xml
 
+      - name: Test Target-Browser Plugin Locally
+        run: make test-target-browser-plugin-locally
 
   # pre-release job determines whether to create release or not and sets job variables which will be used to decide
   # what packages(preflight, log-collector, target-browser) should be included in release
   pre-release:
     runs-on: ubuntu-latest
-    needs: [ build_test_preflight, build_test_log-collector, build_test_target-browser ]
+    needs: [build_test_preflight, build_test_log-collector, build_test_target-browser]
     if: startsWith(github.ref, 'refs/tags/')
     outputs:
       create_release: ${{ steps.detect_changes.outputs.create_release }}

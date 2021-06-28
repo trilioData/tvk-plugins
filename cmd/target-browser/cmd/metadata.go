@@ -3,7 +3,6 @@ package cmd
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth lib for GKE
 
 	targetBrowser "github.com/trilioData/tvk-plugins/tools/target-browser"
 )
@@ -15,21 +14,25 @@ func init() {
 // metadataCmd represents the metadata command
 func metadataCmd() *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:   metadataCmdName,
-		Short: metadataShortUsage,
-		Long:  metadataLongUsage,
-		RunE:  getMetadata,
+		Use:   MetadataCmdName,
+		Short: "API to perform Read operations on Backup high level metadata",
+		Long: `API to perform Read operations on Backup high level metadata.
+  Get metadata of specific backup using flag backup-plan-uid and backup-uid`,
+
+		Example: `  # Get Specific metadata of backup
+  kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid>`,
+		RunE: getMetadata,
 	}
 
-	cmd.Flags().StringVarP(&backupPlanUID, BackupPlanUIDFlag, backupPlanUIDShort, backupPlanUIDDefault, backupPlanUIDUsage)
-	cmd.Flags().StringVarP(&backupUID, BackupUIDFlag, backupUIDShort, backupUIDDefault, backupUIDUsage)
+	cmd.Flags().StringVar(&backupPlanUID, BackupPlanUIDFlag, backupPlanUIDDefault, backupPlanUIDUsage)
 	err := cmd.MarkFlagRequired(BackupPlanUIDFlag)
 	if err != nil {
-		log.Fatalf("Invalid option or missing required flag %s and Error is %s", BackupPlanUIDFlag, err.Error())
+		log.Fatalf("Invalid option or missing required flag %s - %s", BackupPlanUIDFlag, err.Error())
 	}
+	cmd.Flags().StringVar(&backupUID, BackupUIDFlag, backupUIDDefault, backupUIDUsage)
 	err = cmd.MarkFlagRequired(BackupUIDFlag)
 	if err != nil {
-		log.Fatalf("Invalid option or missing required flag %s and Error is %s", BackupUIDFlag, err.Error())
+		log.Fatalf("Invalid option or missing required flag %s - %s", BackupUIDFlag, err.Error())
 	}
 	return cmd
 }
@@ -40,6 +43,7 @@ func getMetadata(*cobra.Command, []string) error {
 		BackupPlanUID: backupPlanUID,
 		BackupUID:     backupUID,
 	}
+
 	err := targetBrowserAuthConfig.GetMetadata(&mdOptions)
 	if err != nil {
 		return err

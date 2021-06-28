@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -11,8 +12,6 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	log "github.com/sirupsen/logrus"
-	"github.com/trilioData/tvk-plugins/cmd/target-browser/cmd"
-	"github.com/trilioData/tvk-plugins/internal"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -24,40 +23,30 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-)
 
-// These tests use Ginkgo (BDD-style Go testing framework). Refer to
-// http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
+	"github.com/trilioData/tvk-plugins/internal"
+	"github.com/trilioData/tvk-plugins/internal/utils/shell"
+)
 
 var (
 	k8sClient client.Client
 	ctx       = context.Background()
-	installNs = GetInstallNamespace()
+	installNs = getInstallNamespace()
 
 	controlPlaneDeploymentKey = types.NamespacedName{
 		Name:      internal.TVKControlPlaneDeployment,
 		Namespace: installNs,
 	}
 
-	createBackupScript     = "./createBackups.sh"
-	cmdBackupPlan          = cmd.BackupPlanCmdName
-	cmdBackup              = cmd.BackupCmdName
-	flagOrderBy            = "--" + string(cmd.OrderByFlag)
-	cmdMetadata            = cmd.MetadataBinaryName
-	flagTvkInstanceUIDFlag = "--" + cmd.TvkInstanceUIDFlag
-	flagBackupUIDFlag      = "--" + cmd.BackupUIDFlag
-	flagBackupStatus       = "--" + cmd.BackupStatusFlag
-	flagBackupPlanUIDFlag  = "--" + cmd.BackupPlanUIDFlag
-	flagPageSize           = "--" + cmd.PageSizeFlag
-	flagTargetNamespace    = "--" + cmd.TargetNamespaceFlag
-	flagTargetName         = "--" + cmd.TargetNameFlag
-	flagKubeConfig         = "--" + cmd.KubeConfigFlag
-	cmdGet                 = cmd.GetFlag
-	testDataDirRelPath     = "./test-data"
-	targetPath             = "target.yaml"
-	nfsIPAddr              string
-	nfsServerPath          string
-	currentDir, _          = os.Getwd()
+	createBackupScript = "./createBackups.sh"
+
+	testDataDirRelPath          = "./test-data"
+	targetPath                  = "target.yaml"
+	nfsIPAddr                   string
+	nfsServerPath               string
+	currentDir, _               = os.Getwd()
+	projectRoot                 = filepath.Dir(filepath.Dir(currentDir))
+	targetBrowserBinaryLocation = filepath.Join(projectRoot, distDir, targetBrowserDir)
 )
 
 func TestTargetBrowser(t *testing.T) {
@@ -67,41 +56,43 @@ func TestTargetBrowser(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	By("bootstrapping test environment")
-	Expect(os.Setenv(internal.NFSServerBasePath, internal.TargetBrowserDataPath)).To(BeNil())
-
-	_, err := Mkdir(internal.TargetLocation)
-	Expect(err).Should(BeNil())
 
 	scheme := runtime.NewScheme()
 	_ = clientGoScheme.AddToScheme(scheme)
 	config := config.GetConfigOrDie()
-
-	k8sClient, _ = client.New(config, client.Options{Scheme: scheme})
+	var err error
+	k8sClient, err = client.New(config, client.Options{Scheme: scheme})
+	Expect(err).Should(BeNil())
 	Expect(k8sClient).ToNot(BeNil())
+
+	Expect(os.Setenv(nfsServerBasePath, targetBrowserDataPath)).To(BeNil())
+
+	_, err = shell.Mkdir(targetLocation)
+	Expect(err).Should(BeNil())
+
 	log.Info("Mounting target.")
-	MountTarget()
+	mountTarget()
 	changeControlPlanePollingPeriod()
 	time.Sleep(time.Second * 10)
 
 	makeRandomDirAndMount()
-	nfsIPAddr, nfsServerPath = GetNFSCredentials()
-	Expect(UpdateYAMLs(
+	nfsIPAddr, nfsServerPath = getNFSCredentials()
+	Expect(updateYAMLs(
 		map[string]string{
-			internal.NFSServerIP:       nfsIPAddr,
-			internal.NFSServerBasePath: nfsServerPath,
+			nfsServerIP:       nfsIPAddr,
+			nfsServerBasePath: nfsServerPath,
 		}, path.Join(testDataDirRelPath, targetPath))).To(BeNil())
 
 }, 60)
 
 var _ = AfterSuite(func() {
-	Expect(UpdateYAMLs(
+	Expect(updateYAMLs(
 		map[string]string{
-			nfsIPAddr:     internal.NFSServerIP,
-			nfsServerPath: internal.NFSServerBasePath,
+			nfsIPAddr:     nfsServerIP,
+			nfsServerPath: nfsServerBasePath,
 		}, path.Join(testDataDirRelPath, targetPath))).To(BeNil())
 	removeRandomDirAndUnmount()
 })
@@ -112,7 +103,7 @@ func changeControlPlanePollingPeriod() {
 		container    *corev1.Container
 		containerIdx int
 		// setting polling period to update browser cache to 10 seconds
-		pollingPeriod = "10s"
+		pollingPeriodTime = "10s"
 	)
 
 	By("Getting Control Plane Deployment")
@@ -121,7 +112,7 @@ func changeControlPlanePollingPeriod() {
 	Expect(err).To(BeNil())
 	containers := deployment.Spec.Template.Spec.Containers
 	for index := range containers {
-		if containers[index].Name == internal.ControlPlaneContainerName {
+		if containers[index].Name == controlPlaneContainerName {
 			container = &containers[index]
 			containerIdx = index
 			break
@@ -129,13 +120,18 @@ func changeControlPlanePollingPeriod() {
 	}
 	if container != nil {
 		for index := range container.Env {
-			if container.Env[index].Name == internal.PollingPeriod {
-				container.Env[index].Value = pollingPeriod
+			if container.Env[index].Name == pollingPeriod {
+				container.Env[index].Value = pollingPeriodTime
 				deployment.Spec.Template.Spec.Containers[containerIdx].Env = container.Env
 				break
 			}
 		}
 	}
-	err = k8sClient.Update(ctx, deployment)
+
+	Eventually(func() error {
+		err = k8sClient.Update(ctx, deployment)
+		return err
+	}, timeout, interval).Should(BeNil())
+
 	Expect(err).ShouldNot(HaveOccurred())
 }
