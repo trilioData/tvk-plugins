@@ -18,8 +18,8 @@ var rootCmd = &cobra.Command{
 
 	Use:   "target-browser",
 	Short: "target-browser cli utility queries content of mounted target",
-	Long: `target-browser cli utility can query content of mounted target location to get details of backup, backupPlan and
-metadata details of backup via HTTP/HTTPS calls to target-browser server.
+	Long: `target-browser cli utility can query content of mounted target location to get details of backup, backupPlan and metadata details
+of backup via HTTP/HTTPS calls to target-browser server.
 `,
 }
 

@@ -18,8 +18,8 @@ var (
 var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "get command retrieves specific resource",
-	Long: `Gets specific resource[backup, backupPlan, metadata, etc] which retrieves single
-object or list of objects of that resource.`,
+	Long: `Performs GET operation on target-browser's '/backup', '/backupPlan' and '/metadata' APIs and gets specific resource
+[backup, backupPlan, metadata, etc] which retrieves single object or list of objects of that resource.`,
 
 	Example: `  # List of backups
   kubectl tvk-target-browser get backup --backup-plan-uid <uid>
@@ -28,7 +28,7 @@ object or list of objects of that resource.`,
   kubectl tvk-target-browser get backupPlan
 
   # Metadata of specific backup object
-  kubectl tvk-target-browser get metadata --backup-uid <uid> --backupplan-uid <uid>
+  kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid>
 
   # Specific metadata
   kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid>

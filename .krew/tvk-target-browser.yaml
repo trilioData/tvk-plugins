@@ -55,7 +55,7 @@ spec:
     kubectl tvk-target-browser get backupPlan
 
     # List of backups
-    kubectl tvk-target-browser get backup --backupplan-uid <uid>
+    kubectl tvk-target-browser get backup --backup-plan-uid <uid>
 
     # Metadata of specific backup object
-    kubectl tvk-target-browser get metadata --backup-uid <uid> --backupplan-uid <uid>
+    kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid>

@@ -1,4 +1,4 @@
-# k8s-triliovault Log Collector
+# TVK Log Collector Plugin
 
 tvk-log-collector collects the logs, config and events of resources. Pod Logs can help you understand what is happening inside your application. The logs are particularly useful for debugging problems and monitoring cluster activity, alongside the metadata of all resources related to TrilioVault as either namespaced by providing namespaces name separated by comma or clustered from k8s cluster for debugging k8s-triliovault application. It also collects the CRDs yaml related to TVK and zip them.
 

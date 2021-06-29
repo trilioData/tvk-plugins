@@ -9,7 +9,6 @@ import (
 
 func init() {
 	getCmd.AddCommand(backupCmd())
-
 }
 
 // backupCmd represents the backup command
@@ -17,32 +16,31 @@ func backupCmd() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:     BackupCmdName,
 		Aliases: []string{backupCmdPluralName},
-		Short:   "API to perform Read operations on Backup",
-		Long: `API to perform Read operations on Backup. Get list of Backup stored on target for specific backupPlan.
-  Filter backup using flag backup-status,
-  Order backup  in ascending or descending order.`,
+		Short:   "Get specific Backup or list of Backups",
+		Long: `Performs GET operation on target-browser's '/backup' API and gets specific Backup or list of Backups from mounted
+target location for specific backupPlan using available flags and options.`,
 		Example: `  # List of backups
   kubectl tvk-target-browser get backup --backup-plan-uid <uid>
 
-  # List of backups order by backup name
-  kubectl tvk-target-browser get backup --backup-plan-uid <uid> --order-by name
-
-  # List of backups order by backup Timestamp in ascending order
-  kubectl tvk-target-browser get backup --backup-plan-uid <uid> --order-by backupTimestamp 
-
-  # List of backups order by backup Timestamp in descending order
-  kubectl tvk-target-browser get backup --backup-plan-uid <uid> --order-by -backupTimestamp
-
-  # List of backups filter by backup status
-  kubectl tvk-target-browser get backup --backup-plan-uid <uid> --backup-status Available
-
-  # List of backups filter by backup uid
+  # Get specific backup (NOT SUPPORTED)
   kubectl tvk-target-browser get backup --backup-plan-uid <uid> --backup-uid <uid>
 
-  # List of backups filter by backup status 
+  # List of backups: order by [name]
+  kubectl tvk-target-browser get backup --backup-plan-uid <uid> --order-by name
+
+  # List of backups: order by [backupTimestamp] in [ascending] order
+  kubectl tvk-target-browser get backup --backup-plan-uid <uid> --order-by backupTimestamp 
+
+  # List of backups: order by [backupTimestamp] in [descending] order
+  kubectl tvk-target-browser get backup --backup-plan-uid <uid> --order-by -backupTimestamp
+
+  # List of backups: filter by [backup-status]
+  kubectl tvk-target-browser get backup --backup-plan-uid <uid> --backup-status Available
+
+  # List of backups: filter by [expiry-date] (NOT SUPPORTED)
   kubectl tvk-target-browser get backup --backup-plan-uid <uid> --expiry-date <date>
 
-  # List of backups filter by backup status
+  # List of backups: filter by [creation-date] (NOT SUPPORTED)
   kubectl tvk-target-browser get backup --backup-plan-uid <uid> --creation-date <date>
 `,
 		RunE: getBackupList,
