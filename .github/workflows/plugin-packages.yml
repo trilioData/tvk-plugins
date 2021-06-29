@@ -94,7 +94,6 @@ jobs:
             testTargetBrowser:
               - *sharedTargetBrowser
 
-
   # build_test_preflight job build preflight packages, runs integration tests and tests packages for plugin creation(install, uninstall)
   # upload preflight packages to github artifacts if tags('/ref/tags') are pushed
   build_test_preflight:
@@ -115,7 +114,7 @@ jobs:
       uses: google-github-actions/setup-gcloud@master
       with:
         project_id: ${{ secrets.GCS_PROJECT_ID }}
-        service_account_key: ${{ secrets.GCS_ARTIFACTS_CREDENTIALS }}
+        service_account_key: ${{ secrets.GKE_SA_KEY }}
         export_default_credentials: true
 
     - name: Authenticate and Connect to GKE cluster
@@ -145,7 +144,6 @@ jobs:
         path: |
           build/preflight.tar.gz
           build/preflight-sha256.txt
-
 
   # build_test_log-collector job builds log-collector package and tests package for plugin creation(install, uninstall)
   build_test_log-collector:
