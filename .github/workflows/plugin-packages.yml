@@ -237,6 +237,12 @@ jobs:
           build_id: tb-${{ github.run_id }}
           nfs_server_ip: ${{ secrets.NFS_SERVER_IP }}
 
+      - name: Publish Target-Browser Tests Report
+        uses: actions/upload-artifact@v2
+        with:
+          name: target-browser-junit
+          files: tests/target-browser/target-browser-junit.xml
+
       - name: Test Target-Browser Plugin Locally
         run: make test-target-browser-plugin-locally
 

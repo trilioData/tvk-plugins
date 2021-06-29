@@ -4,6 +4,9 @@ go 1.15
 
 require (
 	github.com/google/go-cmp v0.5.2
+	github.com/google/go-querystring v1.1.0
+	github.com/google/uuid v1.2.0
+	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/onsi/ginkgo v1.15.0
 	github.com/onsi/gomega v1.10.5

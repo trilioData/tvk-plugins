@@ -1,0 +1,217 @@
+{
+  "metadata": {
+    "name": "BACKUP-NAME",
+    "namespace": "temp-ns",
+    "selfLink": "/apis/triliovault.trilio.io/v1/namespaces/temp-ns/backups/BACKUP-NAME",
+    "uid": "BACKUP-UUID",
+    "resourceVersion": "164466722",
+    "generation": 1,
+    "creationTimestamp": "2021-05-18T17:39:21Z",
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"triliovault.trilio.io/v1\",\"kind\":\"Backup\",\"metadata\":{\"annotations\":{},\"name\":\"BACKUP-NAME\",\"namespace\":\"temp-ns\"},\"spec\":{\"backupPlan\":{\"name\":\"BACKUPPLAN-NAME\"},\"type\":\"Full\"}}\n"
+    },
+    "ownerReferences": [
+      {
+        "apiVersion": "triliovault.trilio.io/v1",
+        "kind": "BackupPlan",
+        "name": "BACKUPPLAN-NAME",
+        "uid": "BACKUPPLAN-UUID"
+      }
+    ],
+    "finalizers": [
+      "backup-cleanup-finalizer"
+    ]
+  },
+  "spec": {
+    "type": "Full",
+    "backupPlan": {
+      "kind": "BackupPlan",
+      "namespace": "temp-ns",
+      "name": "BACKUPPLAN-NAME",
+      "uid": "BACKUPPLAN-UUID",
+      "apiVersion": "triliovault.trilio.io/v1",
+      "resourceVersion": "164463144"
+    }
+  },
+  "status": {
+    "backupScope": "App",
+    "applicationType": "APPLICATION-TYPE",
+    "type": "Full",
+    "location": "BACKUPPLAN-UUID/BACKUP-UUID",
+    "startTimestamp": "2021-05-18T17:39:21Z",
+    "completionTimestamp": "2021-05-18T17:43:COMPLETION-TIMESTAMPZ",
+    "phase": "MetadataUpload",
+    "phaseStatus": "InProgress",
+    "status": "BACKUP-STATUS",
+    "size": "238886912",
+    "percentageCompletion": 100,
+    "snapshot": {
+      "helmCharts": [
+        {
+          "release": "mysql",
+          "revision": 1,
+          "resources": [
+            {
+              "groupVersionKind": {
+                "group": "apps",
+                "version": "v1",
+                "kind": "Deployment"
+              },
+              "objects": [
+                "mysql"
+              ]
+            },
+            {
+              "groupVersionKind": {
+                "version": "v1",
+                "kind": "Secret"
+              },
+              "objects": [
+                "mysql",
+                "sh.helm.release.v1.mysql.v1"
+              ]
+            },
+            {
+              "groupVersionKind": {
+                "version": "v1",
+                "kind": "ConfigMap"
+              },
+              "objects": [
+                "mysql-test"
+              ]
+            },
+            {
+              "groupVersionKind": {
+                "version": "v1",
+                "kind": "Service"
+              },
+              "objects": [
+                "helm-mysql-mysql"
+              ]
+            }
+          ],
+          "storageBackend": "Secret",
+          "version": "v3",
+          "dataSnapshots": [
+            {
+              "backupType": "Full",
+              "location": "BACKUPPLAN-UUID/BACKUP-UUID/helm/mysql/data-snapshot/mysql",
+              "persistentVolumeClaimName": "mysql",
+              "persistentVolumeClaimMetadata": "{\"apiVersion\":\"v1\",\"kind\":\"PersistentVolumeClaim\",\"metadata\":{\"annotations\":{\"meta.helm.sh/release-name\":\"mysql\",\"meta.helm.sh/release-namespace\":\"temp-ns\",\"pv.kubernetes.io/bind-completed\":\"yes\",\"pv.kubernetes.io/bound-by-controller\":\"yes\",\"volume.beta.kubernetes.io/storage-provisioner\":\"pd.csi.storage.gke.io\",\"volume.kubernetes.io/selected-node\":\"gke-dev-cluster-dev-cluster-pool-eab0992b-0zp2\"},\"creationTimestamp\":\"2021-05-18T06:15:49Z\",\"finalizers\":[\"kubernetes.io/pvc-protection\"],\"labels\":{\"app\":\"mysql\",\"app.kubernetes.io/managed-by\":\"Helm\",\"chart\":\"mysql-1.6.2\",\"heritage\":\"Helm\",\"release\":\"mysql\"},\"name\":\"mysql\",\"namespace\":\"temp-ns\",\"resourceVersion\":\"164398856\",\"selfLink\":\"/api/v1/namespaces/temp-ns/persistentvolumeclaims/mysql\",\"uid\":\"613be9f8-c4c8-4557-bd27-4f6c64629c7d\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"1Gi\"}},\"storageClassName\":\"csi-gce-pd\",\"volumeMode\":\"Filesystem\",\"volumeName\":\"pvc-613be9f8-c4c8-4557-bd27-4f6c64629c7d\"},\"status\":{\"accessModes\":[\"ReadWriteOnce\"],\"capacity\":{\"storage\":\"1Gi\"},\"phase\":\"Bound\"}}\n",
+              "volumeSnapshot": {
+                "volumeSnapshot": {
+                  "kind": "VolumeSnapshot",
+                  "namespace": "temp-ns",
+                  "name": "mysql-9d654196-0cd6-4d5b-944f-785b6e44d495",
+                  "uid": "3fc7b7c9-43f8-45f2-a342-b2fbcd8474b2",
+                  "apiVersion": "snapshot.storage.k8s.io/v1beta1",
+                  "resourceVersion": "164465258"
+                },
+                "retryCount": 1,
+                "status": "Completed"
+              },
+              "snapshotSize": "1073741824",
+              "size": "238886912",
+              "uploaded": true,
+              "podContainersMap": [
+                {
+                  "podName": "mysql-7df4dccf76-9sgxd",
+                  "containers": [
+                    "mysql"
+                  ]
+                }
+              ],
+              "conditions": [
+                {
+                  "status": "InProgress",
+                  "timestamp": "2021-05-18T17:39:35Z",
+                  "reason": "Snapshot InProgress",
+                  "phase": "Snapshot"
+                },
+                {
+                  "status": "Completed",
+                  "timestamp": "2021-05-18T17:41:12Z",
+                  "reason": "Snapshot Completed",
+                  "phase": "Snapshot"
+                },
+                {
+                  "status": "InProgress",
+                  "timestamp": "2021-05-18T17:41:12Z",
+                  "reason": "Upload InProgress",
+                  "phase": "Upload"
+                },
+                {
+                  "status": "Completed",
+                  "timestamp": "2021-05-18T17:43:06Z",
+                  "reason": "Upload Completed",
+                  "phase": "Upload"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "condition": [
+      {
+        "status": "InProgress",
+        "timestamp": "2021-05-18T17:39:21Z",
+        "reason": "MetaSnapshot InProgress",
+        "phase": "MetaSnapshot"
+      },
+      {
+        "status": "Completed",
+        "timestamp": "2021-05-18T17:39:35Z",
+        "reason": "MetaSnapshot Completed",
+        "phase": "MetaSnapshot"
+      },
+      {
+        "status": "InProgress",
+        "timestamp": "2021-05-18T17:39:35Z",
+        "reason": "DataSnapshot InProgress",
+        "phase": "DataSnapshot"
+      },
+      {
+        "status": "Completed",
+        "timestamp": "2021-05-18T17:41:12Z",
+        "reason": "DataSnapshot Completed",
+        "phase": "DataSnapshot"
+      },
+      {
+        "status": "InProgress",
+        "timestamp": "2021-05-18T17:41:12Z",
+        "reason": "DataUpload InProgress",
+        "phase": "DataUpload"
+      },
+      {
+        "status": "Completed",
+        "timestamp": "2021-05-18T17:43:06Z",
+        "reason": "DataUpload Completed",
+        "phase": "DataUpload"
+      },
+      {
+        "status": "InProgress",
+        "timestamp": "2021-05-18T17:43:06Z",
+        "reason": "MetadataUpload InProgress",
+        "phase": "MetadataUpload"
+      },
+      {
+        "status": "Completed",
+        "timestamp": "2021-05-18T17:43:18Z",
+        "reason": "MetadataUpload Completed",
+        "phase": "MetadataUpload"
+      }
+    ],
+    "stats": {
+      "target": {
+        "kind": "Target",
+        "namespace": "temp-ns",
+        "name": "sample-target",
+        "uid": "018311c7-d7ab-4dc2-b903-cc00932271f6",
+        "apiVersion": "triliovault.trilio.io/v1",
+        "resourceVersion": "164460692"
+      },
+      "hookExists": false
+    }
+  }
+}

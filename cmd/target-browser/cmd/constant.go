@@ -1,7 +1,7 @@
 package cmd
 
 const (
-	kubeConfigFlag  = "kubeconfig"
+	KubeConfigFlag  = "kubeconfig"
 	kubeConfigUsage = "Path to the kubeconfig file to use for CLI requests"
 
 	insecureSkipTLSFlag  = "insecure-skip-tls-verify"
@@ -16,30 +16,66 @@ const (
 	certificateAuthorityFlag  = "certificate-authority"
 	certificateAuthorityUsage = "Path to a cert file for the certificate authority"
 
-	targetNameFlag  = "target-name"
+	TargetNameFlag  = "target-name"
 	targetNameUsage = "Name of target CR to be used to query mounted target"
 
-	targetNamespaceFlag    = "target-namespace"
-	targetNamespaceDefault = "default"
-	targetNamespaceUsage   = "Namespace of specified target CR to be used to query mounted target"
-
-	backupPlanCmdName        = "backupplan"
-	backupPlanCmdPluralName  = backupPlanCmdName + "s"
+	TargetNamespaceFlag      = "target-namespace"
+	targetNamespaceDefault   = "default"
+	targetNamespaceUsage     = "Namespace of specified target CR to be used to query mounted target"
+	BackupPlanCmdName        = "backupplan"
+	backupPlanCmdPluralName  = BackupPlanCmdName + "s"
 	backupPlanCmdAlias       = "backupPlan"
 	backupPlanCmdAliasPlural = backupPlanCmdAlias + "s"
-	backupCmdName            = "backup"
-	backupCmdPluralName      = backupCmdName + "s"
-	metadataCmdName          = "metadata"
+	BackupCmdName            = "backup"
+	backupCmdPluralName      = BackupCmdName + "s"
+	MetadataCmdName          = "metadata"
 
-	pagesFlag    = "Pages"
+	pagesFlag    = "pages"
 	pagesDefault = 1
 	pagesUsage   = "Number of Pages to display within the paginated result set"
 
-	pageSizeFlag    = "page-size"
+	PageSizeFlag = "page-size"
+
 	pageSizeDefault = 10
 	pageSizeUsage   = "Maximum number of results in a single page"
 
-	orderByFlag    = "order-by"
+	OrderByFlag    = "order-by"
 	orderByDefault = "name"
 	orderByUsage   = "Parameter to use for ordering the paginated result set"
+
+	TvkInstanceUIDFlag    = "tvk-instance-uid"
+	tvkInstanceUIDDefault = ""
+
+	tvkInstanceUIDUsage = "TVK instance id to filter backupPlan"
+
+	BackupPlanUIDFlag    = "backup-plan-uid"
+	backupPlanUIDDefault = ""
+	backupPlanUIDUsage   = "backupPlanUID to get all backup related to UID"
+
+	BackupStatusFlag    = "backup-status"
+	backupStatusDefault = ""
+	backupStatusUsage   = "Status of Backup to filter for [Success, InProgress, Failed]"
+
+	BackupUIDFlag    = "backup-uid"
+	backupUIDDefault = ""
+	backupUIDUsage   = "backupUID to get all backup related to UID"
+
+	creationDateFlag    = "creation-date"
+	creationDateDefault = ""
+	creationDateUsage   = "Backup creation date"
+
+	expiryDateFlag    = "expiry-date"
+	expiryDateDefault = ""
+	expiryDateUsage   = "Backup expiry date"
+)
+
+var (
+	tvkInstanceUID  string
+	backupPlanUID   string
+	backupStatus    string
+	backupUID       string
+	creationDate    string
+	expiryDate      string
+	orderBy         string
+	pages, pageSize int
 )

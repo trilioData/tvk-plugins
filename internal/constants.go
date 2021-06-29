@@ -6,16 +6,21 @@ import (
 )
 
 const (
-	HTTPScheme             = "http"
-	TriliovaultGroup       = "triliovault.trilio.io"
-	TargetKind             = "Target"
-	V1Version              = "v1"
-	APIPath                = "api"
-	LoginPath              = "login"
-	JweToken               = "jweToken"
-	KubeConfigParam        = "kubeconfig"
-	ContentType            = "Content-Type"
-	ContentApplicationJSON = "application/json"
+	TVKControlPlaneDeployment = "k8s-triliovault-control-plane"
+	HTTPScheme                = "http"
+	TriliovaultGroup          = "triliovault.trilio.io"
+	TargetKind                = "Target"
+	V1Version                 = "v1"
+	APIPath                   = "api"
+	LoginPath                 = "login"
+	JweToken                  = "jweToken"
+	KubeConfigParam           = "kubeconfig"
+	ContentType               = "Content-Type"
+	ContentApplicationJSON    = "application/json"
+	BackupPlanAPIPath         = "backupplan"
+	BackupAPIPath             = "backup"
+	MetadataAPIPath           = "metadata"
+	Results                   = "results"
 )
 
 var (

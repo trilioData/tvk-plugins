@@ -1,0 +1,12 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Target
+metadata:
+  name: sample-target
+spec:
+  enableBrowsing: true
+  thresholdCapacity: 100Gi
+  nfsCredentials:
+    nfsExport: nfs_server_ip:NFS_SERVER_BASE_PATH
+    nfsOptions: nfsvers=4
+  type: NFS
+  vendor: Other
