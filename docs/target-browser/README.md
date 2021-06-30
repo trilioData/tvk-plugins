@@ -8,8 +8,9 @@ Plugin currently supports GET operation on target-browser's `/backupplan`, `/bac
   
   1. krew - kubectl-plugin manager. Install from [here](https://krew.sigs.k8s.io/docs/user-guide/setup/install/)
   2. kubectl - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-  3. TVK's web-backend service and target-browser server should be up and running.
-  
+  3. Target CR should have `browsingEnabled` field set to `true` in status[JSON Path - `target.status.browsingEnabled`].
+  4. TVK's web-backend service should be up and running.
+
   **Supported OS and Architectures**:
   
   OS:
