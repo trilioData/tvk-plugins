@@ -55,6 +55,3 @@ release:
   # If set to true, will mark the release as not ready for production.
   # Default is false.
   prerelease: true
-  # TODO: remove 'ids' section, once target-browser is ready for release
-  ids:
-    - log-collector-archive

@@ -297,7 +297,7 @@ jobs:
         env:
           release_preflight: ${{needs.pre-release.outputs.release_preflight}}
           release_log_collector: ${{needs.pre-release.outputs.release_log_collector}}
-          release_target_browser: ${{ needs.pre-release.outputs.release_target_browser }}
+          release_target_browser: ${{needs.pre-release.outputs.release_target_browser}}
 
       - name: Setup Go
         uses: actions/setup-go@v2
