@@ -15,7 +15,7 @@ echo "Creating release with both preflight and log-collector packages"
 echo "::set-output name=create_release::true"
 echo "::set-output name=release_preflight::true"
 echo "::set-output name=release_log_collector::true"
-#echo "::set-output name=release_target_browser::true"
+echo "::set-output name=release_target_browser::true"
 exit 0
 # fallback logic ends here
 
@@ -39,9 +39,7 @@ cmd_dir="cmd"
 tools_dir="tools"
 log_collector_dir="log-collector"
 internal_dir="internal"
-
-# TODO: uncomment target-browser related code changes from this file, once target-browser is ready for release
-#target_browser_dir="target-browser"
+target_browser_dir="target-browser"
 
 preflight_dir=$tools_dir/preflight
 
@@ -69,10 +67,10 @@ while IFS= read -r file; do
     echo "log-collector related code changes have been detected"
     echo "::set-output name=release_log_collector::true"
     log_collector_changed=true
-    #  elif [[ ($target_browser_changed == false) && ($file == $internal_dir/* || $file == $tools_dir/$target_browser_dir/* || $file == $cmd_dir/$target_browser_dir/*)  ]]; then
-    #    echo "target-browser related code changes have been detected"
-    #    echo "::set-output name=release_target_browser::true"
-    #    target_browser_changed=true
+  elif [[ ($target_browser_changed == false) && ($file == $internal_dir/* || $file == $tools_dir/$target_browser_dir/* || $file == $cmd_dir/$target_browser_dir/*) ]]; then
+    echo "target-browser related code changes have been detected"
+    echo "::set-output name=release_target_browser::true"
+    target_browser_changed=true
   fi
 done <files.txt
 

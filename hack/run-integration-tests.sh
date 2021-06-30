@@ -2,7 +2,6 @@
 set -o errexit
 set -o pipefail
 set -x
-sudo apt-get install -y nfs-common
 
 COMPONENTS=("$@")
 
@@ -81,6 +80,10 @@ helm_install() {
 
 run_tests() {
   components=("$@")
+
+  # will be required to run test-cases
+  sudo apt-get install -y nfs-common
+
   GO111MODULE=off go get -u github.com/onsi/ginkgo/ginkgo
   ginkgo -r -keepGoing "${components[@]}"
 }
