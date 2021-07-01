@@ -1,4 +1,4 @@
-# Kubernetes Triliovault Preflight Checks
+# TVK Preflight Plugin
 
 **tvk-preflight** is a kubectl plugin which checks if all the pre-requisites are  
 met before installing Triliovault for Kubernetes application in a Kubernetes cluster.

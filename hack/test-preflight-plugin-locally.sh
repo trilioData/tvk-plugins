@@ -24,7 +24,12 @@ if [[ ! -f "${preflight_archive}" ]]; then
   exit 1
 fi
 
+# test for linux OS
 kubectl krew install --manifest=$preflight_manifest --archive=$preflight_archive
 kubectl krew uninstall tvk-preflight
+
+# test for darwin OS
+KREW_OS=darwin KREW_ARCH=amd64 kubectl krew install --manifest=$preflight_manifest --archive="$preflight_archive"
+KREW_OS=darwin KREW_ARCH=amd64 kubectl krew uninstall tvk-preflight
 
 echo >&2 "Successfully tested preflight plugin locally"

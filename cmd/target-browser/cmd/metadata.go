@@ -15,12 +15,11 @@ func init() {
 func metadataCmd() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   MetadataCmdName,
-		Short: "API to perform Read operations on Backup high level metadata",
-		Long: `API to perform Read operations on Backup high level metadata.
-  Get metadata of specific backup using flag backup-plan-uid and backup-uid`,
-
-		Example: `  # Get Specific metadata of backup
-  kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid>`,
+		Short: "Get Backup high level metadata details",
+		Long:  `Performs GET operation on target-browser's '/metadata' API and gets Backup high level metadata details in JSON format`,
+		Example: `  # Get metadata details of specific backup
+  kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
+`,
 		RunE: getMetadata,
 	}
 
