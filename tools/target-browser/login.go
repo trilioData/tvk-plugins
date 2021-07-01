@@ -23,7 +23,10 @@ func (targetBrowserConfig *Config) Login(tvkHost string) (string, *http.Client, 
 	}
 
 	tvkURL.Path = path.Join(tvkURL.Path, internal.APIPath, internal.V1Version, internal.LoginPath)
-	tvkURL.Scheme = internal.HTTPScheme
+	tvkURL.Scheme = internal.HTTPscheme
+	if targetBrowserConfig.UseHTTPS {
+		tvkURL.Scheme = internal.HTTPSscheme
+	}
 
 	kubeConfigBytes, err := ioutil.ReadFile(targetBrowserConfig.KubeConfig)
 	if err != nil {

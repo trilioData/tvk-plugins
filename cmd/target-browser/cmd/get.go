@@ -71,23 +71,9 @@ func validateInput(cmd *cobra.Command) error {
 		return fmt.Errorf("[%s] flag value cannot be empty", certificateAuthorityFlag)
 	}
 
-	if cmd.Flags().Changed(clientCertificateFlag) && targetBrowserConfig.ClientCert == "" {
-		return fmt.Errorf("[%s] flag value cannot be empty", clientCertificateFlag)
-	}
-
-	if cmd.Flags().Changed(clientKeyFlag) && targetBrowserConfig.ClientKey == "" {
-		return fmt.Errorf("[%s] flag value cannot be empty", clientKeyFlag)
-	}
-
 	if targetBrowserConfig.CaCert != "" && targetBrowserConfig.InsecureSkipTLS {
 		return fmt.Errorf("[%s] flag cannot be provided if [%s] is provided",
 			insecureSkipTLSFlag, certificateAuthorityFlag)
-	}
-
-	if (targetBrowserConfig.ClientKey != "" && targetBrowserConfig.ClientCert == "") ||
-		(targetBrowserConfig.ClientKey == "" && targetBrowserConfig.ClientCert != "") {
-		return fmt.Errorf("both [%s] flag and [%s] flag needs to be provided to use TLS transport",
-			clientKeyFlag, clientCertificateFlag)
 	}
 
 	return nil
