@@ -52,10 +52,10 @@ spec:
     > Usage :-
 
     # List of backupPlans
-    kubectl tvk-target-browser get backupPlan
+    kubectl tvk-target-browser get backupPlan --target-name <name> --target-namespace <namespace>
 
     # List of backups
-    kubectl tvk-target-browser get backup --backup-plan-uid <uid>
+    kubectl tvk-target-browser get backup --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
 
     # Metadata of specific backup object
-    kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid>
+    kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>

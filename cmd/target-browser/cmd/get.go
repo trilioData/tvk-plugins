@@ -14,24 +14,25 @@ var (
 	commonOptions           = targetbrowser.CommonListOptions{}
 )
 
+// nolint:lll // ignore long line lint errors
 // getCmd represents the get command
 var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "get command retrieves specific resource",
-	Long: `Performs GET operation on target-browser's '/backup', '/backupPlan' and '/metadata' APIs and gets specific resource
-[backup, backupPlan, metadata, etc] which retrieves single object or list of objects of that resource.`,
+	Long: `Performs GET operation on target-browser's '/backup', '/backupPlan' and '/metadata' APIs and gets specific resource [backup, backupPlan, metadata, etc]
+which retrieves single object or list of objects of that resource.`,
 
 	Example: `  # List of backups
-  kubectl tvk-target-browser get backup --backup-plan-uid <uid>
+  kubectl tvk-target-browser get backup --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
 
   # List of backupPlans
-  kubectl tvk-target-browser get backupPlan
+  kubectl tvk-target-browser get backupPlan --target-name <name> --target-namespace <namespace>
 
   # Metadata of specific backup object
-  kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid>
+  kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
 
   # Specific metadata
-  kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid>
+  kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
 `,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error

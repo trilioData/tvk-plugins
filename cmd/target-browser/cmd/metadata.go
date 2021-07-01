@@ -18,7 +18,7 @@ func metadataCmd() *cobra.Command {
 		Short: "Get Backup high level metadata details",
 		Long:  `Performs GET operation on target-browser's '/metadata' API and gets Backup high level metadata details in JSON format`,
 		Example: `  # Get metadata details of specific backup
-  kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid>
+  kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
 `,
 		RunE: getMetadata,
 	}

@@ -8,7 +8,14 @@ Plugin currently supports GET operation on target-browser's `/backupplan`, `/bac
   
   1. krew - kubectl-plugin manager. Install from [here](https://krew.sigs.k8s.io/docs/user-guide/setup/install/)
   2. kubectl - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-  3. Target CR should have `browsingEnabled` field set to `true` in status[JSON Path - `target.status.browsingEnabled`].
+  3. Target CR should have `browsingEnabled` field set to `true` in status
+     - CLI Users can check JSON path - `target.status.browsingEnabled`
+     - TVK-UI Users should follow steps:
+        1. Click on `Resource Management` from the left navigation bar.
+        2. In Resource Management, `Backup Plans` tab will be selected by default.
+        3. Click on `Targets` tab.
+        4. Look for the required target name in the list and ensure that in `Browsing` column toggle is `Enabled` for that target.
+
   4. TVK's web-backend service should be up and running.
 
   **Supported OS and Architectures**:
@@ -64,27 +71,27 @@ kubectl tvk-target-browser get metadata --help
   
   - Get list of backups:
   ```bash
-  kubectl tvk-target-browser get backup --backup-plan-uid <uid>
+  kubectl tvk-target-browser get backup --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
   ```
 
   - Get specific backup: (NOT SUPPORTED)
   ```bash
-  kubectl tvk-target-browser get backup --backup-plan-uid <uid> --backup-uid <uid>
+  kubectl tvk-target-browser get backup --backup-plan-uid <uid> --backup-uid <uid> --target-name <name> --target-namespace <namespace>
   ```
 
   - Get list of backupPlans:
   ```bash
-  kubectl tvk-target-browser get backupPlan
+  kubectl tvk-target-browser get backupPlan --target-name <name> --target-namespace <namespace>
   ```
 
   - Get specific backupPlan: (NOT SUPPORTED)
   ```bash
-  kubectl tvk-target-browser get backupPlan --backup-plan-uid <uid>
+  kubectl tvk-target-browser get backupPlan --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
   ```
 
   - Get metadata of specific backup:
   ```bash
-  kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid>
+  kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
   ```
 
 Find more examples and usage of each command & flag with `--help` for each `tvk-target-browser` command. Refer, `Usage` section.
