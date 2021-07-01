@@ -10,6 +10,7 @@ import (
 // AuthInfo contains http client, JWT, TvkHost, TargetBrowserPath for further use in sub-commands of getCmd
 type AuthInfo struct {
 	Client                          *http.Client
+	UseHTTPS                        bool
 	JWT, TvkHost, TargetBrowserPath string
 }
 
@@ -40,6 +41,7 @@ func (targetBrowserConfig *Config) Authenticate(ctx context.Context) (*AuthInfo,
 	}
 
 	return &AuthInfo{
+		UseHTTPS:          targetBrowserConfig.UseHTTPS,
 		Client:            httpClient,
 		JWT:               jweToken,
 		TvkHost:           tvkHost,

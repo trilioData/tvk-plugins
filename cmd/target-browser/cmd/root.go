@@ -16,7 +16,6 @@ import (
 // nolint:lll // ignore long line lint errors
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-
 	Use:   "target-browser",
 	Short: "target-browser cli utility queries content of mounted target",
 	Long: `target-browser cli utility can query content of mounted target location to get details of backup, backupPlan and metadata details of backup
@@ -41,8 +40,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.KubeConfig, KubeConfigFlag, internal.KubeConfigDefault, kubeConfigUsage)
 	rootCmd.PersistentFlags().BoolVar(&targetBrowserConfig.InsecureSkipTLS, insecureSkipTLSFlag, false, insecureSkipTLSUsage)
 	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.CaCert, certificateAuthorityFlag, "", certificateAuthorityUsage)
-	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.ClientCert, clientCertificateFlag, "", clientCertificateUsage)
-	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.ClientKey, clientKeyFlag, "", clientKeyUsage)
+	rootCmd.PersistentFlags().BoolVar(&targetBrowserConfig.UseHTTPS, useHTTPS, false, useHTTPSUsage)
 
 	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.TargetNamespace, TargetNamespaceFlag,
 		targetNamespaceDefault, targetNamespaceUsage)

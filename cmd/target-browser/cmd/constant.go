@@ -7,11 +7,8 @@ const (
 	insecureSkipTLSFlag  = "insecure-skip-tls-verify"
 	insecureSkipTLSUsage = "If true, the server's certificate will not be checked for validity. This will make your HTTPS connections insecure"
 
-	clientCertificateFlag  = "client-certificate"
-	clientCertificateUsage = "Path to a client certificate file for TLS"
-
-	clientKeyFlag  = "client-key"
-	clientKeyUsage = "Path to a client key file for TLS"
+	useHTTPS      = "use-https"
+	useHTTPSUsage = "use https scheme for client connection"
 
 	certificateAuthorityFlag  = "certificate-authority"
 	certificateAuthorityUsage = "Path to a cert file for the certificate authority"

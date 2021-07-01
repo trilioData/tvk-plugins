@@ -15,9 +15,9 @@ import (
 )
 
 type Config struct {
-	Scheme                                                                 *runtime.Scheme
-	KubeConfig, TargetName, TargetNamespace, CaCert, ClientCert, ClientKey string
-	InsecureSkipTLS                                                        bool
+	Scheme                                          *runtime.Scheme
+	KubeConfig, TargetName, TargetNamespace, CaCert string
+	InsecureSkipTLS, UseHTTPS                       bool
 }
 
 // validateTarget validates if provided target is present target-namespace and browsing is enabled for it.

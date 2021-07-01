@@ -7,7 +7,8 @@ import (
 
 const (
 	TVKControlPlaneDeployment = "k8s-triliovault-control-plane"
-	HTTPScheme                = "http"
+	HTTPscheme                = "http"
+	HTTPSscheme               = "https"
 	TriliovaultGroup          = "triliovault.trilio.io"
 	TargetKind                = "Target"
 	V1Version                 = "v1"
