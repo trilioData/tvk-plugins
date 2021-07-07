@@ -67,13 +67,13 @@ func validateInput(cmd *cobra.Command) error {
 		return fmt.Errorf("[%s] flag value cannot be empty", TargetNameFlag)
 	}
 
-	if cmd.Flags().Changed(certificateAuthorityFlag) && targetBrowserConfig.CaCert == "" {
-		return fmt.Errorf("[%s] flag value cannot be empty", certificateAuthorityFlag)
+	if cmd.Flags().Changed(CertificateAuthorityFlag) && targetBrowserConfig.CaCert == "" {
+		return fmt.Errorf("[%s] flag value cannot be empty", CertificateAuthorityFlag)
 	}
 
 	if targetBrowserConfig.CaCert != "" && targetBrowserConfig.InsecureSkipTLS {
 		return fmt.Errorf("[%s] flag cannot be provided if [%s] is provided",
-			insecureSkipTLSFlag, certificateAuthorityFlag)
+			InsecureSkipTLSFlag, CertificateAuthorityFlag)
 	}
 
 	return nil
