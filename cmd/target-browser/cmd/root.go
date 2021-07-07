@@ -38,9 +38,9 @@ var (
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.KubeConfig, KubeConfigFlag, internal.KubeConfigDefault, kubeConfigUsage)
-	rootCmd.PersistentFlags().BoolVar(&targetBrowserConfig.InsecureSkipTLS, insecureSkipTLSFlag, false, insecureSkipTLSUsage)
-	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.CaCert, certificateAuthorityFlag, "", certificateAuthorityUsage)
-	rootCmd.PersistentFlags().BoolVar(&targetBrowserConfig.UseHTTPS, useHTTPS, false, useHTTPSUsage)
+	rootCmd.PersistentFlags().BoolVar(&targetBrowserConfig.InsecureSkipTLS, InsecureSkipTLSFlag, false, insecureSkipTLSUsage)
+	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.CaCert, CertificateAuthorityFlag, "", certificateAuthorityUsage)
+	rootCmd.PersistentFlags().BoolVar(&targetBrowserConfig.UseHTTPS, UseHTTPS, false, useHTTPSUsage)
 
 	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.TargetNamespace, TargetNamespaceFlag,
 		targetNamespaceDefault, targetNamespaceUsage)

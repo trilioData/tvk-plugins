@@ -4,13 +4,13 @@ const (
 	KubeConfigFlag  = "kubeconfig"
 	kubeConfigUsage = "Path to the kubeconfig file to use for CLI requests"
 
-	insecureSkipTLSFlag  = "insecure-skip-tls-verify"
+	InsecureSkipTLSFlag  = "insecure-skip-tls-verify"
 	insecureSkipTLSUsage = "If true, the server's certificate will not be checked for validity. This will make your HTTPS connections insecure"
 
-	useHTTPS      = "use-https"
+	UseHTTPS      = "use-https"
 	useHTTPSUsage = "use https scheme for client connection"
 
-	certificateAuthorityFlag  = "certificate-authority"
+	CertificateAuthorityFlag  = "certificate-authority"
 	certificateAuthorityUsage = "Path to a cert file for the certificate authority"
 
 	TargetNameFlag  = "target-name"

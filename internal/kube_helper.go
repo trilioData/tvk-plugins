@@ -39,15 +39,15 @@ func NewEnv(kubeConfig string, scheme *runtime.Scheme) (*Accessor, error) {
 		return nil, err
 	}
 
-	accessor, err := newAccessor(confPath, scheme)
+	accessor, err := NewAccessor(confPath, scheme)
 	if err != nil {
 		return nil, err
 	}
 	return accessor, nil
 }
 
-// newAccessor returns a new instance of an accessor.
-func newAccessor(kubeConfig string, scheme *runtime.Scheme) (*Accessor, error) {
+// NewAccessor returns a new instance of an accessor.
+func NewAccessor(kubeConfig string, scheme *runtime.Scheme) (*Accessor, error) {
 	restConfig, err := LoadKubeConfigOrDie(kubeConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create rest config. %v", err)

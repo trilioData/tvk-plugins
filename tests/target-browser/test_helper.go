@@ -1,5 +1,6 @@
 package targetbrowsertest
 
+// nolint // ignore dot import lint errors
 import (
 	"context"
 	cryptorand "crypto/rand"
@@ -13,12 +14,14 @@ import (
 	"strings"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/onsi/gomega"
+	. "github.com/onsi/gomega"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/trilioData/tvk-plugins/internal"
@@ -29,6 +32,18 @@ const (
 	timeout         = time.Second * 300
 	interval        = time.Second * 1
 	apiRetryTimeout = time.Second * 5
+
+	NFSServerIP               = "nfs_server_ip"
+	NFSServerBasePath         = "NFS_SERVER_BASE_PATH"
+	ControlPlaneContainerName = "triliovault-control-plane"
+	TargetBrowserDataPath     = "/src/nfs/targetbrowsertesting"
+	InstallNamespace          = "INSTALL_NAMESPACE"
+	TargetName                = "sample-target"
+	TargetLocation            = "/triliodata"
+	TargetBrowserDir          = "target-browser_linux_amd64"
+	TargetBrowserBinaryName   = "target-browser"
+	DistDir                   = "dist"
+	PollingPeriod             = "POLLING_PERIOD"
 )
 
 var (
@@ -37,14 +52,14 @@ var (
 )
 
 func getInstallNamespace() string {
-	namespace, present := os.LookupEnv(installNamespace)
+	namespace, present := os.LookupEnv(InstallNamespace)
 	if !present {
 		panic("Install Namespace not found in environment")
 	}
 	return namespace
 }
 func getNFSIPAddr() string {
-	nfsIPAddr, isNFSIPAddrPresent := os.LookupEnv(nfsServerIP)
+	nfsIPAddr, isNFSIPAddrPresent := os.LookupEnv(NFSServerIP)
 	if !isNFSIPAddrPresent {
 		panic("NFS IP address not found in environment.")
 	}
@@ -67,13 +82,13 @@ func generateRandomString(n int, isOnlyAlphabetic bool) string {
 }
 
 func unMountTarget() {
-	c := fmt.Sprintf("sudo umount %s", targetLocation)
+	c := fmt.Sprintf("sudo umount %s", TargetLocation)
 	command := exec.Command("bash", "-c", c)
 	_, err := command.CombinedOutput()
 	if err != nil {
 		log.Errorf("error %s", err.Error())
 	}
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func makeRandomDirAndMount() {
@@ -82,10 +97,10 @@ func makeRandomDirAndMount() {
 	randomDirectory = generateRandomString(5, false)
 
 	// making directory of random name
-	err = os.MkdirAll(filepath.Join(targetLocation, randomDirectory), 0777)
-	gomega.Expect(err).To(gomega.BeNil())
-	_, err = shell.ChmodR(filepath.Join(targetLocation, randomDirectory), "777")
-	gomega.Expect(err).To(gomega.BeNil())
+	err = os.MkdirAll(filepath.Join(TargetLocation, randomDirectory), 0777)
+	Expect(err).To(BeNil())
+	_, err = shell.ChmodR(filepath.Join(TargetLocation, randomDirectory), "777")
+	Expect(err).To(BeNil())
 	log.Info("directory created:", randomDirectory)
 
 	// unmounting from default target path
@@ -95,24 +110,24 @@ func makeRandomDirAndMount() {
 	time.Sleep(time.Second * 10)
 
 	// setting "NFS_SERVER_BASE_PATH" to newly formed directory and mounting to it
-	gomega.Expect(os.Setenv(nfsServerBasePath, targetBrowserDataPath+"/"+randomDirectory)).To(gomega.BeNil())
+	Expect(os.Setenv(NFSServerBasePath, filepath.Join(TargetBrowserDataPath, randomDirectory))).To(BeNil())
 	mountTarget()
 	log.Info("mounted to new path")
-	gomega.Expect(err).To(gomega.BeNil())
+	Expect(err).To(BeNil())
 
 	time.Sleep(time.Second * 20)
 }
 
 func mountTarget() {
-	targetBrowserPath := os.Getenv(nfsServerBasePath)
-	c := fmt.Sprintf("sudo mount -t nfs -o  nfsvers=4 %s:%s %s", NfsIPAddress, targetBrowserPath, targetLocation)
+	targetBrowserPath := os.Getenv(NFSServerBasePath)
+	c := fmt.Sprintf("sudo mount -t nfs -o  nfsvers=4 %s:%s %s", NfsIPAddress, targetBrowserPath, TargetLocation)
 	fmt.Printf("Mount command %s\n", c)
 	command := exec.Command("bash", "-c", c)
 	_, err := command.CombinedOutput()
 	if err != nil {
 		log.Errorf("error %s", err.Error())
 	}
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 }
 
@@ -125,15 +140,15 @@ func removeRandomDirAndUnmount() {
 	time.Sleep(time.Second * 10)
 
 	// setting "NFS_SERVER_BASE_PATH" to default target path and mounting to it
-	gomega.Expect(os.Setenv(nfsServerBasePath, targetBrowserDataPath)).To(gomega.BeNil())
+	Expect(os.Setenv(NFSServerBasePath, TargetBrowserDataPath)).To(BeNil())
 	mountTarget()
 	log.Info("mounted to default path")
 
 	time.Sleep(time.Second * 10)
 
 	// removing random named directory
-	_, err := shell.RmRf(filepath.Join(targetLocation, randomDirectory))
-	gomega.Expect(err).To(gomega.BeNil())
+	_, err := shell.RmRf(filepath.Join(TargetLocation, randomDirectory))
+	Expect(err).To(BeNil())
 	log.Info("removed directory")
 }
 
@@ -144,32 +159,32 @@ func verifyBackupPlansAndBackupsOnNFS(backupPlans, backups int) (backupPlanUIDs 
 		tempBackupUIDs, backupUIDs []string
 	)
 
-	gomega.Eventually(func() []string {
-		return gomega.InterceptGomegaFailures(func() {
-			backupPlanUIDs, err = shell.ReadChildDir(targetLocation)
-			gomega.Expect(err).To(gomega.BeNil())
+	Eventually(func() []string {
+		return InterceptGomegaFailures(func() {
+			backupPlanUIDs, err = shell.ReadChildDir(TargetLocation)
+			Expect(err).To(BeNil())
 			log.Info(len(backupPlanUIDs), " backupplans present on target location")
-			gomega.Expect(len(backupPlanUIDs)).To(gomega.Equal(backupPlans))
+			Expect(len(backupPlanUIDs)).To(Equal(backupPlans))
 		})
-	}, timeout, interval).Should(gomega.BeEmpty())
+	}, timeout, interval).Should(BeEmpty())
 
-	gomega.Eventually(func() []string {
-		return gomega.InterceptGomegaFailures(func() {
+	Eventually(func() []string {
+		return InterceptGomegaFailures(func() {
 			for i := range backupPlanUIDs {
-				tempBackupUIDs, err = shell.ReadChildDir(targetLocation + "/" + backupPlanUIDs[i])
-				gomega.Expect(err).To(gomega.BeNil())
+				tempBackupUIDs, err = shell.ReadChildDir(TargetLocation + "/" + backupPlanUIDs[i])
+				Expect(err).To(BeNil())
 				backupUIDs = append(backupUIDs, tempBackupUIDs...)
 			}
 			log.Info(len(backupUIDs), " backups present on target location")
-			gomega.Expect(len(backupUIDs)).To(gomega.Equal(backups))
+			Expect(len(backupUIDs)).To(Equal(backups))
 		})
-	}, timeout, interval).Should(gomega.BeEmpty())
+	}, timeout, interval).Should(BeEmpty())
 
 	return backupPlanUIDs
 
 }
 
-func verifyTargetStatus(ctx context.Context, installNs string, cl client.Client) {
+func getTarget(ctx context.Context, installNs string, cl client.Client) *unstructured.Unstructured {
 	// get target
 	target := &unstructured.Unstructured{}
 	target.SetGroupVersionKind(schema.GroupVersionKind{
@@ -177,20 +192,44 @@ func verifyTargetStatus(ctx context.Context, installNs string, cl client.Client)
 		Version: internal.V1Version,
 		Kind:    internal.TargetKind,
 	})
-	gomega.Eventually(func() bool {
-		err := cl.Get(ctx, types.NamespacedName{Namespace: installNs, Name: targetName},
-			target)
-		gomega.Expect(err).To(gomega.BeNil())
-		targetStatus, _, err := unstructured.NestedString(target.Object, "status", "status")
-		gomega.Expect(err).To(gomega.BeNil())
-		return targetStatus == "Available"
 
-	}, timeout, interval).Should(gomega.BeTrue())
+	Eventually(func() error {
+		log.Infof("Getting target %s namespace %s", TargetName, installNs)
+		err := cl.Get(ctx, types.NamespacedName{Namespace: installNs, Name: TargetName},
+			target)
+		return err
+	}, timeout, interval).Should(Not(HaveOccurred()))
+	return target
+}
+
+func verifyTargetBrowsingEnabled(ctx context.Context, installNs string, cl client.Client) {
+	Eventually(func() bool {
+		target := getTarget(ctx, installNs, cl)
+		browsingEnabled, _, err := unstructured.NestedBool(target.Object, "status", "browsingEnabled")
+		Expect(err).To(BeNil())
+		log.Infof("Wait till target browsing is enabled - current status=%v", browsingEnabled)
+		return browsingEnabled
+	}, timeout, interval).Should(BeTrue())
+
+	log.Info("target browsing is enabled successfully")
+}
+
+func verifyTargetStatus(ctx context.Context, installNs string, cl client.Client) {
+	// get target
+	Eventually(func() bool {
+		target := getTarget(ctx, installNs, cl)
+		targetStatus, _, err := unstructured.NestedString(target.Object, "status", "status")
+		Expect(err).To(BeNil())
+		log.Infof("Wait till target becomes 'Available' - current status=%s", targetStatus)
+		return targetStatus == "Available"
+	}, timeout, interval).Should(BeTrue())
+
+	log.Info("target CR is in Available state")
 }
 
 func getNFSCredentials() (nfsIPAddr, nfsServerPath string) {
-	nfsIPAddr, isNFSIPAddrPresent := os.LookupEnv(nfsServerIP)
-	nfsServerPath, isNFSServerPathPresent := os.LookupEnv(nfsServerBasePath)
+	nfsIPAddr, isNFSIPAddrPresent := os.LookupEnv(NFSServerIP)
+	nfsServerPath, isNFSServerPathPresent := os.LookupEnv(NFSServerBasePath)
 	if !isNFSIPAddrPresent || !isNFSServerPathPresent {
 		panic("NFS Credentials not present in env")
 	}
@@ -219,4 +258,33 @@ func updateYAMLs(kv map[string]string, yamlPath string) error {
 	}
 
 	return nil
+}
+
+func GetSecret(ctx context.Context, k8sClient client.Client, name, ns string) *corev1.Secret {
+	secret := &corev1.Secret{}
+	Eventually(func() error {
+		log.Info("getting secret")
+		return k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: ns}, secret)
+	}, timeout, interval).ShouldNot(HaveOccurred())
+
+	return secret
+}
+
+func GetIngress(ctx context.Context, k8sClient client.Client, name, ns string) *v1beta1.Ingress {
+	ing := &v1beta1.Ingress{}
+	Eventually(func() error {
+		log.Info("getting Ingress")
+
+		return k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: ns}, ing)
+	}, timeout, interval).ShouldNot(HaveOccurred())
+
+	return ing
+}
+
+func UpdateIngress(ctx context.Context, k8sClient client.Client, ing *v1beta1.Ingress) {
+	Eventually(func() error {
+		log.Info("Updating ingress")
+		return k8sClient.Update(ctx, ing)
+	}, timeout, interval).ShouldNot(HaveOccurred())
+	log.Infof("Updated ingress %s successfully", ing.Name)
 }

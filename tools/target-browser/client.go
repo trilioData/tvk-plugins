@@ -31,6 +31,6 @@ func (targetBrowserConfig *Config) getHTTPClient() (*http.Client, error) {
 				InsecureSkipVerify: targetBrowserConfig.InsecureSkipTLS,
 			},
 		},
-		Timeout: 60 * time.Second,
+		Timeout: 30 * time.Second,
 	}, nil
 }

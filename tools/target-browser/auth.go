@@ -17,8 +17,14 @@ type AuthInfo struct {
 // Authenticate generates AuthInfo which is required for further operations which are sub-commands of getCmd[backup,
 // backupPlan, metadata].
 func (targetBrowserConfig *Config) Authenticate(ctx context.Context) (*AuthInfo, error) {
+	var err error
 
-	acc, err := internal.NewEnv(targetBrowserConfig.KubeConfig, targetBrowserConfig.Scheme)
+	targetBrowserConfig.KubeConfig, err = internal.NewConfigFromCommandline(targetBrowserConfig.KubeConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	acc, err := internal.NewAccessor(targetBrowserConfig.KubeConfig, targetBrowserConfig.Scheme)
 	if err != nil {
 		return nil, err
 	}

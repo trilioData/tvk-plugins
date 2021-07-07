@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
+
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,7 +42,7 @@ func (targetBrowserConfig *Config) validateTarget(ctx context.Context, cl client
 		return nil, err
 	}
 
-	if exists && !browsingEnabled {
+	if !exists || !browsingEnabled {
 		return nil, fmt.Errorf("browsing is not enabled for given target %s namespace %s",
 			targetBrowserConfig.TargetName, targetBrowserConfig.TargetNamespace)
 	}
@@ -68,8 +70,9 @@ func (targetBrowserConfig *Config) getTvkHostAndTargetBrowserAPIPath(ctx context
 				tvkHost = ing.Spec.Rules[0].Host
 				targetBrowserPath = ing.Spec.Rules[0].HTTP.Paths[0].Path
 				if tvkHost == "" || targetBrowserPath == "" {
-					return "", "", fmt.Errorf("either tvkHost or targetBrowserPath could not retrieved from"+
-						" ingress %s namespace %s", ing.Name, ing.Namespace)
+					log.Warnf("either tvkHost or targetBrowserPath could not retrieved from"+
+						" target browser's ingress %s namespace %s", ing.Name, ing.Namespace)
+					continue
 				}
 				hostFound = true
 				break
@@ -78,6 +81,11 @@ func (targetBrowserConfig *Config) getTvkHostAndTargetBrowserAPIPath(ctx context
 		if hostFound {
 			break
 		}
+	}
+
+	if tvkHost == "" || targetBrowserPath == "" {
+		return tvkHost, targetBrowserPath, fmt.Errorf("either tvkHost or targetBrowserPath could not retrieved for"+
+			" target %s namespace %s", targetBrowserConfig.TargetName, targetBrowserConfig.TargetNamespace)
 	}
 
 	return tvkHost, targetBrowserPath, nil
