@@ -15,6 +15,7 @@ on:
       - 'hack/update-plugin-manifests.sh'
       - 'hack/update-preflight-manifest.sh'
       - 'hack/update-log-collector-manifest.sh'
+      - 'hack/update-target-browser-manifest.sh'
       - '.github/workflows/plugin-manifests.yml'
 
 env:
@@ -85,9 +86,9 @@ jobs:
             sharedTargetBrowser: &sharedTargetBrowser
               - *shared
               - 'cmd/target-browser/**'
-              - 'tools/log-collector/**'
+              - 'tools/target-browser/**'
               - 'internal/**'
-              - 'tests/log-collector/**'
+              - 'tests/target-browser/**'
             targetBrowser:
               - *sharedTargetBrowser
               - '.krew/tvk-target-browser.yaml'
