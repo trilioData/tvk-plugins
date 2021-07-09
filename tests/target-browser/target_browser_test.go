@@ -278,13 +278,14 @@ var _ = Describe("Target Browser Tests", func() {
 			noOfBackupsToCreate     = 2
 			once                    sync.Once
 			isLast                  bool
+			backupUID               string
 		)
 		BeforeEach(func() {
-			backupUID := guid.New().String()
-			// once.Do run once for this Context
 			once.Do(func() {
-				// create target with browsing enabled & create all files & directories required for this Context in NFS server
 				// being used by target - only once Before all It in this context
+				// create target with browsing enabled & create all files & directories required for this Context in NFS server
+				// once.Do run once for this Context
+				backupUID = guid.New().String()
 				createTarget(true)
 				output, _ := exec.Command(createBackupScript, strconv.Itoa(noOfBackupplansToCreate),
 					strconv.Itoa(noOfBackupsToCreate), "true", backupUID).Output()
@@ -415,12 +416,52 @@ var _ = Describe("Target Browser Tests", func() {
 		})
 
 		It("Should get one page backup", func() {
-			isLast = true
 			args := []string{cmdGet, cmdBackup, flagBackupPlanUIDFlag, backupPlanUIDs[1], flagPageSize, "1"}
 			backupData := runCmdBackup(args)
 			Expect(len(backupData)).To(Equal(1))
 		})
 
+		It("Should get one backupPlan for specific backupPlan UID", func() {
+			args := []string{cmdGet, cmdBackupPlan, backupPlanUIDs[1]}
+			backupPlanData := runCmdBackupPlan(args)
+			Expect(len(backupPlanData)).To(Equal(1))
+			Expect(backupPlanData[0].BackupPlanUID).To(Equal(backupPlanUIDs[1]))
+		})
+
+		It("Should get two backupPlan for backupPlan UIDs", func() {
+			args := []string{cmdGet, cmdBackupPlan, backupPlanUIDs[0], backupPlanUIDs[1]}
+			backupPlanData := runCmdBackupPlan(args)
+			Expect(len(backupPlanData)).To(Equal(2))
+		})
+
+		It("Should get one backup for specific backup UID", func() {
+			args := []string{cmdGet, cmdBackup, backupUID}
+			backupData := runCmdBackup(args)
+			Expect(len(backupData)).To(Equal(1))
+			Expect(backupData[0].BackupUID).To(Equal(backupUID))
+		})
+
+		It("Should fail for invalid backupPlan UID", func() {
+			args := []string{cmdGet, cmdBackupPlan, "invalidUID"}
+			args = append(args, commonArgs...)
+			command := exec.Command(targetBrowserBinaryFilePath, args...)
+			output, err := command.CombinedOutput()
+			Expect(err).Should(HaveOccurred())
+			Expect(string(output)).Should(ContainSubstring("404 Not Found"))
+		})
+
+		It("Should get two backup for backup UID", func() {
+			args := []string{cmdGet, cmdBackup, backupUID, backupUID}
+			backupData := runCmdBackup(args)
+			Expect(len(backupData)).To(Equal(2))
+		})
+
+		It("Should get one page backup without backupPlan UID", func() {
+			isLast = true
+			args := []string{cmdGet, cmdBackup, backupUID, flagPageSize, "1"}
+			backupData := runCmdBackup(args)
+			Expect(len(backupData)).To(Equal(1))
+		})
 	})
 
 	Context("Filtering BackupPlans based on TVK Instance ID", func() {
