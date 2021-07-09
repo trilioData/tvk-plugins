@@ -6,7 +6,7 @@ var backupSelector = []string{"metadata.name as Backup Name",
 	"status.status as Backup Status",
 	"status.size as Backup Size",
 	"status.location as Target Location",
-	"status.completionTimestamp as Creation Date",
+	"metadata.creationTimestamp as Creation Date",
 }
 
 var backupPlanSelector = []string{

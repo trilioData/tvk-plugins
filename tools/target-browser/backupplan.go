@@ -1,6 +1,7 @@
 package targetbrowser
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/google/go-querystring/query"
@@ -21,24 +22,37 @@ func (auth *AuthInfo) GetBackupPlans(options *BackupPlanListOptions, backupPlanU
 		return err
 	}
 	queryParam := values.Encode()
-	return auth.GetBackupOrBackupPlan(queryParam, internal.BackupPlanAPIPath, backupPlanSelector, backupPlanUIDs)
+	return auth.TriggerMultipleAPI(queryParam, internal.BackupPlanAPIPath, backupPlanSelector, backupPlanUIDs)
 }
 
-// GetBackupOrBackupPlan returns backup or backupPlan list stored on mounted target with available options
-func (auth *AuthInfo) GetBackupOrBackupPlan(queryParam, apiPath string, selector, args []string) error {
+// TriggerMultipleAPI returns backup or backupPlan list stored on mounted target with available options
+func (auth *AuthInfo) TriggerMultipleAPI(queryParam, apiPath string, selector, args []string) error {
 	if len(args) > 0 {
-		var respData []string
+		var respData []interface{}
 		for _, bpID := range args {
 			resp, err := auth.TriggerAPI(bpID, queryParam, apiPath, selector)
 			if err != nil {
 				return err
 			}
-			respData = append(respData, resp)
+			var result []interface{}
+			if uErr := json.Unmarshal(resp, &result); uErr != nil {
+				return uErr
+			}
+			respData = append(respData, result[0])
 		}
-		fmt.Println(respData)
+
+		body, err := json.MarshalIndent(respData, "", "  ")
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(string(body))
 		return nil
 	}
 	resp, err := auth.TriggerAPI("", queryParam, apiPath, selector)
-	fmt.Println(resp)
-	return err
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(resp))
+	return nil
 }

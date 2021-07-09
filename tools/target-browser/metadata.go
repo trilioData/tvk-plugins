@@ -22,6 +22,9 @@ func (auth *AuthInfo) GetMetadata(options *MetadataListOptions) error {
 	}
 	queryParam := values.Encode()
 	resp, apiErr := auth.TriggerAPI("", queryParam, internal.MetadataAPIPath, []string{})
-	fmt.Println(resp)
-	return apiErr
+	if apiErr != nil {
+		return err
+	}
+	fmt.Println(string(resp))
+	return nil
 }
