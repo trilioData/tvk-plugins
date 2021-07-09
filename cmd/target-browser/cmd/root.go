@@ -34,12 +34,18 @@ func Execute() {
 var (
 	scheme              = runtime.NewScheme()
 	targetBrowserConfig = &targetbrowser.Config{}
+	outputFormat        string
 )
 
 func init() {
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(v1beta1.AddToScheme(scheme))
+	targetBrowserConfig.Scheme = scheme
+
 	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.KubeConfig, KubeConfigFlag, internal.KubeConfigDefault, kubeConfigUsage)
 	rootCmd.PersistentFlags().BoolVar(&targetBrowserConfig.InsecureSkipTLS, InsecureSkipTLSFlag, false, insecureSkipTLSUsage)
 	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.CaCert, CertificateAuthorityFlag, "", certificateAuthorityUsage)
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, OutputFormatFlag, OutputFormatFlagShort, "", OutputFormatFlagUsage)
 	rootCmd.PersistentFlags().BoolVar(&targetBrowserConfig.UseHTTPS, UseHTTPS, false, useHTTPSUsage)
 
 	rootCmd.PersistentFlags().StringVar(&targetBrowserConfig.TargetNamespace, TargetNamespaceFlag,
@@ -48,8 +54,4 @@ func init() {
 	if err := rootCmd.MarkPersistentFlagRequired(TargetNameFlag); err != nil {
 		log.Fatalf("failed to mark flag %s as required - %s", TargetNameFlag, err.Error())
 	}
-
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(v1beta1.AddToScheme(scheme))
-	targetBrowserConfig.Scheme = scheme
 }

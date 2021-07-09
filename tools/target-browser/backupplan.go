@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/go-querystring/query"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/trilioData/tvk-plugins/internal"
 )
@@ -15,14 +16,69 @@ type BackupPlanListOptions struct {
 	TvkInstanceUID string `url:"tvkInstanceUID"`
 }
 
+// BackupPlan struct stores extracted fields from actual BackupPlan API GET response
+type BackupPlan struct {
+	Name                      string      `json:"Name"`
+	UID                       string      `json:"UID"`
+	Type                      string      `json:"Type"`
+	TvkInstanceID             string      `json:"TVK Instance"`
+	SuccessfulBackup          int         `json:"Successful Backup"`
+	SuccessfulBackupTimestamp metav1.Time `json:"Successful Backup Timestamp"`
+}
+
+// BackupPlan struct stores extracted fields from actual BackupPlan API LIST response
+type BackupPlanList struct {
+	Metadata *ListMetadata `json:"metadata"`
+	Results  []BackupPlan  `json:"results"`
+}
+
 // GetBackupPlans returns backupPlan list stored on mounted target with available options
 func (auth *AuthInfo) GetBackupPlans(options *BackupPlanListOptions, backupPlanUIDs []string) error {
 	values, err := query.Values(options)
 	if err != nil {
 		return err
 	}
+
 	queryParam := values.Encode()
-	return auth.TriggerMultipleAPI(queryParam, internal.BackupPlanAPIPath, backupPlanSelector, backupPlanUIDs)
+	response, err :=  auth.TriggerMultipleAPI(queryParam, internal.BackupPlanAPIPath, backupPlanSelector, backupPlanUIDs)
+	if err != nil {
+		return err
+	}
+
+	return PrintFormattedResponse(internal.BackupPlanAPIPath, response, options.OutputFormat)
+}
+
+// normalizeBPlanDataToRowsAndColumns normalizes backupPlan API response and generates metav1.TableRow & metav1.TableColumnDefinition
+// which will be used for printing table formatted output.
+// If 'wideOutput=true', then all defined fields of Backup struct will be printed as output columns
+// If 'wideOutput=false', then selected number of fields of Backup struct from first field will be printed as output columns
+func normalizeBPlanDataToRowsAndColumns(response string, wideOutput bool) ([]metav1.TableRow, []metav1.TableColumnDefinition, error) {
+	var bPlanList BackupPlanList
+
+	err := json.Unmarshal([]byte(response), &bPlanList.Results)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if len(bPlanList.Results) == 0 {
+		return nil, nil, nil
+	}
+
+	var rows []metav1.TableRow
+	for _, bPlan := range bPlanList.Results {
+		rows = append(rows, metav1.TableRow{
+			Cells: []interface{}{bPlan.Name, bPlan.UID, bPlan.Type, bPlan.TvkInstanceID, bPlan.SuccessfulBackup, bPlan.SuccessfulBackupTimestamp},
+		})
+	}
+
+	var columns []metav1.TableColumnDefinition
+	if wideOutput {
+		columns = getColumnDefinitions(bPlanList.Results[0], 0)
+	} else {
+		columns = getColumnDefinitions(bPlanList.Results[0], 4)
+	}
+
+	return rows, columns, err
 }
 
 // TriggerMultipleAPI returns backup or backupPlan list stored on mounted target with available options
