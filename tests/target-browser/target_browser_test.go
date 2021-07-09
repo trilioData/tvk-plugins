@@ -432,6 +432,8 @@ var _ = Describe("Target Browser Tests", func() {
 			args := []string{cmdGet, cmdBackupPlan, backupPlanUIDs[0], backupPlanUIDs[1]}
 			backupPlanData := runCmdBackupPlan(args)
 			Expect(len(backupPlanData)).To(Equal(2))
+			Expect(backupPlanData[0].BackupPlanUID).To(Equal(backupPlanUIDs[0]))
+			Expect(backupPlanData[1].BackupPlanUID).To(Equal(backupPlanUIDs[1]))
 		})
 
 		It("Should get one backup for specific backup UID", func() {
@@ -454,6 +456,7 @@ var _ = Describe("Target Browser Tests", func() {
 			args := []string{cmdGet, cmdBackup, backupUID, backupUID}
 			backupData := runCmdBackup(args)
 			Expect(len(backupData)).To(Equal(2))
+			Expect(backupData[0].BackupUID).To(Equal(backupUID))
 		})
 
 		It("Should get one page backup without backupPlan UID", func() {
@@ -461,6 +464,7 @@ var _ = Describe("Target Browser Tests", func() {
 			args := []string{cmdGet, cmdBackup, backupUID, flagPageSize, "1"}
 			backupData := runCmdBackup(args)
 			Expect(len(backupData)).To(Equal(1))
+			Expect(backupData[0].BackupUID).To(Equal(backupUID))
 		})
 	})
 
