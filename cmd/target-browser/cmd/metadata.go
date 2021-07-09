@@ -37,7 +37,6 @@ func metadataCmd() *cobra.Command {
 }
 
 func getMetadata(*cobra.Command, []string) error {
-
 	mdOptions := targetBrowser.MetadataListOptions{
 		BackupPlanUID: backupPlanUID,
 		BackupUID:     backupUID,

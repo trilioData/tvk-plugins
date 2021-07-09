@@ -1,6 +1,8 @@
 package targetbrowser
 
 import (
+	"fmt"
+
 	"github.com/google/go-querystring/query"
 
 	"github.com/trilioData/tvk-plugins/internal"
@@ -19,5 +21,7 @@ func (auth *AuthInfo) GetMetadata(options *MetadataListOptions) error {
 		return err
 	}
 	queryParam := values.Encode()
-	return auth.TriggerAPI(queryParam, internal.MetadataAPIPath, []string{})
+	resp, apiErr := auth.TriggerAPI("", queryParam, internal.MetadataAPIPath, []string{})
+	fmt.Println(resp)
+	return apiErr
 }

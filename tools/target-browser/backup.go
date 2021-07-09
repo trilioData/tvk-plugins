@@ -10,6 +10,7 @@ import (
 	"path"
 
 	"github.com/google/go-querystring/query"
+	log "github.com/sirupsen/logrus"
 	"github.com/thedevsaddam/gojsonq"
 
 	"github.com/trilioData/tvk-plugins/internal"
@@ -18,31 +19,31 @@ import (
 type CommonListOptions struct {
 	Page     int    `url:"page"`
 	PageSize int    `url:"pageSize"`
-	OrderBy  string `url:"ordering"`
+	OrderBy  string `url:"ordering,omitempty"`
 }
 
 // BackupListOptions for backup
 type BackupListOptions struct {
-	BackupPlanUID string `url:"backupPlanUID"`
-	BackupStatus  string `url:"status"`
+	BackupPlanUID string `url:"backupPlanUID,omitempty"`
+	BackupStatus  string `url:"status,omitempty"`
 	CommonListOptions
 }
 
 // GetBackups returns backup list stored on mounted target with available options
-func (auth *AuthInfo) GetBackups(options *BackupListOptions) error {
+func (auth *AuthInfo) GetBackups(options *BackupListOptions, backupUIDs []string) error {
 	values, err := query.Values(options)
 	if err != nil {
 		return err
 	}
 	queryParam := values.Encode()
-	return auth.TriggerAPI(queryParam, internal.BackupAPIPath, backupSelector)
+	return auth.GetBackupOrBackupPlan(queryParam, internal.BackupAPIPath, backupSelector, backupUIDs)
 }
 
-func (auth *AuthInfo) TriggerAPI(queryParam, apiPath string, selector []string) error {
+func (auth *AuthInfo) TriggerAPI(queryPath, queryParam, apiPath string, selector []string) (string, error) {
 
 	tvkURL, err := url.Parse(auth.TvkHost)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	tvkURL.Path = path.Join(tvkURL.Path, auth.TargetBrowserPath, apiPath)
@@ -50,39 +51,72 @@ func (auth *AuthInfo) TriggerAPI(queryParam, apiPath string, selector []string) 
 	if auth.UseHTTPS {
 		tvkURL.Scheme = internal.HTTPSscheme
 	}
-
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s?%s", tvkURL.String(), queryParam), nil)
+	var tvkURLPath string
+	if queryPath == "" {
+		tvkURLPath = fmt.Sprintf("%s?%s", tvkURL.String(), queryParam)
+	} else {
+		tvkURLPath = fmt.Sprintf("%s/%s?%s", tvkURL.String(), queryPath, queryParam)
+	}
+	req, err := http.NewRequest(http.MethodGet, tvkURLPath, nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	req.Header.Set(internal.ContentType, internal.ContentApplicationJSON)
 	req.Header.Add(internal.JweToken, auth.JWT)
 	resp, err := auth.Client.Do(req)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK || resp.Body == nil {
-		return fmt.Errorf("%s %s did not successfully completed - %s", http.MethodGet, apiPath, resp.Status)
+		return "", fmt.Errorf("%s %s did not successfully completed - %s", http.MethodGet, apiPath, resp.Status)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if len(selector) > 0 {
+		if queryPath != "" {
+			body = parseData(body)
+		}
 		var backupBytes bytes.Buffer
 		gojsonq.New().FromString(string(body)).From(internal.Results).Select(selector...).Writer(&backupBytes)
-		body = backupBytes.Bytes()
+		if queryPath != "" {
+			var result []interface{}
+			if uErr := json.Unmarshal(backupBytes.Bytes(), &result); uErr != nil {
+				return "", uErr
+			}
+			body, err = json.Marshal(result[0])
+			if err != nil {
+				return "", nil
+			}
+		} else {
+			body = backupBytes.Bytes()
+		}
 	}
 	var prettyJSON bytes.Buffer
-	err = json.Indent(&prettyJSON, body, "", "  ")
-	if err != nil {
-		return fmt.Errorf("JSON parse error: %s", err.Error())
+	if err := json.Indent(&prettyJSON, body, "", "  "); err != nil {
+		return "", fmt.Errorf("JSON parse error: %s", err.Error())
 	}
-	fmt.Println(prettyJSON.String())
+	return prettyJSON.String(), nil
+}
 
-	return nil
+func parseData(respData []byte) []byte {
+	type result struct {
+		Result []interface{} `json:"results"`
+	}
+	var r result
+	r.Result = []interface{}{respData}
+	err := json.Unmarshal(respData, &r.Result[0])
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	respDataByte, err := json.MarshalIndent(r, "", "  ")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	return respDataByte
 }

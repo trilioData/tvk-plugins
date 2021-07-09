@@ -22,8 +22,8 @@ using available flags and options.`,
 		Example: `  # List of backupPlans	
   kubectl tvk-target-browser get backupPlan --target-name <name> --target-namespace <namespace>
 
-  # Get specific backupPlan (NOT SUPPORTED)
-  kubectl tvk-target-browser get backupPlan --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
+  # Get specific backupPlan
+  kubectl tvk-target-browser get backupPlan <backup-plan-uid> --target-name <name> --target-namespace <namespace>
 
   # List of backupPlans: order by [name]
   kubectl tvk-target-browser get backupPlan --order-by name --target-name <name> --target-namespace <namespace>
@@ -37,19 +37,20 @@ using available flags and options.`,
   # List of backupPlans: filter by [tvkInstanceUID]
   kubectl tvk-target-browser get backupPlan --tvk-instance-uid <uid> --target-name <name> --target-namespace <namespace>
 `,
-		RunE: getBackupPlanList,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return getBackupPlanList(args)
+		},
 	}
-
 	cmd.Flags().StringVar(&tvkInstanceUID, TvkInstanceUIDFlag, tvkInstanceUIDDefault, tvkInstanceUIDUsage)
 	return cmd
 }
 
-func getBackupPlanList(*cobra.Command, []string) error {
+func getBackupPlanList(args []string) error {
 	bpOptions := targetBrowser.BackupPlanListOptions{
 		CommonListOptions: commonOptions,
 		TvkInstanceUID:    tvkInstanceUID,
 	}
-	err := targetBrowserAuthConfig.GetBackupPlans(&bpOptions)
+	err := targetBrowserAuthConfig.GetBackupPlans(&bpOptions, args)
 	if err != nil {
 		return err
 	}
