@@ -26,33 +26,32 @@ The following checks included in preflight:
 
 - Ensure *kubectl* utility is present on system
 - Ensure *kubectl* is pointed to k8s cluster (i.e can access the remote target cluster)
-- Ensure *helm* utility is present on system and pointed to the cluster
-  - If *helmVersion=~v2*, then ensure *tiller* is present on cluster
+- Ensure *helm*  utility is present on system and pointed to the cluster
   - If *helmVersion=~v3*, then *tiller* is not needed on cluster
-- Ensure minimum Kubernetes version >= 1.13.x
+- Ensure minimum Kubernetes version >= 1.17.x
 - Ensure RBAC is enabled in cluster
 - Ensure provided storageClass is present in cluster
-- Ensure atleast one of the snapshot class is marked as *default* in cluster if volume snapshot api is in alpha state
+  1. Provided storageClass's `provisioner` [JSON Path: `storageclass.provisioner`] should match with provided volumeSnapshotClass's `driver`[JSON Path: `volumesnapshotclass.driver`]
+  2. If volumeSnapshotClass is not provided then, volumeSnapshotClass which satisfies condition `[i]` will be selected.
+  If there's are multiple volumeSnapshotClasses satisfying condition `[i]`, default volumeSnapshotClass[which has annotation `snapshot.storage.kubernetes.io/is-default-class: "true"` set]
+  will be used for further pre-flight checks.
+  3. Pre-flight check fails if no volumeSnapshotClass is found[after considering all above mentioned conditions].
+- Ensure at least one volumeSnapshotClass is marked as *default* in cluster if user has not provided volumeSnapshotClass as input.
 - Ensure all required features are present
-  - Alpha features for k8s version less than 1.14.x and greater than 1.13.x  --> *"CSIBlockVolume" "CSIDriverRegistry" "CSINodeInfo" "VolumeSnapshotDataSource"*
-  - Alpha features for k8s version less than 1.17.x and greater than 1.14.x --> *"VolumeSnapshotDataSource"*
-  - Alpha features for k8s version less than 1.15.x --> *"CustomResourceWebhookConversion"*
   - No Alpha features required for k8s version >= 1.17.x
 - Ensure CSI apis are present in cluster
-  - "csidrivers.csi.storage.k8s.io" (Only for k8s 1.13.x)
-  - "csinodeinfos.csi.storage.k8s.io" (Only for k8s 1.13.x)
   - "volumesnapshotclasses.snapshot.storage.k8s.io"
   - "volumesnapshotcontents.snapshot.storage.k8s.io"
   - "volumesnapshots.snapshot.storage.k8s.io"
 - Ensure DNS resolution works as expected in the cluster
-  - Creates a new pod (*dnsutils*) then resolve *kubernetes.default* service from inside the pod
+  - Creates a new pod (*dnsutils-${RANDOM_STRING}*) then resolves *kubernetes.default* service from inside the pod
 - Ensure Volume Snapshot functionality works as expected for both used and unused PVs
-  - Create a source Pod and PVC (*source-pod* and *source-pvc*)
-  - Create a Volume snapshot from a used PV (*snapshot-source-pvc*) from the *source-pvc*
+  - Create a source Pod and PVC (*source-pod-${RANDOM_STRING}* and *source-pvc-${RANDOM_STRING}*)
+  - Create a Volume snapshot from a used PV (*snapshot-source-pvc-${RANDOM_STRING}*) from the *source-pvc-${RANDOM_STRING}*
   - Create a volume snapshot from unused PV (delete the source pod before snapshoting)
-  - Create a restore Pod and PVC (*restored-pod* and *restored-pvc*)
+  - Create a restore Pod and PVC (*restored-pod-${RANDOM_STRING}* and *restored-pvc-${RANDOM_STRING}*)
   - Create a resotre Pod and PVC from unused pv snapshot
-  - Ensure data in restored pod/pvc
+  - Ensure data in restored pod/pvc is correct
 - Cleanup of all the intermediate resources created
 
 

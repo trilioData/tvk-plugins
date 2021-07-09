@@ -271,7 +271,6 @@ check_storage_snapshot_class() {
 
 check_csi() {
   local exit_status=0
-  readonly apis_for_k8s_13=("csidrivers.csi.storage.k8s.io" "csinodeinfos.csi.storage.k8s.io")
 
   common_required_apis=(
     "volumesnapshotclasses.snapshot.storage.k8s.io"
@@ -280,12 +279,6 @@ check_csi() {
   )
 
   echo -e "${LIGHT_BLUE}Checking if CSI APIs are installed in cluster...${NC}\n"
-
-  k8s_version=$(kubectl version --short | grep Server | awk '{print $3}' | cut -d '.' -f2)
-  if [[ "${k8s_version}" == 13 ]]; then
-    # shellcheck disable=SC2206
-    common_required_apis+=(${apis_for_k8s_13[@]})
-  fi
 
   for api in "${common_required_apis[@]}"; do
     # shellcheck disable=SC2143
