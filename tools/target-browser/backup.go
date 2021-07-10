@@ -26,13 +26,14 @@ type BackupListOptions struct {
 
 // Backup struct stores extracted fields from actual Backup API GET response
 type Backup struct {
-	Name      string `json:"Name"`
-	UID       string `json:"UID"`
-	Type      string `json:"Type"`
-	Size      string `json:"Size"`
-	Status    string `json:"Status"`
-	CreatedAt string `json:"Created At"`
-	Location  string `json:"Location"`
+	Name           string `json:"Name"`
+	UID            string `json:"UID"`
+	Type           string `json:"Type"`
+	Size           string `json:"Size"`
+	Status         string `json:"Status"`
+	BackupPlanUID  string `json:"BackupPlan UID"`
+	CreationTime   string `json:"Start Time"`
+	CompletionTime string `json:"End Time"`
 }
 
 // BackupList struct stores extracted fields from actual Backup API LIST response
@@ -48,12 +49,12 @@ func (auth *AuthInfo) GetBackups(options *BackupListOptions, backupUIDs []string
 		return err
 	}
 	queryParam := values.Encode()
-	response, err := auth.TriggerMultipleAPI(queryParam, internal.BackupAPIPath, backupSelector, backupUIDs)
+	response, err := auth.TriggerAPIs(queryParam, internal.BackupAPIPath, backupSelector, backupUIDs)
 	if err != nil {
 		return err
 	}
 
-	return PrintFormattedResponse(internal.BackupAPIPath, response, options.OutputFormat)
+	return PrintFormattedResponse(internal.BackupAPIPath, string(response), options.OutputFormat)
 }
 
 func (auth *AuthInfo) TriggerAPI(pathParam, queryParam, apiPath string, selector []string) ([]byte, error) {
@@ -67,6 +68,7 @@ func (auth *AuthInfo) TriggerAPI(pathParam, queryParam, apiPath string, selector
 	if auth.UseHTTPS {
 		tvkURL.Scheme = internal.HTTPSscheme
 	}
+
 	tvkURL.RawQuery = queryParam
 	req, err := http.NewRequest(http.MethodGet, tvkURL.String(), nil)
 	if err != nil {
@@ -82,7 +84,7 @@ func (auth *AuthInfo) TriggerAPI(pathParam, queryParam, apiPath string, selector
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK || resp.Body == nil {
-		return nil, fmt.Errorf("%s %s did not successfully completed - %s", http.MethodGet, apiPath, resp.Status)
+		return nil, fmt.Errorf("%s %s did not successfully completed - %s", http.MethodGet, req.URL.String(), resp.Status)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -90,37 +92,19 @@ func (auth *AuthInfo) TriggerAPI(pathParam, queryParam, apiPath string, selector
 		return nil, err
 	}
 
-	if len(selector) > 0 {
-		if pathParam != "" {
-			body, err = parseData(body)
-			if err != nil {
-				return nil, err
-			}
-		}
-		var respBytes bytes.Buffer
-		gojsonq.New().FromString(string(body)).From(internal.Results).Select(selector...).Writer(&respBytes)
-		if pathParam != "" {
-			return respBytes.Bytes(), nil
-		}
-		body = respBytes.Bytes()
-	}
-	var prettyJSON bytes.Buffer
-	if indErr := json.Indent(&prettyJSON, body, "", "  "); indErr != nil {
-		return nil, fmt.Errorf("JSON parse error: %s", indErr.Error())
-	}
-	return prettyJSON.Bytes(), nil
+	return body, nil
 }
 
 func parseData(respData []byte) ([]byte, error) {
 	type result struct {
-		Result []interface{} `json:"results"`
+		Result interface{} `json:"results"`
 	}
 	var r result
 	r.Result = []interface{}{respData}
-	if err := json.Unmarshal(respData, &r.Result[0]); err != nil {
+	if err := json.Unmarshal(respData, &r.Result); err != nil {
 		return nil, err
 	}
-	respDataByte, err := json.MarshalIndent(r, "", "  ")
+	respDataByte, err := json.Marshal(r)
 	if err != nil {
 		return nil, err
 	}
@@ -132,9 +116,11 @@ func parseData(respData []byte) ([]byte, error) {
 // If 'wideOutput=true', then all defined fields of Backup struct will be printed as output columns
 // If 'wideOutput=false', then selected number of fields of Backup struct from first field will be printed as output columns
 func normalizeBackupDataToRowsAndColumns(response string, wideOutput bool) ([]metav1.TableRow, []metav1.TableColumnDefinition, error) {
-	var backupList BackupList
+	var respBytes bytes.Buffer
+	gojsonq.New().FromString(response).From(internal.Results).Select(backupSelector...).Writer(&respBytes)
 
-	err := json.Unmarshal([]byte(response), &backupList.Results)
+	var backupList BackupList
+	err := json.Unmarshal(respBytes.Bytes(), &backupList.Results)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -144,9 +130,11 @@ func normalizeBackupDataToRowsAndColumns(response string, wideOutput bool) ([]me
 	}
 
 	var rows []metav1.TableRow
-	for _, backup := range backupList.Results {
+	for i := range backupList.Results {
+		backup := backupList.Results[i]
 		rows = append(rows, metav1.TableRow{
-			Cells: []interface{}{backup.Name, backup.UID, backup.Type, backup.Size, backup.Status, backup.CreatedAt, backup.Location},
+			Cells: []interface{}{backup.Name, backup.UID, backup.Type, backup.Size, backup.Status, backup.BackupPlanUID,
+				backup.CreationTime, backup.CompletionTime},
 		})
 	}
 

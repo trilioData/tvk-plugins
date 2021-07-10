@@ -1,8 +1,10 @@
 package targetbrowser
 
 import (
+	"bytes"
 	"encoding/json"
-	"fmt"
+
+	"github.com/thedevsaddam/gojsonq"
 
 	"github.com/google/go-querystring/query"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +15,7 @@ import (
 // BackupPlanListOptions for backupPlan
 type BackupPlanListOptions struct {
 	CommonListOptions
-	TvkInstanceUID string `url:"tvkInstanceUID"`
+	TvkInstanceUID string `url:"tvkInstanceUID,omitempty"`
 }
 
 // BackupPlan struct stores extracted fields from actual BackupPlan API GET response
@@ -40,12 +42,12 @@ func (auth *AuthInfo) GetBackupPlans(options *BackupPlanListOptions, backupPlanU
 	}
 
 	queryParam := values.Encode()
-	response, err :=  auth.TriggerMultipleAPI(queryParam, internal.BackupPlanAPIPath, backupPlanSelector, backupPlanUIDs)
+	response, err := auth.TriggerAPIs(queryParam, internal.BackupPlanAPIPath, backupPlanSelector, backupPlanUIDs)
 	if err != nil {
 		return err
 	}
 
-	return PrintFormattedResponse(internal.BackupPlanAPIPath, response, options.OutputFormat)
+	return PrintFormattedResponse(internal.BackupPlanAPIPath, string(response), options.OutputFormat)
 }
 
 // normalizeBPlanDataToRowsAndColumns normalizes backupPlan API response and generates metav1.TableRow & metav1.TableColumnDefinition
@@ -53,9 +55,12 @@ func (auth *AuthInfo) GetBackupPlans(options *BackupPlanListOptions, backupPlanU
 // If 'wideOutput=true', then all defined fields of Backup struct will be printed as output columns
 // If 'wideOutput=false', then selected number of fields of Backup struct from first field will be printed as output columns
 func normalizeBPlanDataToRowsAndColumns(response string, wideOutput bool) ([]metav1.TableRow, []metav1.TableColumnDefinition, error) {
-	var bPlanList BackupPlanList
 
-	err := json.Unmarshal([]byte(response), &bPlanList.Results)
+	var respBytes bytes.Buffer
+	gojsonq.New().FromString(response).From(internal.Results).Select(backupPlanSelector...).Writer(&respBytes)
+
+	var bPlanList BackupPlanList
+	err := json.Unmarshal(respBytes.Bytes(), &bPlanList.Results)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -65,7 +70,8 @@ func normalizeBPlanDataToRowsAndColumns(response string, wideOutput bool) ([]met
 	}
 
 	var rows []metav1.TableRow
-	for _, bPlan := range bPlanList.Results {
+	for i := range bPlanList.Results {
+		bPlan := bPlanList.Results[i]
 		rows = append(rows, metav1.TableRow{
 			Cells: []interface{}{bPlan.Name, bPlan.UID, bPlan.Type, bPlan.TvkInstanceID, bPlan.SuccessfulBackup, bPlan.SuccessfulBackupTimestamp},
 		})
@@ -81,34 +87,39 @@ func normalizeBPlanDataToRowsAndColumns(response string, wideOutput bool) ([]met
 	return rows, columns, err
 }
 
-// TriggerMultipleAPI returns backup or backupPlan list stored on mounted target with available options
-func (auth *AuthInfo) TriggerMultipleAPI(queryParam, apiPath string, selector, args []string) error {
+// TriggerAPIs returns backup or backupPlan list stored on mounted target with available options
+func (auth *AuthInfo) TriggerAPIs(queryParam, apiPath string, selector, args []string) ([]byte, error) {
 	if len(args) > 0 {
 		var respData []interface{}
-		for _, bpID := range args {
-			resp, err := auth.TriggerAPI(bpID, queryParam, apiPath, selector)
+		for _, uid := range args {
+			resp, err := auth.TriggerAPI(uid, queryParam, apiPath, selector)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			var result []interface{}
+
+			var result interface{}
 			if uErr := json.Unmarshal(resp, &result); uErr != nil {
-				return uErr
+				return nil, uErr
 			}
-			respData = append(respData, result[0])
+			respData = append(respData, result)
 		}
 
 		body, err := json.MarshalIndent(respData, "", "  ")
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		fmt.Println(string(body))
-		return nil
+		body, err = parseData(body)
+		if err != nil {
+			return nil, err
+		}
+
+		return body, nil
 	}
+
 	resp, err := auth.TriggerAPI("", queryParam, apiPath, selector)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	fmt.Println(string(resp))
-	return nil
+	return resp, nil
 }

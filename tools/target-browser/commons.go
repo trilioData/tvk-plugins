@@ -18,7 +18,7 @@ import (
 type CommonListOptions struct {
 	Page         int    `url:"page"`
 	PageSize     int    `url:"pageSize"`
-	OrderBy      string `url:"ordering"`
+	OrderBy      string `url:"ordering,omitempty"`
 	OutputFormat string
 }
 

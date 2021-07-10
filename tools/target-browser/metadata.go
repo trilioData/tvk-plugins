@@ -1,8 +1,6 @@
 package targetbrowser
 
 import (
-	"fmt"
-
 	"github.com/google/go-querystring/query"
 
 	"github.com/trilioData/tvk-plugins/internal"
@@ -31,5 +29,5 @@ func (auth *AuthInfo) GetMetadata(options *MetadataListOptions) error {
 		options.OutputFormat = internal.FormatYAML
 	}
 
-	return PrintFormattedResponse(internal.MetadataAPIPath, response, options.OutputFormat)
+	return PrintFormattedResponse(internal.MetadataAPIPath, string(resp), options.OutputFormat)
 }
