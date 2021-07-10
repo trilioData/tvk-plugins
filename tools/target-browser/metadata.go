@@ -1,8 +1,6 @@
 package targetbrowser
 
 import (
-	"fmt"
-
 	"github.com/google/go-querystring/query"
 
 	"github.com/trilioData/tvk-plugins/internal"
@@ -12,6 +10,7 @@ import (
 type MetadataListOptions struct {
 	BackupUID     string `url:"backupUID"`
 	BackupPlanUID string `url:"backupPlanUID"`
+	OutputFormat  string
 }
 
 // GetMetadata returns metadata of backup on mounted target
@@ -25,6 +24,10 @@ func (auth *AuthInfo) GetMetadata(options *MetadataListOptions) error {
 	if apiErr != nil {
 		return err
 	}
-	fmt.Println(string(resp))
-	return nil
+
+	if options.OutputFormat == "" || options.OutputFormat == internal.FormatWIDE {
+		options.OutputFormat = internal.FormatYAML
+	}
+
+	return PrintFormattedResponse(internal.MetadataAPIPath, string(resp), options.OutputFormat)
 }

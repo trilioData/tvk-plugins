@@ -1,5 +1,12 @@
 package cmd
 
+import (
+	"fmt"
+	"strings"
+
+	"github.com/trilioData/tvk-plugins/internal"
+)
+
 const (
 	KubeConfigFlag  = "kubeconfig"
 	kubeConfigUsage = "Path to the kubeconfig file to use for CLI requests"
@@ -12,6 +19,9 @@ const (
 
 	CertificateAuthorityFlag  = "certificate-authority"
 	certificateAuthorityUsage = "Path to a cert file for the certificate authority"
+
+	OutputFormatFlag      = "output"
+	OutputFormatFlagShort = "o"
 
 	TargetNameFlag  = "target-name"
 	targetNameUsage = "Name of target CR to be used to query mounted target"
@@ -75,4 +85,9 @@ var (
 	expiryDate      string
 	orderBy         string
 	pages, pageSize int
+)
+
+var (
+	OutputFormatFlagUsage = fmt.Sprintf("Output format to use. Supported formats: %s.",
+		strings.Join(internal.AllowedOutputFormats.List(), "|"))
 )

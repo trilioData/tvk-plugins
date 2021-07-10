@@ -22,6 +22,9 @@ const (
 	BackupAPIPath             = "backup"
 	MetadataAPIPath           = "metadata"
 	Results                   = "results"
+	FormatYAML                = "yaml"
+	FormatJSON                = "json"
+	FormatWIDE                = "wide"
 )
 
 var (

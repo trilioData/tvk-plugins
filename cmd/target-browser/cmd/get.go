@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/trilioData/tvk-plugins/internal"
 	targetbrowser "github.com/trilioData/tvk-plugins/tools/target-browser"
 )
 
@@ -46,9 +47,10 @@ which retrieves single object or list of objects of that resource.`,
 		}
 
 		commonOptions = targetbrowser.CommonListOptions{
-			Page:     pages,
-			PageSize: pageSize,
-			OrderBy:  orderBy,
+			Page:         pages,
+			PageSize:     pageSize,
+			OrderBy:      orderBy,
+			OutputFormat: outputFormat,
 		}
 
 		return nil
@@ -74,6 +76,10 @@ func validateInput(cmd *cobra.Command) error {
 	if targetBrowserConfig.CaCert != "" && targetBrowserConfig.InsecureSkipTLS {
 		return fmt.Errorf("[%s] flag cannot be provided if [%s] is provided",
 			InsecureSkipTLSFlag, CertificateAuthorityFlag)
+	}
+
+	if outputFormat != "" && !internal.AllowedOutputFormats.Has(outputFormat) {
+		return fmt.Errorf("[%s] flag invalid value. Usage - %s", OutputFormatFlag, OutputFormatFlagUsage)
 	}
 
 	return nil
