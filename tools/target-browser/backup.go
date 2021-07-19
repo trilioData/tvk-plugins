@@ -49,7 +49,7 @@ func (auth *AuthInfo) GetBackups(options *BackupListOptions, backupUIDs []string
 		return err
 	}
 	queryParam := values.Encode()
-	response, err := auth.TriggerAPIs(queryParam, internal.BackupAPIPath, backupSelector, backupUIDs)
+	response, err := auth.TriggerAPIs(queryParam, internal.BackupAPIPath, BackupSelector, backupUIDs)
 	if err != nil {
 		return err
 	}
@@ -117,7 +117,7 @@ func parseData(respData []byte) ([]byte, error) {
 // If 'wideOutput=false', then selected number of fields of Backup struct from first field will be printed as output columns
 func normalizeBackupDataToRowsAndColumns(response string, wideOutput bool) ([]metav1.TableRow, []metav1.TableColumnDefinition, error) {
 	var respBytes bytes.Buffer
-	gojsonq.New().FromString(response).From(internal.Results).Select(backupSelector...).Writer(&respBytes)
+	gojsonq.New().FromString(response).From(internal.Results).Select(BackupSelector...).Writer(&respBytes)
 
 	var backupList BackupList
 	err := json.Unmarshal(respBytes.Bytes(), &backupList.Results)

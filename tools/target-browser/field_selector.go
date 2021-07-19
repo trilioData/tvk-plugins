@@ -1,6 +1,6 @@
 package targetbrowser
 
-var backupSelector = []string{
+var BackupSelector = []string{
 	"metadata.name as Name",
 	"metadata.uid  as UID",
 	"status.type as Type",
@@ -11,7 +11,7 @@ var backupSelector = []string{
 	"status.completionTimestamp as End Time",
 }
 
-var backupPlanSelector = []string{
+var BackupPlanSelector = []string{
 	"metadata.name as Name",
 	"metadata.uid  as UID",
 	"generatedField.applicationType as Type",

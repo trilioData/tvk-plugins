@@ -42,7 +42,7 @@ func (auth *AuthInfo) GetBackupPlans(options *BackupPlanListOptions, backupPlanU
 	}
 
 	queryParam := values.Encode()
-	response, err := auth.TriggerAPIs(queryParam, internal.BackupPlanAPIPath, backupPlanSelector, backupPlanUIDs)
+	response, err := auth.TriggerAPIs(queryParam, internal.BackupPlanAPIPath, BackupPlanSelector, backupPlanUIDs)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (auth *AuthInfo) GetBackupPlans(options *BackupPlanListOptions, backupPlanU
 func normalizeBPlanDataToRowsAndColumns(response string, wideOutput bool) ([]metav1.TableRow, []metav1.TableColumnDefinition, error) {
 
 	var respBytes bytes.Buffer
-	gojsonq.New().FromString(response).From(internal.Results).Select(backupPlanSelector...).Writer(&respBytes)
+	gojsonq.New().FromString(response).From(internal.Results).Select(BackupPlanSelector...).Writer(&respBytes)
 
 	var bPlanList BackupPlanList
 	err := json.Unmarshal(respBytes.Bytes(), &bPlanList.Results)
