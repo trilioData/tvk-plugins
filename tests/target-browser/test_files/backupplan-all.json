@@ -51,13 +51,13 @@
   "status": {
     "status": "Available",
     "scope": "App",
-    "applicationType": "APPLICATION-TYPE",
+    "applicationType": "custom",
     "stats": {
       "backupSummary": {
         "inProgressBackup": {
           "kind": "Backup",
           "namespace": "temp-ns",
-          "name": "sample-backu",
+          "name": "sample-backup",
           "uid": "BACKUP-UUID",
           "apiVersion": "triliovault.trilio.io/v1",
           "resourceVersion": "164463883"
@@ -65,7 +65,7 @@
         "latestBackup": {
           "kind": "Backup",
           "namespace": "temp-ns",
-          "name": "sample-backu",
+          "name": "sample-backup",
           "uid": "BACKUP-UUID",
           "apiVersion": "triliovault.trilio.io/v1",
           "resourceVersion": "164463883"

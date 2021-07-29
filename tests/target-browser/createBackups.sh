@@ -10,10 +10,17 @@ set -ex
 src_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fixpath="/triliodata"
 backupType=('Helm' 'Operator' 'Custom' 'Namespace')
-
+backupStatus=('InProgress' 'Completed' 'Available' 'Failed' )
 for ((i = 0; i < $1; i++)); do
   bplanuid=$(uuidgen)
-  index=$RANDOM%4
+  if [ "$5" = "helm" ]; then
+    index=0
+  elif [ "$5" = "custom" ]; then
+    index=2
+  else
+    index=$RANDOM%4
+  fi
+backupStatusIndex=$RANDOM%4
 
   for ((j = 0; j < $2; j++)); do
 
@@ -34,7 +41,7 @@ for ((i = 0; i < $1; i++)); do
       sed -i "s/BACKUP-UUID/$backupuid/g" "${src_dir}"/test_files/backup-modified.json
       sed -i "s/BACKUPPLAN-UUID/$bplanuid/g" "${src_dir}"/test_files/backup-modified.json
       sed -i "s/BACKUPPLAN-NAME/backupplan-$i/g" "${src_dir}"/test_files/backup-modified.json
-      sed -i "s/BACKUP-STATUS/Available/g" "${src_dir}"/test_files/backup-modified.json
+      sed -i "s/BACKUP-STATUS/${backupStatus[backupStatusIndex]}/g" "${src_dir}"/test_files/backup-modified.json
       sed -i "s/APPLICATION-TYPE/${backupType[index]}/g" "${src_dir}"/test_files/backup-modified.json
       sed -i "s/COMPLETION-TIMESTAMP/$completionTime/g" "${src_dir}"/test_files/backup-modified.json
 
