@@ -59,7 +59,7 @@ which retrieves single object or list of objects of that resource.`,
 
 func init() {
 	getCmd.PersistentFlags().IntVar(&pages, pagesFlag, pagesDefault, pagesUsage)
-	getCmd.PersistentFlags().IntVar(&pageSize, PageSizeFlag, pageSizeDefault, pageSizeUsage)
+	getCmd.PersistentFlags().IntVar(&pageSize, PageSizeFlag, PageSizeDefault, pageSizeUsage)
 	getCmd.PersistentFlags().StringVar(&orderBy, OrderByFlag, orderByDefault, orderByUsage)
 	rootCmd.AddCommand(getCmd)
 }

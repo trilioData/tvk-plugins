@@ -43,7 +43,7 @@ const (
 
 	PageSizeFlag = "page-size"
 
-	pageSizeDefault = 10
+	PageSizeDefault = 10
 	pageSizeUsage   = "Maximum number of results in a single page"
 
 	OrderByFlag    = "order-by"

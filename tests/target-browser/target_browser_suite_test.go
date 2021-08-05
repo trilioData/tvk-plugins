@@ -23,6 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientGoScheme "k8s.io/client-go/kubernetes/scheme"
@@ -175,9 +176,11 @@ func createTarget(enableBrowsing bool) {
 }
 
 func deleteTarget(enableBrowsing bool) {
-	if !enableBrowsing {
+	if enableBrowsing {
 		Expect(updateYAMLs(map[string]string{"enableBrowsing: false": "enableBrowsing: true"}, targetYamlPath)).To(BeNil())
 	}
+	target := getTarget(ctx, installNs, k8sClient)
+	pvcName, isPresent, _ := unstructured.NestedString(target.Object, "status", "nfsPersistentVolumeClaim", "name")
 	targetCmd := fmt.Sprintf("kubectl delete -f %s --namespace %s", filepath.Join(testDataDirRelPath, targetYaml), installNs)
 	command := exec.Command("bash", "-c", targetCmd)
 	out, err := command.CombinedOutput()
@@ -185,7 +188,9 @@ func deleteTarget(enableBrowsing bool) {
 	if err != nil {
 		Fail(fmt.Sprintf("target creation failed %s.", err.Error()))
 	}
-	time.Sleep(30 * time.Second) //wait to delete target pvc
+	if isPresent {
+		CheckPvcDeleted(ctx, k8sClient, pvcName, installNs)
+	}
 	log.Infof("Deleted target %s successfully", TargetName)
 }
 

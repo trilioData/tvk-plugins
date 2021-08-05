@@ -16,6 +16,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -287,4 +288,17 @@ func UpdateIngress(ctx context.Context, k8sClient client.Client, ing *v1beta1.In
 		return k8sClient.Update(ctx, ing)
 	}, timeout, interval).ShouldNot(HaveOccurred())
 	log.Infof("Updated ingress %s successfully", ing.Name)
+}
+
+func CheckPvcDeleted(ctx context.Context, k8sClient client.Client, name, ns string) {
+	pvc := &corev1.PersistentVolumeClaim{}
+	Eventually(func() bool {
+		log.Info("Waiting for PVC to be deleted")
+		if err := k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: ns}, pvc); err != nil {
+			if apierrors.IsNotFound(err) {
+				return true
+			}
+		}
+		return false
+	}, timeout, interval).Should(BeTrue())
 }
