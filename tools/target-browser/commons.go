@@ -16,10 +16,11 @@ import (
 )
 
 type CommonListOptions struct {
-	Page         int    `url:"page"`
-	PageSize     int    `url:"pageSize"`
-	OrderBy      string `url:"ordering,omitempty"`
-	OutputFormat string
+	Page           int    `url:"page"`
+	PageSize       int    `url:"pageSize"`
+	OrderBy        string `url:"ordering,omitempty"`
+	OperationScope string `url:"operationScope,omitempty"`
+	OutputFormat   string
 }
 
 // ListMetadata for Pagination

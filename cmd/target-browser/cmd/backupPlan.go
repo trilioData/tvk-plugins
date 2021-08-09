@@ -36,6 +36,12 @@ using available flags and options.`,
   
   # List of backupPlans: filter by [tvkInstanceUID]
   kubectl tvk-target-browser get backupPlan --tvk-instance-uid <uid> --target-name <name> --target-namespace <namespace>
+  
+  # List of backupPlans in Single Namespace: filter by [operationScope]
+  kubectl tvk-target-browser get backupPlan --operation-scope SingleNamespace --target-name <name> --target-namespace <namespace>
+
+  # List of backupPlans in Multi Namespace/Cluster Scope: filter by [operationScope]
+  kubectl tvk-target-browser get backupPlan --operation-scope MultiNamespace --target-name <name> --target-namespace <namespace>
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return getBackupPlanList(args)

@@ -74,6 +74,9 @@ const (
 	expiryDateFlag    = "expiry-date"
 	expiryDateDefault = ""
 	expiryDateUsage   = "Backup expiry date"
+
+	OperationScopeFlag  = "operation-scope"
+	operationScopeUsage = "Filter backup/backupPlan for [SingleNamespace, MultiNamespace]"
 )
 
 var (
@@ -84,6 +87,7 @@ var (
 	creationDate    string
 	expiryDate      string
 	orderBy         string
+	operationScope  string
 	pages, pageSize int
 )
 

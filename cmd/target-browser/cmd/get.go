@@ -47,10 +47,11 @@ which retrieves single object or list of objects of that resource.`,
 		}
 
 		commonOptions = targetbrowser.CommonListOptions{
-			Page:         pages,
-			PageSize:     pageSize,
-			OrderBy:      orderBy,
-			OutputFormat: outputFormat,
+			Page:           pages,
+			PageSize:       pageSize,
+			OrderBy:        orderBy,
+			OutputFormat:   outputFormat,
+			OperationScope: operationScope,
 		}
 
 		return nil
@@ -61,6 +62,7 @@ func init() {
 	getCmd.PersistentFlags().IntVar(&pages, pagesFlag, pagesDefault, pagesUsage)
 	getCmd.PersistentFlags().IntVar(&pageSize, PageSizeFlag, PageSizeDefault, pageSizeUsage)
 	getCmd.PersistentFlags().StringVar(&orderBy, OrderByFlag, orderByDefault, orderByUsage)
+	getCmd.PersistentFlags().StringVar(&operationScope, OperationScopeFlag, "", operationScopeUsage)
 	rootCmd.AddCommand(getCmd)
 }
 
