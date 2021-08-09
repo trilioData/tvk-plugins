@@ -73,7 +73,7 @@ helm_install() {
   if [[ -n "${node_external_ip}" ]]; then
     sudo -- bash -c "echo \"${node_external_ip} ${INGRESS_HOST}\" >>/etc/hosts"
   else
-    trap "cleanup" EXIT
+    exit 1
   fi
 
 }

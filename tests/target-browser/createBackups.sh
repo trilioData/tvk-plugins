@@ -10,14 +10,17 @@ set -ex
 src_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fixpath="/triliodata"
 backupType=('Helm' 'Operator' 'Custom' 'Namespace')
-
+backupStatus=('InProgress' 'Completed' 'Available' 'Failed' )
 for ((i = 0; i < $1; i++)); do
   bplanuid=$(uuidgen)
-  if [ "$5" == "helm_backup_type" ]; then
+  if [ "$5" = "helm" ]; then
     index=0
+  elif [ "$5" = "custom" ]; then
+    index=2
   else
     index=$RANDOM%4
   fi
+backupStatusIndex=$RANDOM%4
 
   for ((j = 0; j < $2; j++)); do
 
@@ -38,7 +41,7 @@ for ((i = 0; i < $1; i++)); do
       sed -i "s/BACKUP-UUID/$backupuid/g" "${src_dir}"/test_files/backup-modified.json
       sed -i "s/BACKUPPLAN-UUID/$bplanuid/g" "${src_dir}"/test_files/backup-modified.json
       sed -i "s/BACKUPPLAN-NAME/backupplan-$i/g" "${src_dir}"/test_files/backup-modified.json
-      sed -i "s/BACKUP-STATUS/Available/g" "${src_dir}"/test_files/backup-modified.json
+      sed -i "s/BACKUP-STATUS/${backupStatus[backupStatusIndex]}/g" "${src_dir}"/test_files/backup-modified.json
       sed -i "s/APPLICATION-TYPE/${backupType[index]}/g" "${src_dir}"/test_files/backup-modified.json
       sed -i "s/COMPLETION-TIMESTAMP/$completionTime/g" "${src_dir}"/test_files/backup-modified.json
 
@@ -49,7 +52,7 @@ for ((i = 0; i < $1; i++)); do
       sed -i "s/BACKUPPLAN-UUID/$bplanuid/g" "${src_dir}"/test_files/backupplan-modified.json
       sed -i "s/BACKUP-UUID/$backupuid/g" "${src_dir}"/test_files/backupplan-modified.json
 
-      # modify backupcomponents in backupplan json file as per value of index vairiable
+      # modify backupcomponents in backupPlan json file as per value of index variable
       if [[ $index -eq 0 ]]; then
         sed -i "s/\"BACKUPPLAN-COMPONENTS\"/{\"helmReleases\":[\"mysql\"]}/g" "${src_dir}"/test_files/backupplan-modified.json
       elif [[ $index -eq 1 ]]; then
@@ -59,6 +62,23 @@ for ((i = 0; i < $1; i++)); do
       else
         sed -i "s/\"BACKUPPLAN-COMPONENTS\"/{}/g" "${src_dir}"/test_files/backupplan-modified.json
       fi
+
+      # copy modified files to NFS location
+      mv "${src_dir}"/test_files/backup-modified.json "${backuppath}"/backup.json
+      mv "${src_dir}"/test_files/backupplan-modified.json "${backuppath}"/backupplan.json
+    elif [ "$3" == "all_type_backup" ]; then
+      cp "${src_dir}"/test_files/backup-all.json "${src_dir}"/test_files/backup-modified.json
+      cp "${src_dir}"/test_files/backupplan-all.json "${src_dir}"/test_files/backupplan-modified.json
+
+      echo "Replacing placeholders in backup & backupPlan json files"
+      # change placeholders in backup file with a new values
+
+      sed -i "s/BACKUP-UUID/$backupuid/g" "${src_dir}"/test_files/backup-modified.json
+      sed -i "s/BACKUPPLAN-UUID/$bplanuid/g" "${src_dir}"/test_files/backup-modified.json
+
+      # change placeholders in backupPlan file with a new value
+      sed -i "s/BACKUPPLAN-UUID/$bplanuid/g" "${src_dir}"/test_files/backupplan-modified.json
+      sed -i "s/BACKUP-UUID/$backupuid/g" "${src_dir}"/test_files/backupplan-modified.json
 
       # copy modified files to NFS location
       mv "${src_dir}"/test_files/backup-modified.json "${backuppath}"/backup.json
