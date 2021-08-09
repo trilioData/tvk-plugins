@@ -16,7 +16,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -45,6 +45,7 @@ const (
 	TargetBrowserBinaryName   = "target-browser"
 	DistDir                   = "dist"
 	PollingPeriod             = "POLLING_PERIOD"
+	kubernetesInstanceKey     = "app.kubernetes.io/instance"
 )
 
 var (
@@ -290,15 +291,16 @@ func UpdateIngress(ctx context.Context, k8sClient client.Client, ing *v1beta1.In
 	log.Infof("Updated ingress %s successfully", ing.Name)
 }
 
-func CheckPvcDeleted(ctx context.Context, k8sClient client.Client, name, ns string) {
-	pvc := &corev1.PersistentVolumeClaim{}
+func checkPvcDeleted(ctx context.Context, k8sClient client.Client, ns, selector string) {
 	Eventually(func() bool {
 		log.Info("Waiting for PVC to be deleted")
-		if err := k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: ns}, pvc); err != nil {
-			if apierrors.IsNotFound(err) {
-				return true
-			}
-		}
-		return false
+		pvcList := corev1.PersistentVolumeClaimList{}
+		selectors, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+			MatchLabels: map[string]string{kubernetesInstanceKey: selector},
+		})
+		Expect(err).To(BeNil())
+		err = k8sClient.List(ctx, &pvcList, client.MatchingLabelsSelector{Selector: selectors}, client.InNamespace(ns))
+		Expect(err).To(BeNil())
+		return pvcList.Items == nil
 	}, timeout, interval).Should(BeTrue())
 }
