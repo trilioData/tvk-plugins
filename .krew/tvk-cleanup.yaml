@@ -24,7 +24,7 @@ spec:
       to: .
 
   description: |
-    tvk-cleanup is a kubectl plugin which cleans up Triliovault for Kubernetes(TVK) application 
+    tvk-cleanup is a kubectl plugin which cleans up Triliovault for Kubernetes(TVK) application
     Custom reources and CRDs in a Kubernetes cluster.
 
     > Check available flags for cleanup plugin with :-
@@ -46,4 +46,3 @@ spec:
     kubectl tvk-cleanup -n -c        -- Cleans up only Triliovault CRDs, Non-interactive
     kubectl tvk-cleanup -n -r "Restore Backup Backupplan"
                                      -- Cleans up only specified Triliovault CRs, Non-interactive
-
