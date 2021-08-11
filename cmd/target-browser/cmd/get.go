@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -84,5 +85,12 @@ func validateInput(cmd *cobra.Command) error {
 		return fmt.Errorf("[%s] flag invalid value. Usage - %s", OutputFormatFlag, OutputFormatFlagUsage)
 	}
 
+	if operationScope != "" {
+		val, isPresent := internal.ResourceScopeMap[strings.ToLower(operationScope)]
+		if !isPresent {
+			return fmt.Errorf("[%s] flag invalid value. Usage - %s", OperationScopeFlag, operationScopeUsage)
+		}
+		operationScope = val
+	}
 	return nil
 }

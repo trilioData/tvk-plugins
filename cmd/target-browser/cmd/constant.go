@@ -76,7 +76,8 @@ const (
 	expiryDateUsage   = "Backup expiry date"
 
 	OperationScopeFlag  = "operation-scope"
-	operationScopeUsage = "Filter backup/backupPlan for [SingleNamespace, MultiNamespace]"
+	operationScopeUsage = "Filter backup/backupPlan for [SingleNamespace, MultiNamespace]. " +
+		"Supported values: SingleNamespace|MultiNamespace or singleNamespace|multiNamespace"
 )
 
 var (
