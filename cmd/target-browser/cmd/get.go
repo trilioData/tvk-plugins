@@ -86,11 +86,13 @@ func validateInput(cmd *cobra.Command) error {
 	}
 
 	if operationScope != "" {
-		val, isPresent := internal.ResourceScopeMap[strings.ToLower(operationScope)]
-		if !isPresent {
+		if strings.EqualFold(operationScope, internal.SingleNamespace) {
+			operationScope = internal.SingleNamespace
+		} else if strings.EqualFold(operationScope, internal.MultiNamespace) {
+			operationScope = internal.MultiNamespace
+		} else {
 			return fmt.Errorf("[%s] flag invalid value. Usage - %s", OperationScopeFlag, operationScopeUsage)
 		}
-		operationScope = val
 	}
 	return nil
 }

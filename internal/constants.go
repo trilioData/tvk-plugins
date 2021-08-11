@@ -25,8 +25,8 @@ const (
 	FormatYAML                = "yaml"
 	FormatJSON                = "json"
 	FormatWIDE                = "wide"
-	SingleNamespace           = "singlenamespace"
-	MultiNamespace            = "multinamespace"
+	SingleNamespace           = "SingleNamespace"
+	MultiNamespace            = "MultiNamespace"
 )
 
 var (

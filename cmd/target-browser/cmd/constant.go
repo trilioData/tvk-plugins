@@ -77,7 +77,7 @@ const (
 
 	OperationScopeFlag  = "operation-scope"
 	operationScopeUsage = "Filter backup/backupPlan for [SingleNamespace, MultiNamespace]. " +
-		"Supported values: SingleNamespace|MultiNamespace or singleNamespace|multiNamespace"
+		"Supported values can be in any case capital, small or mixed."
 )
 
 var (
