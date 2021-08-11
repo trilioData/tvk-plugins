@@ -73,15 +73,24 @@ kubectl tvk-target-browser get metadata --help
   ```bash
   kubectl tvk-target-browser get backup --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
   ```
+
  - Get list of backups for backupPlan:
 
   ```bash
   kubectl tvk-target-browser get backup --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
   ```
-  
+
   - Get specific backup:
   ```bash
   kubectl tvk-target-browser get backup <backup-uid> --target-name <name> --target-namespace <namespace>
+  ```
+  - List of backups in Single Namespace:
+  ```bash
+  kubectl tvk-target-browser get backup --operation-scope SingleNamespace --target-name <name> --target-namespace <namespace>
+  ```
+  - List of backups in Multi Namespace/Cluster Scope:
+  ```bash
+   kubectl tvk-target-browser get backup --operation-scope MultiNamespace --target-name <name> --target-namespace <namespace>
   ```
 
   - Get list of backupPlans:
@@ -92,6 +101,14 @@ kubectl tvk-target-browser get metadata --help
   - Get specific backupPlan:
   ```bash
   kubectl tvk-target-browser get backupPlan <backup-plan-uid> --target-name <name> --target-namespace <namespace>
+  ```
+  - List of backupPlans in Single Namespace:
+  ```bash
+  kubectl tvk-target-browser get backupPlan --operation-scope SingleNamespace --target-name <name> --target-namespace <namespace>
+  ```
+  - List of backupPlans in Multi Namespace/Cluster Scope:
+  ```bash
+  kubectl tvk-target-browser get backupPlan --operation-scope MultiNamespace --target-name <name> --target-namespace <namespace>
   ```
 
   - Get metadata of specific backup:

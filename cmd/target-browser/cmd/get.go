@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -47,10 +48,11 @@ which retrieves single object or list of objects of that resource.`,
 		}
 
 		commonOptions = targetbrowser.CommonListOptions{
-			Page:         pages,
-			PageSize:     pageSize,
-			OrderBy:      orderBy,
-			OutputFormat: outputFormat,
+			Page:           pages,
+			PageSize:       pageSize,
+			OrderBy:        orderBy,
+			OutputFormat:   outputFormat,
+			OperationScope: operationScope,
 		}
 
 		return nil
@@ -61,6 +63,7 @@ func init() {
 	getCmd.PersistentFlags().IntVar(&pages, pagesFlag, pagesDefault, pagesUsage)
 	getCmd.PersistentFlags().IntVar(&pageSize, PageSizeFlag, PageSizeDefault, pageSizeUsage)
 	getCmd.PersistentFlags().StringVar(&orderBy, OrderByFlag, orderByDefault, orderByUsage)
+	getCmd.PersistentFlags().StringVar(&operationScope, OperationScopeFlag, "", operationScopeUsage)
 	rootCmd.AddCommand(getCmd)
 }
 
@@ -82,5 +85,14 @@ func validateInput(cmd *cobra.Command) error {
 		return fmt.Errorf("[%s] flag invalid value. Usage - %s", OutputFormatFlag, OutputFormatFlagUsage)
 	}
 
+	if operationScope != "" {
+		if strings.EqualFold(operationScope, internal.SingleNamespace) {
+			operationScope = internal.SingleNamespace
+		} else if strings.EqualFold(operationScope, internal.MultiNamespace) {
+			operationScope = internal.MultiNamespace
+		} else {
+			return fmt.Errorf("[%s] flag invalid value. Usage - %s", OperationScopeFlag, operationScopeUsage)
+		}
+	}
 	return nil
 }
