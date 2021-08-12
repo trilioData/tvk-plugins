@@ -10,7 +10,7 @@ CLEANUP_RUN_SUCCESS=true
 check_if_ocp() {
   # Check if the k8s cluster is upstream or OCP
   local is_ocp="N"
-  if [[ $(kubectl api-resources | grep openshift.io) ]]; then
+  if (kubectl api-resources | grep -q openshift.io); then
     is_ocp="Y"
   fi
   echo "${is_ocp}"
@@ -22,18 +22,19 @@ delete_tvk_res(){
   local exit_status=0
   for res in ${TVK_resources}
   do
-    if (kubectl get ${res} -A --no-headers 2>/dev/null)
+    if (kubectl get "${res}" -A --no-headers 2>/dev/null)
     then
       # Fetch non-deuplicate namespace for the given resource
-      for ns in $(kubectl get ${res} -A --no-headers 2>/dev/null | awk '{print $1}'| uniq) 
+      for ns in $(kubectl get "${res}" -A --no-headers 2>/dev/null | awk '{print $1}'| uniq) 
       do
         # Fetch given resource name
-        for name in $(kubectl get ${res} -n ${ns} --no-headers 2>/dev/null | awk '{print $1}'| uniq)
+        for name in $(kubectl get "${res}" -n "${ns}" --no-headers 2>/dev/null | awk '{print $1}'| uniq)
         do 
           # Delete 
           echo "kubectl delete ${res} ${name} -n ${ns} "
-          kubectl delete ${res} ${name} -n ${ns}
-	  if [ $? -ne 0 ]
+          kubectl delete "${res}" "${name}" -n "${ns}"
+	  retValue=$?
+          if [ "${retValue}" -ne 0 ]
           then
 	    exit_status=1
           fi
@@ -56,7 +57,8 @@ delete_tvk_op(){
     then 
       echo "Uninstalling k8s-triliovault operator"
       kubectl delete subscription k8s-triliovault -n openshift-operators
-      if [ $? -ne 0 ]
+      retValue=$?
+      if [ "${retValue}" -ne 0 ]
       then
         exit_status=1
       fi
@@ -64,11 +66,12 @@ delete_tvk_op(){
     
     # Delete k8s-triliovault clusterserviceversion
     tvkcsversion=$(kubectl get clusterserviceversion --no-headers -n openshift-operators 2>/dev/null | grep k8s-triliovault | awk '{print $1}')
-    if [ ! -z ${tvkcsversion} ]
+    if [ -n "${tvkcsversion}" ]
     then 
       echo "Deleting k8s-triliovault clusterserviceversion"
-      kubectl delete clusterserviceversion ${tvkcsversion} -n openshift-operators
-      if [ $? -ne 0 ]
+      kubectl delete clusterserviceversion "${tvkcsversion}" -n openshift-operators
+      retValue=$?
+      if [ "${retValue}" -ne 0 ]
       then
         exit_status=1
       fi
@@ -76,11 +79,12 @@ delete_tvk_op(){
     
     # Delete k8s-triliovault-resource-cleaner cronjob
     tvkcron=$(kubectl get cronjob --no-headers -n openshift-operators 2>/dev/null | grep k8s-triliovault | awk '{print $1}')
-    if [ ! -z ${tvkcron} ]
+    if [ -n "${tvkcron}" ]
     then 
       echo "Deleting k8s-triliovault-resource-cleaner cronjob"
-      kubectl delete cronjob ${tvkcron} -n openshift-operators
-      if [ $? -ne 0 ]
+      kubectl delete cronjob "${tvkcron}" -n openshift-operators
+      retValue=$?
+      if [ "${retValue}" -ne 0 ]
       then
         exit_status=1
       fi
@@ -92,16 +96,18 @@ delete_tvk_op(){
   if (helm list -A | grep -v REVISION | grep triliovault >/dev/null 2>&1)
   then
     echo "Uninstalling Trilivault-manager"
-    tvm=($(helm list -A | grep -v REVISION | grep triliovault-v | awk '{print $1,$2}'))
-    helm uninstall ${tvm[0]} -n ${tvm[1]}
-    if [ $? -ne 0 ]
+    tvm=("$(helm list -A | grep -v REVISION | grep triliovault-v | awk '{print $1,$2}')")
+    helm uninstall "${tvm[0]}" -n "${tvm[1]}"
+    retValue=$?
+    if [ "${retValue}" -ne 0 ]
     then
       exit_status=1
     fi
     echo "Uninstalling Trilivault-operator"
-    tvm=($(helm list -A | grep -v REVISION | grep triliovault-o | awk '{print $1,$2}'))
-    helm uninstall ${tvm[0]} -n ${tvm[1]}
-    if [ $? -ne 0 ]
+    tvm=("$(helm list -A | grep -v REVISION | grep triliovault-o | awk '{print $1,$2}')")
+    helm uninstall "${tvm[0]}" -n "${tvm[1]}"
+    retValue=$?
+    if [ "${retValue}" -ne 0 ]
     then
       exit_status=1
     fi
@@ -118,8 +124,9 @@ delete_tvk_crd(){
   do
     # Delete
     echo "kubectl delete crd ${tvkcrd}"
-    kubectl delete crd ${tvkcrd}
-    if [ $? -ne 0 ]
+    kubectl delete crd "${tvkcrd}"
+    retValue=$?
+    if [ "${retValue}" -ne 0 ]
     then
       exit_status=1
     fi
@@ -177,7 +184,7 @@ while test $# -gt 0; do
       ;;
     -r|--resources)
       shift
-      if [[ $@ == -* || $# -eq 0 ]]; then
+      if [[ "$*" == -* || $# -eq 0 ]]; then
         export TVK_resources="Restore Backup Backupplan Hook Target Policy License"
         echo "No resources specified, will be deleting all resources listed below"
         echo "Restore Backup Backupplan Hook Target Policy License"
@@ -229,14 +236,15 @@ fi
 echo "Starting Cleanup..............................."
 echo
 
-if [ ! -z "${TVK_resources}" ]
+if [ -n "${TVK_resources}" ]
 then
   echo "Deleting Triliovault resources: "
-  echo ${TVK_resources}
+  echo "${TVK_resources}"
   echo
   # Delete Triliovault resource
   delete_tvk_res
-  if [ $? -ne 0 ]
+  retValue=$?
+  if [ "${retValue}" -ne 0 ]
   then
     CLEANUP_RUN_SUCCESS=false
   fi
@@ -248,7 +256,8 @@ then
   echo
   # Delete Triliovault Manager or Operator
   delete_tvk_op
-  if [ $? -ne 0 ]
+  retValue=$?
+  if [ "${retValue}" -ne 0 ]
   then
     CLEANUP_RUN_SUCCESS=false
   fi
@@ -260,7 +269,8 @@ then
   echo
   # Delete CRDs
   delete_tvk_crd
-  if [ $? -ne 0 ]
+  retValue=$?
+  if [ "${retValue}" -ne 0 ]
   then
     CLEANUP_RUN_SUCCESS=false
   fi
