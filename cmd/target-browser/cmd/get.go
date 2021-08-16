@@ -45,14 +45,16 @@ which retrieves single object or list of objects of that resource.`,
 		}
 
 		commonOptions = targetbrowser.CommonListOptions{
-			Page:           pages,
-			PageSize:       pageSize,
-			OrderBy:        orderBy,
-			OutputFormat:   outputFormat,
-			OperationScope: operationScope,
-			TvkInstanceUID: tvkInstanceUID,
-		}
 
+			CreationEndTimestamp:   creationEndTimestamp,
+			CreationStartTimestamp: creationStartTimestamp,
+			Page:                   pages,
+			PageSize:               pageSize,
+			OrderBy:                orderBy,
+			OutputFormat:           outputFormat,
+			OperationScope:         operationScope,
+			TvkInstanceUID:         tvkInstanceUID,
+		}
 		return nil
 	},
 }
@@ -63,6 +65,9 @@ func init() {
 	getCmd.PersistentFlags().StringVar(&orderBy, OrderByFlag, orderByDefault, orderByUsage)
 	getCmd.PersistentFlags().StringVar(&operationScope, OperationScopeFlag, "", operationScopeUsage)
 	getCmd.PersistentFlags().StringVar(&tvkInstanceUID, TvkInstanceUIDFlag, "", tvkInstanceUIDUsage)
+	getCmd.PersistentFlags().StringVar(&creationStartTimestamp, CreationStartTimestampFlag, "", creationStartTimestampUsage)
+	getCmd.PersistentFlags().StringVar(&creationEndTimestamp, CreationEndTimestampFlag, "", creationEndTimestampUsage)
+
 	rootCmd.AddCommand(getCmd)
 }
 
@@ -92,6 +97,23 @@ func validateInput(cmd *cobra.Command) error {
 		} else {
 			return fmt.Errorf("[%s] flag invalid value. Usage - %s", OperationScopeFlag, operationScopeUsage)
 		}
+	}
+	if creationStartTimestamp != "" && creationEndTimestamp != "" {
+		creationStartTimestamp = parseTimestamp(creationStartTimestamp, startTime)
+		creationEndTimestamp = parseTimestamp(creationEndTimestamp, endTime)
+	} else if creationEndTimestamp != "" {
+		creationEndTimestamp = parseTimestamp(creationEndTimestamp, endTime)
+		creationStartTimestamp = extractDate(creationEndTimestamp) + "T" + startTime + "Z"
+	} else if creationStartTimestamp != "" {
+		creationStartTimestamp = parseTimestamp(creationStartTimestamp, startTime)
+		creationEndTimestamp = extractDate(creationStartTimestamp) + "T" + endTime + "Z"
+	}
+
+	if creationStartTimestamp != "" && !validateRFC3339Timestamps(creationStartTimestamp) {
+		return fmt.Errorf("[%s] flag invalid value. Usage - %s", CreationStartTimestampFlag, creationStartTimestampUsage)
+	}
+	if creationEndTimestamp != "" && !validateRFC3339Timestamps(creationEndTimestamp) {
+		return fmt.Errorf("[%s] flag invalid value. Usage - %s", CreationEndTimestampFlag, creationEndTimestampUsage)
 	}
 	return nil
 }

@@ -188,7 +188,7 @@ func deleteTarget(enableBrowsing bool) {
 	if err != nil {
 		Fail(fmt.Sprintf("target deletion failed %s.", err.Error()))
 	}
-	checkPvcDeleted(ctx, k8sClient, installNs, TargetName)
+	checkPvcDeleted(ctx, k8sClient, installNs)
 	log.Infof("Deleted target %s successfully", TargetName)
 }
 

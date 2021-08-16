@@ -51,6 +51,7 @@ backupStatusIndex=$RANDOM%4
       sed -i "s/APPLICATION-TYPE/${backupType[index]}/g" "${src_dir}"/test_files/backupplan-modified.json
       sed -i "s/BACKUPPLAN-UUID/$bplanuid/g" "${src_dir}"/test_files/backupplan-modified.json
       sed -i "s/BACKUP-UUID/$backupuid/g" "${src_dir}"/test_files/backupplan-modified.json
+      sed -i "s/COMPLETION-TIMESTAMP/$completionTime/g" "${src_dir}"/test_files/backupplan-modified.json
 
       # modify backupcomponents in backupPlan json file as per value of index variable
       if [[ $index -eq 0 ]]; then

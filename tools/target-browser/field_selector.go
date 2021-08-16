@@ -22,4 +22,5 @@ var BackupPlanSelector = []string{
 	"generatedField.tvkInstanceUID as TVK Instance",
 	"generatedField.successfulBackupCount as Successful Backup",
 	"generatedField.lastSuccessfulBackupTimestamp as Successful Backup Timestamp",
+	"metadata.creationTimestamp as Start Time",
 }

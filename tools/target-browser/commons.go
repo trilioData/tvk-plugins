@@ -16,12 +16,15 @@ import (
 )
 
 type CommonListOptions struct {
-	Page           int    `url:"page"`
-	PageSize       int    `url:"pageSize"`
-	OrderBy        string `url:"ordering,omitempty"`
-	OperationScope string `url:"operationScope,omitempty"`
-	OutputFormat   string
-	TvkInstanceUID string `url:"tvkInstanceUID,omitempty"`
+
+	CreationStartTimestamp string `url:"creationStartTimestamp,omitempty"`
+	CreationEndTimestamp   string `url:"creationEndTimestamp,omitempty"`
+	Page                   int    `url:"page"`
+	PageSize               int    `url:"pageSize"`
+	OrderBy                string `url:"ordering,omitempty"`
+	OutputFormat           string
+	OperationScope         string `url:"operationScope,omitempty"`
+	TvkInstanceUID         string `url:"tvkInstanceUID,omitempty"`
 }
 
 // ListMetadata for Pagination
