@@ -21,6 +21,7 @@ const (
 	BackupPlanAPIPath         = "backupplan"
 	BackupAPIPath             = "backup"
 	MetadataAPIPath           = "metadata"
+	ResourceMetadataAPIPath   = "resource-metadata"
 	Results                   = "results"
 	FormatYAML                = "yaml"
 	FormatJSON                = "json"

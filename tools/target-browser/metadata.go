@@ -22,7 +22,7 @@ func (auth *AuthInfo) GetMetadata(options *MetadataListOptions) error {
 	queryParam := values.Encode()
 	resp, apiErr := auth.TriggerAPI("", queryParam, internal.MetadataAPIPath, []string{})
 	if apiErr != nil {
-		return err
+		return apiErr
 	}
 
 	if options.OutputFormat == "" || options.OutputFormat == internal.FormatWIDE {
