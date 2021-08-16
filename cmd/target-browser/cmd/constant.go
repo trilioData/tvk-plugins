@@ -51,8 +51,11 @@ const (
 	orderByDefault = "name"
 	orderByUsage   = "Parameter to use for ordering the paginated result set"
 
+
+
 	TvkInstanceUIDFlag  = "tvk-instance-uid"
 	tvkInstanceUIDUsage = "TVK instance id to filter backup/backupPlan"
+
 
 	BackupPlanUIDFlag    = "backup-plan-uid"
 	backupPlanUIDDefault = ""
@@ -69,6 +72,7 @@ const (
 	OperationScopeFlag  = "operation-scope"
 	operationScopeUsage = "Filter backup/backupPlan for [SingleNamespace, MultiNamespace]. " +
 		"Supported values can be in any case capital, small or mixed."
+
 
 	groupFlag      = "group"
 	groupFlagShort = "g"
@@ -93,6 +97,7 @@ const (
 	kindsUsage = "List of kinds of trilio resources. Available kinds: ClusterBackup, ClusterBackupPlan," +
 		" Backup, BackupPlan, Target, Secret, Policy, Hook"
 
+
 	supportedTSFormat           = "Supported format can be yyyy-mm-dd or yyyy-mm-ddThh:mm:ssZ"
 	CreationStartTimestampFlag  = "creation-start-timestamp"
 	creationStartTimestampUsage = "RFC3339 timestamp to filter backup/backupPlans on creationTimestamp from. " + supportedTSFormat
@@ -106,10 +111,12 @@ const (
 )
 
 var (
+
 	group                                            string
 	version                                          string
 	kind                                             string
 	name                                             string
+
 	tvkInstanceUID                                   string
 	backupPlanUID                                    string
 	backupStatus                                     string
@@ -119,7 +126,9 @@ var (
 	creationStartTimestamp, creationEndTimestamp     string
 	expirationStartTimestamp, expirationEndTimestamp string
 	operationScope                                   string
+
 	kinds                                            []string
+
 )
 
 var (

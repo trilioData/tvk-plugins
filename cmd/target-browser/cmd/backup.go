@@ -70,6 +70,7 @@ func init() {
 	backupCmd.Flags().StringVar(&expirationStartTimestamp, ExpirationStartTimestampFlag, "", expirationStartTimestampUsage)
 	backupCmd.Flags().StringVar(&expirationEndTimestamp, ExpirationEndTimestampFlag, "", expirationEndTimestampUsage)
 	getCmd.AddCommand(backupCmd)
+
 }
 
 func validateBackupCmdInput() error {

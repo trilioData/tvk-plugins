@@ -1,5 +1,6 @@
 package cmd
 
+
 import (
 	"regexp"
 	"time"
@@ -10,6 +11,8 @@ import (
 const (
 	EndTime   = "23:59:59"
 	StartTime = "00:00:00"
+
+
 )
 
 func removeDuplicates(uids []string) []string {
@@ -33,7 +36,9 @@ func validateRFC3339Timestamps(startTimestamp string) bool {
 
 // extractDate func extract date in format yyyy-mm-dd
 func extractDate(timestamp string) string {
+
 	var re = regexp.MustCompile(`([12]\d{3}-(0[1-9]|1[012])-(0[1-9]|[12]\d|3[01]))`)
+
 	return re.FindString(timestamp)
 }
 

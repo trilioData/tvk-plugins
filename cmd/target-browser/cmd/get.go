@@ -45,7 +45,6 @@ which retrieves single object or list of objects of that resource.`,
 		}
 
 		commonOptions = targetbrowser.CommonListOptions{
-
 			CreationEndTimestamp:   creationEndTimestamp,
 			CreationStartTimestamp: creationStartTimestamp,
 			Page:                   pages,
@@ -107,6 +106,7 @@ func validateInput(cmd *cobra.Command) error {
 	} else if creationStartTimestamp != "" {
 		creationStartTimestamp = parseTimestamp(creationStartTimestamp, StartTime)
 		creationEndTimestamp = extractDate(creationStartTimestamp) + "T" + EndTime + "Z"
+
 	}
 
 	if creationStartTimestamp != "" && !validateRFC3339Timestamps(creationStartTimestamp) {
