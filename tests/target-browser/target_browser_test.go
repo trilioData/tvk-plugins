@@ -49,6 +49,7 @@ const (
 	flagOutputFormat       = flagPrefix + cmd.OutputFormatFlag
 	kubeConf               = ""
 	pageSize               = 1
+	flagOperationScope     = flagPrefix + cmd.OperationScopeFlag
 )
 
 var (
@@ -492,6 +493,87 @@ var _ = Describe("Target Browser Tests", func() {
 			})
 		})
 
+		Context(fmt.Sprintf("test-cases for flag %s with path param & zero, valid  and invalid value",
+			cmd.OperationScopeFlag), func() {
+			var (
+				clusterBackupPlanUIDs   []string
+				noOfBackupPlansToCreate = 3
+				noOfBackupsToCreate     = 1
+				once                    sync.Once
+				isLast                  bool
+				backupUID               string
+			)
+			BeforeEach(func() {
+				once.Do(func() {
+					backupUID = guid.New().String()
+					createTarget(true)
+					output, _ := exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
+						strconv.Itoa(noOfBackupsToCreate), "cluster", backupUID).Output()
+					log.Info("Shell Script Output: ", string(output))
+					clusterBackupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreate)
+					time.Sleep(2 * time.Minute) //wait to sync data on target browser
+				})
+			})
+
+			AfterEach(func() {
+				if isLast {
+					deleteTarget(false)
+					for _, backupPlans := range clusterBackupPlanUIDs {
+						_, err := shell.RmRf(filepath.Join(TargetLocation, backupPlans))
+						Expect(err).To(BeNil())
+					}
+				}
+			})
+
+			It(fmt.Sprintf("Should fail if flag %s is given without value", flagOperationScope), func() {
+				args := []string{cmdGet, cmdBackupPlan}
+				args = append(args, commonArgs...)
+				args = append(args, flagOperationScope)
+				command := exec.Command(targetBrowserBinaryFilePath, args...)
+				output, err := command.CombinedOutput()
+				Expect(err).Should(HaveOccurred())
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagOperationScope)))
+			})
+
+			It(fmt.Sprintf("Should succeed if flag %s is not provided", flagOperationScope), func() {
+				args := []string{cmdGet, cmdBackupPlan}
+				args = append(args, commonArgs...)
+				cmd := exec.Command(targetBrowserBinaryFilePath, args...)
+				_, err := cmd.CombinedOutput()
+				Expect(err).ShouldNot(HaveOccurred())
+			})
+
+			It(fmt.Sprintf("Should succeed if flag %s is given zero value", flagOperationScope), func() {
+				args := []string{cmdGet, cmdBackupPlan, flagOperationScope, ""}
+				args = append(args, commonArgs...)
+				cmd := exec.Command(targetBrowserBinaryFilePath, args...)
+				_, err := cmd.CombinedOutput()
+				Expect(err).ShouldNot(HaveOccurred())
+			})
+
+			It(fmt.Sprintf("Should get %d backupPlan if flag %s is given %s value", noOfBackupPlansToCreate,
+				flagOperationScope, internal.MultiNamespace), func() {
+				args := []string{cmdGet, cmdBackupPlan, flagOperationScope, internal.MultiNamespace}
+				backupPlanData := runCmdBackupPlan(args)
+				Expect(len(backupPlanData)).To(Equal(noOfBackupPlansToCreate))
+			})
+
+			It(fmt.Sprintf("Should get one backupPlan for specific clusterBackupPlan UID with flag %s", cmd.OperationScopeFlag), func() {
+				args := []string{cmdGet, cmdBackupPlan, clusterBackupPlanUIDs[1], flagOperationScope, internal.MultiNamespace}
+				backupPlanData := runCmdBackupPlan(args)
+				Expect(len(backupPlanData)).To(Equal(1))
+				Expect(backupPlanData[0].UID).To(Equal(clusterBackupPlanUIDs[1]))
+			})
+
+			It(fmt.Sprintf("Should get 0 backupPlan if flag %s is given %s value",
+				flagOperationScope, internal.SingleNamespace), func() {
+				isLast = true
+				args := []string{cmdGet, cmdBackupPlan, flagOperationScope, internal.SingleNamespace}
+				backupPlanData := runCmdBackupPlan(args)
+				Expect(len(backupPlanData)).To(Equal(0))
+			})
+		})
+
 		Context("Filtering BackupPlans based on TVK Instance ID", func() {
 
 			var (
@@ -785,14 +867,106 @@ var _ = Describe("Target Browser Tests", func() {
 			})
 			// TODO update condition once API is fixed
 			It(fmt.Sprintf("Should succeed if flag %s is given 'invalid' value", flagOrderBy), func() {
-				isLast = true
 				args := []string{cmdGet, cmdBackup, flagOrderBy, "invalid"}
 				args = append(args, commonArgs...)
 				cmd := exec.Command(targetBrowserBinaryFilePath, args...)
 				_, err := cmd.CombinedOutput()
 				Expect(err).ShouldNot(HaveOccurred())
 			})
+
+			It("Should fail if path param is given 'invalidUID' value", func() {
+				isLast = true
+				args := []string{cmdGet, cmdBackup, "invalidUID"}
+				args = append(args, commonArgs...)
+				command := exec.Command(targetBrowserBinaryFilePath, args...)
+				output, err := command.CombinedOutput()
+				Expect(err).Should(HaveOccurred())
+				Expect(string(output)).Should(ContainSubstring("404 Not Found"))
+			})
 		})
+
+		Context(fmt.Sprintf("test-cases for flag %s with path value, zero, valid  and invalid value",
+			cmd.OperationScopeFlag), func() {
+			var (
+				clusterBackupPlanUIDs   []string
+				noOfBackupPlansToCreate = 3
+				noOfBackupsToCreate     = 1
+				once                    sync.Once
+				isLast                  bool
+				backupUID               string
+			)
+			BeforeEach(func() {
+				once.Do(func() {
+					backupUID = guid.New().String()
+					createTarget(true)
+					output, _ := exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
+						strconv.Itoa(noOfBackupsToCreate), "cluster", backupUID).Output()
+					log.Info("Shell Script Output: ", string(output))
+					clusterBackupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreate)
+					time.Sleep(2 * time.Minute) //wait to sync data on target browser
+				})
+			})
+
+			AfterEach(func() {
+				if isLast {
+					deleteTarget(false)
+					for _, backupPlans := range clusterBackupPlanUIDs {
+						_, err := shell.RmRf(filepath.Join(TargetLocation, backupPlans))
+						Expect(err).To(BeNil())
+					}
+				}
+			})
+
+			It(fmt.Sprintf("Should fail if flag %s is given without value", flagOperationScope), func() {
+				args := []string{cmdGet, cmdBackup}
+				args = append(args, commonArgs...)
+				args = append(args, flagOperationScope)
+				command := exec.Command(targetBrowserBinaryFilePath, args...)
+				output, err := command.CombinedOutput()
+				Expect(err).Should(HaveOccurred())
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagOperationScope)))
+			})
+
+			It(fmt.Sprintf("Should succeed if flag %s is not provided", flagOperationScope), func() {
+				args := []string{cmdGet, cmdBackup}
+				args = append(args, commonArgs...)
+				cmd := exec.Command(targetBrowserBinaryFilePath, args...)
+				_, err := cmd.CombinedOutput()
+				Expect(err).ShouldNot(HaveOccurred())
+			})
+
+			It(fmt.Sprintf("Should succeed if flag %s is given zero value", flagOperationScope), func() {
+				args := []string{cmdGet, cmdBackup, flagOperationScope, ""}
+				args = append(args, commonArgs...)
+				cmd := exec.Command(targetBrowserBinaryFilePath, args...)
+				_, err := cmd.CombinedOutput()
+				Expect(err).ShouldNot(HaveOccurred())
+			})
+
+			It(fmt.Sprintf("Should get %d backupPlan if flag %s is given %s value", noOfBackupPlansToCreate,
+				flagOperationScope, internal.MultiNamespace), func() {
+				args := []string{cmdGet, cmdBackup, flagOperationScope, internal.MultiNamespace}
+				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(noOfBackupPlansToCreate))
+			})
+
+			It(fmt.Sprintf("Should get 0 backupPlan if flag %s is given %s value",
+				flagOperationScope, internal.SingleNamespace), func() {
+				args := []string{cmdGet, cmdBackup, flagOperationScope, internal.SingleNamespace}
+				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(0))
+			})
+
+			It(fmt.Sprintf("Should get one backup for specific cluster backup UID %s", backupUID), func() {
+				isLast = true
+				args := []string{cmdGet, cmdBackup, backupUID, flagOperationScope, internal.MultiNamespace}
+				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(1))
+				Expect(backupData[0].UID).To(Equal(backupUID))
+			})
+
+		})
+
 	})
 	Context("Metadata command's Flag's test-cases", func() {
 		Context("Filter Operations on different fields of backupPlan & backup", func() {

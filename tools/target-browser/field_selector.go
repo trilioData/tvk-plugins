@@ -9,6 +9,7 @@ var BackupSelector = []string{
 	"spec.backupPlan.uid as BackupPlan UID",
 	"status.creationTimestamp as Start Time",
 	"status.completionTimestamp as End Time",
+	"spec.clusterBackupPlan.uid as ClusterBackupPlan UID",
 }
 
 var BackupPlanSelector = []string{

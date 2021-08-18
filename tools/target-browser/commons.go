@@ -33,10 +33,10 @@ type ListMetadata struct {
 // currently supports 'yaml', 'json', 'wide' formats
 // default format for 'metadata' API response will be 'yaml'
 // for 'backupplan', 'backup' API responses, default format will be 'wideOutput=false' so that only few important columns are printed
-func PrintFormattedResponse(apiPath, response, outputFormat string) error {
+func PrintFormattedResponse(apiPath, response, operationScope, outputFormat string) error {
 	var err error
 	if outputFormat == internal.FormatWIDE {
-		err = PrintTable(apiPath, response, true)
+		err = PrintTable(apiPath, response, operationScope, true)
 	} else if outputFormat == internal.FormatYAML {
 		prettyJSON, cErr := yaml.JSONToYAML([]byte(response))
 		if cErr != nil {
@@ -51,14 +51,14 @@ func PrintFormattedResponse(apiPath, response, outputFormat string) error {
 		}
 		fmt.Println(prettyJSON.String())
 	} else {
-		err = PrintTable(apiPath, response, false)
+		err = PrintTable(apiPath, response, operationScope, false)
 	}
 
 	return err
 }
 
 // PrintTable formats response according to API path and prints in table format considering 'wideOutput' value
-func PrintTable(apiPath, response string, wideOutput bool) error {
+func PrintTable(apiPath, response, operationScope string, wideOutput bool) error {
 	var (
 		rows    []metav1.TableRow
 		columns []metav1.TableColumnDefinition
@@ -68,7 +68,7 @@ func PrintTable(apiPath, response string, wideOutput bool) error {
 	if apiPath == internal.BackupPlanAPIPath {
 		rows, columns, err = normalizeBPlanDataToRowsAndColumns(response, wideOutput)
 	} else if apiPath == internal.BackupAPIPath {
-		rows, columns, err = normalizeBackupDataToRowsAndColumns(response, wideOutput)
+		rows, columns, err = normalizeBackupDataToRowsAndColumns(response, operationScope, wideOutput)
 	} else {
 		return fmt.Errorf("unknown response data [%s API] received for formatting ", apiPath)
 	}
@@ -100,7 +100,9 @@ func getColumnDefinitions(data interface{}, columns int) []metav1.TableColumnDef
 		t := val.Type().Field(i)
 		fieldName := t.Name
 		kind := t.Type.Kind().String()
-
+		if fieldName == "ClusterBackupPlanUID" {
+			continue
+		}
 		switch jsonTag := t.Tag.Get("json"); jsonTag {
 		case "-":
 		case "":

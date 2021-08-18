@@ -42,12 +42,12 @@ func (auth *AuthInfo) GetBackupPlans(options *BackupPlanListOptions, backupPlanU
 	}
 
 	queryParam := values.Encode()
-	response, err := auth.TriggerAPIs(queryParam, internal.BackupPlanAPIPath, BackupPlanSelector, backupPlanUIDs)
+	response, err := auth.TriggerAPIs(queryParam, internal.BackupPlanAPIPath, backupPlanUIDs)
 	if err != nil {
 		return err
 	}
 
-	return PrintFormattedResponse(internal.BackupPlanAPIPath, string(response), options.OutputFormat)
+	return PrintFormattedResponse(internal.BackupPlanAPIPath, string(response), options.OperationScope, options.OutputFormat)
 }
 
 // normalizeBPlanDataToRowsAndColumns normalizes backupPlan API response and generates metav1.TableRow & metav1.TableColumnDefinition
@@ -88,11 +88,11 @@ func normalizeBPlanDataToRowsAndColumns(response string, wideOutput bool) ([]met
 }
 
 // TriggerAPIs returns backup or backupPlan list stored on mounted target with available options
-func (auth *AuthInfo) TriggerAPIs(queryParam, apiPath string, selector, args []string) ([]byte, error) {
+func (auth *AuthInfo) TriggerAPIs(queryParam, apiPath string, args []string) ([]byte, error) {
 	if len(args) > 0 {
 		var respData []interface{}
 		for _, uid := range args {
-			resp, err := auth.TriggerAPI(uid, queryParam, apiPath, selector)
+			resp, err := auth.TriggerAPI(uid, queryParam, apiPath)
 			if err != nil {
 				return nil, err
 			}
@@ -117,7 +117,7 @@ func (auth *AuthInfo) TriggerAPIs(queryParam, apiPath string, selector, args []s
 		return body, nil
 	}
 
-	resp, err := auth.TriggerAPI("", queryParam, apiPath, selector)
+	resp, err := auth.TriggerAPI("", queryParam, apiPath)
 	if err != nil {
 		return nil, err
 	}

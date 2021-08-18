@@ -1,0 +1,96 @@
+{
+    "kind": "ClusterBackup",
+    "apiVersion": "triliovault.trilio.io/v1",
+    "metadata": {
+        "name": "CLUSTER-BACKUP-NAME",
+        "selfLink": "/apis/triliovault.trilio.io/v1/clusterbackups/CLUSTER-BACKUP-NAME",
+        "uid":  "CLUSTER-BACKUP-UUID",
+        "resourceVersion": "8457",
+        "generation": 1,
+        "creationTimestamp": "2021-08-03T11:14:27Z",
+        "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"triliovault.trilio.io/v1\",\"kind\":\"ClusterBackup\",\"metadata\":{\"annotations\":{},\"name\":\"CLUSTER-BACKUP-NAME\"},\"spec\":{\"clusterBackupPlan\":{\"name\":\"CLUSTER-BACKUPPLAN-NAME\",\"namespace\":\"temp-ns2\"},\"type\":\"Full\"}}\n",
+            "triliovault.trilio.io/creator": "admin"
+        },
+        "finalizers": [
+            "backup-cleanup-finalizer"
+        ]
+    },
+    "spec": {
+        "type": "Full",
+        "clusterBackupPlan": {
+            "kind": "ClusterBackupPlan",
+            "name": "CLUSTER-BACKUPPLAN-NAME",
+            "uid": "CLUSTER-BACKUPPLAN-UUID",
+            "apiVersion": "triliovault.trilio.io/v1",
+            "resourceVersion": "8253"
+        }
+    },
+    "status": {
+        "type": "Full",
+        "location": "CLUSTER-BACKUPPLAN-UUID/CLUSTER-BACKUP-UUID",
+        "startTimestamp": "2021-08-03T11:14:27Z",
+        "completionTimestamp": "2021-08-03T11:14:58Z",
+        "status": "BACKUP-STATUS",
+        "size": "0",
+        "condition": [
+            {
+                "phase": "Backup",
+                "status": "InProgress",
+                "timestamp": "2021-08-03T11:14:27Z",
+                "reason": "Backup InProgress"
+            },
+            {
+                "phase": "Backup",
+                "status": "Failed",
+                "timestamp": "2021-08-03T11:14:49Z",
+                "reason": "Backup Failed"
+            },
+            {
+                "phase": "MetadataUpload",
+                "status": "InProgress",
+                "timestamp": "2021-08-03T11:14:49Z",
+                "reason": "MetadataUpload InProgress"
+            },
+            {
+                "phase": "MetadataUpload",
+                "status": "Completed",
+                "timestamp": "2021-08-03T11:14:58Z",
+                "reason": "MetadataUpload Completed"
+            }
+        ],
+        "backupInfos": {
+            "temp-ns2": {
+                "backup": {
+                    "kind": "Backup",
+                    "namespace": "temp-ns2",
+                    "name": "multi-ns-sample-clusterbac-0f0cc19e-6747-481a-a81a-29cc87b25021",
+                    "uid": "a9cf2d20-344b-4b96-8d3c-52e278377712",
+                    "apiVersion": "triliovault.trilio.io/v1",
+                    "resourceVersion": "8436"
+                },
+                "status": "BACKUP-STATUS",
+                "location": "283df942-bef1-40cb-8241-0698f7e169a0/a9cf2d20-344b-4b96-8d3c-52e278377712"
+            },
+            "temp-ns1": {
+                "backup": {
+                    "kind": "Backup",
+                    "namespace": "temp-ns1",
+                    "name": "multi-ns-sample-clusterbac-3e8977c9-b204-42cd-8ccd-234bbf7241d4",
+                    "uid": "a8f472fb-1e24-437a-a241-70932f289a48",
+                    "apiVersion": "triliovault.trilio.io/v1",
+                    "resourceVersion": "8445"
+                },
+                "status": "BACKUP-STATUS",
+                "location": "4002e961-7a9e-489b-8dd5-ca406cbe5435/a8f472fb-1e24-437a-a241-70932f289a48"
+            }
+        },
+        "stats": {
+            "target": {
+                "namespace": "temp-ns2",
+                "name": "sample-target"
+            },
+            "hookExists": false
+        }
+    }
+}

@@ -1,0 +1,194 @@
+{
+    "kind": "ClusterBackupPlan",
+    "apiVersion": "triliovault.trilio.io/v1",
+    "metadata": {
+        "name": "CLUSTER-BACKUPPLAN-NAME",
+        "selfLink": "/apis/triliovault.trilio.io/v1/clusterbackupplans/CLUSTER-BACKUPPLAN-NAME",
+        "uid": "CLUSTER-BACKUPPLAN-UUID",
+        "resourceVersion": "8472",
+        "generation": 1,
+        "creationTimestamp": "2021-08-03T11:01:58Z",
+        "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"triliovault.trilio.io/v1\",\"kind\":\"ClusterBackupPlan\",\"metadata\":{\"annotations\":{},\"name\":\"CLUSTER-BACKUPPLAN-NAME\"},\"spec\":{\"backupComponents\":[{\"namespace\":\"temp-ns1\"},{\"namespace\":\"temp-ns2\"}],\"backupConfig\":{\"target\":{\"name\":\"sample-target\",\"namespace\":\"temp-ns2\"}}}}\n"
+        }
+    },
+    "spec": {
+        "backupComponents": [
+            {
+                "namespace": "temp-ns1"
+            },
+            {
+                "namespace": "temp-ns2"
+            }
+        ],
+        "backupConfig": {
+            "target": {
+                "namespace": "temp-ns2",
+                "name": "sample-target"
+            },
+            "schedulePolicy": {}
+        }
+    },
+    "status": {
+        "status": "Available",
+        "backupPlans": {
+            "temp-ns2": {
+                "backupPlan": {
+                    "kind": "BackupPlan",
+                    "namespace": "temp-ns2",
+                    "name": "multi-ns-sample-clusterbac-c96c4868-0fe5-4eeb-ae53-c9ffc45cbbbe",
+                    "uid": "283df942-bef1-40cb-8241-0698f7e169a0",
+                    "apiVersion": "triliovault.trilio.io/v1",
+                    "resourceVersion": "8440"
+                },
+                "status": "Available"
+            },
+            "temp-ns1": {
+                "backupPlan": {
+                    "kind": "BackupPlan",
+                    "namespace": "temp-ns1",
+                    "name": "multi-ns-sample-clusterbac-67756e6a-32a4-4209-8e90-cda5c9966693",
+                    "uid": "4002e961-7a9e-489b-8dd5-ca406cbe5435",
+                    "apiVersion": "triliovault.trilio.io/v1",
+                    "resourceVersion": "8446"
+                },
+                "status": "Available"
+            }
+        },
+        "condition": [
+            {
+                "status": "InProgress",
+                "timestamp": "2021-08-03T11:05:40Z",
+                "reason": "Syncing ClusterBackupPlan Components Change"
+            },
+            {
+                "status": "Available",
+                "timestamp": "2021-08-03T11:06:55Z",
+                "reason": "Successfully Synced ClusterBackupPlan Components"
+            },
+            {
+                "status": "InProgress",
+                "timestamp": "2021-08-03T11:07:22Z",
+                "reason": "Syncing ClusterBackupPlan Components Change"
+            },
+            {
+                "status": "Available",
+                "timestamp": "2021-08-03T11:07:22Z",
+                "reason": "Successfully Synced ClusterBackupPlan Components"
+            },
+            {
+                "status": "InProgress",
+                "timestamp": "2021-08-03T11:10:18Z",
+                "reason": "Syncing ClusterBackupPlan Components Change"
+            },
+            {
+                "status": "Available",
+                "timestamp": "2021-08-03T11:10:19Z",
+                "reason": "Successfully Synced ClusterBackupPlan Components"
+            },
+            {
+                "status": "InProgress",
+                "timestamp": "2021-08-03T11:10:19Z",
+                "reason": "Syncing ClusterBackupPlan Components Change"
+            },
+            {
+                "status": "Available",
+                "timestamp": "2021-08-03T11:10:20Z",
+                "reason": "Successfully Synced ClusterBackupPlan Components"
+            },
+            {
+                "status": "InProgress",
+                "timestamp": "2021-08-03T11:10:42Z",
+                "reason": "Syncing ClusterBackupPlan Components Change"
+            },
+            {
+                "status": "Available",
+                "timestamp": "2021-08-03T11:10:43Z",
+                "reason": "Successfully Synced ClusterBackupPlan Components"
+            },
+            {
+                "status": "InProgress",
+                "timestamp": "2021-08-03T11:10:43Z",
+                "reason": "Syncing ClusterBackupPlan Components Change"
+            },
+            {
+                "status": "Available",
+                "timestamp": "2021-08-03T11:10:43Z",
+                "reason": "Successfully Synced ClusterBackupPlan Components"
+            },
+            {
+                "status": "InProgress",
+                "timestamp": "2021-08-03T11:14:21Z",
+                "reason": "Syncing ClusterBackupPlan Components Change"
+            },
+            {
+                "status": "Available",
+                "timestamp": "2021-08-03T11:14:21Z",
+                "reason": "Successfully Synced ClusterBackupPlan Components"
+            },
+            {
+                "status": "InProgress",
+                "timestamp": "2021-08-03T11:14:21Z",
+                "reason": "Syncing ClusterBackupPlan Components Change"
+            },
+            {
+                "status": "Available",
+                "timestamp": "2021-08-03T11:14:21Z",
+                "reason": "Successfully Synced ClusterBackupPlan Components"
+            },
+            {
+                "status": "InProgress",
+                "timestamp": "2021-08-03T11:14:28Z",
+                "reason": "Syncing ClusterBackupPlan Components Change"
+            },
+            {
+                "status": "Available",
+                "timestamp": "2021-08-03T11:14:28Z",
+                "reason": "Successfully Synced ClusterBackupPlan Components"
+            },
+            {
+                "status": "InProgress",
+                "timestamp": "2021-08-03T11:14:29Z",
+                "reason": "Syncing ClusterBackupPlan Components Change"
+            },
+            {
+                "status": "Available",
+                "timestamp": "2021-08-03T11:14:29Z",
+                "reason": "Successfully Synced ClusterBackupPlan Components"
+            },
+            {
+                "status": "InProgress",
+                "timestamp": "2021-08-03T11:14:49Z",
+                "reason": "Syncing ClusterBackupPlan Components Change"
+            },
+            {
+                "status": "Available",
+                "timestamp": "2021-08-03T11:14:50Z",
+                "reason": "Successfully Synced ClusterBackupPlan Components"
+            },
+            {
+                "status": "InProgress",
+                "timestamp": "2021-08-03T11:14:50Z",
+                "reason": "Syncing ClusterBackupPlan Components Change"
+            },
+            {
+                "status": "Available",
+                "timestamp": "2021-08-03T11:14:50Z",
+                "reason": "Successfully Synced ClusterBackupPlan Components"
+            }
+        ],
+        "stats": {
+            "clusterBackupSummary": {
+                "latestClusterBackup": {
+                    "kind": "ClusterBackup",
+                    "name": "CLUSTER-BACKUP-NAME",
+                    "uid": "CLUSTER-BACKUP-UUID",
+                    "apiVersion": "triliovault.trilio.io/v1",
+                    "resourceVersion": "8457"
+                },
+                "totalSuccessClusterBackups": 1
+            },
+            "clusterRestoreSummary": {}
+        }
+    }
+}

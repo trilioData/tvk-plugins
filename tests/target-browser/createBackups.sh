@@ -83,6 +83,28 @@ backupStatusIndex=$RANDOM%4
       # copy modified files to NFS location
       mv "${src_dir}"/test_files/backup-modified.json "${backuppath}"/backup.json
       mv "${src_dir}"/test_files/backupplan-modified.json "${backuppath}"/backupplan.json
+    elif [ "$3" == "cluster" ]; then
+      cp "${src_dir}"/test_files/cluster-backup-with-placeholders.json "${src_dir}"/test_files/cluster-backup-modified.json
+      cp "${src_dir}"/test_files/cluster-backupplan-with-placeholders.json "${src_dir}"/test_files/cluster-backupplan-modified.json
+
+      echo "Replacing placeholders in cluster backup & backupplan json files"
+      # change placeholders in cluster backup file with a new values
+      sed -i "s/CLUSTER-BACKUP-NAME/cluster-backup-$j/g" "${src_dir}"/test_files/cluster-backup-modified.json
+      sed -i "s/CLUSTER-BACKUP-UUID/$backupuid/g" "${src_dir}"/test_files/cluster-backup-modified.json
+      sed -i "s/CLUSTER-BACKUPPLAN-UUID/$bplanuid/g" "${src_dir}"/test_files/cluster-backup-modified.json
+      sed -i "s/CLUSTER-BACKUPPLAN-NAME/cluster-backupplan-$i/g" "${src_dir}"/test_files/cluster-backup-modified.json
+      sed -i "s/BACKUP-STATUS/${backupStatus[backupStatusIndex]}/g" "${src_dir}"/test_files/cluster-backup-modified.json
+      sed -i "s/COMPLETION-TIMESTAMP/$completionTime/g" "${src_dir}"/test_files/cluster-backup-modified.json
+
+      # change placeholders in cluster backupplan file with a new value
+      sed -i "s/CLUSTER-BACKUP-NAME/backup-$j/g" "${src_dir}"/test_files/cluster-backupplan-modified.json
+      sed -i "s/CLUSTER-BACKUPPLAN-NAME/cluster-backupplan-$i/g" "${src_dir}"/test_files/cluster-backupplan-modified.json
+      sed -i "s/CLUSTER-BACKUPPLAN-UUID/$bplanuid/g" "${src_dir}"/test_files/cluster-backupplan-modified.json
+      sed -i "s/CLUSTER-BACKUP-UUID/$backupuid/g" "${src_dir}"/test_files/cluster-backupplan-modified.json
+
+      # copy modified files to NFS location
+      mv "${src_dir}"/test_files/cluster-backup-modified.json "${backuppath}"/cluster-backup.json
+      mv "${src_dir}"/test_files/cluster-backupplan-modified.json "${backuppath}"/cluster-backupplan.json
     else
       if [ "$3" = "mutate-tvk-id" ]; then
         cp "${src_dir}"/test_files/tvk-meta.json "${src_dir}"/test_files/tvk-meta-modified.json
