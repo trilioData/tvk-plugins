@@ -20,7 +20,7 @@ on:
 
 env:
   GKE_CLUSTER: ci-cluster
-  GKE_ZONE: us-east1-c
+  GKE_ZONE: us-east1-b
 
 jobs:
   # pre-build job runs yaml lint, shell lint, golangci-lint and detects file changes to sets job variables which will be used to
