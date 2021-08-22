@@ -3,6 +3,8 @@ set -o errexit
 set -o pipefail
 set -x
 
+#hello-test
+
 COMPONENTS=("$@")
 
 export STORAGE_CLASS="csi-gce-pd"
