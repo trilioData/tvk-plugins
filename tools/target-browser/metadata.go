@@ -20,7 +20,7 @@ func (auth *AuthInfo) GetMetadata(options *MetadataListOptions) error {
 		return err
 	}
 	queryParam := values.Encode()
-	resp, apiErr := auth.TriggerAPI("", queryParam, internal.MetadataAPIPath)
+	resp, apiErr := auth.TriggerAPI("", queryParam, internal.MetadataAPIPath, []string{})
 	if apiErr != nil {
 		return apiErr
 	}
@@ -29,5 +29,5 @@ func (auth *AuthInfo) GetMetadata(options *MetadataListOptions) error {
 		options.OutputFormat = internal.FormatYAML
 	}
 
-	return PrintFormattedResponse(internal.MetadataAPIPath, string(resp), "", options.OutputFormat)
+	return PrintFormattedResponse(internal.MetadataAPIPath, string(resp), options.OutputFormat)
 }

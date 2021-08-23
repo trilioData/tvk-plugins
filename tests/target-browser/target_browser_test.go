@@ -257,7 +257,7 @@ var _ = Describe("Target Browser Tests", func() {
 		})
 	})
 
-	Context("BackupPlan command's Flag's test-cases", func() {
+	Context("BackupPlan command test-cases", func() {
 		Context(fmt.Sprintf("test-cases for sorting on columns %s, %s, %s, %s",
 			backupPlanType, name, successfulBackups, backupTimestamp), func() {
 			var (
@@ -496,7 +496,7 @@ var _ = Describe("Target Browser Tests", func() {
 		Context(fmt.Sprintf("test-cases for flag %s with path param & zero, valid  and invalid value",
 			cmd.OperationScopeFlag), func() {
 			var (
-				clusterBackupPlanUIDs   []string
+				backupPlanUIDs          []string
 				noOfBackupPlansToCreate = 3
 				noOfBackupsToCreate     = 1
 				once                    sync.Once
@@ -510,7 +510,11 @@ var _ = Describe("Target Browser Tests", func() {
 					output, _ := exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
 						strconv.Itoa(noOfBackupsToCreate), "cluster", backupUID).Output()
 					log.Info("Shell Script Output: ", string(output))
-					clusterBackupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreate)
+					output, _ = exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
+						strconv.Itoa(noOfBackupsToCreate), "true", backupUID).Output()
+					log.Info("Shell Script Output: ", string(output))
+
+					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate*2, noOfBackupPlansToCreate*noOfBackupsToCreate*2)
 					time.Sleep(2 * time.Minute) //wait to sync data on target browser
 				})
 			})
@@ -518,7 +522,7 @@ var _ = Describe("Target Browser Tests", func() {
 			AfterEach(func() {
 				if isLast {
 					deleteTarget(false)
-					for _, backupPlans := range clusterBackupPlanUIDs {
+					for _, backupPlans := range backupPlanUIDs {
 						_, err := shell.RmRf(filepath.Join(TargetLocation, backupPlans))
 						Expect(err).To(BeNil())
 					}
@@ -535,20 +539,17 @@ var _ = Describe("Target Browser Tests", func() {
 				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagOperationScope)))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s is not provided", flagOperationScope), func() {
+			It(fmt.Sprintf("Should get both OperationScoped backupPlan and clusterBackupPlans if flag %s is not provided",
+				flagOperationScope), func() {
 				args := []string{cmdGet, cmdBackupPlan}
-				args = append(args, commonArgs...)
-				cmd := exec.Command(targetBrowserBinaryFilePath, args...)
-				_, err := cmd.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
+				backupPlanData := runCmdBackupPlan(args)
+				Expect(len(backupPlanData)).To(Equal(noOfBackupPlansToCreate * 2))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s is given zero value", flagOperationScope), func() {
+			It(fmt.Sprintf("Should get both backupPlans and clusterbackupPlans if flag %s is given zero value", flagOperationScope), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagOperationScope, ""}
-				args = append(args, commonArgs...)
-				cmd := exec.Command(targetBrowserBinaryFilePath, args...)
-				_, err := cmd.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
+				backupPlanData := runCmdBackupPlan(args)
+				Expect(len(backupPlanData)).To(Equal(noOfBackupPlansToCreate * 2))
 			})
 
 			It(fmt.Sprintf("Should get %d backupPlan if flag %s is given %s value", noOfBackupPlansToCreate,
@@ -556,13 +557,17 @@ var _ = Describe("Target Browser Tests", func() {
 				args := []string{cmdGet, cmdBackupPlan, flagOperationScope, internal.MultiNamespace}
 				backupPlanData := runCmdBackupPlan(args)
 				Expect(len(backupPlanData)).To(Equal(noOfBackupPlansToCreate))
+				for idx := range backupPlanData {
+					Expect(backupPlanData[idx].Kind).To(Equal(internal.ClusterBackupPlanKind))
+				}
 			})
 
 			It(fmt.Sprintf("Should get one backupPlan for specific clusterBackupPlan UID with flag %s", cmd.OperationScopeFlag), func() {
-				args := []string{cmdGet, cmdBackupPlan, clusterBackupPlanUIDs[1], flagOperationScope, internal.MultiNamespace}
+				args := []string{cmdGet, cmdBackupPlan, backupPlanUIDs[1], flagOperationScope, internal.MultiNamespace}
 				backupPlanData := runCmdBackupPlan(args)
 				Expect(len(backupPlanData)).To(Equal(1))
-				Expect(backupPlanData[0].UID).To(Equal(clusterBackupPlanUIDs[1]))
+				Expect(backupPlanData[0].UID).To(Equal(backupPlanUIDs[1]))
+				Expect(backupPlanData[0].Kind).To(Equal(internal.ClusterBackupPlanKind))
 			})
 
 			It(fmt.Sprintf("Should get 0 backupPlan if flag %s is given %s value",
@@ -570,7 +575,10 @@ var _ = Describe("Target Browser Tests", func() {
 				isLast = true
 				args := []string{cmdGet, cmdBackupPlan, flagOperationScope, internal.SingleNamespace}
 				backupPlanData := runCmdBackupPlan(args)
-				Expect(len(backupPlanData)).To(Equal(0))
+				Expect(len(backupPlanData)).To(Equal(noOfBackupPlansToCreate))
+				for idx := range backupPlanData {
+					Expect(backupPlanData[idx].Kind).To(Equal(internal.BackupPlanKind))
+				}
 			})
 		})
 
@@ -648,7 +656,7 @@ var _ = Describe("Target Browser Tests", func() {
 		})
 	})
 
-	Context("Backup command's Flag's test-cases", func() {
+	Context("Backup command test-cases", func() {
 		Context(fmt.Sprintf("test-cases for filtering and sorting operations on %s, %s columns of Backup", status, name), func() {
 			var (
 				backupPlanUIDs          []string
@@ -888,21 +896,25 @@ var _ = Describe("Target Browser Tests", func() {
 		Context(fmt.Sprintf("test-cases for flag %s with path value, zero, valid  and invalid value",
 			cmd.OperationScopeFlag), func() {
 			var (
-				clusterBackupPlanUIDs   []string
-				noOfBackupPlansToCreate = 3
-				noOfBackupsToCreate     = 1
-				once                    sync.Once
-				isLast                  bool
-				backupUID               string
+				clusterBackupPlanUIDs       []string
+				noOfBackupPlansToCreate     = 3
+				noOfBackupsToCreate         = 1
+				once                        sync.Once
+				isLast                      bool
+				backupUID, clusterBackupUID string
 			)
 			BeforeEach(func() {
 				once.Do(func() {
 					backupUID = guid.New().String()
+					clusterBackupUID = guid.New().String()
 					createTarget(true)
 					output, _ := exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
-						strconv.Itoa(noOfBackupsToCreate), "cluster", backupUID).Output()
+						strconv.Itoa(noOfBackupsToCreate), "cluster", clusterBackupUID).Output()
 					log.Info("Shell Script Output: ", string(output))
-					clusterBackupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreate)
+					output, _ = exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
+						strconv.Itoa(noOfBackupsToCreate), "true", backupUID).Output()
+					log.Info("Shell Script Output: ", string(output))
+					clusterBackupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate*2, noOfBackupPlansToCreate*noOfBackupsToCreate*2)
 					time.Sleep(2 * time.Minute) //wait to sync data on target browser
 				})
 			})
@@ -927,48 +939,59 @@ var _ = Describe("Target Browser Tests", func() {
 				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagOperationScope)))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s is not provided", flagOperationScope), func() {
+			It(fmt.Sprintf("Should get both OperationScoped backup and clusterbackups if flag %s is not provided", flagOperationScope), func() {
 				args := []string{cmdGet, cmdBackup}
-				args = append(args, commonArgs...)
-				cmd := exec.Command(targetBrowserBinaryFilePath, args...)
-				_, err := cmd.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
+				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(noOfBackupPlansToCreate * noOfBackupsToCreate * 2))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s is given zero value", flagOperationScope), func() {
-				args := []string{cmdGet, cmdBackup, flagOperationScope, ""}
-				args = append(args, commonArgs...)
-				cmd := exec.Command(targetBrowserBinaryFilePath, args...)
-				_, err := cmd.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
+			It(fmt.Sprintf("Should get both backups and clusterbackups if flag %s is given zero value", flagOperationScope), func() {
+				args := []string{cmdGet, cmdBackup}
+				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(noOfBackupPlansToCreate * noOfBackupsToCreate * 2))
 			})
 
-			It(fmt.Sprintf("Should get %d backupPlan if flag %s is given %s value", noOfBackupPlansToCreate,
+			It(fmt.Sprintf("Should get %d backup if flag %s is given %s value", noOfBackupPlansToCreate,
 				flagOperationScope, internal.MultiNamespace), func() {
 				args := []string{cmdGet, cmdBackup, flagOperationScope, internal.MultiNamespace}
 				backupData := runCmdBackup(args)
 				Expect(len(backupData)).To(Equal(noOfBackupPlansToCreate))
+				for idx := range backupData {
+					Expect(backupData[idx].Kind).To(Equal(internal.ClusterBackupKind))
+				}
 			})
 
 			It(fmt.Sprintf("Should get 0 backupPlan if flag %s is given %s value",
 				flagOperationScope, internal.SingleNamespace), func() {
 				args := []string{cmdGet, cmdBackup, flagOperationScope, internal.SingleNamespace}
 				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(0))
+				for idx := range backupData {
+					Expect(backupData[idx].Kind).To(Equal(internal.BackupKind))
+				}
 			})
 
-			It(fmt.Sprintf("Should get one backup for specific cluster backup UID %s", backupUID), func() {
-				isLast = true
-				args := []string{cmdGet, cmdBackup, backupUID, flagOperationScope, internal.MultiNamespace}
+			It(fmt.Sprintf("Should get one backup for specific backup UID %s if flag %s is given %s value",
+				backupUID, cmd.OperationScopeFlag, internal.SingleNamespace), func() {
+				args := []string{cmdGet, cmdBackup, backupUID, flagOperationScope, internal.SingleNamespace}
 				backupData := runCmdBackup(args)
 				Expect(len(backupData)).To(Equal(1))
 				Expect(backupData[0].UID).To(Equal(backupUID))
+				Expect(backupData[0].Kind).To(Equal(internal.BackupKind))
 			})
 
+			It(fmt.Sprintf("Should get one backup for specific cluster backup UID %s if flag %s is given %s value",
+				clusterBackupUID, cmd.OperationScopeFlag, internal.MultiNamespace), func() {
+				isLast = true
+				args := []string{cmdGet, cmdBackup, clusterBackupUID, flagOperationScope, internal.MultiNamespace}
+				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(1))
+				Expect(backupData[0].UID).To(Equal(clusterBackupUID))
+				Expect(backupData[0].Kind).To(Equal(internal.ClusterBackupKind))
+			})
 		})
 
 	})
-	Context("Metadata command's Flag's test-cases", func() {
+	Context("Metadata command test-cases", func() {
 		Context("Filter Operations on different fields of backupPlan & backup", func() {
 			var (
 				backupPlanUIDs          []string

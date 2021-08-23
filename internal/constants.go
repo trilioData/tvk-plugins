@@ -28,6 +28,10 @@ const (
 	FormatWIDE                = "wide"
 	SingleNamespace           = "SingleNamespace"
 	MultiNamespace            = "MultiNamespace"
+	BackupKind                = "Backup"
+	BackupPlanKind            = "BackupPlan"
+	ClusterBackupKind         = "ClusterBackup"
+	ClusterBackupPlanKind     = "ClusterBackupPlan"
 )
 
 var (

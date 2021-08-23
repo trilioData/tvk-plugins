@@ -26,15 +26,15 @@ type BackupListOptions struct {
 
 // Backup struct stores extracted fields from actual Backup API GET response
 type Backup struct {
-	Name                 string `json:"Name"`
-	UID                  string `json:"UID"`
-	Type                 string `json:"Type"`
-	Size                 string `json:"Size"`
-	Status               string `json:"Status"`
-	BackupPlanUID        string `json:"BackupPlan UID"`
-	CreationTime         string `json:"Start Time"`
-	CompletionTime       string `json:"End Time"`
-	ClusterBackupPlanUID string `json:"ClusterBackupPlan UID"`
+	Name           string `json:"Name"`
+	Kind           string `json:"Kind"`
+	UID            string `json:"UID"`
+	Type           string `json:"Type"`
+	Size           string `json:"Size"`
+	Status         string `json:"Status"`
+	BackupPlanUID  string `json:"BackupPlan UID"`
+	CreationTime   string `json:"Start Time"`
+	CompletionTime string `json:"End Time"`
 }
 
 // BackupList struct stores extracted fields from actual Backup API LIST response
@@ -50,15 +50,15 @@ func (auth *AuthInfo) GetBackups(options *BackupListOptions, backupUIDs []string
 		return err
 	}
 	queryParam := values.Encode()
-	response, err := auth.TriggerAPIs(queryParam, internal.BackupAPIPath, backupUIDs)
+	response, err := auth.TriggerAPIs(queryParam, internal.BackupAPIPath, BackupSelector, backupUIDs)
 	if err != nil {
 		return err
 	}
 
-	return PrintFormattedResponse(internal.BackupAPIPath, string(response), options.OperationScope, options.OutputFormat)
+	return PrintFormattedResponse(internal.BackupAPIPath, string(response), options.OutputFormat)
 }
 
-func (auth *AuthInfo) TriggerAPI(pathParam, queryParam, apiPath string) ([]byte, error) {
+func (auth *AuthInfo) TriggerAPI(pathParam, queryParam, apiPath string, selector []string) ([]byte, error) {
 	tvkURL, err := url.Parse(auth.TvkHost)
 	if err != nil {
 		return nil, err
@@ -116,8 +116,7 @@ func parseData(respData []byte) ([]byte, error) {
 // which will be used for printing table formatted output.
 // If 'wideOutput=true', then all defined fields of Backup struct will be printed as output columns
 // If 'wideOutput=false', then selected number of fields of Backup struct from first field will be printed as output columns
-func normalizeBackupDataToRowsAndColumns(response, operationScope string, wideOutput bool) ([]metav1.TableRow,
-	[]metav1.TableColumnDefinition, error) {
+func normalizeBackupDataToRowsAndColumns(response string, wideOutput bool) ([]metav1.TableRow, []metav1.TableColumnDefinition, error) {
 	var respBytes bytes.Buffer
 	gojsonq.New().FromString(response).From(internal.Results).Select(BackupSelector...).Writer(&respBytes)
 
@@ -132,16 +131,10 @@ func normalizeBackupDataToRowsAndColumns(response, operationScope string, wideOu
 	}
 
 	var rows []metav1.TableRow
-	var backupPlanUID string
 	for i := range backupList.Results {
 		backup := backupList.Results[i]
-		if operationScope == internal.MultiNamespace {
-			backupPlanUID = backup.ClusterBackupPlanUID
-		} else {
-			backupPlanUID = backup.BackupPlanUID
-		}
 		rows = append(rows, metav1.TableRow{
-			Cells: []interface{}{backup.Name, backup.UID, backup.Type, backup.Size, backup.Status, backupPlanUID,
+			Cells: []interface{}{backup.Name, backup.Kind, backup.UID, backup.Type, backup.Size, backup.Status, backup.BackupPlanUID,
 				backup.CreationTime, backup.CompletionTime},
 		})
 	}
@@ -150,7 +143,7 @@ func normalizeBackupDataToRowsAndColumns(response, operationScope string, wideOu
 	if wideOutput {
 		columns = getColumnDefinitions(backupList.Results[0], 0)
 	} else {
-		columns = getColumnDefinitions(backupList.Results[0], 5)
+		columns = getColumnDefinitions(backupList.Results[0], 6)
 	}
 
 	return rows, columns, err

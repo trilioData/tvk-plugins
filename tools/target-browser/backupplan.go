@@ -21,6 +21,7 @@ type BackupPlanListOptions struct {
 // BackupPlan struct stores extracted fields from actual BackupPlan API GET response
 type BackupPlan struct {
 	Name                      string      `json:"Name"`
+	Kind                      string      `json:"Kind"`
 	UID                       string      `json:"UID"`
 	Type                      string      `json:"Type"`
 	TvkInstanceID             string      `json:"TVK Instance"`
@@ -42,12 +43,12 @@ func (auth *AuthInfo) GetBackupPlans(options *BackupPlanListOptions, backupPlanU
 	}
 
 	queryParam := values.Encode()
-	response, err := auth.TriggerAPIs(queryParam, internal.BackupPlanAPIPath, backupPlanUIDs)
+	response, err := auth.TriggerAPIs(queryParam, internal.BackupPlanAPIPath, BackupPlanSelector, backupPlanUIDs)
 	if err != nil {
 		return err
 	}
 
-	return PrintFormattedResponse(internal.BackupPlanAPIPath, string(response), options.OperationScope, options.OutputFormat)
+	return PrintFormattedResponse(internal.BackupPlanAPIPath, string(response), options.OutputFormat)
 }
 
 // normalizeBPlanDataToRowsAndColumns normalizes backupPlan API response and generates metav1.TableRow & metav1.TableColumnDefinition
@@ -73,7 +74,8 @@ func normalizeBPlanDataToRowsAndColumns(response string, wideOutput bool) ([]met
 	for i := range bPlanList.Results {
 		bPlan := bPlanList.Results[i]
 		rows = append(rows, metav1.TableRow{
-			Cells: []interface{}{bPlan.Name, bPlan.UID, bPlan.Type, bPlan.TvkInstanceID, bPlan.SuccessfulBackup, bPlan.SuccessfulBackupTimestamp},
+			Cells: []interface{}{bPlan.Name, bPlan.Kind, bPlan.UID, bPlan.Type, bPlan.TvkInstanceID,
+				bPlan.SuccessfulBackup, bPlan.SuccessfulBackupTimestamp},
 		})
 	}
 
@@ -81,18 +83,18 @@ func normalizeBPlanDataToRowsAndColumns(response string, wideOutput bool) ([]met
 	if wideOutput {
 		columns = getColumnDefinitions(bPlanList.Results[0], 0)
 	} else {
-		columns = getColumnDefinitions(bPlanList.Results[0], 4)
+		columns = getColumnDefinitions(bPlanList.Results[0], 5)
 	}
 
 	return rows, columns, err
 }
 
 // TriggerAPIs returns backup or backupPlan list stored on mounted target with available options
-func (auth *AuthInfo) TriggerAPIs(queryParam, apiPath string, args []string) ([]byte, error) {
+func (auth *AuthInfo) TriggerAPIs(queryParam, apiPath string, selector, args []string) ([]byte, error) {
 	if len(args) > 0 {
 		var respData []interface{}
 		for _, uid := range args {
-			resp, err := auth.TriggerAPI(uid, queryParam, apiPath)
+			resp, err := auth.TriggerAPI(uid, queryParam, apiPath, selector)
 			if err != nil {
 				return nil, err
 			}
@@ -117,7 +119,7 @@ func (auth *AuthInfo) TriggerAPIs(queryParam, apiPath string, args []string) ([]
 		return body, nil
 	}
 
-	resp, err := auth.TriggerAPI("", queryParam, apiPath)
+	resp, err := auth.TriggerAPI("", queryParam, apiPath, selector)
 	if err != nil {
 		return nil, err
 	}

@@ -1,4 +1,6 @@
 {
+  "kind": "BackupPlan",
+  "apiVersion": "triliovault.trilio.io/v1",
   "metadata": {
     "name": "BACKUPPLAN-NAME",
     "namespace": "temp-ns",
