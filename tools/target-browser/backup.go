@@ -83,7 +83,7 @@ func (auth *AuthInfo) TriggerAPI(pathParam, queryParam, apiPath string, selector
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK && resp.Body == nil {
+	if resp.StatusCode != http.StatusOK || resp.Body == nil {
 		return nil, fmt.Errorf("%s %s did not successfully completed - %s", http.MethodGet, req.URL.String(), resp.Status)
 	}
 

@@ -2,8 +2,6 @@ package targetbrowser
 
 import (
 	"github.com/google/go-querystring/query"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/trilioData/tvk-plugins/internal"
 )
 
@@ -27,7 +25,6 @@ func (auth *AuthInfo) GetResourceMetadata(options *ResourceMetadataListOptions) 
 	queryParam := values.Encode()
 	resp, apiErr := auth.TriggerAPI("", queryParam, internal.ResourceMetadataAPIPath, []string{})
 	if apiErr != nil {
-		log.Info(apiErr)
 		return apiErr
 	}
 

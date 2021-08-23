@@ -15,7 +15,7 @@ func init() {
 func resourceMetadataCmd() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   ResourceMetadataCmdName,
-		Short: "Get Backup high level metadata details",
+		Short: "Get Details of particular resource of a backup",
 		Long:  `Performs GET operation on target-browser's '/resource-metadata' API and gets Application YAMLs from backup in JSON format`,
 		Example: `  # Get resource-metadata details of specific backup
   kubectl tvk-target-browser get resource-metadata --backup-uid <uid> --backup-plan-uid <uid> --name <name> --group <group> 
@@ -24,7 +24,7 @@ func resourceMetadataCmd() *cobra.Command {
 		RunE: getResourceMetadata,
 	}
 
-	cmd.Flags().StringVar(&group, groupFlag, groupDefault, groupUsage)
+	cmd.Flags().StringVarP(&group, groupFlag, groupFlagShort, groupDefault, groupUsage)
 
 	cmd.Flags().StringVar(&backupPlanUID, BackupPlanUIDFlag, backupPlanUIDDefault, backupPlanUIDUsage)
 	err := cmd.MarkFlagRequired(BackupPlanUIDFlag)
@@ -38,13 +38,13 @@ func resourceMetadataCmd() *cobra.Command {
 		log.Fatalf("Invalid option or missing required flag %s - %s", BackupUIDFlag, err.Error())
 	}
 
-	cmd.Flags().StringVar(&version, versionFlag, versionDefault, versionUsage)
+	cmd.Flags().StringVarP(&version, versionFlag, versionFlagShort, versionDefault, versionUsage)
 	err = cmd.MarkFlagRequired(versionFlag)
 	if err != nil {
 		log.Fatalf("Invalid option or missing required flag %s - %s", versionFlag, err.Error())
 	}
 
-	cmd.Flags().StringVar(&kind, kindFlag, kindDefault, kindUsage)
+	cmd.Flags().StringVarP(&kind, kindFlag, kindFlagShort, kindDefault, kindUsage)
 	err = cmd.MarkFlagRequired(kindFlag)
 	if err != nil {
 		log.Fatalf("Invalid option or missing required flag %s - %s", kindFlag, err.Error())
