@@ -15,8 +15,8 @@ func init() {
 func resourceMetadataCmd() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   ResourceMetadataCmdName,
-		Short: "Get Details of particular resource of a backup",
-		Long:  `Performs GET operation on target-browser's '/resource-metadata' API and gets Application YAMLs from backup in JSON format`,
+		Short: "Get metadata details of particular resource from backup",
+		Long:  `Performs GET operation on target-browser's '/resource-metadata' API and gets Application metadata from backup`,
 		Example: `  # Get resource-metadata details of specific backup
   kubectl tvk-target-browser get resource-metadata --backup-uid <uid> --backup-plan-uid <uid> --name <name> --group <group> 
 	--version <version> --kind <kind>

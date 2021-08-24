@@ -83,7 +83,7 @@ const (
 	groupFlag      = "group"
 	groupFlagShort = "g"
 	groupDefault   = ""
-	groupUsage     = "PI group name of resource whose resource-metadata needs to be retrieved"
+	groupUsage     = "API group name of resource whose resource-metadata needs to be retrieved"
 
 	versionFlag      = "version"
 	versionFlagShort = "v"
