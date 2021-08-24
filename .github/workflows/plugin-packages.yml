@@ -195,11 +195,11 @@ jobs:
       #if: (needs.pre-build.outputs.testCleanup == 'true') || startsWith(github.ref, 'refs/tags/')
       #run: make test-cleanup-integration
 
-      #- name: Ensure Required Utilities Installed
-      #run: make install-required-utilities
+    - name: Ensure Required Utilities Installed
+      run: make install-required-utilities
 
-      #- name: Test Cleanup Plugin Locally
-      #run: make test-cleanup-plugin-locally
+    - name: Test Cleanup Plugin Locally
+      run: make test-cleanup-plugin-locally
 
     - name: Upload Cleanup Plugin Packges to github artifact
       uses: actions/upload-artifact@v2
