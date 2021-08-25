@@ -20,6 +20,7 @@ import (
 	"github.com/trilioData/tvk-plugins/cmd/target-browser/cmd"
 	"github.com/trilioData/tvk-plugins/internal"
 	"github.com/trilioData/tvk-plugins/internal/utils/shell"
+	targetbrowser "github.com/trilioData/tvk-plugins/tools/target-browser"
 )
 
 const (
@@ -258,24 +259,25 @@ var _ = Describe("Target Browser Tests", func() {
 	})
 
 	Context("BackupPlan command test-cases", func() {
-		Context(fmt.Sprintf("test-cases for sorting on columns %s, %s, %s, %s",
+		//TODO enable sorting test once backupPlan API fixed with query param ordering
+		PContext(fmt.Sprintf("test-cases for sorting on columns %s, %s, %s, %s",
 			backupPlanType, name, successfulBackups, backupTimestamp), func() {
 			var (
-				backupPlanUIDs          []string
-				noOfBackupPlansToCreate = 4
-				noOfBackupsToCreate     = 1
-				once                    sync.Once
-				isLast                  bool
-				backupUID               string
+				backupPlanUIDs                   []string
+				noOfBackupPlansToCreate          = 4
+				noOfBackupsToCreatePerBackupPlan = 1
+				once                             sync.Once
+				isLast                           bool
+				backupUID                        string
 			)
 			BeforeEach(func() {
 				once.Do(func() {
 					backupUID = guid.New().String()
 					createTarget(true)
 					output, _ := exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
-						strconv.Itoa(noOfBackupsToCreate), "true", backupUID).Output()
+						strconv.Itoa(noOfBackupsToCreatePerBackupPlan), "backup", backupUID).Output()
 					log.Info("Shell Script Output: ", string(output))
-					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreate)
+					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
 					time.Sleep(2 * time.Minute) // wait to sync data on target browser
 				})
 			})
@@ -369,21 +371,21 @@ var _ = Describe("Target Browser Tests", func() {
 		Context(fmt.Sprintf("test-cases for flag %s, %s with path value, zero, valid  and invalid value",
 			cmd.OrderByFlag, cmd.PageSizeFlag), func() {
 			var (
-				backupPlanUIDs          []string
-				noOfBackupPlansToCreate = 11
-				noOfBackupsToCreate     = 2
-				once                    sync.Once
-				isLast                  bool
-				backupUID               string
+				backupPlanUIDs                   []string
+				noOfBackupPlansToCreate          = 11
+				noOfBackupsToCreatePerBackupPlan = 2
+				once                             sync.Once
+				isLast                           bool
+				backupUID                        string
 			)
 			BeforeEach(func() {
 				once.Do(func() {
 					backupUID = guid.New().String()
 					createTarget(true)
 					output, _ := exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
-						strconv.Itoa(noOfBackupsToCreate), "true", backupUID).Output()
+						strconv.Itoa(noOfBackupsToCreatePerBackupPlan), "backup", backupUID).Output()
 					log.Info("Shell Script Output: ", string(output))
-					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreate)
+					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
 					time.Sleep(2 * time.Minute) //wait to sync data on target browser
 				})
 			})
@@ -496,25 +498,33 @@ var _ = Describe("Target Browser Tests", func() {
 		Context(fmt.Sprintf("test-cases for flag %s with path param & zero, valid  and invalid value",
 			cmd.OperationScopeFlag), func() {
 			var (
-				backupPlanUIDs          []string
-				noOfBackupPlansToCreate = 3
-				noOfBackupsToCreate     = 1
-				once                    sync.Once
-				isLast                  bool
-				backupUID               string
+				backupPlanUIDs, clusterBackupPlanUIDs          []string
+				noOfBackupPlansToCreate                        = 3
+				noOfBackupsToCreatePerBackupPlan               = 1
+				noOfClusterBackupPlansToCreate                 = 3
+				noOfClusterBackupsToCreatePerClusterBackupPlan = 1
+				once                                           sync.Once
+				isLast                                         bool
+				backupUID, clusterBackupUID                    string
 			)
 			BeforeEach(func() {
 				once.Do(func() {
 					backupUID = guid.New().String()
+					clusterBackupUID = guid.New().String()
 					createTarget(true)
-					output, _ := exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
-						strconv.Itoa(noOfBackupsToCreate), "cluster", backupUID).Output()
+					output, _ := exec.Command(createBackupScript, strconv.Itoa(noOfClusterBackupPlansToCreate),
+						strconv.Itoa(noOfClusterBackupsToCreatePerClusterBackupPlan), "cluster_backup", clusterBackupUID).Output()
 					log.Info("Shell Script Output: ", string(output))
+					clusterBackupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfClusterBackupPlansToCreate,
+						noOfClusterBackupPlansToCreate*noOfClusterBackupsToCreatePerClusterBackupPlan)
+
 					output, _ = exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
-						strconv.Itoa(noOfBackupsToCreate), "true", backupUID).Output()
+						strconv.Itoa(noOfBackupsToCreatePerBackupPlan), "backup", backupUID).Output()
 					log.Info("Shell Script Output: ", string(output))
 
-					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate*2, noOfBackupPlansToCreate*noOfBackupsToCreate*2)
+					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate+noOfClusterBackupPlansToCreate,
+						noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan+
+							noOfClusterBackupsToCreatePerClusterBackupPlan*noOfClusterBackupPlansToCreate)
 					time.Sleep(2 * time.Minute) //wait to sync data on target browser
 				})
 			})
@@ -543,34 +553,63 @@ var _ = Describe("Target Browser Tests", func() {
 				flagOperationScope), func() {
 				args := []string{cmdGet, cmdBackupPlan}
 				backupPlanData := runCmdBackupPlan(args)
-				Expect(len(backupPlanData)).To(Equal(noOfBackupPlansToCreate * 2))
+				Expect(len(backupPlanData)).To(Equal(noOfBackupPlansToCreate + noOfClusterBackupPlansToCreate))
+				validateBackupPlanKind(backupPlanData, clusterBackupPlanUIDs)
 			})
 
 			It(fmt.Sprintf("Should get both backupPlans and clusterbackupPlans if flag %s is given zero value", flagOperationScope), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagOperationScope, ""}
 				backupPlanData := runCmdBackupPlan(args)
-				Expect(len(backupPlanData)).To(Equal(noOfBackupPlansToCreate * 2))
+				Expect(len(backupPlanData)).To(Equal(noOfBackupPlansToCreate + noOfClusterBackupPlansToCreate))
+				validateBackupPlanKind(backupPlanData, clusterBackupPlanUIDs)
 			})
 
-			It(fmt.Sprintf("Should get %d backupPlan if flag %s is given %s value", noOfBackupPlansToCreate,
+			It(fmt.Sprintf("Should get %d backupPlan if flag %s is given %s value", noOfClusterBackupPlansToCreate,
 				flagOperationScope, internal.MultiNamespace), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagOperationScope, internal.MultiNamespace}
 				backupPlanData := runCmdBackupPlan(args)
-				Expect(len(backupPlanData)).To(Equal(noOfBackupPlansToCreate))
+				Expect(len(backupPlanData)).To(Equal(noOfClusterBackupPlansToCreate))
 				for idx := range backupPlanData {
 					Expect(backupPlanData[idx].Kind).To(Equal(internal.ClusterBackupPlanKind))
 				}
 			})
 
 			It(fmt.Sprintf("Should get one backupPlan for specific clusterBackupPlan UID with flag %s", cmd.OperationScopeFlag), func() {
-				args := []string{cmdGet, cmdBackupPlan, backupPlanUIDs[1], flagOperationScope, internal.MultiNamespace}
+				args := []string{cmdGet, cmdBackupPlan, clusterBackupPlanUIDs[1], flagOperationScope, internal.MultiNamespace}
 				backupPlanData := runCmdBackupPlan(args)
 				Expect(len(backupPlanData)).To(Equal(1))
-				Expect(backupPlanData[0].UID).To(Equal(backupPlanUIDs[1]))
+				Expect(backupPlanData[0].UID).To(Equal(clusterBackupPlanUIDs[1]))
 				Expect(backupPlanData[0].Kind).To(Equal(internal.ClusterBackupPlanKind))
 			})
 
-			It(fmt.Sprintf("Should get 0 backupPlan if flag %s is given %s value",
+			It(fmt.Sprintf("Should get one backupPlan for specific cluster BackupPlan UID if flag %s is not provided",
+				cmd.OperationScopeFlag), func() {
+				args := []string{cmdGet, cmdBackupPlan, clusterBackupPlanUIDs[1]}
+				backupPlanData := runCmdBackupPlan(args)
+				Expect(len(backupPlanData)).To(Equal(1))
+				Expect(backupPlanData[0].UID).To(Equal(clusterBackupPlanUIDs[1]))
+				Expect(backupPlanData[0].Kind).To(Equal(internal.ClusterBackupPlanKind))
+			})
+
+			It(fmt.Sprintf("Should get one backupPlan for specific BackupPlan UID with flag %s", cmd.OperationScopeFlag), func() {
+				backupPlanUID := getBackupPlanUID(backupPlanUIDs, clusterBackupPlanUIDs)
+				args := []string{cmdGet, cmdBackupPlan, backupPlanUID, flagOperationScope, internal.SingleNamespace}
+				backupPlanData := runCmdBackupPlan(args)
+				Expect(len(backupPlanData)).To(Equal(1))
+				Expect(backupPlanData[0].UID).To(Equal(backupPlanUID))
+				Expect(backupPlanData[0].Kind).To(Equal(internal.BackupPlanKind))
+			})
+
+			It(fmt.Sprintf("Should get one backupPlan for specific BackupPlan UID if flag %s is not provided", cmd.OperationScopeFlag), func() {
+				backupPlanUID := getBackupPlanUID(backupPlanUIDs, clusterBackupPlanUIDs)
+				args := []string{cmdGet, cmdBackupPlan, backupPlanUID}
+				backupPlanData := runCmdBackupPlan(args)
+				Expect(len(backupPlanData)).To(Equal(1))
+				Expect(backupPlanData[0].UID).To(Equal(backupPlanUID))
+				Expect(backupPlanData[0].Kind).To(Equal(internal.BackupPlanKind))
+			})
+
+			It(fmt.Sprintf("Should get %d backupPlan if flag %s is given %s value", noOfBackupPlansToCreate,
 				flagOperationScope, internal.SingleNamespace), func() {
 				isLast = true
 				args := []string{cmdGet, cmdBackupPlan, flagOperationScope, internal.SingleNamespace}
@@ -659,21 +698,21 @@ var _ = Describe("Target Browser Tests", func() {
 	Context("Backup command test-cases", func() {
 		Context(fmt.Sprintf("test-cases for filtering and sorting operations on %s, %s columns of Backup", status, name), func() {
 			var (
-				backupPlanUIDs          []string
-				noOfBackupPlansToCreate = 4
-				noOfBackupsToCreate     = 1
-				once                    sync.Once
-				isLast                  bool
-				backupUID               string
+				backupPlanUIDs                   []string
+				noOfBackupPlansToCreate          = 4
+				noOfBackupsToCreatePerBackupPlan = 1
+				once                             sync.Once
+				isLast                           bool
+				backupUID                        string
 			)
 			BeforeEach(func() {
 				once.Do(func() {
 					backupUID = guid.New().String()
 					createTarget(true)
 					output, _ := exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
-						strconv.Itoa(noOfBackupsToCreate), "true", backupUID).Output()
+						strconv.Itoa(noOfBackupsToCreatePerBackupPlan), "backup", backupUID).Output()
 					log.Info("Shell Script Output: ", string(output))
-					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreate)
+					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
 					time.Sleep(2 * time.Minute) //wait to sync data on target browser
 				})
 			})
@@ -737,21 +776,21 @@ var _ = Describe("Target Browser Tests", func() {
 		Context(fmt.Sprintf("test-cases for flag %s, %s, %s, %s with path value, zero, valid  and invalid value",
 			cmd.OrderByFlag, cmd.PageSizeFlag, cmd.BackupPlanUIDFlag, cmd.BackupStatusFlag), func() {
 			var (
-				backupPlanUIDs          []string
-				noOfBackupPlansToCreate = 11
-				noOfBackupsToCreate     = 1
-				once                    sync.Once
-				isLast                  bool
-				backupUID               string
+				backupPlanUIDs                   []string
+				noOfBackupPlansToCreate          = 11
+				noOfBackupsToCreatePerBackupPlan = 1
+				once                             sync.Once
+				isLast                           bool
+				backupUID                        string
 			)
 			BeforeEach(func() {
 				once.Do(func() {
 					backupUID = guid.New().String()
 					createTarget(true)
 					output, _ := exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
-						strconv.Itoa(noOfBackupsToCreate), "true", backupUID).Output()
+						strconv.Itoa(noOfBackupsToCreatePerBackupPlan), "backup", backupUID).Output()
 					log.Info("Shell Script Output: ", string(output))
-					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreate)
+					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
 					time.Sleep(2 * time.Minute) // wait to sync data on target browser
 				})
 			})
@@ -896,33 +935,39 @@ var _ = Describe("Target Browser Tests", func() {
 		Context(fmt.Sprintf("test-cases for flag %s with path value, zero, valid  and invalid value",
 			cmd.OperationScopeFlag), func() {
 			var (
-				clusterBackupPlanUIDs       []string
-				noOfBackupPlansToCreate     = 3
-				noOfBackupsToCreate         = 1
-				once                        sync.Once
-				isLast                      bool
-				backupUID, clusterBackupUID string
+				backupPlanUIDs                                 []string
+				noOfBackupPlansToCreate                        = 3
+				noOfBackupsToCreatePerBackupPlan               = 1
+				noOfClusterBackupPlansToCreate                 = 3
+				noOfClusterBackupsToCreatePerClusterBackupPlan = 1
+				once                                           sync.Once
+				isLast                                         bool
+				backupUID, clusterBackupUID                    string
 			)
 			BeforeEach(func() {
 				once.Do(func() {
 					backupUID = guid.New().String()
 					clusterBackupUID = guid.New().String()
 					createTarget(true)
-					output, _ := exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
-						strconv.Itoa(noOfBackupsToCreate), "cluster", clusterBackupUID).Output()
+					output, _ := exec.Command(createBackupScript, strconv.Itoa(noOfClusterBackupPlansToCreate),
+						strconv.Itoa(noOfClusterBackupsToCreatePerClusterBackupPlan), "cluster_backup", clusterBackupUID).Output()
 					log.Info("Shell Script Output: ", string(output))
 					output, _ = exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
-						strconv.Itoa(noOfBackupsToCreate), "true", backupUID).Output()
+						strconv.Itoa(noOfBackupsToCreatePerBackupPlan), "backup", backupUID).Output()
 					log.Info("Shell Script Output: ", string(output))
-					clusterBackupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate*2, noOfBackupPlansToCreate*noOfBackupsToCreate*2)
-					time.Sleep(2 * time.Minute) //wait to sync data on target browser
+
+					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate+noOfClusterBackupPlansToCreate,
+						noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan+
+							noOfClusterBackupsToCreatePerClusterBackupPlan*noOfClusterBackupPlansToCreate)
+					//wait to sync data on target browser
+					time.Sleep(2 * time.Minute)
 				})
 			})
 
 			AfterEach(func() {
 				if isLast {
 					deleteTarget(false)
-					for _, backupPlans := range clusterBackupPlanUIDs {
+					for _, backupPlans := range backupPlanUIDs {
 						_, err := shell.RmRf(filepath.Join(TargetLocation, backupPlans))
 						Expect(err).To(BeNil())
 					}
@@ -942,32 +987,60 @@ var _ = Describe("Target Browser Tests", func() {
 			It(fmt.Sprintf("Should get both OperationScoped backup and clusterbackups if flag %s is not provided", flagOperationScope), func() {
 				args := []string{cmdGet, cmdBackup}
 				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(noOfBackupPlansToCreate * noOfBackupsToCreate * 2))
+				Expect(len(backupData)).To(Equal(
+					noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan +
+						noOfClusterBackupsToCreatePerClusterBackupPlan*noOfClusterBackupPlansToCreate))
+				for idx := range backupData {
+					if backupData[idx].UID == clusterBackupUID {
+						Expect(backupData[idx].Kind).To(Equal(internal.ClusterBackupKind))
+					} else {
+						Expect(backupData[idx].Kind).To(Equal(internal.BackupKind))
+					}
+				}
 			})
 
 			It(fmt.Sprintf("Should get both backups and clusterbackups if flag %s is given zero value", flagOperationScope), func() {
 				args := []string{cmdGet, cmdBackup}
 				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(noOfBackupPlansToCreate * noOfBackupsToCreate * 2))
+				Expect(len(backupData)).To(Equal(
+					noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan +
+						noOfClusterBackupsToCreatePerClusterBackupPlan*noOfClusterBackupPlansToCreate))
+				for idx := range backupData {
+					if backupData[idx].UID == clusterBackupUID {
+						Expect(backupData[idx].Kind).To(Equal(internal.ClusterBackupKind))
+					} else {
+						Expect(backupData[idx].Kind).To(Equal(internal.BackupKind))
+					}
+				}
+
 			})
 
-			It(fmt.Sprintf("Should get %d backup if flag %s is given %s value", noOfBackupPlansToCreate,
+			It(fmt.Sprintf("Should get %d backup if flag %s is given %s value",
+				noOfClusterBackupPlansToCreate*noOfClusterBackupsToCreatePerClusterBackupPlan,
 				flagOperationScope, internal.MultiNamespace), func() {
 				args := []string{cmdGet, cmdBackup, flagOperationScope, internal.MultiNamespace}
 				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(noOfBackupPlansToCreate))
+				Expect(len(backupData)).To(Equal(noOfClusterBackupPlansToCreate * noOfClusterBackupsToCreatePerClusterBackupPlan))
 				for idx := range backupData {
 					Expect(backupData[idx].Kind).To(Equal(internal.ClusterBackupKind))
 				}
 			})
 
-			It(fmt.Sprintf("Should get 0 backupPlan if flag %s is given %s value",
+			It(fmt.Sprintf("Should get %d backup if flag %s is given %s value", noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan,
 				flagOperationScope, internal.SingleNamespace), func() {
 				args := []string{cmdGet, cmdBackup, flagOperationScope, internal.SingleNamespace}
 				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(noOfBackupPlansToCreate * noOfBackupsToCreatePerBackupPlan))
 				for idx := range backupData {
 					Expect(backupData[idx].Kind).To(Equal(internal.BackupKind))
 				}
+			})
+			It(fmt.Sprintf("Should get one backup for specific backup UID %s if flag %s is not provided", backupUID, flagOperationScope), func() {
+				args := []string{cmdGet, cmdBackup, backupUID}
+				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(1))
+				Expect(backupData[0].UID).To(Equal(backupUID))
+				Expect(backupData[0].Kind).To(Equal(internal.BackupKind))
 			})
 
 			It(fmt.Sprintf("Should get one backup for specific backup UID %s if flag %s is given %s value",
@@ -977,6 +1050,15 @@ var _ = Describe("Target Browser Tests", func() {
 				Expect(len(backupData)).To(Equal(1))
 				Expect(backupData[0].UID).To(Equal(backupUID))
 				Expect(backupData[0].Kind).To(Equal(internal.BackupKind))
+			})
+
+			It(fmt.Sprintf("Should get one backup for specific cluster backup UID %s if flag %s is not provided",
+				clusterBackupUID, flagOperationScope), func() {
+				args := []string{cmdGet, cmdBackup, clusterBackupUID}
+				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(1))
+				Expect(backupData[0].UID).To(Equal(clusterBackupUID))
+				Expect(backupData[0].Kind).To(Equal(internal.ClusterBackupKind))
 			})
 
 			It(fmt.Sprintf("Should get one backup for specific cluster backup UID %s if flag %s is given %s value",
@@ -994,13 +1076,13 @@ var _ = Describe("Target Browser Tests", func() {
 	Context("Metadata command test-cases", func() {
 		Context("Filter Operations on different fields of backupPlan & backup", func() {
 			var (
-				backupPlanUIDs          []string
-				noOfBackupPlansToCreate = 1
-				noOfBackupsToCreate     = 1
-				once                    sync.Once
-				isLast                  bool
-				backupUID               string
-				expectedEmptyMetadata   = `{"custom": {}}`
+				backupPlanUIDs                   []string
+				noOfBackupPlansToCreate          = 1
+				noOfBackupsToCreatePerBackupPlan = 1
+				once                             sync.Once
+				isLast                           bool
+				backupUID                        string
+				expectedEmptyMetadata            = `{"custom": {}}`
 			)
 
 			BeforeEach(func() {
@@ -1008,10 +1090,10 @@ var _ = Describe("Target Browser Tests", func() {
 					backupUID = guid.New().String()
 					createTarget(true)
 					output, _ := exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
-						strconv.Itoa(noOfBackupsToCreate), "all_type_backup", backupUID).Output()
+						strconv.Itoa(noOfBackupsToCreatePerBackupPlan), "all_type_backup", backupUID).Output()
 
 					log.Info("Shell Script Output: ", string(output))
-					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreate)
+					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
 					time.Sleep(2 * time.Minute) //wait to sync data on target browser
 				})
 			})
@@ -1112,12 +1194,12 @@ var _ = Describe("Target Browser Tests", func() {
 		})
 		Context("Filter Operations on of backupPlan & backup for helm type backup", func() {
 			var (
-				backupPlanUIDs          []string
-				noOfBackupPlansToCreate = 1
-				noOfBackupsToCreate     = 1
-				once                    sync.Once
-				isLast                  bool
-				backupUID               string
+				backupPlanUIDs                   []string
+				noOfBackupPlansToCreate          = 1
+				noOfBackupsToCreatePerBackupPlan = 1
+				once                             sync.Once
+				isLast                           bool
+				backupUID                        string
 			)
 
 			BeforeEach(func() {
@@ -1125,10 +1207,10 @@ var _ = Describe("Target Browser Tests", func() {
 					backupUID = guid.New().String()
 					createTarget(true)
 					output, _ := exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
-						strconv.Itoa(noOfBackupsToCreate), "true", backupUID, "helm").Output()
+						strconv.Itoa(noOfBackupsToCreatePerBackupPlan), "backup", backupUID, "helm").Output()
 
 					log.Info("Shell Script Output: ", string(output))
-					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreate)
+					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
 					time.Sleep(1 * time.Minute) //wait to sync data on target browser
 				})
 			})
@@ -1163,12 +1245,12 @@ var _ = Describe("Target Browser Tests", func() {
 		})
 		Context("Filter Operations on of backupPlan & backup for custom type backup", func() {
 			var (
-				backupPlanUIDs          []string
-				noOfBackupPlansToCreate = 1
-				noOfBackupsToCreate     = 1
-				once                    sync.Once
-				isLast                  bool
-				backupUID               string
+				backupPlanUIDs                   []string
+				noOfBackupPlansToCreate          = 1
+				noOfBackupsToCreatePerBackupPlan = 1
+				once                             sync.Once
+				isLast                           bool
+				backupUID                        string
 			)
 
 			BeforeEach(func() {
@@ -1176,10 +1258,10 @@ var _ = Describe("Target Browser Tests", func() {
 					backupUID = guid.New().String()
 					createTarget(true)
 					output, _ := exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
-						strconv.Itoa(noOfBackupsToCreate), "true", backupUID, "custom").Output()
+						strconv.Itoa(noOfBackupsToCreatePerBackupPlan), "backup", backupUID, "custom").Output()
 
 					log.Info("Shell Script Output: ", string(output))
-					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreate)
+					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
 					time.Sleep(1 * time.Minute) //wait to sync data on target browser
 				})
 			})
@@ -1214,3 +1296,35 @@ var _ = Describe("Target Browser Tests", func() {
 		})
 	})
 })
+
+func validateBackupPlanKind(backupPlanData []targetbrowser.BackupPlan, clusterBackupPlanUIDs []string) {
+	for idx := range backupPlanData {
+		found := false
+		for _, uid := range clusterBackupPlanUIDs {
+			if uid == backupPlanData[idx].UID {
+				Expect(backupPlanData[idx].Kind).To(Equal(internal.ClusterBackupPlanKind))
+				found = true
+				break
+			}
+		}
+		if !found {
+			Expect(backupPlanData[idx].Kind).To(Equal(internal.BackupPlanKind))
+		}
+	}
+}
+
+func getBackupPlanUID(backupPlanUIDs, clusterBackupPlanUIDs []string) string {
+	for _, bpUID := range backupPlanUIDs {
+		found := false
+		for _, clusterBpUID := range clusterBackupPlanUIDs {
+			if bpUID == clusterBpUID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return bpUID
+		}
+	}
+	return ""
+}

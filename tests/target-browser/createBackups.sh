@@ -31,7 +31,7 @@ backupStatusIndex=$RANDOM%4
     mkdir -p "${backuppath}"
 
     # used to add custom parameter values in backup & backupplans .json files
-    if [ "$3" = "true" ]; then
+    if [ "$3" = "backup" ]; then
       cp "${src_dir}"/test_files/backup-with-placeholders.json "${src_dir}"/test_files/backup-modified.json
       cp "${src_dir}"/test_files/backupplan-with-placeholders.json "${src_dir}"/test_files/backupplan-modified.json
 
@@ -83,7 +83,7 @@ backupStatusIndex=$RANDOM%4
       # copy modified files to NFS location
       mv "${src_dir}"/test_files/backup-modified.json "${backuppath}"/backup.json
       mv "${src_dir}"/test_files/backupplan-modified.json "${backuppath}"/backupplan.json
-    elif [ "$3" == "cluster" ]; then
+    elif [ "$3" == "cluster_backup" ]; then
       cp "${src_dir}"/test_files/cluster-backup-with-placeholders.json "${src_dir}"/test_files/cluster-backup-modified.json
       cp "${src_dir}"/test_files/cluster-backupplan-with-placeholders.json "${src_dir}"/test_files/cluster-backupplan-modified.json
 
