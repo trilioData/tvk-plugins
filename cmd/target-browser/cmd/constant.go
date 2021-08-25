@@ -36,6 +36,7 @@ const (
 	BackupCmdName            = "backup"
 	backupCmdPluralName      = BackupCmdName + "s"
 	MetadataCmdName          = "metadata"
+	ResourceMetadataCmdName  = "resource-metadata"
 
 	pagesFlag    = "pages"
 	pagesDefault = 1
@@ -78,11 +79,34 @@ const (
 	OperationScopeFlag  = "operation-scope"
 	operationScopeUsage = "Filter backup/backupPlan for [SingleNamespace, MultiNamespace]. " +
 		"Supported values can be in any case capital, small or mixed."
+
+	groupFlag      = "group"
+	groupFlagShort = "g"
+	groupDefault   = ""
+	groupUsage     = "API group name of resource whose resource-metadata needs to be retrieved"
+
+	versionFlag      = "version"
+	versionFlagShort = "v"
+	versionDefault   = ""
+	versionUsage     = "API version of resource whose resource-metadata needs to be retrieved"
+
+	kindFlag      = "kind"
+	kindFlagShort = "k"
+	kindDefault   = ""
+	kindUsage     = "API resource Kind of backed up resource whose resource-metadata needs to be retrieved"
+
+	nameFlag    = "name"
+	nameDefault = ""
+	nameUsage   = "name of backed up resource whose resource-metadata needs to be retrieved"
 )
 
 var (
 	tvkInstanceUID  string
 	backupPlanUID   string
+	group           string
+	version         string
+	kind            string
+	name            string
 	backupStatus    string
 	backupUID       string
 	creationDate    string
