@@ -37,6 +37,7 @@ const (
 	backupCmdPluralName      = BackupCmdName + "s"
 	MetadataCmdName          = "metadata"
 	ResourceMetadataCmdName  = "resource-metadata"
+	TrilioResourcesCmdName   = "trilio-resources"
 
 	pagesFlag    = "pages"
 	pagesDefault = 1
@@ -98,6 +99,9 @@ const (
 	nameFlag    = "name"
 	nameDefault = ""
 	nameUsage   = "name of backed up resource whose resource-metadata needs to be retrieved"
+
+	kindsFlag  = "kinds"
+	kindsUsage = "List of kinds of trilio resources"
 )
 
 var (
@@ -113,6 +117,7 @@ var (
 	expiryDate      string
 	orderBy         string
 	operationScope  string
+	kinds           []string
 	pages, pageSize int
 )
 

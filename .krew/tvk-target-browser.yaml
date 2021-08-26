@@ -71,3 +71,6 @@ spec:
 
     # Resource Metadata of specific backup object
     kubectl tvk-target-browser get resource-metadata --backup-uid <uid> --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace> --group <group> --version <version> --kind <kind> --name <resource-name>
+
+    # Trilio Resources for specific backup object
+    kubectl tvk-target-browser get backup trilio-resources --backup-uid <uid> --backup-plan-uid <uid> --operation-scope <scope> --kinds <kinds>

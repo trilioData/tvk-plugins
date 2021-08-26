@@ -121,4 +121,9 @@ kubectl tvk-target-browser get metadata --help
   kubectl tvk-target-browser get resource-metadata --backup-uid <uid> --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace> --group <group> --version <version> --kind <kind> --name <resource-name>
   ```
 
+  - Get trilio resources for specific backup
+  ```bash
+  kubectl tvk-target-browser get backup trilio-resources --backup-uid <uid> --backup-plan-uid <uid> --operation-scope <scope> --kinds <kinds>
+  ```
+
 Find more examples and usage of each command & flag with `--help` for each `tvk-target-browser` command. Refer, `Usage` section.
