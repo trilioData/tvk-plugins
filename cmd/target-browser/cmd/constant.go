@@ -101,7 +101,8 @@ const (
 	nameUsage   = "name of backed up resource whose resource-metadata needs to be retrieved"
 
 	kindsFlag  = "kinds"
-	kindsUsage = "List of kinds of trilio resources"
+	kindsUsage = "List of kinds of trilio resources. Available kinds: ClusterBackup, ClusterBackupPlan," +
+		" Backup, BackupPlan, Target, Secret, Policy, Hook"
 )
 
 var (
