@@ -3,9 +3,9 @@ package targetbrowser
 import (
 	"context"
 	"fmt"
+	"path"
 
 	log "github.com/sirupsen/logrus"
-
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -89,4 +89,20 @@ func (targetBrowserConfig *Config) getTvkHostAndTargetBrowserAPIPath(ctx context
 	}
 
 	return tvkHost, targetBrowserPath, nil
+}
+
+func getTrilioResourcesAPIPath(uid string) string {
+	return path.Join(internal.BackupAPIPath, uid, internal.TrilioResourcesAPIPath)
+}
+
+func removeDuplicates(uids []string) []string {
+	keys := make(map[string]bool)
+	var list []string
+	for _, entry := range uids {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
 }

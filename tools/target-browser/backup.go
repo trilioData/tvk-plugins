@@ -49,7 +49,7 @@ func (auth *AuthInfo) GetBackups(options *BackupListOptions, backupUIDs []string
 		return err
 	}
 	queryParam := values.Encode()
-	response, err := auth.TriggerAPIs(queryParam, internal.BackupAPIPath, BackupSelector, backupUIDs)
+	response, err := auth.TriggerAPIs(queryParam, internal.BackupAPIPath, BackupSelector, backupUIDs, true, false)
 	if err != nil {
 		return err
 	}
