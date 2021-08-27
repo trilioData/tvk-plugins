@@ -42,8 +42,7 @@ const (
 	pagesDefault = 1
 	pagesUsage   = "Number of Pages to display within the paginated result set"
 
-	PageSizeFlag = "page-size"
-
+	PageSizeFlag    = "page-size"
 	PageSizeDefault = 10
 	pageSizeUsage   = "Maximum number of results in a single page"
 
@@ -53,8 +52,7 @@ const (
 
 	TvkInstanceUIDFlag    = "tvk-instance-uid"
 	tvkInstanceUIDDefault = ""
-
-	tvkInstanceUIDUsage = "TVK instance id to filter backupPlan"
+	tvkInstanceUIDUsage   = "TVK instance id to filter backupPlan"
 
 	BackupPlanUIDFlag    = "backup-plan-uid"
 	backupPlanUIDDefault = ""

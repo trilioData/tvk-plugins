@@ -27,6 +27,7 @@ type BackupListOptions struct {
 // Backup struct stores extracted fields from actual Backup API GET response
 type Backup struct {
 	Name           string `json:"Name"`
+	Kind           string `json:"Kind"`
 	UID            string `json:"UID"`
 	Type           string `json:"Type"`
 	Size           string `json:"Size"`
@@ -133,7 +134,7 @@ func normalizeBackupDataToRowsAndColumns(response string, wideOutput bool) ([]me
 	for i := range backupList.Results {
 		backup := backupList.Results[i]
 		rows = append(rows, metav1.TableRow{
-			Cells: []interface{}{backup.Name, backup.UID, backup.Type, backup.Size, backup.Status, backup.BackupPlanUID,
+			Cells: []interface{}{backup.Name, backup.Kind, backup.UID, backup.Type, backup.Size, backup.Status, backup.BackupPlanUID,
 				backup.CreationTime, backup.CompletionTime},
 		})
 	}
@@ -142,7 +143,7 @@ func normalizeBackupDataToRowsAndColumns(response string, wideOutput bool) ([]me
 	if wideOutput {
 		columns = getColumnDefinitions(backupList.Results[0], 0)
 	} else {
-		columns = getColumnDefinitions(backupList.Results[0], 5)
+		columns = getColumnDefinitions(backupList.Results[0], 6)
 	}
 
 	return rows, columns, err

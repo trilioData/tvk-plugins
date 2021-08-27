@@ -32,9 +32,6 @@ which retrieves single object or list of objects of that resource.`,
 
   # Metadata of specific backup object
   kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
-
-  # Specific metadata
-  kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
 `,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error

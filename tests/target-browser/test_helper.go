@@ -137,7 +137,7 @@ func removeRandomDirAndUnmount() {
 
 	// unmounting from random named directory
 	unMountTarget()
-	log.Info("unmounted from random named directory", randomDirectory)
+	log.Info("unmounted from random named directory ", randomDirectory)
 
 	time.Sleep(time.Second * 10)
 
