@@ -22,6 +22,7 @@ const (
 	BackupAPIPath             = "backup"
 	MetadataAPIPath           = "metadata"
 	ResourceMetadataAPIPath   = "resource-metadata"
+	TrilioResourcesAPIPath    = "trilio-resources"
 	Results                   = "results"
 	FormatYAML                = "yaml"
 	FormatJSON                = "json"
