@@ -50,7 +50,7 @@ func (auth *AuthInfo) GetBackups(options *BackupListOptions, backupUIDs []string
 		return err
 	}
 	queryParam := values.Encode()
-	response, err := auth.TriggerAPIs(queryParam, internal.BackupAPIPath, BackupSelector, backupUIDs, true, false)
+	response, err := auth.TriggerAPIs(queryParam, internal.BackupAPIPath, backupUIDs)
 	if err != nil {
 		return err
 	}
@@ -58,13 +58,13 @@ func (auth *AuthInfo) GetBackups(options *BackupListOptions, backupUIDs []string
 	return PrintFormattedResponse(internal.BackupAPIPath, string(response), options.OutputFormat)
 }
 
-func (auth *AuthInfo) TriggerAPI(pathParam, queryParam, apiPath string, selector []string) ([]byte, error) {
+func (auth *AuthInfo) TriggerAPI(apiPath, queryParam string) ([]byte, error) {
 	tvkURL, err := url.Parse(auth.TvkHost)
 	if err != nil {
 		return nil, err
 	}
 
-	tvkURL.Path = path.Join(tvkURL.Path, auth.TargetBrowserPath, apiPath, pathParam)
+	tvkURL.Path = path.Join(tvkURL.Path, auth.TargetBrowserPath, apiPath)
 	tvkURL.Scheme = internal.HTTPscheme
 	if auth.UseHTTPS {
 		tvkURL.Scheme = internal.HTTPSscheme

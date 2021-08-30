@@ -61,6 +61,11 @@ func init() {
 }
 
 func getBackupList(args []string) error {
+
+	if len(args) > 1 {
+		args = removeDuplicates(args)
+	}
+
 	bpOptions := targetBrowser.BackupListOptions{
 		BackupPlanUID:     backupPlanUID,
 		BackupStatus:      backupStatus,

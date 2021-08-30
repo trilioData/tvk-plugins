@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	targetBrowser "github.com/trilioData/tvk-plugins/tools/target-browser"
@@ -32,6 +34,13 @@ func trilioResourcesCmd() *cobra.Command {
 }
 
 func getTrilioResources(args []string) error {
+
+	if len(args) == 0 {
+		return fmt.Errorf("at-least 1 backupUID is needed")
+	}
+
+	args = removeDuplicates(args)
+
 	trilioResourcesOptions := targetBrowser.TrilioResourcesListOptions{
 		BackupPlanUID:     backupPlanUID,
 		BackupUID:         backupUID,

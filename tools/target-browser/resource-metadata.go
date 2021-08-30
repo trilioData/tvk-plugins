@@ -23,7 +23,7 @@ func (auth *AuthInfo) GetResourceMetadata(options *ResourceMetadataListOptions) 
 		return err
 	}
 	queryParam := values.Encode()
-	resp, apiErr := auth.TriggerAPI("", queryParam, internal.ResourceMetadataAPIPath, []string{})
+	resp, apiErr := auth.TriggerAPI(internal.ResourceMetadataAPIPath, queryParam)
 	if apiErr != nil {
 		return apiErr
 	}
