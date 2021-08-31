@@ -94,15 +94,3 @@ func (targetBrowserConfig *Config) getTvkHostAndTargetBrowserAPIPath(ctx context
 func getTrilioResourcesAPIPath(uid string) string {
 	return path.Join(internal.BackupAPIPath, uid, internal.TrilioResourcesAPIPath)
 }
-
-func removeDuplicates(uids []string) []string {
-	keys := make(map[string]bool)
-	var list []string
-	for _, entry := range uids {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			list = append(list, entry)
-		}
-	}
-	return list
-}

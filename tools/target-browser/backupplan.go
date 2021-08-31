@@ -3,6 +3,7 @@ package targetbrowser
 import (
 	"bytes"
 	"encoding/json"
+	"path"
 
 	"github.com/thedevsaddam/gojsonq"
 
@@ -43,7 +44,7 @@ func (auth *AuthInfo) GetBackupPlans(options *BackupPlanListOptions, backupPlanU
 	}
 
 	queryParam := values.Encode()
-	response, err := auth.TriggerAPIs(queryParam, internal.BackupPlanAPIPath, BackupPlanSelector, backupPlanUIDs, true, false)
+	response, err := auth.TriggerAPIs(queryParam, internal.BackupPlanAPIPath, backupPlanUIDs)
 	if err != nil {
 		return err
 	}
@@ -90,8 +91,7 @@ func normalizeBPlanDataToRowsAndColumns(response string, wideOutput bool) ([]met
 }
 
 // TriggerAPIs returns backup or backupPlan list stored on mounted target with available options
-func (auth *AuthInfo) TriggerAPIs(queryParam, apiPath string, selector, args []string,
-	pathParam, isTrilioResourcesAPI bool) ([]byte, error) {
+func (auth *AuthInfo) TriggerAPIs(queryParam, apiPath string, args []string) ([]byte, error) {
 
 	var (
 		resp, body []byte
@@ -101,13 +101,11 @@ func (auth *AuthInfo) TriggerAPIs(queryParam, apiPath string, selector, args []s
 	if len(args) > 0 {
 		var respData []interface{}
 		for _, uid := range args {
-
-			if pathParam {
-				resp, err = auth.TriggerAPI(uid, queryParam, apiPath, selector)
-			} else if !pathParam && isTrilioResourcesAPI {
-				resp, err = auth.TriggerAPI("", queryParam, getTrilioResourcesAPIPath(uid), selector)
-			} else {
-				resp, err = auth.TriggerAPI("", queryParam, apiPath, selector)
+			switch apiPath {
+			case internal.TrilioResourcesAPIPath:
+				resp, err = auth.TriggerAPI(getTrilioResourcesAPIPath(uid), queryParam)
+			default:
+				resp, err = auth.TriggerAPI(path.Join(apiPath, uid), queryParam)
 			}
 
 			if err != nil {
@@ -134,7 +132,7 @@ func (auth *AuthInfo) TriggerAPIs(queryParam, apiPath string, selector, args []s
 		return body, nil
 	}
 
-	resp, err = auth.TriggerAPI("", queryParam, apiPath, selector)
+	resp, err = auth.TriggerAPI(apiPath, queryParam)
 	if err != nil {
 		return nil, err
 	}

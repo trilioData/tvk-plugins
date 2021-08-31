@@ -52,10 +52,15 @@ using available flags and options.`,
 }
 
 func getBackupPlanList(args []string) error {
+	if len(args) > 1 {
+		args = removeDuplicates(args)
+	}
+
 	bpOptions := targetBrowser.BackupPlanListOptions{
 		CommonListOptions: commonOptions,
 		TvkInstanceUID:    tvkInstanceUID,
 	}
+
 	err := targetBrowserAuthConfig.GetBackupPlans(&bpOptions, args)
 	if err != nil {
 		return err
