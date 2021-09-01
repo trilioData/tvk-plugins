@@ -4,7 +4,7 @@ metadata:
   name: tvk-cleanup
 spec:
   homepage: https://github.com/trilioData/tvk-plugins/blob/main/docs/cleanup/README.md
-  shortDescription: TVK cleanup for k8s cluster
+  shortDescription: TVK cleanup cleans up TVK resources from k8s cluster
   version: CLEANUP_VERSION
   caveats: |
     Curl and Git neeed to be installed on system for Krew index update to work properly

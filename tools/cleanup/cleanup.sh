@@ -9,9 +9,9 @@ CLEANUP_RUN_SUCCESS=true
 
 check_if_ocp() {
   # Check if the k8s cluster is upstream or OCP
-  local is_ocp="N"
+  local is_ocp="False"
   if (kubectl api-resources | grep -q openshift.io); then
-    is_ocp="Y"
+    is_ocp="True"
   fi
   echo "${is_ocp}"
 }
@@ -51,7 +51,8 @@ delete_tvk_res(){
 delete_tvk_op(){
   # Check if the k8s cluster is upstream or OCP
   local exit_status=0
-  if [[ $(check_if_ocp) == "Y" ]]; then
+  if [[ $(check_if_ocp) == "True" ]]; then
+    echo "This is OCP Cluster"
     # Delete k8s-triliovault operator
     if (kubectl get subscription k8s-triliovault -n openshift-operators >/dev/null 2>&1)
     then 

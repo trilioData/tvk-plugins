@@ -49,10 +49,7 @@ build-target-browser:
 	goreleaser release --snapshot --skip-publish --rm-dist
 	find . -name .goreleaser.yml -exec sed -i '/skip: true/d' {} +
 
-build: build-preflight
-	goreleaser release --snapshot --skip-publish --rm-dist
-
-build: build-cleanup
+build: build-preflight build-cleanup
 	goreleaser release --snapshot --skip-publish --rm-dist
 
 test-preflight-plugin-locally:

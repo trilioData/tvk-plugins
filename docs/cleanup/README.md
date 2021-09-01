@@ -1,7 +1,7 @@
 # TVK Cleanup Plugin
 
 **tvk-cleanup** is a kubectl plugin which cleans up Triliovaultfor Kubernetes 
-application, Custom reources and CRDs in a Kubernetes cluster.
+application, Helm charts, Custom reources and CRDs in a Kubernetes cluster.
 
 ## Pre-requisites:
 
@@ -14,11 +14,6 @@ OS:
 - Linux
 - darwin
 
-Arch:
-- amd64
-- x86
-
-
 ## TVK Cleanup
 
 This plugin cleans up all TVK Custom Resources, CRDs, and TVK application itself from all the namespace.
@@ -27,9 +22,9 @@ It cleans up TVK installed as operator (on OCP platform) and as helm chart on up
 Please note the following:
 - Ensure *kubectl* utility is present on system
 - Ensure *kubectl* is pointed to k8s cluster (i.e can access the remote target cluster)
-- Ensure *helm*  utility is present on system and pointed to the cluster
-  - If *helmVersion=~v3*, then *tiller* is not needed on cluster
-- Ensure minimum Kubernetes version >= 1.17.x
+- Ensure *helm* utility is present on system and pointed to the cluster
+  - *helmVersion=~v3* is needed on the cluster
+- Ensure minimum Kubernetes version >= 1.18.x
 - Cleans up all the Triliovault Custom Resources, Triliovault Manager application and CRDs from all the namespaces
 - User can select to delete any or all of 
   1. Triliovault Application (Operator or Helm chart)
@@ -66,6 +61,7 @@ Please note the following:
 
 ## Usage:
 
+```shell script
 kubectl tvk-cleanup [options] [arguments]
 Options:
         -h, --help                show brief help
@@ -75,8 +71,9 @@ Options:
         -r, --resources \"resource1 resource2..\"
                                   specify list of Triliovault CRs to delete
                                   If not provided, all Triliovault CRs (listed below) will be deleted
-                                  e.g. Restore Backup Backupplan Hook Target Policy License
-
+                                  e.g. Restore Backup Backupplan ClusterRestore ClusterBackup
+                                       ClusterBackupPlan Hook Target Policy License
+```
 
 ## Examples
 
