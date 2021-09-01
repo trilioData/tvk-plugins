@@ -21,7 +21,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -330,7 +330,7 @@ func createTLSSecret(secretName string) {
 	log.Infof("created TLS type secret %s", secretName)
 }
 
-func deleteTargetBrowserIngress() {
+func getTargetBrowserIngress() *v1beta1.Ingress {
 
 	target := getTarget(ctx, installNs, k8sClient)
 
@@ -343,12 +343,11 @@ func deleteTargetBrowserIngress() {
 		ownerRefs := ing.GetOwnerReferences()
 		for j := range ownerRefs {
 			ownerRef := ownerRefs[j]
-			if ownerRef.Kind == internal.TargetKind && ownerRef.UID == target.GetUID() {
-				err = k8sClient.Delete(ctx, &ing, &client.DeleteOptions{})
-				Expect(err).To(BeNil())
-				log.Infof("deleted ingress %s namespace %s", ing.Name, installNs)
-				break
+			if ownerRef.Kind == target.GetKind() && ownerRef.UID == target.GetUID() {
+				return &ing
 			}
 		}
 	}
+
+	return nil
 }

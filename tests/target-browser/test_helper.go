@@ -15,7 +15,7 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -276,7 +276,6 @@ func GetIngress(ctx context.Context, k8sClient client.Client, name, ns string) *
 	ing := &v1beta1.Ingress{}
 	Eventually(func() error {
 		log.Info("getting Ingress")
-
 		return k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: ns}, ing)
 	}, timeout, interval).ShouldNot(HaveOccurred())
 
