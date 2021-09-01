@@ -33,6 +33,7 @@ const (
 	BackupPlanKind            = "BackupPlan"
 	ClusterBackupKind         = "ClusterBackup"
 	ClusterBackupPlanKind     = "ClusterBackupPlan"
+	IngressKind               = "Ingress"
 )
 
 var (
