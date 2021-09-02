@@ -17,7 +17,10 @@ import (
 	. "github.com/onsi/gomega"
 	log "github.com/sirupsen/logrus"
 
+	"k8s.io/api/networking/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/trilioData/tvk-plugins/cmd/target-browser/cmd"
 	"github.com/trilioData/tvk-plugins/internal"
@@ -179,13 +182,22 @@ var _ = Describe("Target Browser Tests", func() {
 		})
 
 		Context("test-cases with target 'browsingEnabled=true'", func() {
+			var ing *v1beta1.Ingress
 			BeforeEach(func() {
 				createTarget(true)
-				deleteTargetBrowserIngress()
+				// update target browser's ingress OwnerReferences to nil so that it won't be identified as target browser's ingress
+				ing = getTargetBrowserIngress()
+				Expect(ing).ToNot(BeNil())
+				ing.SetOwnerReferences([]metav1.OwnerReference{})
+				UpdateIngress(ctx, k8sClient, ing)
 			})
 
 			AfterEach(func() {
 				deleteTarget(false)
+				if ing != nil {
+					Expect(k8sClient.Delete(ctx, ing, &client.DeleteOptions{})).To(BeNil())
+					log.Infof("deleted ingress %s namespace %s", ing.Name, installNs)
+				}
 			})
 
 			It("Should fail if target browser's ingress resource not found", func() {
@@ -806,10 +818,10 @@ var _ = Describe("Target Browser Tests", func() {
 				Expect(backupData[0].UID).To(Equal(backupUID))
 			})
 
-			It(fmt.Sprintf("Should get two backup for backup UID %s", backupUID), func() {
+			It(fmt.Sprintf("Should get one backup for 2 duplicate backup UID %s", backupUID), func() {
 				args := []string{cmdGet, cmdBackup, backupUID, backupUID}
 				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(2))
+				Expect(len(backupData)).To(Equal(1))
 				Expect(backupData[0].UID).To(Equal(backupUID))
 			})
 

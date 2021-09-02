@@ -53,6 +53,11 @@ func NewAccessor(kubeConfig string, scheme *runtime.Scheme) (*Accessor, error) {
 		return nil, fmt.Errorf("failed to create rest config. %v", err)
 	}
 
+	// copy to avoid mutating the passed-in config
+	restConfig = rest.CopyConfig(restConfig)
+	// set the warning handler for this client to ignore warnings
+	restConfig.WarningHandler = rest.NoWarnings{}
+
 	set, err := client.NewForConfig(restConfig)
 	if err != nil {
 		return nil, err

@@ -2,7 +2,10 @@ package targetbrowser
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+
+	v1 "k8s.io/api/networking/v1"
 
 	"github.com/trilioData/tvk-plugins/internal"
 )
@@ -36,9 +39,17 @@ func (targetBrowserConfig *Config) Authenticate(ctx context.Context) (*AuthInfo,
 		return nil, err
 	}
 
-	tvkHost, targetBrowserPath, err := targetBrowserConfig.getTvkHostAndTargetBrowserAPIPath(ctx, cl, target)
+	isIngressNetworkingV1Resource := internal.CheckIfAPIVersionKindAvailable(acc.GetDiscoveryClient(),
+		v1.SchemeGroupVersion.WithKind(internal.IngressKind))
+
+	tvkHost, targetBrowserPath, err := getTvkHostAndTargetBrowserAPIPath(ctx, cl, target, isIngressNetworkingV1Resource)
 	if err != nil {
 		return nil, err
+	}
+
+	if tvkHost == "" || targetBrowserPath == "" {
+		return nil, fmt.Errorf("either tvkHost or targetBrowserPath could not retrieved for"+
+			" target %s namespace %s", targetBrowserConfig.TargetName, targetBrowserConfig.TargetNamespace)
 	}
 
 	jweToken, httpClient, err := targetBrowserConfig.Login(tvkHost)

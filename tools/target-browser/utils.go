@@ -6,7 +6,9 @@ import (
 	"path"
 
 	log "github.com/sirupsen/logrus"
-	"k8s.io/api/extensions/v1beta1"
+
+	v1 "k8s.io/api/networking/v1"
+	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -51,41 +53,50 @@ func (targetBrowserConfig *Config) validateTarget(ctx context.Context, cl client
 }
 
 // getTvkHostAndTargetBrowserAPIPath gets tvkHost name and targetBrowserAPIPath from target-browser's ingress
-func (targetBrowserConfig *Config) getTvkHostAndTargetBrowserAPIPath(ctx context.Context, cl client.Client,
-	target *unstructured.Unstructured) (tvkHost, targetBrowserPath string, err error) {
+func getTvkHostAndTargetBrowserAPIPath(ctx context.Context, cl client.Client, target *unstructured.Unstructured,
+	isIngressNetworkingV1Resource bool) (tvkHost, targetBrowserPath string, err error) {
 
-	ingressList := v1beta1.IngressList{}
-	if err := cl.List(ctx, &ingressList, client.InNamespace(targetBrowserConfig.TargetNamespace)); err != nil {
-		return "", "", err
+	ingressList := unstructured.UnstructuredList{}
+	ingressList.SetGroupVersionKind(v1.SchemeGroupVersion.WithKind(internal.IngressKind))
+	if !isIngressNetworkingV1Resource {
+		ingressList.SetGroupVersionKind(v1beta1.SchemeGroupVersion.WithKind(internal.IngressKind))
 	}
 
-	var hostFound bool
+	err = cl.List(ctx, &ingressList, client.InNamespace(target.GetNamespace()))
+	if err != nil {
+		return "", "", err
+	}
 
 	for i := range ingressList.Items {
 		ing := ingressList.Items[i]
 		ownerRefs := ing.GetOwnerReferences()
 		for j := range ownerRefs {
 			ownerRef := ownerRefs[j]
-			if ownerRef.Kind == internal.TargetKind && ownerRef.UID == target.GetUID() {
-				tvkHost = ing.Spec.Rules[0].Host
-				targetBrowserPath = ing.Spec.Rules[0].HTTP.Paths[0].Path
+			if ownerRef.Kind == target.GetKind() && ownerRef.UID == target.GetUID() {
+				if isIngressNetworkingV1Resource {
+					resource := &v1.Ingress{}
+					if err = runtime.DefaultUnstructuredConverter.FromUnstructured(ing.Object, resource); err != nil {
+						return
+					}
+					tvkHost = resource.Spec.Rules[0].Host
+					targetBrowserPath = resource.Spec.Rules[0].HTTP.Paths[0].Path
+				} else {
+					resource := &v1beta1.Ingress{}
+					if err = runtime.DefaultUnstructuredConverter.FromUnstructured(ing.Object, resource); err != nil {
+						return
+					}
+					tvkHost = resource.Spec.Rules[0].Host
+					targetBrowserPath = resource.Spec.Rules[0].HTTP.Paths[0].Path
+				}
+
 				if tvkHost == "" || targetBrowserPath == "" {
 					log.Warnf("either tvkHost or targetBrowserPath could not retrieved from"+
-						" target browser's ingress %s namespace %s", ing.Name, ing.Namespace)
+						" target browser's ingress %s namespace %s", ing.GetName(), ing.GetNamespace())
 					continue
 				}
-				hostFound = true
-				break
+				return
 			}
 		}
-		if hostFound {
-			break
-		}
-	}
-
-	if tvkHost == "" || targetBrowserPath == "" {
-		return tvkHost, targetBrowserPath, fmt.Errorf("either tvkHost or targetBrowserPath could not retrieved for"+
-			" target %s namespace %s", targetBrowserConfig.TargetName, targetBrowserConfig.TargetNamespace)
 	}
 
 	return tvkHost, targetBrowserPath, nil
