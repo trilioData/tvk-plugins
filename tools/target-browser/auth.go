@@ -40,7 +40,7 @@ func (targetBrowserConfig *Config) Authenticate(ctx context.Context) (*AuthInfo,
 	}
 
 	isIngressNetworkingV1Resource := internal.CheckIfAPIVersionKindAvailable(acc.GetDiscoveryClient(),
-		v1.SchemeGroupVersion.String(), internal.IngressKind)
+		v1.SchemeGroupVersion.WithKind(internal.IngressKind))
 
 	tvkHost, targetBrowserPath, err := getTvkHostAndTargetBrowserAPIPath(ctx, cl, target, isIngressNetworkingV1Resource)
 	if err != nil {
