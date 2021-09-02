@@ -99,14 +99,14 @@ func validateInput(cmd *cobra.Command) error {
 		}
 	}
 	if creationStartTimestamp != "" && creationEndTimestamp != "" {
-		creationStartTimestamp = parseTimestamp(creationStartTimestamp, startTime)
-		creationEndTimestamp = parseTimestamp(creationEndTimestamp, endTime)
+		creationStartTimestamp = parseTimestamp(creationStartTimestamp, StartTime)
+		creationEndTimestamp = parseTimestamp(creationEndTimestamp, EndTime)
 	} else if creationEndTimestamp != "" {
-		creationEndTimestamp = parseTimestamp(creationEndTimestamp, endTime)
-		creationStartTimestamp = extractDate(creationEndTimestamp) + "T" + startTime + "Z"
+		creationEndTimestamp = parseTimestamp(creationEndTimestamp, EndTime)
+		creationStartTimestamp = extractDate(creationEndTimestamp) + "T" + StartTime + "Z"
 	} else if creationStartTimestamp != "" {
-		creationStartTimestamp = parseTimestamp(creationStartTimestamp, startTime)
-		creationEndTimestamp = extractDate(creationStartTimestamp) + "T" + endTime + "Z"
+		creationStartTimestamp = parseTimestamp(creationStartTimestamp, StartTime)
+		creationEndTimestamp = extractDate(creationStartTimestamp) + "T" + EndTime + "Z"
 	}
 
 	if creationStartTimestamp != "" && !validateRFC3339Timestamps(creationStartTimestamp) {

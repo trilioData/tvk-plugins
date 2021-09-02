@@ -1,14 +1,15 @@
 package cmd
 
-
 import (
-	"k8s.io/apimachinery/pkg/util/sets"
 	"regexp"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
+
 const (
-	endTime   = "23:59:59"
-	startTime = "00:00:00"
+	EndTime   = "23:59:59"
+	StartTime = "00:00:00"
 )
 
 func removeDuplicates(uids []string) []string {
@@ -32,7 +33,7 @@ func validateRFC3339Timestamps(startTimestamp string) bool {
 
 // extractDate func extract date in format yyyy-mm-dd
 func extractDate(timestamp string) string {
-	var re = regexp.MustCompile(`\d{4}-(0?[1-9]|1[012])-(0?[1-9]|[12]\d|3[01]){1,2}`)
+	var re = regexp.MustCompile(`([12]\d{3}-(0[1-9]|1[012])-(0[1-9]|[12]\d|3[01]))`)
 	return re.FindString(timestamp)
 }
 

@@ -31,6 +31,7 @@
         "location": "CLUSTER-BACKUPPLAN-UUID/CLUSTER-BACKUP-UUID",
         "startTimestamp": "2021-08-03T11:14:27Z",
         "completionTimestamp": "2021-08-03T11:14:58Z",
+        "expirationTimestamp": "2021-09-13T01:00:EXPIRATION-TIMESTAMPZ",
         "status": "BACKUP-STATUS",
         "size": "0",
         "condition": [

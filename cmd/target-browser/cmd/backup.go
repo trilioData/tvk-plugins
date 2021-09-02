@@ -55,6 +55,10 @@ for specific backupPlan using available flags and options.`,
 `,
 
 	RunE: func(cmd *cobra.Command, args []string) error {
+		err := validateBackupCmdInput()
+		if err != nil {
+			return err
+		}
 		return getBackupList(args)
 	},
 }
@@ -66,19 +70,18 @@ func init() {
 	backupCmd.Flags().StringVar(&expirationStartTimestamp, ExpirationStartTimestampFlag, "", expirationStartTimestampUsage)
 	backupCmd.Flags().StringVar(&expirationEndTimestamp, ExpirationEndTimestampFlag, "", expirationEndTimestampUsage)
 	getCmd.AddCommand(backupCmd)
-
 }
 
 func validateBackupCmdInput() error {
 	if expirationStartTimestamp != "" && expirationEndTimestamp != "" {
-		expirationStartTimestamp = parseTimestamp(expirationStartTimestamp, startTime)
-		expirationEndTimestamp = parseTimestamp(expirationEndTimestamp, endTime)
+		expirationStartTimestamp = parseTimestamp(expirationStartTimestamp, StartTime)
+		expirationEndTimestamp = parseTimestamp(expirationEndTimestamp, EndTime)
 	} else if expirationEndTimestamp != "" {
-		expirationEndTimestamp = parseTimestamp(expirationEndTimestamp, endTime)
-		expirationStartTimestamp = extractDate(expirationEndTimestamp) + "T" + startTime + "Z"
+		expirationEndTimestamp = parseTimestamp(expirationEndTimestamp, EndTime)
+		expirationStartTimestamp = extractDate(expirationEndTimestamp) + "T" + StartTime + "Z"
 	} else if expirationStartTimestamp != "" {
-		expirationStartTimestamp = parseTimestamp(expirationStartTimestamp, startTime)
-		expirationEndTimestamp = extractDate(expirationStartTimestamp) + "T" + endTime + "Z"
+		expirationStartTimestamp = parseTimestamp(expirationStartTimestamp, StartTime)
+		expirationEndTimestamp = extractDate(expirationStartTimestamp) + "T" + EndTime + "Z"
 	}
 
 	if expirationStartTimestamp != "" && !validateRFC3339Timestamps(expirationStartTimestamp) {

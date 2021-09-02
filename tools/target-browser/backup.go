@@ -38,6 +38,7 @@ type Backup struct {
 	TvkInstanceID  string `json:"TVK Instance"`
 	CreationTime   string `json:"Start Time"`
 	CompletionTime string `json:"End Time"`
+	ExpirationTime string `json:"Expiration Time"`
 }
 
 // BackupList struct stores extracted fields from actual Backup API LIST response
@@ -137,9 +138,9 @@ func normalizeBackupDataToRowsAndColumns(response string, wideOutput bool) ([]me
 	for i := range backupList.Results {
 		backup := backupList.Results[i]
 		rows = append(rows, metav1.TableRow{
-			Cells: []interface{}{backup.Name, backup.Kind, backup.UID, backup.Type, backup.Size, backup.Status, backup.BackupPlanUID,
 
-				backup.TvkInstanceID, backup.CreationTime, backup.CompletionTime},
+			Cells: []interface{}{backup.Name, backup.Kind, backup.UID, backup.Type, backup.Size, backup.Status,
+				backup.BackupPlanUID, backup.TvkInstanceID, backup.CreationTime, backup.CompletionTime, backup.ExpirationTime},
 
 		})
 	}

@@ -27,6 +27,7 @@ backupStatusIndex=$RANDOM%4
     backupuid=$4
     backuppath=${fixpath}/${bplanuid}/${backupuid}
     completionTime=$(($(($RANDOM % 50)) + 10))
+    expirationTime=$(($(($RANDOM % 50)) + 10))
     echo "Creating backup in directory ${backuppath}"
     mkdir -p "${backuppath}"
 
@@ -44,6 +45,7 @@ backupStatusIndex=$RANDOM%4
       sed -i "s/BACKUP-STATUS/${backupStatus[backupStatusIndex]}/g" "${src_dir}"/test_files/backup-modified.json
       sed -i "s/APPLICATION-TYPE/${backupType[index]}/g" "${src_dir}"/test_files/backup-modified.json
       sed -i "s/COMPLETION-TIMESTAMP/$completionTime/g" "${src_dir}"/test_files/backup-modified.json
+      sed -i "s/EXPIRATION-TIMESTAMP/$expirationTime/g" "${src_dir}"/test_files/backup-modified.json
 
       # change placeholders in backupplan file with a new value
       sed -i "s/BACKUP-NAME/backup-$j/g" "${src_dir}"/test_files/backupplan-modified.json
@@ -96,6 +98,7 @@ backupStatusIndex=$RANDOM%4
       sed -i "s/CLUSTER-BACKUPPLAN-NAME/cluster-backupplan-$i/g" "${src_dir}"/test_files/cluster-backup-modified.json
       sed -i "s/BACKUP-STATUS/${backupStatus[backupStatusIndex]}/g" "${src_dir}"/test_files/cluster-backup-modified.json
       sed -i "s/COMPLETION-TIMESTAMP/$completionTime/g" "${src_dir}"/test_files/cluster-backup-modified.json
+      sed -i "s/EXPIRATION-TIMESTAMP/$expirationTime/g" "${src_dir}"/test_files/cluster-backup-modified.json
 
       # change placeholders in cluster backupplan file with a new value
       sed -i "s/CLUSTER-BACKUP-NAME/backup-$j/g" "${src_dir}"/test_files/cluster-backupplan-modified.json
