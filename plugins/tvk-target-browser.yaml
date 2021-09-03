@@ -5,7 +5,7 @@ metadata:
 spec:
   homepage: https://github.com/trilioData/tvk-plugins/blob/master/docs/target-browser/README.md
   shortDescription: TVK Target Browser queries mounted target to get details of backup, backupPlan, backup metadata, etc.
-  version: v1.0.0-rc5
+  version: v1.0.0-rc6
   caveats: |
     Curl and Git neeed to be installed on system for Krew index update to work properly
   platforms:
@@ -13,8 +13,8 @@ spec:
       matchLabels:
         os: linux
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0-rc5/target-browser_v1.0.0-rc5_linux_amd64.tar.gz
-    sha256: 9be537355ba7adcf83880a265d065083ee54e41465e6e46ed5a79c23b45d78b4
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0-rc6/target-browser_v1.0.0-rc6_linux_amd64.tar.gz
+    sha256: 12a77a380d74725fd1266f63dd630a1616285ab2336029cb6650db7cf6f3c83b
     bin: target-browser
     files:
     - from: '*'
@@ -24,8 +24,8 @@ spec:
       matchLabels:
         os: darwin
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0-rc5/target-browser_v1.0.0-rc5_darwin_amd64.tar.gz
-    sha256: 26e976cc59f9a27909888fea9da734f21a703a78060ec5aeb33ad83dba3c0b84
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0-rc6/target-browser_v1.0.0-rc6_darwin_amd64.tar.gz
+    sha256: 41f084d0b2fd0cfa26a4270b211ee35cf2022c9f628731536eda81493d0a1387
     bin: target-browser
     files:
     - from: '*'
@@ -35,8 +35,8 @@ spec:
       matchLabels:
         os: windows
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0-rc5/target-browser_v1.0.0-rc5_windows_amd64.zip
-    sha256: e305b996c4f7ffb8140581869e517e1189fc5c5965d17b6084407ed0cbb67ef6
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0-rc6/target-browser_v1.0.0-rc6_windows_amd64.zip
+    sha256: ef04ba3e78c254d8e7a8e5abed9928fba996c17ae6d2d2f7cb26b9cd51a9026a
     bin: target-browser.exe
     files:
     - from: '*'
@@ -68,3 +68,9 @@ spec:
 
     # Metadata of specific backup object
     kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
+
+    # Resource Metadata of specific backup object
+    kubectl tvk-target-browser get resource-metadata --backup-uid <uid> --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace> --group <group> --version <version> --kind <kind> --name <resource-name>
+
+    # Trilio Resources for specific backup object
+    kubectl tvk-target-browser get backup trilio-resources <backup-uid> --backup-plan-uid <uid> --kinds ClusterBackupPlan,Backup,Hook --target-name <name> --target-namespace <namespace>
