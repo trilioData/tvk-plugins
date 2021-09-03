@@ -73,10 +73,10 @@ func aggregateEvents(eventObjects unstructured.UnstructuredList,
 			namespace = "default"
 		}
 
-		kind, _, kErr := unstructured.NestedString(eve.Object, "involvedObject", "kind")
-		if kErr != nil {
-			log.Errorf("Unable to get event data of Object : %s", kErr.Error())
-			return nil, kErr
+		kind, _, gErr := unstructured.NestedString(eve.Object, "involvedObject", "kind")
+		if gErr != nil {
+			log.Errorf("Unable to get event data of Object : %s", gErr.Error())
+			return nil, gErr
 		}
 
 		name, _, naErr := unstructured.NestedString(eve.Object, "involvedObject", "name")

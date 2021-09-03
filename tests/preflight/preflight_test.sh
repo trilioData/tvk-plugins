@@ -7,6 +7,9 @@ PREFLIGHT_TESTS_SUCCESS=true
 # shellcheck source=/dev/null
 source tools/preflight/preflight.sh --source-only
 
+# change permission of kubeconfig file to suppress it's warning
+sudo chmod 600 "${KUBECONFIG}"
+
 trap 'cleanup' EXIT
 
 take_input --storageclass csi-gce-pd --snapshotclass default-snapshot-class
