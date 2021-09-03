@@ -303,6 +303,7 @@ metadata:
   name: ${DNS_UTILS}
   labels:
     trilio: tvk-preflight
+    preflight-run: ${RANDOM_STRING}
 spec:
   containers:
   - name: dnsutils
@@ -349,6 +350,7 @@ metadata:
   name: ${SOURCE_PVC}
   labels:
     trilio: tvk-preflight
+    preflight-run: ${RANDOM_STRING}
 spec:
   accessModes:
     - ReadWriteOnce
@@ -363,6 +365,7 @@ metadata:
   name: ${SOURCE_POD}
   labels:
     trilio: tvk-preflight
+    preflight-run: ${RANDOM_STRING}
 spec:
   containers:
   - name: busybox
@@ -410,6 +413,7 @@ metadata:
   name: ${VOLUME_SNAP_SRC}
   labels:
     trilio: tvk-preflight
+    preflight-run: ${RANDOM_STRING}
 spec:
   volumeSnapshotClassName: ${SNAPSHOT_CLASS}
   source:
@@ -447,6 +451,7 @@ metadata:
   name: ${RESTORE_PVC}
   labels:
     trilio: tvk-preflight
+    preflight-run: ${RANDOM_STRING}
 spec:
   accessModes:
     - ReadWriteOnce
@@ -465,6 +470,7 @@ metadata:
   name: ${RESTORE_POD}
   labels:
     trilio: tvk-preflight
+    preflight-run: ${RANDOM_STRING}
 spec:
   containers:
   - name: busybox
@@ -519,6 +525,7 @@ metadata:
   name: ${UNUSED_VOLUME_SNAP_SRC}
   labels:
     trilio: tvk-preflight
+    preflight-run: ${RANDOM_STRING}
 spec:
   volumeSnapshotClassName: ${SNAPSHOT_CLASS}
   source:
@@ -556,6 +563,7 @@ metadata:
   name: ${UNUSED_RESTORE_PVC}
   labels:
     trilio: tvk-preflight
+    preflight-run: ${RANDOM_STRING}
 spec:
   accessModes:
     - ReadWriteOnce
@@ -574,6 +582,7 @@ metadata:
   name: ${UNUSED_RESTORE_POD}
   labels:
     trilio: tvk-preflight
+    preflight-run: ${RANDOM_STRING}
 spec:
   containers:
   - name: busybox
@@ -631,7 +640,7 @@ cleanup() {
 
   kubectl delete --force --grace-period=0 pod "${SOURCE_POD}" "${RESTORE_POD}" "${UNUSED_RESTORE_POD}" &>/dev/null || true
 
-  kubectl delete all -l trilio=tvk-preflight --force --grace-period=0 &>/dev/null || true
+  kubectl delete all -l preflight-run="${RANDOM_STRING}" --force --grace-period=0 &>/dev/null || true
 
   echo -e "\n${GREEN} ${CHECK} Cleaned up all the resources${NC}\n"
 
