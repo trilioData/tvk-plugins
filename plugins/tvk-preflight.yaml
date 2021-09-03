@@ -5,7 +5,7 @@ metadata:
 spec:
   homepage: https://github.com/trilioData/tvk-plugins/blob/main/docs/preflight/README.md
   shortDescription: TVK application preflight check for k8s cluster
-  version: v1.0.0-rc5
+  version: v1.0.0-rc6
   caveats: |
     Curl and Git neeed to be installed on system for Krew index update to work properly
   platforms:
@@ -16,8 +16,8 @@ spec:
         values:
         - darwin
         - linux
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0-rc5/preflight.tar.gz
-    sha256: 0ee0dad934e2b9965f6a81aeacc384fb224cefe426ba352921b537a02bf492e1
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0-rc6/preflight.tar.gz
+    sha256: 08a7dc4f5fd22cfcfaaa7bb208d9d8396125e18330af5dee1131278777cd0ab7
     bin: preflight
     files:
     - from: preflight/*
