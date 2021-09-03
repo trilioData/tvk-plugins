@@ -169,12 +169,6 @@ if [[ retCode -ne 0 ]]; then
   PREFLIGHT_TESTS_SUCCESS=false
 fi
 
-testVolumeSnapshot
-retCode=$?
-if [[ retCode -ne 0 ]]; then
-  PREFLIGHT_TESTS_SUCCESS=false
-fi
-
 # Check status of Pre-flight test-cases
 if [ $PREFLIGHT_TESTS_SUCCESS == "true" ]; then
   echo -e "All Pre-flight tests Passed!"
