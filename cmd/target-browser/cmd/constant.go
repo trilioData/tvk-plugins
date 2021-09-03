@@ -51,9 +51,8 @@ const (
 	orderByDefault = "name"
 	orderByUsage   = "Parameter to use for ordering the paginated result set"
 
-	TvkInstanceUIDFlag    = "tvk-instance-uid"
-	tvkInstanceUIDDefault = ""
-	tvkInstanceUIDUsage   = "TVK instance id to filter backupPlan"
+	TvkInstanceUIDFlag  = "tvk-instance-uid"
+	tvkInstanceUIDUsage = "TVK instance id to filter backup/backupPlan"
 
 	BackupPlanUIDFlag    = "backup-plan-uid"
 	backupPlanUIDDefault = ""

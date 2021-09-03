@@ -33,6 +33,7 @@ type Backup struct {
 	Size           string `json:"Size"`
 	Status         string `json:"Status"`
 	BackupPlanUID  string `json:"BackupPlan UID"`
+	TvkInstanceID  string `json:"TVK Instance"`
 	CreationTime   string `json:"Start Time"`
 	CompletionTime string `json:"End Time"`
 }
@@ -135,7 +136,7 @@ func normalizeBackupDataToRowsAndColumns(response string, wideOutput bool) ([]me
 		backup := backupList.Results[i]
 		rows = append(rows, metav1.TableRow{
 			Cells: []interface{}{backup.Name, backup.Kind, backup.UID, backup.Type, backup.Size, backup.Status, backup.BackupPlanUID,
-				backup.CreationTime, backup.CompletionTime},
+				backup.TvkInstanceID, backup.CreationTime, backup.CompletionTime},
 		})
 	}
 

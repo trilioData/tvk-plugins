@@ -47,7 +47,7 @@ using available flags and options.`,
 			return getBackupPlanList(args)
 		},
 	}
-	cmd.Flags().StringVar(&tvkInstanceUID, TvkInstanceUIDFlag, tvkInstanceUIDDefault, tvkInstanceUIDUsage)
+
 	return cmd
 }
 
@@ -58,7 +58,6 @@ func getBackupPlanList(args []string) error {
 
 	bpOptions := targetBrowser.BackupPlanListOptions{
 		CommonListOptions: commonOptions,
-		TvkInstanceUID:    tvkInstanceUID,
 	}
 
 	err := targetBrowserAuthConfig.GetBackupPlans(&bpOptions, args)

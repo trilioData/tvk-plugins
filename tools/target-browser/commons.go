@@ -21,6 +21,7 @@ type CommonListOptions struct {
 	OrderBy        string `url:"ordering,omitempty"`
 	OperationScope string `url:"operationScope,omitempty"`
 	OutputFormat   string
+	TvkInstanceUID string `url:"tvkInstanceUID,omitempty"`
 }
 
 // ListMetadata for Pagination

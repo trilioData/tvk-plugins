@@ -16,7 +16,6 @@ import (
 // BackupPlanListOptions for backupPlan
 type BackupPlanListOptions struct {
 	CommonListOptions
-	TvkInstanceUID string `url:"tvkInstanceUID,omitempty"`
 }
 
 // BackupPlan struct stores extracted fields from actual BackupPlan API GET response

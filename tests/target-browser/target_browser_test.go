@@ -1029,6 +1029,78 @@ var _ = Describe("Target Browser Tests", func() {
 			})
 		})
 
+		Context("Filtering Backups based on TVK Instance ID", func() {
+			var (
+				backupPlanUIDs      []string
+				tvkInstanceIDValues []string
+				once                sync.Once
+				isLast              bool
+			)
+			BeforeEach(func() {
+				once.Do(func() {
+					createTarget(true)
+					// Generating backupPlans and backups with different TVK instance UID
+					tvkInstanceIDValues = []string{
+						guid.New().String(),
+						guid.New().String(),
+					}
+					for _, value := range tvkInstanceIDValues {
+						_, err := exec.Command(createBackupScript, "1", "1", "mutate-tvk-id", value).Output()
+						Expect(err).To(BeNil())
+					}
+					time.Sleep(2 * time.Minute) // wait to sync data on target browser
+					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(2, 2)
+				})
+			})
+			AfterEach(func() {
+				if isLast {
+					deleteTarget(false)
+					for _, backupPlans := range backupPlanUIDs {
+						_, err := shell.RmRf(filepath.Join(TargetLocation, backupPlans))
+						Expect(err).To(BeNil())
+					}
+				}
+			})
+
+			It(fmt.Sprintf("Should filter backups if flag %s is provided", cmd.TvkInstanceUIDFlag), func() {
+				for _, value := range tvkInstanceIDValues {
+					args := []string{cmdGet, cmdBackup, flagTvkInstanceUIDFlag, value}
+					backupData := runCmdBackup(args)
+					Expect(len(backupData)).To(Equal(1))
+					Expect(backupData[0].TvkInstanceID).Should(Equal(value))
+				}
+			})
+			// TODO update condition once API is fixed
+			It(fmt.Sprintf("Should get zero backups if flag %s is given 'invalid' value", cmd.TvkInstanceUIDFlag), func() {
+				args := []string{cmdGet, cmdBackup, flagTvkInstanceUIDFlag, "invalid"}
+				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(0))
+			})
+
+			It(fmt.Sprintf("Should fail if flag %s is given without value", flagTvkInstanceUIDFlag), func() {
+				args := []string{cmdGet, cmdBackup}
+				args = append(args, commonArgs...)
+				args = append(args, flagTvkInstanceUIDFlag)
+				command := exec.Command(targetBrowserBinaryFilePath, args...)
+				output, err := command.CombinedOutput()
+				Expect(err).Should(HaveOccurred())
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagTvkInstanceUIDFlag)))
+			})
+
+			It(fmt.Sprintf("Should filter backups on flag %s and order by backup name ascending order", cmd.TvkInstanceUIDFlag), func() {
+				isLast = true
+				for _, value := range tvkInstanceIDValues {
+					args := []string{cmdGet, cmdBackup, flagTvkInstanceUIDFlag, value, flagOrderBy, name}
+					backupData := runCmdBackup(args)
+					Expect(backupData[0].TvkInstanceID).Should(Equal(value))
+					for index := 0; index < len(backupData)-1; index++ {
+						Expect(backupData[index].Name <= backupData[index+1].Name).Should(BeTrue())
+					}
+				}
+
+			})
+		})
+
 	})
 	Context("Metadata command test-cases", func() {
 		Context("Filter Operations on different fields of backupPlan & backup", func() {
