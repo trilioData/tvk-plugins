@@ -17,7 +17,7 @@ CHECK='\xE2\x9C\x94'
 CROSS='\xE2\x9D\x8C'
 
 MIN_HELM_VERSION="3.0.0"
-MIN_K8S_VERSION="1.17.0"
+MIN_K8S_VERSION="1.18.0"
 PREFLIGHT_RUN_SUCCESS=true
 
 # shellcheck disable=SC2018
@@ -314,7 +314,7 @@ spec:
   restartPolicy: Always
 EOF
 
-  kubectl wait --for=condition=ready --timeout=2m pod/"${DNS_UTILS}" &>/dev/null
+  kubectl wait --for=condition=ready --timeout=5m pod/"${DNS_UTILS}" &>/dev/null
   kubectl exec -it "${DNS_UTILS}" -- nslookup kubernetes.default &>/dev/null
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
@@ -379,12 +379,12 @@ spec:
       readOnly: false
 EOF
 
-  kubectl wait --for=condition=ready --timeout=2m pod/"${SOURCE_POD}" &>/dev/null
+  kubectl wait --for=condition=ready --timeout=5m pod/"${SOURCE_POD}" &>/dev/null
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
-    echo -e "${GREEN} ${CHECK} Created source pod and pvc${NC}\n"
+    echo -e "${GREEN} ${CHECK} Successfully created source pod [Ready] and pvc ${NC}\n"
   else
-    echo -e "${RED} ${CROSS} Error creating source pod and pvc${NC}\n"
+    echo -e "${RED} ${CROSS} Error waiting for source pod and pvc to be in [Ready] state${NC}\n"
     return ${err_status}
   fi
 
@@ -482,12 +482,12 @@ spec:
       readOnly: false
 EOF
 
-  kubectl wait --for=condition=ready --timeout=2m pod/"${RESTORE_POD}" &>/dev/null
+  kubectl wait --for=condition=ready --timeout=5m pod/"${RESTORE_POD}" &>/dev/null
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
-    echo -e "${GREEN} ${CHECK} Created restore pod from volume snapshot${NC}\n"
+    echo -e "${GREEN} ${CHECK} Successfully created restore pod [Ready] from volume snapshot${NC}\n"
   else
-    echo -e "${RED_BOLD} ${CROSS} Error creating pod and pvc from volume snapshot${NC}\n"
+    echo -e "${RED_BOLD} ${CROSS} Error waiting for restore pod and pvc from volume snapshot to be in [Ready] state${NC}\n"
     return ${err_status}
   fi
 
@@ -591,12 +591,12 @@ spec:
       readOnly: false
 EOF
 
-  kubectl wait --for=condition=ready --timeout=2m pod/"${UNUSED_RESTORE_POD}" &>/dev/null
+  kubectl wait --for=condition=ready --timeout=5m pod/"${UNUSED_RESTORE_POD}" &>/dev/null
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
-    echo -e "${GREEN} ${CHECK} Created restore pod from volume snapshot of unused pv${NC}\n"
+    echo -e "${GREEN} ${CHECK} Successfully created restore pod [Ready] from volume snapshot of unused pv${NC}\n"
   else
-    echo -e "${RED_BOLD} ${CROSS} Error creating pod and pvc from volume snapshot of unused pv${NC}\n"
+    echo -e "${RED_BOLD} ${CROSS} Error waiting for restore pod and pvc from volume snapshot of unused pv to be in [Ready] state${NC}\n"
     return ${err_status}
   fi
 
