@@ -40,6 +40,9 @@ for specific backupPlan using available flags and options.`,
   # List of backups in Multi Namespace/Cluster Scope: filter by [operationScope]
   kubectl tvk-target-browser get backup --operation-scope MultiNamespace --target-name <name> --target-namespace <namespace>
 
+  # List of backups: filter by [tvkInstanceUID]
+  kubectl tvk-target-browser get backup --tvk-instance-uid <uid> --target-name <name> --target-namespace <namespace>
+  
   # List of backups: filter by [expiry-date] (NOT SUPPORTED)
   kubectl tvk-target-browser get backup --backup-plan-uid <uid> --expiry-date <date> --target-name <name> --target-namespace <namespace>
 

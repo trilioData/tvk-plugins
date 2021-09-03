@@ -50,6 +50,7 @@ which retrieves single object or list of objects of that resource.`,
 			OrderBy:        orderBy,
 			OutputFormat:   outputFormat,
 			OperationScope: operationScope,
+			TvkInstanceUID: tvkInstanceUID,
 		}
 
 		return nil
@@ -61,6 +62,7 @@ func init() {
 	getCmd.PersistentFlags().IntVar(&pageSize, PageSizeFlag, PageSizeDefault, pageSizeUsage)
 	getCmd.PersistentFlags().StringVar(&orderBy, OrderByFlag, orderByDefault, orderByUsage)
 	getCmd.PersistentFlags().StringVar(&operationScope, OperationScopeFlag, "", operationScopeUsage)
+	getCmd.PersistentFlags().StringVar(&tvkInstanceUID, TvkInstanceUIDFlag, "", tvkInstanceUIDUsage)
 	rootCmd.AddCommand(getCmd)
 }
 
