@@ -97,23 +97,12 @@ func validateInput(cmd *cobra.Command) error {
 			return fmt.Errorf("[%s] flag invalid value. Usage - %s", OperationScopeFlag, operationScopeUsage)
 		}
 	}
-	if creationStartTimestamp != "" && creationEndTimestamp != "" {
-		creationStartTimestamp = parseTimestamp(creationStartTimestamp, StartTime)
-		creationEndTimestamp = parseTimestamp(creationEndTimestamp, EndTime)
-	} else if creationEndTimestamp != "" {
-		creationEndTimestamp = parseTimestamp(creationEndTimestamp, EndTime)
-		creationStartTimestamp = extractDate(creationEndTimestamp) + "T" + StartTime + "Z"
-	} else if creationStartTimestamp != "" {
-		creationStartTimestamp = parseTimestamp(creationStartTimestamp, StartTime)
-		creationEndTimestamp = extractDate(creationStartTimestamp) + "T" + EndTime + "Z"
-
+	var err error
+	creationStartTimestamp, creationEndTimestamp, err = validateStartEndTimeStamp(creationStartTimestamp, creationEndTimestamp,
+		CreationStartTimestampFlag, CreationEndTimestampFlag, creationStartTimestampUsage, creationEndTimestampUsage)
+	if err != nil {
+		return err
 	}
 
-	if creationStartTimestamp != "" && !validateRFC3339Timestamps(creationStartTimestamp) {
-		return fmt.Errorf("[%s] flag invalid value. Usage - %s", CreationStartTimestampFlag, creationStartTimestampUsage)
-	}
-	if creationEndTimestamp != "" && !validateRFC3339Timestamps(creationEndTimestamp) {
-		return fmt.Errorf("[%s] flag invalid value. Usage - %s", CreationEndTimestampFlag, creationEndTimestampUsage)
-	}
 	return nil
 }

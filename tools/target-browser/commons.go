@@ -16,7 +16,6 @@ import (
 )
 
 type CommonListOptions struct {
-
 	CreationStartTimestamp string `url:"creationStartTimestamp,omitempty"`
 	CreationEndTimestamp   string `url:"creationEndTimestamp,omitempty"`
 	Page                   int    `url:"page"`

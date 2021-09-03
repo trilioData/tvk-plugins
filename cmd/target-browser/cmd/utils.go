@@ -1,18 +1,17 @@
 package cmd
 
-
 import (
-	"regexp"
+	"fmt"
 	"time"
 
+	"github.com/araddon/dateparse"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
-	EndTime   = "23:59:59"
-	StartTime = "00:00:00"
-
-
+	EndTime           = "23:59:59"
+	StartTime         = "00:00:00"
+	dayEndTimeSeconds = 24*60*60 - 1
 )
 
 func removeDuplicates(uids []string) []string {
@@ -27,34 +26,46 @@ func removeDuplicates(uids []string) []string {
 
 }
 
-func validateRFC3339Timestamps(startTimestamp string) bool {
-	if _, err := time.Parse(time.RFC3339, startTimestamp); err != nil {
-		return false
+func parseTimestamp(timestamp, deltaTime string) (time.Time, error) {
+	ts, err := dateparse.ParseAny(timestamp)
+	if err != nil {
+		return time.Time{}, err
 	}
-	return true
+	if ts.Hour() == 0 && ts.Minute() == 0 && ts.Second() == 0 && deltaTime != StartTime {
+		ts = ts.Add(dayEndTimeSeconds * time.Second)
+	}
+	return ts, nil
+
 }
 
-// extractDate func extract date in format yyyy-mm-dd
-func extractDate(timestamp string) string {
+func validateStartEndTimeStamp(startTS, endTS, startFlag, endFlag, startUsage, endUsage string) (startTStamp, endTStamp string, err error) {
+	var ts time.Time
+	if startTS != "" && endTS != "" {
+		ts, err = parseTimestamp(startTS, StartTime)
+		if err != nil {
+			return "", "", fmt.Errorf("[%s] flag invalid value. Usage - %s", startFlag, startUsage)
+		}
+		startTStamp = ts.Format(time.RFC3339)
+		ts, err = parseTimestamp(endTS, EndTime)
+		if err != nil {
+			return "", "", fmt.Errorf("[%s] flag invalid value. Usage - %s", endFlag, endUsage)
+		}
+		endTStamp = ts.Format(time.RFC3339)
 
-	var re = regexp.MustCompile(`([12]\d{3}-(0[1-9]|1[012])-(0[1-9]|[12]\d|3[01]))`)
-
-	return re.FindString(timestamp)
-}
-
-// extractTime func extract time in format hh:mm:ss
-func extractTime(timestamp, deltaTime string) string {
-	var re = regexp.MustCompile(`([01]?\d|2[0-3]):[0-5]\d:[0-5]\d`)
-	if re.FindString(timestamp) == "" {
-		return deltaTime
+	} else if endTS != "" {
+		ts, err = parseTimestamp(endTS, EndTime)
+		if err != nil {
+			return "", "", fmt.Errorf("[%s] flag invalid value. Usage - %s", endFlag, endUsage)
+		}
+		endTStamp = ts.Format(time.RFC3339)
+		startTStamp = ts.Truncate(time.Hour * 24).Format(time.RFC3339)
+	} else if startTS != "" {
+		ts, err = parseTimestamp(startTS, StartTime)
+		if err != nil {
+			return "", "", fmt.Errorf("[%s] flag invalid value. Usage - %s", startFlag, startUsage)
+		}
+		startTStamp = ts.Format(time.RFC3339)
+		endTStamp = ts.Truncate(time.Hour * 24).Add(dayEndTimeSeconds * time.Second).Format(time.RFC3339)
 	}
-	return re.FindString(timestamp)
-}
-
-func parseTimestamp(timestamp, deltaTime string) string {
-	if validateRFC3339Timestamps(timestamp) {
-		return timestamp
-	}
-	return extractDate(timestamp) + "T" + extractTime(timestamp, deltaTime) + "Z"
-
+	return startTStamp, endTStamp, nil
 }

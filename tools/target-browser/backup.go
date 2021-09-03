@@ -138,11 +138,8 @@ func normalizeBackupDataToRowsAndColumns(response string, wideOutput bool) ([]me
 	for i := range backupList.Results {
 		backup := backupList.Results[i]
 		rows = append(rows, metav1.TableRow{
-
-
 			Cells: []interface{}{backup.Name, backup.Kind, backup.UID, backup.Type, backup.Size, backup.Status,
 				backup.BackupPlanUID, backup.TvkInstanceID, backup.CreationTime, backup.CompletionTime, backup.ExpirationTime},
-
 		})
 	}
 
