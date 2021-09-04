@@ -93,16 +93,17 @@ const (
 	kindsUsage = "List of kinds of trilio resources. Available kinds: ClusterBackup, ClusterBackupPlan," +
 		" Backup, BackupPlan, Target, Secret, Policy, Hook"
 
-	supportedTSFormat           = "Supported format can be yyyy-mm-dd or yyyy-mm-ddThh:mm:ssZ"
-	CreationStartTimestampFlag  = "creation-start-timestamp"
-	creationStartTimestampUsage = "RFC3339 timestamp to filter backup/backupPlans on creationTimestamp from. " + supportedTSFormat
-	CreationEndTimestampFlag    = "creation-end-timestamp"
-	creationEndTimestampUsage   = "RFC3339 timestamp to filter backup/backupPlans on creationTimestamp to." + supportedTSFormat
+	supportedTSFormat = "Supported format can be yyyy-mm-dd or yyyy-mm-ddThh:mm:ssZ, yyyy/mm/dd, dd/mm/yyy," +
+		" mm/dd/yy, yyyy-mm-dd hh:mm:ss, yyyymmdd, yyyy-mm-ddThh"
+	CreationStartDateFlag  = "creation-start-date"
+	creationStartDateUsage = "Any valid date or timestamp to filter backup/backupPlans on creationTimestamp from. " + supportedTSFormat
+	CreationEndDateFlag    = "creation-end-date"
+	creationEndDateUsage   = "Any valid date or timestamp to filter backup/backupPlans on creationTimestamp to." + supportedTSFormat
 
-	ExpirationStartTimestampFlag  = "expiration-start-timestamp"
-	expirationStartTimestampUsage = "RFC3339 timestamp to filter backups on expirationTimestamp from." + supportedTSFormat
-	ExpirationEndTimestampFlag    = "expiration-end-timestamp"
-	expirationEndTimestampUsage   = "RFC3339 timestamp to filter backups on expirationTimestamp to." + supportedTSFormat
+	ExpirationStartDateFlag  = "expiration-start-date"
+	expirationStartDateUsage = "Any valid  date or timestamp to filter backups on expirationTimestamp from." + supportedTSFormat
+	ExpirationEndDateFlag    = "expiration-end-date"
+	expirationEndDateUsage   = "Any valid date or timestamp to filter backups on expirationTimestamp to." + supportedTSFormat
 )
 
 var (
@@ -111,15 +112,15 @@ var (
 	kind    string
 	name    string
 
-	tvkInstanceUID                                   string
-	backupPlanUID                                    string
-	backupStatus                                     string
-	backupUID                                        string
-	orderBy                                          string
-	pages, pageSize                                  int
-	creationStartTimestamp, creationEndTimestamp     string
-	expirationStartTimestamp, expirationEndTimestamp string
-	operationScope                                   string
+	tvkInstanceUID                         string
+	backupPlanUID                          string
+	backupStatus                           string
+	backupUID                              string
+	orderBy                                string
+	pages, pageSize                        int
+	creationStartDate, creationEndDate     string
+	expirationStartDate, expirationEndDate string
+	operationScope                         string
 
 	kinds []string
 )

@@ -29,41 +29,41 @@ import (
 )
 
 const (
-	backupPlanType               = "backupPlanType"
-	name                         = "name"
-	successfulBackups            = "successfulBackups"
-	backupTimestamp              = "backupTimestamp"
-	status                       = "status"
-	cmdBackupPlan                = cmd.BackupPlanCmdName
-	cmdBackup                    = cmd.BackupCmdName
-	cmdMetadata                  = cmd.MetadataCmdName
-	cmdGet                       = "get"
-	flagPrefix                   = "--"
-	hyphen                       = "-"
-	flagOrderBy                  = flagPrefix + cmd.OrderByFlag
-	flagTvkInstanceUIDFlag       = flagPrefix + cmd.TvkInstanceUIDFlag
-	flagBackupUIDFlag            = flagPrefix + cmd.BackupUIDFlag
-	flagBackupStatus             = flagPrefix + cmd.BackupStatusFlag
-	flagBackupPlanUIDFlag        = flagPrefix + cmd.BackupPlanUIDFlag
-	flagPageSize                 = flagPrefix + cmd.PageSizeFlag
-	flagTargetNamespace          = flagPrefix + cmd.TargetNamespaceFlag
-	flagTargetName               = flagPrefix + cmd.TargetNameFlag
-	flagKubeConfig               = flagPrefix + cmd.KubeConfigFlag
-	flagCaCert                   = flagPrefix + cmd.CertificateAuthorityFlag
-	flagInsecureSkip             = flagPrefix + cmd.InsecureSkipTLSFlag
-	flagUseHTTPS                 = flagPrefix + cmd.UseHTTPS
-	flagOutputFormat             = flagPrefix + cmd.OutputFormatFlag
-	flagCreationStartTimestamp   = flagPrefix + cmd.CreationStartTimestampFlag
-	flagCreationEndTimestamp     = flagPrefix + cmd.CreationEndTimestampFlag
-	flagExpirationStartTimestamp = flagPrefix + cmd.ExpirationStartTimestampFlag
-	flagExpirationEndTimestamp   = flagPrefix + cmd.ExpirationEndTimestampFlag
-	flagOperationScope           = flagPrefix + cmd.OperationScopeFlag
-	kubeConf                     = ""
-	pageSize                     = 1
-	backupCreationStartDate      = "2021-05-16"
-	backupCreationEndDate        = "2021-05-18"
-	backupExpirationStartDate    = "2021-09-13"
-	backupExpirationEndDate      = "2021-09-14"
+	backupPlanType            = "backupPlanType"
+	name                      = "name"
+	successfulBackups         = "successfulBackups"
+	backupTimestamp           = "backupTimestamp"
+	status                    = "status"
+	cmdBackupPlan             = cmd.BackupPlanCmdName
+	cmdBackup                 = cmd.BackupCmdName
+	cmdMetadata               = cmd.MetadataCmdName
+	cmdGet                    = "get"
+	flagPrefix                = "--"
+	hyphen                    = "-"
+	flagOrderBy               = flagPrefix + cmd.OrderByFlag
+	flagTvkInstanceUIDFlag    = flagPrefix + cmd.TvkInstanceUIDFlag
+	flagBackupUIDFlag         = flagPrefix + cmd.BackupUIDFlag
+	flagBackupStatus          = flagPrefix + cmd.BackupStatusFlag
+	flagBackupPlanUIDFlag     = flagPrefix + cmd.BackupPlanUIDFlag
+	flagPageSize              = flagPrefix + cmd.PageSizeFlag
+	flagTargetNamespace       = flagPrefix + cmd.TargetNamespaceFlag
+	flagTargetName            = flagPrefix + cmd.TargetNameFlag
+	flagKubeConfig            = flagPrefix + cmd.KubeConfigFlag
+	flagCaCert                = flagPrefix + cmd.CertificateAuthorityFlag
+	flagInsecureSkip          = flagPrefix + cmd.InsecureSkipTLSFlag
+	flagUseHTTPS              = flagPrefix + cmd.UseHTTPS
+	flagOutputFormat          = flagPrefix + cmd.OutputFormatFlag
+	flagCreationStartDate     = flagPrefix + cmd.CreationStartDateFlag
+	flagCreationEndDate       = flagPrefix + cmd.CreationEndDateFlag
+	flagExpirationStartDate   = flagPrefix + cmd.ExpirationStartDateFlag
+	flagExpirationEndDate     = flagPrefix + cmd.ExpirationEndDateFlag
+	flagOperationScope        = flagPrefix + cmd.OperationScopeFlag
+	kubeConf                  = ""
+	pageSize                  = 1
+	backupCreationStartDate   = "2021-05-16"
+	backupCreationEndDate     = "2021-05-18"
+	backupExpirationStartDate = "2021-09-13"
+	backupExpirationEndDate   = "2021-09-14"
 )
 
 var (
@@ -387,7 +387,7 @@ var _ = Describe("Target Browser Tests", func() {
 		})
 
 		Context(fmt.Sprintf("test-cases for flag %s, %s, %s, %s with path value, zero, valid  and invalid value",
-			cmd.OrderByFlag, cmd.PageSizeFlag, cmd.CreationStartTimestampFlag, cmd.CreationEndTimestampFlag), func() {
+			cmd.OrderByFlag, cmd.PageSizeFlag, cmd.CreationStartDateFlag, cmd.CreationEndDateFlag), func() {
 			var (
 				backupPlanUIDs                   []string
 				noOfBackupPlansToCreate          = 11
@@ -508,150 +508,109 @@ var _ = Describe("Target Browser Tests", func() {
 				Expect(string(output)).Should(ContainSubstring("404 Not Found"))
 			})
 
-			It(fmt.Sprintf("Should fail if flag %s is given without value", flagCreationStartTimestamp), func() {
+			It(fmt.Sprintf("Should fail if flag %s is given without value", flagCreationStartDate), func() {
 				args := []string{cmdGet, cmdBackupPlan}
 				args = append(args, commonArgs...)
-				args = append(args, flagCreationStartTimestamp)
+				args = append(args, flagCreationStartDate)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagCreationStartTimestamp)))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagCreationStartDate)))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s is given zero value", flagCreationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagCreationStartTimestamp, ""}
-				backupPlanData := runCmdBackupPlan(args)
-				Expect(len(backupPlanData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should fail if flag %s is given 'invalid' value", flagCreationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagCreationStartTimestamp, "invalid"}
+			It(fmt.Sprintf("Should succeed if flag %s is given zero value", flagCreationStartDate), func() {
+				args := []string{cmdGet, cmdBackupPlan, flagCreationStartDate, ""}
 				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.CreationStartTimestampFlag)))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag value cannot be empty", cmd.CreationStartDateFlag)))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s is given valid format timestamp value", flagCreationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagCreationStartTimestamp, fmt.Sprintf("%sT%sZ", backupCreationEndDate, cmd.StartTime)}
+			It(fmt.Sprintf("Should fail if flag %s is given 'invalid' value", flagCreationStartDate), func() {
+				args := []string{cmdGet, cmdBackupPlan, flagCreationStartDate, "invalid"}
+				args = append(args, commonArgs...)
+				command := exec.Command(targetBrowserBinaryFilePath, args...)
+				output, err := command.CombinedOutput()
+				Expect(err).Should(HaveOccurred())
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.CreationStartDateFlag)))
+			})
+
+			It(fmt.Sprintf("Should succeed if flag %s is given valid format timestamp value", flagCreationStartDate), func() {
+				args := []string{cmdGet, cmdBackupPlan, flagCreationStartDate, fmt.Sprintf("%sT%sZ", backupCreationEndDate, cmd.StartTime)}
 				backupPlanData := runCmdBackupPlan(args)
 				Expect(len(backupPlanData)).To(Equal(cmd.PageSizeDefault))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s is given valid format date value", flagCreationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagCreationStartTimestamp, backupCreationEndDate}
+			It(fmt.Sprintf("Should succeed if flag %s is given valid format date value", flagCreationStartDate), func() {
+				args := []string{cmdGet, cmdBackupPlan, flagCreationStartDate, backupCreationEndDate}
 				backupPlanData := runCmdBackupPlan(args)
 				Expect(len(backupPlanData)).To(Equal(cmd.PageSizeDefault))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'T' value", flagCreationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagCreationStartTimestamp, fmt.Sprintf("%sT%s", backupCreationEndDate, cmd.StartTime)}
+			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'T' value", flagCreationStartDate), func() {
+				args := []string{cmdGet, cmdBackupPlan, flagCreationStartDate, fmt.Sprintf("%sT%s", backupCreationEndDate, cmd.StartTime)}
 				backupPlanData := runCmdBackupPlan(args)
 				Expect(len(backupPlanData)).To(Equal(cmd.PageSizeDefault))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'Z' value", flagCreationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagCreationStartTimestamp, fmt.Sprintf("%s %sZ", backupCreationEndDate, cmd.StartTime)}
+			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'Z' value", flagCreationStartDate), func() {
+				args := []string{cmdGet, cmdBackupPlan, flagCreationStartDate, fmt.Sprintf("%s %sZ", backupCreationEndDate, cmd.StartTime)}
 				backupPlanData := runCmdBackupPlan(args)
 				Expect(len(backupPlanData)).To(Equal(cmd.PageSizeDefault))
 			})
 
 			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'T' & 'Z' value",
-				flagCreationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagCreationStartTimestamp, fmt.Sprintf("%s %s", backupCreationEndDate, cmd.StartTime)}
+				flagCreationStartDate), func() {
+				args := []string{cmdGet, cmdBackupPlan, flagCreationStartDate, fmt.Sprintf("%s %s", backupCreationEndDate, cmd.StartTime)}
 				backupPlanData := runCmdBackupPlan(args)
 				Expect(len(backupPlanData)).To(Equal(cmd.PageSizeDefault))
 			})
 
-			It(fmt.Sprintf("Should fail if flag %s is given without value", flagCreationEndTimestamp), func() {
+			It(fmt.Sprintf("Should fail if flag %s is given without value", flagCreationEndDate), func() {
 				args := []string{cmdGet, cmdBackupPlan}
 				args = append(args, commonArgs...)
-				args = append(args, flagCreationEndTimestamp)
+				args = append(args, flagCreationEndDate)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagCreationEndTimestamp)))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagCreationEndDate)))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s is given zero value", flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagCreationEndTimestamp, ""}
-				backupPlanData := runCmdBackupPlan(args)
-				Expect(len(backupPlanData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should fail if flag %s is given 'invalid' value", flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagCreationEndTimestamp, "invalid"}
+			It(fmt.Sprintf("Should fail if flag %s is given 'invalid' value", flagCreationEndDate), func() {
+				args := []string{cmdGet, cmdBackupPlan, flagCreationEndDate, "invalid"}
 				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.CreationEndTimestampFlag)))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given valid format timestamp value", flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagCreationEndTimestamp, fmt.Sprintf("%sT%sZ", backupCreationEndDate, cmd.EndTime)}
-				backupPlanData := runCmdBackupPlan(args)
-				Expect(len(backupPlanData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given valid format date value", flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagCreationEndTimestamp, backupCreationEndDate}
-				backupPlanData := runCmdBackupPlan(args)
-				Expect(len(backupPlanData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'T' value", flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagCreationEndTimestamp, fmt.Sprintf("%s %sZ", backupCreationEndDate, cmd.EndTime)}
-				backupPlanData := runCmdBackupPlan(args)
-				Expect(len(backupPlanData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'Z' value", flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagCreationEndTimestamp, fmt.Sprintf("%sT%s", backupCreationEndDate, cmd.EndTime)}
-				backupPlanData := runCmdBackupPlan(args)
-				Expect(len(backupPlanData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'T' & 'Z' value", flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagCreationEndTimestamp, fmt.Sprintf("%s %s", backupCreationEndDate, cmd.EndTime)}
-				backupPlanData := runCmdBackupPlan(args)
-				Expect(len(backupPlanData)).To(Equal(cmd.PageSizeDefault))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag value cannot be empty", cmd.CreationStartDateFlag)))
 			})
 
 			It(fmt.Sprintf("Should fail if flag %s is given valid & flag %s is given 'invalid' value",
-				flagCreationStartTimestamp, flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagCreationStartTimestamp, backupCreationStartDate, flagCreationEndTimestamp, "invalid"}
+				flagCreationStartDate, flagCreationEndDate), func() {
+				args := []string{cmdGet, cmdBackupPlan, flagCreationStartDate, backupCreationStartDate, flagCreationEndDate, "invalid"}
 				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.CreationEndTimestampFlag)))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.CreationEndDateFlag)))
 			})
 
 			It(fmt.Sprintf("Should fail if flag %s is given valid & flag %s is given 'invalid' value",
-				flagCreationEndTimestamp, flagCreationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagCreationEndTimestamp, backupCreationStartDate, flagCreationStartTimestamp, "invalid"}
+				flagCreationEndDate, flagCreationStartDate), func() {
+				args := []string{cmdGet, cmdBackupPlan, flagCreationEndDate, backupCreationStartDate, flagCreationStartDate, "invalid"}
 				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.CreationStartTimestampFlag)))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.CreationStartDateFlag)))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s & flag %s are given valid format date value",
-				flagCreationStartTimestamp, flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagCreationStartTimestamp, backupCreationStartDate,
-					flagCreationEndTimestamp, backupCreationEndDate}
-				backupPlanData := runCmdBackupPlan(args)
-				Expect(len(backupPlanData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should fail if flag %s & flag %s are given valid format and flagCreationStartTimestamp > CreationEndTimestamp",
-				flagCreationStartTimestamp, flagCreationEndTimestamp), func() {
+			It(fmt.Sprintf("Should fail if flag %s & flag %s are given valid format and flagCreationStartDate > CreationEndTimestamp",
+				flagCreationStartDate, flagCreationEndDate), func() {
 				isLast = true
-				args := []string{cmdGet, cmdBackupPlan, flagCreationStartTimestamp, backupCreationEndDate,
-					flagCreationEndTimestamp, backupCreationStartDate}
+				args := []string{cmdGet, cmdBackupPlan, flagCreationStartDate, backupCreationEndDate,
+					flagCreationEndDate, backupCreationStartDate}
 				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
@@ -900,8 +859,8 @@ var _ = Describe("Target Browser Tests", func() {
 		})
 
 		Context(fmt.Sprintf("test-cases for flag %s, %s, %s, %s, %s, %s, %s, %s with path value, zero, valid  and invalid value",
-			cmd.OrderByFlag, cmd.PageSizeFlag, cmd.BackupPlanUIDFlag, cmd.BackupStatusFlag, cmd.CreationStartTimestampFlag,
-			cmd.CreationEndTimestampFlag, cmd.ExpirationStartTimestampFlag, cmd.ExpirationEndTimestampFlag), func() {
+			cmd.OrderByFlag, cmd.PageSizeFlag, cmd.BackupPlanUIDFlag, cmd.BackupStatusFlag, cmd.CreationStartDateFlag,
+			cmd.CreationEndDateFlag, cmd.ExpirationStartDateFlag, cmd.ExpirationEndDateFlag), func() {
 			var (
 				backupPlanUIDs                   []string
 				noOfBackupPlansToCreate          = 11
@@ -1053,150 +1012,90 @@ var _ = Describe("Target Browser Tests", func() {
 				Expect(err).Should(HaveOccurred())
 				Expect(string(output)).Should(ContainSubstring("404 Not Found"))
 			})
-			It(fmt.Sprintf("Should fail if flag %s is given without value", flagCreationStartTimestamp), func() {
+			It(fmt.Sprintf("Should fail if flag %s is given without value", flagCreationStartDate), func() {
 				args := []string{cmdGet, cmdBackup}
 				args = append(args, commonArgs...)
-				args = append(args, flagCreationStartTimestamp)
+				args = append(args, flagCreationStartDate)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagCreationStartTimestamp)))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagCreationStartDate)))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s is given zero value", flagCreationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationStartTimestamp, ""}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should fail if flag %s is given 'invalid' value", flagCreationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationStartTimestamp, "invalid"}
+			It(fmt.Sprintf("Should fail if flag %s is given 'invalid' value", flagCreationStartDate), func() {
+				args := []string{cmdGet, cmdBackup, flagCreationStartDate, "invalid"}
 				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.CreationStartTimestampFlag)))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.CreationStartDateFlag)))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s is given valid format timestamp value", flagCreationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationStartTimestamp, fmt.Sprintf("%sT%sZ", backupCreationEndDate, cmd.StartTime)}
+			It(fmt.Sprintf("Should succeed if flag %s is given valid format timestamp value", flagCreationStartDate), func() {
+				args := []string{cmdGet, cmdBackup, flagCreationStartDate, fmt.Sprintf("%sT%sZ", backupCreationEndDate, cmd.StartTime)}
 				backupData := runCmdBackup(args)
 				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s is given valid format date value", flagCreationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationStartTimestamp, backupCreationEndDate}
+			It(fmt.Sprintf("Should succeed if flag %s is given valid format date value", flagCreationStartDate), func() {
+				args := []string{cmdGet, cmdBackup, flagCreationStartDate, backupCreationEndDate}
 				backupData := runCmdBackup(args)
 				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'T' value", flagCreationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationStartTimestamp, fmt.Sprintf("%s %sZ", backupCreationEndDate, cmd.StartTime)}
+			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'T' value", flagCreationStartDate), func() {
+				args := []string{cmdGet, cmdBackup, flagCreationStartDate, fmt.Sprintf("%s %sZ", backupCreationEndDate, cmd.StartTime)}
 				backupData := runCmdBackup(args)
 				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'Z' value", flagCreationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationStartTimestamp, fmt.Sprintf("%sT%s", backupCreationEndDate, cmd.StartTime)}
+			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'Z' value", flagCreationStartDate), func() {
+				args := []string{cmdGet, cmdBackup, flagCreationStartDate, fmt.Sprintf("%sT%s", backupCreationEndDate, cmd.StartTime)}
 				backupData := runCmdBackup(args)
 				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
 			})
 
 			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'T' & 'Z' value",
-				flagCreationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationStartTimestamp, fmt.Sprintf("%s %s", backupCreationEndDate, cmd.StartTime)}
+				flagCreationStartDate), func() {
+				args := []string{cmdGet, cmdBackup, flagCreationStartDate, fmt.Sprintf("%s %s", backupCreationEndDate, cmd.StartTime)}
 				backupData := runCmdBackup(args)
 				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
 			})
 
-			It(fmt.Sprintf("Should fail if flag %s is given without value", flagCreationEndTimestamp), func() {
+			It(fmt.Sprintf("Should fail if flag %s is given without value", flagCreationEndDate), func() {
 				args := []string{cmdGet, cmdBackup}
 				args = append(args, commonArgs...)
-				args = append(args, flagCreationEndTimestamp)
+				args = append(args, flagCreationEndDate)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagCreationEndTimestamp)))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given zero value", flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationEndTimestamp, ""}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should fail if flag %s is given 'invalid' value", flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationEndTimestamp, "invalid"}
-				args = append(args, commonArgs...)
-				command := exec.Command(targetBrowserBinaryFilePath, args...)
-				output, err := command.CombinedOutput()
-				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.CreationEndTimestampFlag)))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given valid format timestamp value", flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationEndTimestamp, fmt.Sprintf("%sT%sZ", backupCreationEndDate, cmd.EndTime)}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given valid format date value", flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationEndTimestamp, backupCreationEndDate}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'T' value", flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationEndTimestamp, fmt.Sprintf("%s %sZ", backupCreationEndDate, cmd.EndTime)}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'Z' value", flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationEndTimestamp, fmt.Sprintf("%sT%s", backupCreationEndDate, cmd.EndTime)}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'T' & 'Z' value",
-				flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationEndTimestamp, fmt.Sprintf("%s %s", backupCreationEndDate, cmd.EndTime)}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagCreationEndDate)))
 			})
 
 			It(fmt.Sprintf("Should fail if flag %s is given valid & flag %s is given 'invalid' value",
-				flagCreationStartTimestamp, flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationStartTimestamp, backupCreationStartDate, flagCreationEndTimestamp, "invalid"}
+				flagCreationStartDate, flagCreationEndDate), func() {
+				args := []string{cmdGet, cmdBackup, flagCreationStartDate, backupCreationStartDate, flagCreationEndDate, "invalid"}
 				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.CreationEndTimestampFlag)))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.CreationEndDateFlag)))
 			})
 
 			It(fmt.Sprintf("Should fail if flag %s is given valid & flag %s is given 'invalid' value",
-				flagCreationEndTimestamp, flagCreationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationEndTimestamp, backupCreationStartDate, flagCreationStartTimestamp, "invalid"}
+				flagCreationEndDate, flagCreationStartDate), func() {
+				args := []string{cmdGet, cmdBackup, flagCreationEndDate, backupCreationStartDate, flagCreationStartDate, "invalid"}
 				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.CreationStartTimestampFlag)))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.CreationStartDateFlag)))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s & flag %s are given valid format date value",
-				flagCreationStartTimestamp, flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationStartTimestamp, backupCreationStartDate,
-					flagCreationEndTimestamp, backupCreationEndDate}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should fail if flag %s & flag %s are given valid format and flagCreationStartTimestamp > CreationEndTimestamp",
-				flagCreationStartTimestamp, flagCreationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagCreationStartTimestamp, backupCreationEndDate,
-					flagCreationEndTimestamp, backupCreationStartDate}
+			It(fmt.Sprintf("Should fail if flag %s & flag %s are given valid format and flagCreationStartDate > CreationEndTimestamp",
+				flagCreationStartDate, flagCreationEndDate), func() {
+				args := []string{cmdGet, cmdBackup, flagCreationStartDate, backupCreationEndDate,
+					flagCreationEndDate, backupCreationStartDate}
 				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
@@ -1204,152 +1103,67 @@ var _ = Describe("Target Browser Tests", func() {
 				Expect(string(output)).Should(ContainSubstring("400 Bad Request"))
 			})
 			//test case for flag expiration
-			It(fmt.Sprintf("Should fail if flag %s is given without value", flagExpirationStartTimestamp), func() {
+			It(fmt.Sprintf("Should fail if flag %s is given without value", flagExpirationStartDate), func() {
 				args := []string{cmdGet, cmdBackup}
 				args = append(args, commonArgs...)
-				args = append(args, flagExpirationStartTimestamp)
+				args = append(args, flagExpirationStartDate)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagExpirationStartTimestamp)))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagExpirationStartDate)))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s is given zero value", flagExpirationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagExpirationStartTimestamp, ""}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should fail if flag %s is given 'invalid' value", flagExpirationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagExpirationStartTimestamp, "invalid"}
-				args = append(args, commonArgs...)
-				command := exec.Command(targetBrowserBinaryFilePath, args...)
-				output, err := command.CombinedOutput()
-				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.ExpirationStartTimestampFlag)))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given valid format timestamp value", flagExpirationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagExpirationStartTimestamp, fmt.Sprintf("%sT%sZ", backupExpirationStartDate, cmd.StartTime)}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given valid format date value", flagExpirationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagExpirationStartTimestamp, backupExpirationStartDate}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'T' value", flagExpirationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagExpirationStartTimestamp, fmt.Sprintf("%s %sZ", backupExpirationStartDate, cmd.StartTime)}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'Z' value", flagExpirationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagExpirationStartTimestamp, fmt.Sprintf("%sT%s", backupExpirationStartDate, cmd.StartTime)}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'T' & 'Z' value",
-				flagExpirationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagExpirationStartTimestamp, fmt.Sprintf("%s %s", backupExpirationStartDate, cmd.StartTime)}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should fail if flag %s is given without value", flagExpirationEndTimestamp), func() {
+			It(fmt.Sprintf("Should fail if flag %s is given without value", flagExpirationEndDate), func() {
 				args := []string{cmdGet, cmdBackup}
 				args = append(args, commonArgs...)
-				args = append(args, flagExpirationEndTimestamp)
+				args = append(args, flagExpirationEndDate)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagExpirationEndTimestamp)))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagExpirationEndDate)))
 			})
 
-			It(fmt.Sprintf("Should succeed if flag %s is given zero value", flagExpirationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagExpirationEndTimestamp, ""}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should fail if flag %s is given 'invalid' value", flagExpirationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagExpirationEndTimestamp, "invalid"}
+			It(fmt.Sprintf("Should succeed if flag %s is given zero value", flagExpirationEndDate), func() {
+				args := []string{cmdGet, cmdBackup, flagExpirationEndDate, ""}
 				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.ExpirationEndTimestampFlag)))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given valid format timestamp value", flagExpirationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagExpirationEndTimestamp, fmt.Sprintf("%sT%sZ", backupExpirationStartDate, cmd.EndTime)}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given valid format date value", flagExpirationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagExpirationEndTimestamp, backupExpirationStartDate}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'T' value",
-				flagExpirationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagExpirationEndTimestamp, fmt.Sprintf("%s %sZ", backupExpirationStartDate, cmd.EndTime)}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'Z' value",
-				flagExpirationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagExpirationEndTimestamp, fmt.Sprintf("%sT%s", backupExpirationStartDate, cmd.EndTime)}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
-			})
-
-			It(fmt.Sprintf("Should succeed if flag %s is given invalid format timestamp without 'T' & 'Z' value",
-				flagExpirationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagExpirationEndTimestamp, fmt.Sprintf("%s %s", backupExpirationStartDate, cmd.EndTime)}
-				backupData := runCmdBackup(args)
-				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag value cannot be empty", cmd.ExpirationEndDateFlag)))
 			})
 
 			It(fmt.Sprintf("Should fail if flag %s is given valid & flag %s is given 'invalid' value",
-				flagExpirationStartTimestamp, flagExpirationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagExpirationStartTimestamp, backupCreationStartDate, flagExpirationEndTimestamp, "invalid"}
+				flagExpirationStartDate, flagExpirationEndDate), func() {
+				args := []string{cmdGet, cmdBackup, flagExpirationStartDate, backupCreationStartDate, flagExpirationEndDate, "invalid"}
 				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.ExpirationEndTimestampFlag)))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.ExpirationEndDateFlag)))
 			})
 
 			It(fmt.Sprintf("Should fail if flag %s is given valid & flag %s is given 'invalid' value",
-				flagExpirationEndTimestamp, flagExpirationStartTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagExpirationEndTimestamp, backupCreationStartDate, flagExpirationStartTimestamp, "invalid"}
+				flagExpirationEndDate, flagExpirationStartDate), func() {
+				args := []string{cmdGet, cmdBackup, flagExpirationEndDate, backupCreationStartDate, flagExpirationStartDate, "invalid"}
 				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.ExpirationStartTimestampFlag)))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.ExpirationStartDateFlag)))
 			})
 
 			It(fmt.Sprintf("Should succeed if flag %s & flag %s are given valid format date value",
-				flagExpirationStartTimestamp, flagExpirationEndTimestamp), func() {
-				args := []string{cmdGet, cmdBackup, flagExpirationStartTimestamp, backupExpirationStartDate,
-					flagExpirationEndTimestamp, backupExpirationEndDate}
+				flagExpirationStartDate, flagExpirationEndDate), func() {
+				args := []string{cmdGet, cmdBackup, flagExpirationStartDate, backupExpirationStartDate,
+					flagExpirationEndDate, backupExpirationEndDate}
 				backupData := runCmdBackup(args)
 				Expect(len(backupData)).To(Equal(cmd.PageSizeDefault))
 			})
 
 			It(fmt.Sprintf("Should fail if flag %s & flag %s are given valid format and ExpirationStartTimestamp > CreationEndTimestamp",
-				flagExpirationStartTimestamp, flagExpirationEndTimestamp), func() {
+				flagExpirationStartDate, flagExpirationEndDate), func() {
 				isLast = true
-				args := []string{cmdGet, cmdBackup, flagExpirationStartTimestamp, "2021-05-19", flagExpirationEndTimestamp, backupCreationEndDate}
+				args := []string{cmdGet, cmdBackup, flagExpirationStartDate, "2021-05-19", flagExpirationEndDate, backupCreationEndDate}
 				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()

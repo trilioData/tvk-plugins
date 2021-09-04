@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/araddon/dateparse"
@@ -9,9 +8,8 @@ import (
 )
 
 const (
-	EndTime           = "23:59:59"
-	StartTime         = "00:00:00"
-	dayEndTimeSeconds = 24*60*60 - 1
+	EndTime   = "23:59:59"
+	StartTime = "00:00:00"
 )
 
 func removeDuplicates(uids []string) []string {
@@ -26,46 +24,10 @@ func removeDuplicates(uids []string) []string {
 
 }
 
-func parseTimestamp(timestamp, deltaTime string) (time.Time, error) {
+func parseTimestamp(timestamp string) (*time.Time, error) {
 	ts, err := dateparse.ParseAny(timestamp)
 	if err != nil {
-		return time.Time{}, err
+		return &time.Time{}, err
 	}
-	if ts.Hour() == 0 && ts.Minute() == 0 && ts.Second() == 0 && deltaTime != StartTime {
-		ts = ts.Add(dayEndTimeSeconds * time.Second)
-	}
-	return ts, nil
-
-}
-
-func validateStartEndTimeStamp(startTS, endTS, startFlag, endFlag, startUsage, endUsage string) (startTStamp, endTStamp string, err error) {
-	var ts time.Time
-	if startTS != "" && endTS != "" {
-		ts, err = parseTimestamp(startTS, StartTime)
-		if err != nil {
-			return "", "", fmt.Errorf("[%s] flag invalid value. Usage - %s", startFlag, startUsage)
-		}
-		startTStamp = ts.Format(time.RFC3339)
-		ts, err = parseTimestamp(endTS, EndTime)
-		if err != nil {
-			return "", "", fmt.Errorf("[%s] flag invalid value. Usage - %s", endFlag, endUsage)
-		}
-		endTStamp = ts.Format(time.RFC3339)
-
-	} else if endTS != "" {
-		ts, err = parseTimestamp(endTS, EndTime)
-		if err != nil {
-			return "", "", fmt.Errorf("[%s] flag invalid value. Usage - %s", endFlag, endUsage)
-		}
-		endTStamp = ts.Format(time.RFC3339)
-		startTStamp = ts.Truncate(time.Hour * 24).Format(time.RFC3339)
-	} else if startTS != "" {
-		ts, err = parseTimestamp(startTS, StartTime)
-		if err != nil {
-			return "", "", fmt.Errorf("[%s] flag invalid value. Usage - %s", startFlag, startUsage)
-		}
-		startTStamp = ts.Format(time.RFC3339)
-		endTStamp = ts.Truncate(time.Hour * 24).Add(dayEndTimeSeconds * time.Second).Format(time.RFC3339)
-	}
-	return startTStamp, endTStamp, nil
+	return &ts, nil
 }

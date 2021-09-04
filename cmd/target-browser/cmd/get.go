@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -45,8 +46,8 @@ which retrieves single object or list of objects of that resource.`,
 		}
 
 		commonOptions = targetbrowser.CommonListOptions{
-			CreationEndTimestamp:   creationEndTimestamp,
-			CreationStartTimestamp: creationStartTimestamp,
+			CreationEndTimestamp:   creationEndDate,
+			CreationStartTimestamp: creationStartDate,
 			Page:                   pages,
 			PageSize:               pageSize,
 			OrderBy:                orderBy,
@@ -64,8 +65,8 @@ func init() {
 	getCmd.PersistentFlags().StringVar(&orderBy, OrderByFlag, orderByDefault, orderByUsage)
 	getCmd.PersistentFlags().StringVar(&operationScope, OperationScopeFlag, "", operationScopeUsage)
 	getCmd.PersistentFlags().StringVar(&tvkInstanceUID, TvkInstanceUIDFlag, "", tvkInstanceUIDUsage)
-	getCmd.PersistentFlags().StringVar(&creationStartTimestamp, CreationStartTimestampFlag, "", creationStartTimestampUsage)
-	getCmd.PersistentFlags().StringVar(&creationEndTimestamp, CreationEndTimestampFlag, "", creationEndTimestampUsage)
+	getCmd.PersistentFlags().StringVar(&creationStartDate, CreationStartDateFlag, "", creationStartDateUsage)
+	getCmd.PersistentFlags().StringVar(&creationEndDate, CreationEndDateFlag, "", creationEndDateUsage)
 
 	rootCmd.AddCommand(getCmd)
 }
@@ -97,11 +98,34 @@ func validateInput(cmd *cobra.Command) error {
 			return fmt.Errorf("[%s] flag invalid value. Usage - %s", OperationScopeFlag, operationScopeUsage)
 		}
 	}
+	if cmd.Flags().Changed(CreationEndDateFlag) && creationStartDate == "" ||
+		cmd.Flags().Changed(CreationStartDateFlag) && creationStartDate == "" {
+		return fmt.Errorf("[%s] flag value cannot be empty", CreationStartDateFlag)
+	}
+
+	var ts *time.Time
 	var err error
-	creationStartTimestamp, creationEndTimestamp, err = validateStartEndTimeStamp(creationStartTimestamp, creationEndTimestamp,
-		CreationStartTimestampFlag, CreationEndTimestampFlag, creationStartTimestampUsage, creationEndTimestampUsage)
-	if err != nil {
-		return err
+	if creationStartDate != "" {
+		ts, err = parseTimestamp(creationStartDate)
+		if err != nil {
+			return fmt.Errorf("[%s] flag invalid value. Usage - %s", CreationStartDateFlag, creationStartDateUsage)
+		}
+		creationStartDate = ts.Format(time.RFC3339)
+	}
+
+	if creationEndDate != "" {
+		ts, err = parseTimestamp(creationEndDate)
+		if err != nil {
+			return fmt.Errorf("[%s] flag invalid value. Usage - %s", CreationEndDateFlag, creationEndDateUsage)
+		}
+		creationEndDate = ts.Format(time.RFC3339)
+	}
+	if cmd.Flags().Changed(CreationStartDateFlag) && creationEndDate == "" {
+		creationEndDate = time.Now().Format(time.RFC3339)
+	}
+	if creationStartDate == creationEndDate && creationStartDate != "" {
+		return fmt.Errorf("[%s] and [%s] flag values.  %s and %s can't be same", CreationStartDateFlag,
+			CreationEndDateFlag, creationStartDate, creationEndDate)
 	}
 
 	return nil
