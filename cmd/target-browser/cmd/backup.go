@@ -45,38 +45,37 @@ for specific backupPlan using available flags and options.`,
   # List of backups: filter by [tvkInstanceUID]
   kubectl tvk-target-browser get backup --tvk-instance-uid <uid> --target-name <name> --target-namespace <namespace>
 
-  # List of backups: filter by [expirationStartDate] and [expirationEndDate]
-  kubectl tvk-target-browser get backup --expiration-start-date <expiration-start-date> --expiration-end-date <expiration-end-date>--target-name <name> --target-namespace <namespace>
+  # List of backups: filter by [expirationStartTime] and [expirationEndTime]
+  kubectl tvk-target-browser get backup --expiration-start-time <expiration-start-time> --expiration-end-time <expiration-end-time>--target-name <name> --target-namespace <namespace>
 
-  # List of backups: filter by [creationStartDate] and [creationEndDate]
-  kubectl tvk-target-browser get backup --creation-start-date <creation-start-date> --creation-end-date <creation-end-date>--target-name <name> --target-namespace <namespace>
+  # List of backups: filter by [creationStartTime] and [creationEndTime]
+  kubectl tvk-target-browser get backup --creation-start-time <creation-start-time> --creation-end-time <creation-end-time>--target-name <name> --target-namespace <namespace>
 `,
 
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if cmd.Flags().Changed(ExpirationStartDateFlag) && expirationEndDate == "" ||
-			cmd.Flags().Changed(ExpirationEndDateFlag) && expirationEndDate == "" {
-			return fmt.Errorf("[%s] flag value cannot be empty", ExpirationEndDateFlag)
+		if (cmd.Flags().Changed(ExpirationStarTimeFlag) || cmd.Flags().Changed(ExpirationEndTimeFlag)) && expirationEndTime == "" {
+			return fmt.Errorf("[%s] flag value cannot be empty", ExpirationEndTimeFlag)
 		}
 		var ts *time.Time
 		var err error
-		if expirationEndDate != "" {
-			ts, err = parseTimestamp(expirationEndDate)
+		if expirationEndTime != "" {
+			ts, err = parseTimestamp(expirationEndTime)
 			if err != nil {
-				return fmt.Errorf("[%s] flag invalid value. Usage - %s", ExpirationEndDateFlag, expirationEndDateUsage)
+				return fmt.Errorf("[%s] flag invalid value. Usage - %s", ExpirationEndTimeFlag, expirationEndTimeUsage)
 			}
-			expirationEndDate = ts.Format(time.RFC3339)
+			expirationEndTime = ts.Format(time.RFC3339)
 		}
 
-		if expirationStartDate != "" {
-			ts, err = parseTimestamp(expirationStartDate)
+		if expirationStartTime != "" {
+			ts, err = parseTimestamp(expirationStartTime)
 			if err != nil {
-				return fmt.Errorf("[%s] flag invalid value. Usage - %s", ExpirationStartDateFlag, expirationStartDateUsage)
+				return fmt.Errorf("[%s] flag invalid value. Usage - %s", ExpirationStarTimeFlag, expirationStartTimeUsage)
 			}
-			expirationStartDate = ts.Format(time.RFC3339)
+			expirationStartTime = ts.Format(time.RFC3339)
 		}
 
-		if cmd.Flags().Changed(ExpirationEndDateFlag) && expirationStartDate == "" {
-			expirationStartDate = time.Now().Format(time.RFC3339)
+		if cmd.Flags().Changed(ExpirationEndTimeFlag) && expirationStartTime == "" {
+			expirationStartTime = time.Now().Format(time.RFC3339)
 		}
 		return getBackupList(args)
 	},
@@ -86,8 +85,8 @@ func init() {
 	backupCmd.Flags().StringVar(&backupPlanUID, BackupPlanUIDFlag, backupPlanUIDDefault, backupPlanUIDUsage)
 	backupCmd.Flags().StringVar(&backupStatus, BackupStatusFlag, backupStatusDefault, backupStatusUsage)
 	backupCmd.Flags().StringVar(&backupUID, BackupUIDFlag, backupUIDDefault, backupUIDUsage)
-	backupCmd.Flags().StringVar(&expirationStartDate, ExpirationStartDateFlag, "", expirationStartDateUsage)
-	backupCmd.Flags().StringVar(&expirationEndDate, ExpirationEndDateFlag, "", expirationEndDateUsage)
+	backupCmd.Flags().StringVar(&expirationStartTime, ExpirationStarTimeFlag, "", expirationStartTimeUsage)
+	backupCmd.Flags().StringVar(&expirationEndTime, ExpirationEndTimeFlag, "", expirationEndTimeUsage)
 	getCmd.AddCommand(backupCmd)
 }
 
@@ -101,8 +100,8 @@ func getBackupList(args []string) error {
 		BackupPlanUID:            backupPlanUID,
 		BackupStatus:             backupStatus,
 		CommonListOptions:        commonOptions,
-		ExpirationStartTimestamp: expirationStartDate,
-		ExpirationEndTimestamp:   expirationEndDate,
+		ExpirationStartTimestamp: expirationStartTime,
+		ExpirationEndTimestamp:   expirationEndTime,
 	}
 	err := targetBrowserAuthConfig.GetBackups(&bpOptions, args)
 	if err != nil {

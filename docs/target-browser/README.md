@@ -126,19 +126,19 @@ kubectl tvk-target-browser get metadata --help
   kubectl tvk-target-browser get backup trilio-resources <backup-uid> --backup-plan-uid <uid> --kinds ClusterBackupPlan,Backup,Hook --target-name <name> --target-namespace <namespace>
   ```
 
-  - List of backups: filter by [expirationStartDate] and [expirationEndDate]
+  - List of backups: filter by [expirationStartTime] and [expirationEndTime]
   ```bash
-  kubectl tvk-target-browser get backup --expiration-start-date <expiration-start-date> --expiration-end-date <expiration-end-date> --target-name <name> --target-namespace <namespace>
+  kubectl tvk-target-browser get backup --expiration-start-time <expiration-start-time> --expiration-end-time <expiration-end-time> --target-name <name> --target-namespace <namespace>
   ```
 
-  - List of backups: filter by [creationStartDate] and [creationEndDate]
+  - List of backups: filter by [creationStartTime] and [creationEndTime]
   ```bash
-  kubectl tvk-target-browser get backup --creation-start-date <creation-start-date> --creation-end-date <creation-end-date> --target-name <name> --target-namespace <namespace>
+  kubectl tvk-target-browser get backup --creation-start-time <creation-start-time> --creation-end-time <creation-end-time> --target-name <name> --target-namespace <namespace>
   ```
 
-  - List of backupPlans: filter by [creationStartDate] and [creationEndDate]
+  - List of backupPlans: filter by [creationStartTime] and [creationEndTime]
 ```bash
-  kubectl tvk-target-browser get backupPlan --creation-start-date <creation-start-date> --creation-end-date <creation-end-date>--target-name <name> --target-namespace <namespace>
+  kubectl tvk-target-browser get backupPlan --creation-start-time <creation-start-time> --creation-end-time <creation-end-time>--target-name <name> --target-namespace <namespace>
 ```    
 
 Find more examples and usage of each command & flag with `--help` for each `tvk-target-browser` command. Refer, `Usage` section.

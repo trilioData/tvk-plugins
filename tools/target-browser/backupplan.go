@@ -27,7 +27,7 @@ type BackupPlan struct {
 	TvkInstanceID             string      `json:"TVK Instance"`
 	SuccessfulBackup          int         `json:"Successful Backup"`
 	SuccessfulBackupTimestamp metav1.Time `json:"Successful Backup Timestamp"`
-	CreationTime              string      `json:"Start Time"`
+	CreationTime              string      `json:"Creation Time"`
 }
 
 // BackupPlanList struct stores extracted fields from actual BackupPlan API LIST response

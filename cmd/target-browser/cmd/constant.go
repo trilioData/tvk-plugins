@@ -95,15 +95,15 @@ const (
 
 	supportedTSFormat = "Supported format can be yyyy-mm-dd or yyyy-mm-ddThh:mm:ssZ, yyyy/mm/dd, dd/mm/yyy," +
 		" mm/dd/yy, yyyy-mm-dd hh:mm:ss, yyyymmdd, yyyy-mm-ddThh"
-	CreationStartDateFlag  = "creation-start-date"
-	creationStartDateUsage = "Any valid date or timestamp to filter backup/backupPlans on creationTimestamp from. " + supportedTSFormat
-	CreationEndDateFlag    = "creation-end-date"
-	creationEndDateUsage   = "Any valid date or timestamp to filter backup/backupPlans on creationTimestamp to." + supportedTSFormat
+	CreationStartTimeFlag  = "creation-start-time"
+	creationStartTimeUsage = "Any valid date or timestamp to filter backup/backupPlans on creationTimestamp from. " + supportedTSFormat
+	CreationEndTimeFlag    = "creation-end-time"
+	creationEndTimeUsage   = "Any valid date or timestamp to filter backup/backupPlans on creationTimestamp to." + supportedTSFormat
 
-	ExpirationStartDateFlag  = "expiration-start-date"
-	expirationStartDateUsage = "Any valid  date or timestamp to filter backups on expirationTimestamp from." + supportedTSFormat
-	ExpirationEndDateFlag    = "expiration-end-date"
-	expirationEndDateUsage   = "Any valid date or timestamp to filter backups on expirationTimestamp to." + supportedTSFormat
+	ExpirationStarTimeFlag   = "expiration-start-time"
+	expirationStartTimeUsage = "Any valid  date or timestamp to filter backups on expirationTimestamp from." + supportedTSFormat
+	ExpirationEndTimeFlag    = "expiration-end-time"
+	expirationEndTimeUsage   = "Any valid date or timestamp to filter backups on expirationTimestamp to." + supportedTSFormat
 )
 
 var (
@@ -118,8 +118,8 @@ var (
 	backupUID                              string
 	orderBy                                string
 	pages, pageSize                        int
-	creationStartDate, creationEndDate     string
-	expirationStartDate, expirationEndDate string
+	creationStartTime, creationEndTime     string
+	expirationStartTime, expirationEndTime string
 	operationScope                         string
 
 	kinds []string

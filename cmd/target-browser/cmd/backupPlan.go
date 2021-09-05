@@ -43,8 +43,8 @@ using available flags and options.`,
   # List of backupPlans in Multi Namespace/Cluster Scope: filter by [operationScope]
   kubectl tvk-target-browser get backupPlan --operation-scope MultiNamespace --target-name <name> --target-namespace <namespace>
 
-  # List of backupPlans: filter by [creationStartDate] and [creationEndDate]
-  kubectl tvk-target-browser get backupPlan --creation-start-date <creation-start-date> --creation-end-date <creation-end-date>--target-name <name> --target-namespace <namespace>
+  # List of backupPlans: filter by [creationStartTime] and [creationEndTime]
+  kubectl tvk-target-browser get backupPlan --creation-start-time <creation-start-time> --creation-end-time <creation-end-time>--target-name <name> --target-namespace <namespace>
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return getBackupPlanList(args)
