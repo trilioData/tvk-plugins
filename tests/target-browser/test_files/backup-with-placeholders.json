@@ -7,7 +7,7 @@
     "uid": "BACKUP-UUID",
     "resourceVersion": "164466722",
     "generation": 1,
-    "creationTimestamp": "2021-05-18T17:39:21Z",
+    "creationTimestamp": "2021-05-18T17:38:COMPLETION-TIMESTAMPZ",
     "annotations": {
       "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"triliovault.trilio.io/v1\",\"kind\":\"Backup\",\"metadata\":{\"annotations\":{},\"name\":\"BACKUP-NAME\",\"namespace\":\"temp-ns\"},\"spec\":{\"backupPlan\":{\"name\":\"BACKUPPLAN-NAME\"},\"type\":\"Full\"}}\n"
     },
@@ -39,8 +39,9 @@
     "applicationType": "APPLICATION-TYPE",
     "type": "Full",
     "location": "BACKUPPLAN-UUID/BACKUP-UUID",
-    "startTimestamp": "2021-05-18T17:39:21Z",
+    "startTimestamp": "2021-05-18T17:38:COMPLETION-TIMESTAMPZ",
     "completionTimestamp": "2021-05-18T17:43:COMPLETION-TIMESTAMPZ",
+    "expirationTimestamp": "2021-09-13T01:00:EXPIRATION-TIMESTAMPZ",
     "phase": "MetadataUpload",
     "phaseStatus": "InProgress",
     "status": "BACKUP-STATUS",

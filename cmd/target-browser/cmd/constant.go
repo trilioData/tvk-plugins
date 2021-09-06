@@ -66,14 +66,6 @@ const (
 	backupUIDDefault = ""
 	backupUIDUsage   = "backupUID to get all backup related to UID"
 
-	creationDateFlag    = "creation-date"
-	creationDateDefault = ""
-	creationDateUsage   = "Backup creation date"
-
-	expiryDateFlag    = "expiry-date"
-	expiryDateDefault = ""
-	expiryDateUsage   = "Backup expiry date"
-
 	OperationScopeFlag  = "operation-scope"
 	operationScopeUsage = "Filter backup/backupPlan for [SingleNamespace, MultiNamespace]. " +
 		"Supported values can be in any case capital, small or mixed."
@@ -100,23 +92,37 @@ const (
 	kindsFlag  = "kinds"
 	kindsUsage = "List of kinds of trilio resources. Available kinds: ClusterBackup, ClusterBackupPlan," +
 		" Backup, BackupPlan, Target, Secret, Policy, Hook"
+
+	supportedTSFormat = "Supported format can be yyyy-mm-dd or yyyy-mm-ddThh:mm:ssZ, yyyy/mm/dd, dd/mm/yyy," +
+		" mm/dd/yy, yyyy-mm-dd hh:mm:ss, yyyymmdd, yyyy-mm-ddThh"
+	CreationStartTimeFlag  = "creation-start-time"
+	creationStartTimeUsage = "Any valid date or timestamp to filter backup/backupPlans on creationTimestamp from. " + supportedTSFormat
+	CreationEndTimeFlag    = "creation-end-time"
+	creationEndTimeUsage   = "Any valid date or timestamp to filter backup/backupPlans on creationTimestamp to." + supportedTSFormat
+
+	ExpirationStarTimeFlag   = "expiration-start-time"
+	expirationStartTimeUsage = "Any valid  date or timestamp to filter backups on expirationTimestamp from." + supportedTSFormat
+	ExpirationEndTimeFlag    = "expiration-end-time"
+	expirationEndTimeUsage   = "Any valid date or timestamp to filter backups on expirationTimestamp to." + supportedTSFormat
 )
 
 var (
-	tvkInstanceUID  string
-	backupPlanUID   string
-	group           string
-	version         string
-	kind            string
-	name            string
-	backupStatus    string
-	backupUID       string
-	creationDate    string
-	expiryDate      string
-	orderBy         string
-	operationScope  string
-	kinds           []string
-	pages, pageSize int
+	group   string
+	version string
+	kind    string
+	name    string
+
+	tvkInstanceUID                         string
+	backupPlanUID                          string
+	backupStatus                           string
+	backupUID                              string
+	orderBy                                string
+	pages, pageSize                        int
+	creationStartTime, creationEndTime     string
+	expirationStartTime, expirationEndTime string
+	operationScope                         string
+
+	kinds []string
 )
 
 var (

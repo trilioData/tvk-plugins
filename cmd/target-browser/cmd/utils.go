@@ -1,6 +1,16 @@
 package cmd
 
-import "k8s.io/apimachinery/pkg/util/sets"
+import (
+	"time"
+
+	"github.com/araddon/dateparse"
+	"k8s.io/apimachinery/pkg/util/sets"
+)
+
+const (
+	EndTime   = "23:59:59"
+	StartTime = "00:00:00"
+)
 
 func removeDuplicates(uids []string) []string {
 	uniqueUIDs := sets.String{}
@@ -11,4 +21,13 @@ func removeDuplicates(uids []string) []string {
 	}
 
 	return uniqueUIDs.List()
+
+}
+
+func parseTimestamp(timestamp string) (*time.Time, error) {
+	ts, err := dateparse.ParseAny(timestamp)
+	if err != nil {
+		return &time.Time{}, err
+	}
+	return &ts, nil
 }

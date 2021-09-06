@@ -290,12 +290,12 @@ func UpdateIngress(ctx context.Context, k8sClient client.Client, ing *v1beta1.In
 	log.Infof("Updated ingress %s successfully", ing.Name)
 }
 
-func checkPvcDeleted(ctx context.Context, k8sClient client.Client, ns, selector string) {
+func checkPvcDeleted(ctx context.Context, k8sClient client.Client, ns string) {
 	Eventually(func() bool {
 		log.Info("Waiting for PVC to be deleted")
 		pvcList := corev1.PersistentVolumeClaimList{}
 		selectors, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
-			MatchLabels: map[string]string{kubernetesInstanceKey: selector},
+			MatchLabels: map[string]string{kubernetesInstanceKey: TargetName},
 		})
 		Expect(err).To(BeNil())
 		err = k8sClient.List(ctx, &pvcList, client.MatchingLabelsSelector{Selector: selectors}, client.InNamespace(ns))

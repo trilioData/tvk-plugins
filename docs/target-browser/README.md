@@ -123,7 +123,22 @@ kubectl tvk-target-browser get metadata --help
 
   - Get trilio resources for specific backup
   ```bash
-     kubectl tvk-target-browser get backup trilio-resources <backup-uid> --backup-plan-uid <uid> --kinds ClusterBackupPlan,Backup,Hook --target-name <name> --target-namespace <namespace>
+  kubectl tvk-target-browser get backup trilio-resources <backup-uid> --backup-plan-uid <uid> --kinds ClusterBackupPlan,Backup,Hook --target-name <name> --target-namespace <namespace>
   ```
+
+  - List of backups: filter by [expirationStartTime] and [expirationEndTime]
+  ```bash
+  kubectl tvk-target-browser get backup --expiration-start-time <expiration-start-time> --expiration-end-time <expiration-end-time> --target-name <name> --target-namespace <namespace>
+  ```
+
+  - List of backups: filter by [creationStartTime] and [creationEndTime]
+  ```bash
+  kubectl tvk-target-browser get backup --creation-start-time <creation-start-time> --creation-end-time <creation-end-time> --target-name <name> --target-namespace <namespace>
+  ```
+
+  - List of backupPlans: filter by [creationStartTime] and [creationEndTime]
+```bash
+  kubectl tvk-target-browser get backupPlan --creation-start-time <creation-start-time> --creation-end-time <creation-end-time>--target-name <name> --target-namespace <namespace>
+```    
 
 Find more examples and usage of each command & flag with `--help` for each `tvk-target-browser` command. Refer, `Usage` section.

@@ -188,7 +188,7 @@ func deleteTarget(enableBrowsing bool) {
 	if err != nil {
 		Fail(fmt.Sprintf("target deletion failed %s.", err.Error()))
 	}
-	checkPvcDeleted(ctx, k8sClient, installNs, TargetName)
+	checkPvcDeleted(ctx, k8sClient, installNs)
 	log.Infof("Deleted target %s successfully", TargetName)
 }
 
@@ -250,7 +250,7 @@ func runCmdBackup(args []string) []targetbrowser.Backup {
 		if err != nil {
 			log.Infof(fmt.Sprintf("Error to execute command %s", err.Error()))
 		}
-		log.Infof("Backup data is %s", output)
+		log.Debugf("Backup data is %s", output)
 		return strings.Contains(string(output), "502 Bad Gateway")
 	}, apiRetryTimeout, interval).Should(BeFalse())
 
