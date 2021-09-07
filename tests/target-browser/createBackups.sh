@@ -10,7 +10,7 @@ set -ex
 src_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fixpath="/triliodata"
 backupType=('Helm' 'Operator' 'Custom' 'Namespace')
-backupStatus=('InProgress' 'Completed' 'Available' 'Failed' )
+backupStatus=('InProgress' 'Completed' 'Available' 'Failed')
 for ((i = 0; i < $1; i++)); do
   bplanuid=$(uuidgen)
   if [ "$5" = "helm" ]; then
@@ -20,7 +20,7 @@ for ((i = 0; i < $1; i++)); do
   else
     index=$RANDOM%4
   fi
-backupStatusIndex=$RANDOM%4
+  backupStatusIndex=$RANDOM%4
 
   for ((j = 0; j < $2; j++)); do
 

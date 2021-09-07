@@ -19,6 +19,7 @@ CROSS='\xE2\x9D\x8C'
 MIN_HELM_VERSION="3.0.0"
 MIN_K8S_VERSION="1.18.0"
 PREFLIGHT_RUN_SUCCESS=true
+STORAGE_SNAPSHOT_CLASS_CHECK_SUCCESS=true
 
 # shellcheck disable=SC2018
 RANDOM_STRING=$(
@@ -335,12 +336,6 @@ check_volume_snapshot() {
   local retries=45
   local sleep=5
 
-  # shellcheck disable=SC2143
-  if [[ -z "${SNAPSHOT_CLASS}" ]]; then
-    echo -e "${RED} ${CROSS} Volume snapshot class having same driver as StorageClass's provisioner not found in cluster${NC}\n"
-    return ${err_status}
-  fi
-
   echo -e "${BROWN} Creating source pod and pvc for volume-snapshot check${NC}\n"
 
   cat <<EOF | kubectl apply -f - &>/dev/null
@@ -624,7 +619,7 @@ EOF
 cleanup() {
   local exit_status=0
 
-  echo -e "${LIGHT_BLUE} Cleaning up residual resources...${NC}\n"
+  echo -e "\n${LIGHT_BLUE}Cleaning up residual resources...${NC}"
 
   declare -a pvc=("${SOURCE_PVC}" "${RESTORE_PVC}" "${UNUSED_RESTORE_PVC}")
   for res in "${pvc[@]}"; do
@@ -704,6 +699,7 @@ fi
 check_storage_snapshot_class
 retCode=$?
 if [[ retCode -ne 0 ]]; then
+  STORAGE_SNAPSHOT_CLASS_CHECK_SUCCESS=false
   PREFLIGHT_RUN_SUCCESS=false
 fi
 
@@ -719,10 +715,14 @@ if [[ retCode -ne 0 ]]; then
   PREFLIGHT_RUN_SUCCESS=false
 fi
 
-check_volume_snapshot
-retCode=$?
-if [[ retCode -ne 0 ]]; then
-  PREFLIGHT_RUN_SUCCESS=false
+if [ $STORAGE_SNAPSHOT_CLASS_CHECK_SUCCESS == "true" ]; then
+  check_volume_snapshot
+  retCode=$?
+  if [[ retCode -ne 0 ]]; then
+    PREFLIGHT_RUN_SUCCESS=false
+  fi
+else
+  echo -e "${LIGHT_BLUE}Skipping 'VOLUME_SNAPSHOT' check as 'STORAGE_SNAPSHOT_CLASS' preflight check failed${NC}\n"
 fi
 
 # Print status of Pre-flight checks
