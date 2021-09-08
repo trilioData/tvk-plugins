@@ -5,7 +5,7 @@ metadata:
 spec:
   homepage: https://github.com/trilioData/tvk-plugins/blob/master/docs/target-browser/README.md
   shortDescription: TVK Target Browser queries mounted target to get details of backup, backupPlan, backup metadata, etc.
-  version: v1.0.0-rc6
+  version: v1.0.0
   caveats: |
     Curl and Git neeed to be installed on system for Krew index update to work properly
   platforms:
@@ -13,8 +13,8 @@ spec:
       matchLabels:
         os: linux
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0-rc6/target-browser_v1.0.0-rc6_linux_amd64.tar.gz
-    sha256: 12a77a380d74725fd1266f63dd630a1616285ab2336029cb6650db7cf6f3c83b
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0/target-browser_v1.0.0_linux_amd64.tar.gz
+    sha256: 25c19d83d1f2be612363067da12fdc88497c9201aa1d8914f91b1e56be2e709e
     bin: target-browser
     files:
     - from: '*'
@@ -24,8 +24,8 @@ spec:
       matchLabels:
         os: darwin
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0-rc6/target-browser_v1.0.0-rc6_darwin_amd64.tar.gz
-    sha256: 41f084d0b2fd0cfa26a4270b211ee35cf2022c9f628731536eda81493d0a1387
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0/target-browser_v1.0.0_darwin_amd64.tar.gz
+    sha256: 77459dcfaffc77404a8f9b704257957c423a2a115a42f3ca59ed25a8993961ee
     bin: target-browser
     files:
     - from: '*'
@@ -35,8 +35,8 @@ spec:
       matchLabels:
         os: windows
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0-rc6/target-browser_v1.0.0-rc6_windows_amd64.zip
-    sha256: ef04ba3e78c254d8e7a8e5abed9928fba996c17ae6d2d2f7cb26b9cd51a9026a
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0/target-browser_v1.0.0_windows_amd64.zip
+    sha256: 6419c8e409b0f9d0cb41bb80f9404b6b50144c483e09e5867a0b9514d36b09f9
     bin: target-browser.exe
     files:
     - from: '*'
@@ -74,3 +74,12 @@ spec:
 
     # Trilio Resources for specific backup object
     kubectl tvk-target-browser get backup trilio-resources <backup-uid> --backup-plan-uid <uid> --kinds ClusterBackupPlan,Backup,Hook --target-name <name> --target-namespace <namespace>
+
+    # List of backups: filter by [expirationStartTime] and [expirationEndTime]
+    kubectl tvk-target-browser get backup --expiration-start-time <expiration-start-time> --expiration-end-time <expiration-end-time>--target-name <name> --target-namespace <namespace>
+
+    # List of backups: filter by [creationStartTime] and [creationEndTime]
+    kubectl tvk-target-browser get backup --creation-start-time <creation-start-time> --creation-end-time <creation-end-time>--target-name <name> --target-namespace <namespace>
+
+    # List of backupPlans: filter by [creationStartTime] and [creationEndTime]
+    kubectl tvk-target-browser get backupPlan --creation-start-time <creation-start-time> --creation-end-time <creation-end-time>--target-name <name> --target-namespace <namespace>
