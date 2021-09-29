@@ -93,7 +93,6 @@ fi
 KREW_OS=windows KREW_ARCH=arm64 kubectl krew install --manifest=$log_collector_manifest --archive="$log_collector_archive_path"
 KREW_OS=windows KREW_ARCH=arm64 kubectl krew uninstall tvk-log-collector
 
-
 log_collector_tar_archive="log-collector_${git_version}_windows_arm.zip"
 log_collector_archive_path="${build_dir}/${log_collector_tar_archive}"
 if [[ ! -f "${log_collector_archive_path}" ]]; then
