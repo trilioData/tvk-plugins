@@ -263,7 +263,7 @@ jobs:
           service_account_key: ${{ secrets.GCS_ARTIFACTS_CREDENTIALS }}
           export_default_credentials: true
 
-      - name: Upload Preflight Plugin Packges to GCS artifact
+      - name: Upload Log-Collector binary to GCS artifact
         if: ${{ github.ref == 'refs/heads/main' }}
         run: gsutil cp dist/log-collector_linux_amd64/log-collector gs://trilio-artifacts/tvk-plugins/log-collector/main/log-collector
 
@@ -425,20 +425,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Download Preflight Packages from Artifact
+      - name: Download All Plugin Packages from Artifacts
         uses: actions/download-artifact@v2
-        if: needs.pre-release.outputs.release_preflight == 'true'
+        if: (needs.pre-release.outputs.release_preflight == 'true') || (needs.pre-release.outputs.release_cleanup == 'true') || (needs.pre-release.outputs.release_tvk_oneclick == 'true')
         with:
-          name: preflight
           path: build
-
-      - name: Download Cleanup Packages from Artifact
-        uses: actions/download-artifact@v2
-        if: needs.pre-release.outputs.release_cleanup == 'true'
-        with:
-          name: cleanup
-          path: build
-
 
       - name: Update GoReleaser Config for Release
         run: hack/update-goreleaser-yaml.sh
