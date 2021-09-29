@@ -33,6 +33,26 @@ fi
 kubectl krew install --manifest=$log_collector_manifest --archive="$log_collector_archive_path"
 kubectl krew uninstall tvk-log-collector
 
+log_collector_tar_archive="log-collector_${git_version}_linux_arm64.tar.gz"
+log_collector_archive_path="${build_dir}/${log_collector_tar_archive}"
+if [[ ! -f "${log_collector_archive_path}" ]]; then
+  echo >&2 "Could not find archive ${log_collector_archive_path}."
+  exit 1
+fi
+
+KREW_OS=linux KREW_ARCH=arm64 kubectl krew install --manifest=$log_collector_manifest --archive="$log_collector_archive_path"
+KREW_OS=linux KREW_ARCH=arm64 kubectl krew uninstall tvk-log-collector
+
+log_collector_tar_archive="log-collector_${git_version}_linux_arm.tar.gz"
+log_collector_archive_path="${build_dir}/${log_collector_tar_archive}"
+if [[ ! -f "${log_collector_archive_path}" ]]; then
+  echo >&2 "Could not find archive ${log_collector_archive_path}."
+  exit 1
+fi
+
+KREW_OS=linux KREW_ARCH=arm kubectl krew install --manifest=$log_collector_manifest --archive="$log_collector_archive_path"
+KREW_OS=linux KREW_ARCH=arm kubectl krew uninstall tvk-log-collector
+
 log_collector_tar_archive="log-collector_${git_version}_darwin_amd64.tar.gz"
 log_collector_archive_path="${build_dir}/${log_collector_tar_archive}"
 if [[ ! -f "${log_collector_archive_path}" ]]; then
@@ -43,6 +63,16 @@ fi
 KREW_OS=darwin KREW_ARCH=amd64 kubectl krew install --manifest=$log_collector_manifest --archive="$log_collector_archive_path"
 KREW_OS=darwin KREW_ARCH=amd64 kubectl krew uninstall tvk-log-collector
 
+log_collector_tar_archive="log-collector_${git_version}_darwin_arm64.tar.gz"
+log_collector_archive_path="${build_dir}/${log_collector_tar_archive}"
+if [[ ! -f "${log_collector_archive_path}" ]]; then
+  echo >&2 "Could not find archive ${log_collector_archive_path}."
+  exit 1
+fi
+
+KREW_OS=darwin KREW_ARCH=arm64 kubectl krew install --manifest=$log_collector_manifest --archive="$log_collector_archive_path"
+KREW_OS=darwin KREW_ARCH=arm64 kubectl krew uninstall tvk-log-collector
+
 log_collector_tar_archive="log-collector_${git_version}_windows_amd64.zip"
 log_collector_archive_path="${build_dir}/${log_collector_tar_archive}"
 if [[ ! -f "${log_collector_archive_path}" ]]; then
@@ -52,5 +82,26 @@ fi
 
 KREW_OS=windows KREW_ARCH=amd64 kubectl krew install --manifest=$log_collector_manifest --archive="$log_collector_archive_path"
 KREW_OS=windows KREW_ARCH=amd64 kubectl krew uninstall tvk-log-collector
+
+log_collector_tar_archive="log-collector_${git_version}_windows_arm64.zip"
+log_collector_archive_path="${build_dir}/${log_collector_tar_archive}"
+if [[ ! -f "${log_collector_archive_path}" ]]; then
+  echo >&2 "Could not find archive ${log_collector_archive_path}."
+  exit 1
+fi
+
+KREW_OS=windows KREW_ARCH=arm64 kubectl krew install --manifest=$log_collector_manifest --archive="$log_collector_archive_path"
+KREW_OS=windows KREW_ARCH=arm64 kubectl krew uninstall tvk-log-collector
+
+
+log_collector_tar_archive="log-collector_${git_version}_windows_arm.zip"
+log_collector_archive_path="${build_dir}/${log_collector_tar_archive}"
+if [[ ! -f "${log_collector_archive_path}" ]]; then
+  echo >&2 "Could not find archive ${log_collector_archive_path}."
+  exit 1
+fi
+
+KREW_OS=windows KREW_ARCH=arm kubectl krew install --manifest=$log_collector_manifest --archive="$log_collector_archive_path"
+KREW_OS=windows KREW_ARCH=arm kubectl krew uninstall tvk-log-collector
 
 echo >&2 "Successfully tested log-collector plugin locally"

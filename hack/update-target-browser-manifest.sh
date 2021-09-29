@@ -40,17 +40,32 @@ else
   exit 1
 fi
 
-target_browser_linux_sha=$(awk '/target-browser/ && /linux/ { print $1 }' "$target_browser_sha256_filePath")
+target_browser_linux_amd64_sha=$(awk '/target-browser/ && /linux_amd64/ { print $1 }' "$target_browser_sha256_filePath")
 # shellcheck disable=SC2086
-target_browser_darwin_sha=$(awk '/target-browser/ && /darwin/ { print $1 }' $target_browser_sha256_filePath)
+target_browser_linux_arm64_sha=$(awk '/target-browser/ && /linux_arm64/ { print $1 }' "$target_browser_sha256_filePath")
 # shellcheck disable=SC2086
-target_browser_windows_sha=$(awk '/target-browser/ && /windows/ { print $1 }' $target_browser_sha256_filePath)
+target_browser_linux_arm_sha=$(awk '/target-browser/ && /linux_arm.tar.gz/ { print $1 }' "$target_browser_sha256_filePath")
+# shellcheck disable=SC2086
+target_browser_darwin_amd64_sha=$(awk '/target-browser/ && /darwin_amd64/ { print $1 }' $target_browser_sha256_filePath)
+# shellcheck disable=SC2086
+target_browser_darwin_arm64_sha=$(awk '/target-browser/ && /darwin_arm64/ { print $1 }' $target_browser_sha256_filePath)
+# shellcheck disable=SC2086
+target_browser_windows_amd64_sha=$(awk '/target-browser/ && /windows_amd64/ { print $1 }' $target_browser_sha256_filePath)
+# shellcheck disable=SC2086
+target_browser_windows_arm64_sha=$(awk '/target-browser/ && /windows_arm64/ { print $1 }' $target_browser_sha256_filePath)
+# shellcheck disable=SC2086
+target_browser_windows_arm_sha=$(awk '/target-browser/ && /windows_arm.zip/ { print $1 }' $target_browser_sha256_filePath)
 
 sed -i "s/TARGET_BROWSER_VERSION/$TARGET_BROWSER_VERSION/g" "$target_browser_template_manifest"
 
-sed -i "s/TARGET_BROWSER_LINUX_TAR_CHECKSUM/$target_browser_linux_sha/g" "$target_browser_template_manifest"
-sed -i "s/TARGET_BROWSER_DARWIN_TAR_CHECKSUM/$target_browser_darwin_sha/g" "$target_browser_template_manifest"
-sed -i "s/TARGET_BROWSER_WINDOWS_TAR_CHECKSUM/$target_browser_windows_sha/g" "$target_browser_template_manifest"
+sed -i "s/TARGET_BROWSER_LINUX_AMD64_TAR_CHECKSUM/$target_browser_linux_amd64_sha/g" "$target_browser_template_manifest"
+sed -i "s/TARGET_BROWSER_LINUX_ARM64_TAR_CHECKSUM/$target_browser_linux_arm64_sha/g" "$target_browser_template_manifest"
+sed -i "s/TARGET_BROWSER_LINUX_ARM_TAR_CHECKSUM/$target_browser_linux_arm_sha/g" "$target_browser_template_manifest"
+sed -i "s/TARGET_BROWSER_DARWIN_AMD64_TAR_CHECKSUM/$target_browser_darwin_amd64_sha/g" "$target_browser_template_manifest"
+sed -i "s/TARGET_BROWSER_DARWIN_ARM64_TAR_CHECKSUM/$target_browser_darwin_arm64_sha/g" "$target_browser_template_manifest"
+sed -i "s/TARGET_BROWSER_WINDOWS_AMD64_TAR_CHECKSUM/$target_browser_windows_amd64_sha/g" "$target_browser_template_manifest"
+sed -i "s/TARGET_BROWSER_WINDOWS_ARM64_TAR_CHECKSUM/$target_browser_windows_arm64_sha/g" "$target_browser_template_manifest"
+sed -i "s/TARGET_BROWSER_WINDOWS_ARM_TAR_CHECKSUM/$target_browser_windows_arm_sha/g" "$target_browser_template_manifest"
 
 cp "$build_dir"/$target_browser_yaml "$plugins_dir"/$target_browser_yaml
 echo >&2 "Updated target-browser plugin manifest '$target_browser_yaml' with 'version=$TARGET_BROWSER_VERSION' and new sha256sum"
