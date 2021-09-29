@@ -5,7 +5,7 @@ metadata:
 spec:
   homepage: https://github.com/trilioData/tvk-plugins/blob/master/docs/target-browser/README.md
   shortDescription: TVK Target Browser queries mounted target to get details of backup, backupPlan, backup metadata, etc.
-  version: v1.0.0
+  version: v1.1.0-rc1
   caveats: |
     Curl and Git neeed to be installed on system for Krew index update to work properly
   platforms:
@@ -13,8 +13,28 @@ spec:
       matchLabels:
         os: linux
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0/target-browser_v1.0.0_linux_amd64.tar.gz
-    sha256: 25c19d83d1f2be612363067da12fdc88497c9201aa1d8914f91b1e56be2e709e
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc1/target-browser_v1.1.0-rc1_linux_amd64.tar.gz
+    sha256: f97e008610e472c19948758da7df7222e81d42e36b9622f95bafc039ffaf3bb0
+    bin: target-browser
+    files:
+    - from: '*'
+      to: .
+  - selector:
+      matchLabels:
+        os: linux
+        arch: arm64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc1/target-browser_v1.1.0-rc1_linux_arm64.tar.gz
+    sha256: 445557dc6b3bb1663bb20cc3a43e499ecb08c2195a8f94813475bf73977078b5
+    bin: target-browser
+    files:
+    - from: '*'
+      to: .
+  - selector:
+      matchLabels:
+        os: linux
+        arch: arm
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc1/target-browser_v1.1.0-rc1_linux_arm.tar.gz
+    sha256: cea47e4971c2d428e84283c9410b0ae5215cdda0ad8b53636ae185bc49b1d7be
     bin: target-browser
     files:
     - from: '*'
@@ -24,8 +44,18 @@ spec:
       matchLabels:
         os: darwin
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0/target-browser_v1.0.0_darwin_amd64.tar.gz
-    sha256: 77459dcfaffc77404a8f9b704257957c423a2a115a42f3ca59ed25a8993961ee
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc1/target-browser_v1.1.0-rc1_darwin_amd64.tar.gz
+    sha256: c02445a732f6dc853b59f91050942c33fe55590d914e69581807222a964851bb
+    bin: target-browser
+    files:
+    - from: '*'
+      to: .
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: arm64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc1/target-browser_v1.1.0-rc1_darwin_arm64.tar.gz
+    sha256: ffa1240771e3067950b86e60be2eb7f548e5ef66b884fa01cbf58cc7bd3e006e
     bin: target-browser
     files:
     - from: '*'
@@ -35,12 +65,32 @@ spec:
       matchLabels:
         os: windows
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.0.0/target-browser_v1.0.0_windows_amd64.zip
-    sha256: 6419c8e409b0f9d0cb41bb80f9404b6b50144c483e09e5867a0b9514d36b09f9
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc1/target-browser_v1.1.0-rc1_windows_amd64.zip
+    sha256: 1b2cfca290a206cf971ade27e1b081e90d8e654e5deaf718722dca24e86ee51d
     bin: target-browser.exe
     files:
     - from: '*'
       to: .
+  #  - selector:
+  #      matchLabels:
+  #        os: windows
+  #        arch: arm64
+  #    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc1/target-browser_v1.1.0-rc1_windows_arm64.zip
+  #    sha256: 096ef2ad51dd47eaa505f37f636cea7cfdf33a0ec2dd968ae3d6c449892b630b
+  #    bin: target-browser.exe
+  #    files:
+  #    - from: '*'
+  #      to: .
+  #  - selector:
+  #      matchLabels:
+  #        os: windows
+  #        arch: arm
+  #    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc1/target-browser_v1.1.0-rc1_windows_arm.zip
+  #    sha256: 7b61bef69cb5236bb78082001886eb46b05b20b37a8987bcff36566cdf5ecc3c
+  #    bin: target-browser.exe
+  #    files:
+  #    - from: '*'
+  #      to: .
 
   description: |
     tvk-target-browser is a kubectl plugin which can query content of mounted target location to get details of backup,
