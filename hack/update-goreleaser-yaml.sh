@@ -16,25 +16,28 @@ echo "release tvk-oneclick package:" "$release_tvk_oneclick"
 SRC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
 goreleaser_yaml=$SRC_ROOT/.goreleaser.yml
 
-if [[ $release_preflight == true ]] || [[ $release_tvk_oneclick == true ]]; then
-  if [[ $release_preflight == true ]] && [[ $release_tvk_oneclick == true ]]; then
-    echo "adding preflight & tvk-oneclick packages to goreleaser.yml"
-    echo '  extra_files:
-      - glob: build/preflight.tar.gz
-      - glob: build/preflight-sha256.txt
-      - glob: build/tvk-oneclick.tar.gz
-      - glob: build/tvk-oneclick-sha256.txt' >>"$goreleaser_yaml"
-  elif [[ $release_preflight == true ]] && [[ $release_tvk_oneclick != true ]]; then
+if [[ $release_preflight == true || $release_cleanup == true || $release_tvk_oneclick == true ]]; then
+
+  echo '  extra_files:' >>"$goreleaser_yaml"
+
+  if [[ $release_preflight == true ]]; then
     echo "adding preflight packages to goreleaser.yml"
-    echo '  extra_files:
-      - glob: build/preflight.tar.gz
-      - glob: build/preflight-sha256.txt' >>"$goreleaser_yaml"
-  elif [[ $release_tvk_oneclick == true ]] && [[ $release_preflight != true ]]; then
-    echo "adding tvk-oneclick packages to goreleaser.yml"
-    echo '  extra_files:
-      - glob: build/tvk-oneclick.tar.gz
-      - glob: build/tvk-oneclick-sha256.txt' >>"$goreleaser_yaml"
+    echo '    - glob: build/preflight/preflight.tar.gz
+    - glob: build/preflight/preflight-sha256.txt' >>"$goreleaser_yaml"
   fi
+
+  if [[ $release_tvk_oneclick == true ]]; then
+    echo "adding tvk-oneclick packages to goreleaser.yml"
+    echo '    - glob: build/tvk-oneclick/tvk-oneclick.tar.gz
+    - glob: build/tvk-oneclick/tvk-oneclick-sha256.txt' >>"$goreleaser_yaml"
+  fi
+
+  if [[ $release_cleanup == true ]]; then
+    echo "adding cleanup packages to goreleaser.yml"
+    echo '    - glob: build/cleanup/cleanup.tar.gz
+    - glob: build/cleanup/cleanup-sha256.txt' >>"$goreleaser_yaml"
+  fi
+
 fi
 
 if [[ $release_log_collector != true ]]; then
@@ -45,13 +48,6 @@ fi
 if [[ $release_target_browser != true ]]; then
   echo "skip target-browser packages release from goreleaser.yml"
   sed -i '/binary: target-browser/a \ \ skip: true' "$goreleaser_yaml"
-fi
-
-if [[ $release_cleanup == true ]]; then
-  echo "adding cleanup packages to goreleaser.yml"
-  echo '  extra_files:
-    - glob: build/cleanup.tar.gz
-    - glob: build/cleanup-sha256.txt' >>"$goreleaser_yaml"
 fi
 
 echo "updated $goreleaser_yaml"
