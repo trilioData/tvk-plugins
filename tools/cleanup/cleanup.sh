@@ -97,20 +97,28 @@ delete_tvk_op(){
   if (helm list -A | grep -v REVISION | grep triliovault >/dev/null 2>&1)
   then
     echo "Uninstalling Trilivault-manager"
-    tvm=("$(helm list -A | grep -v REVISION | grep triliovault-v | awk '{print $1,$2}')")
-    helm uninstall "${tvm[0]}" -n "${tvm[1]}"
-    retValue=$?
-    if [ "${retValue}" -ne 0 ]
-    then
-      exit_status=1
+    tvm=$(helm list -A | grep -v REVISION | grep triliovault-v | awk '{print $1}')
+    tvm_ns=$(helm list -A | grep -v REVISION | grep triliovault-v | awk '{print $2}')
+    if [ -n "${tvm}" ]
+    then 
+      helm uninstall "${tvm}" -n "${tvm_ns}"
+      retValue=$?
+      if [ "${retValue}" -ne 0 ]
+      then
+        exit_status=1
+      fi
     fi
     echo "Uninstalling Trilivault-operator"
-    tvm=("$(helm list -A | grep -v REVISION | grep triliovault-o | awk '{print $1,$2}')")
-    helm uninstall "${tvm[0]}" -n "${tvm[1]}"
-    retValue=$?
-    if [ "${retValue}" -ne 0 ]
-    then
-      exit_status=1
+    tvo=$(helm list -A | grep -v REVISION | grep triliovault-o | awk '{print $1}')
+    tvo_ns=$(helm list -A | grep -v REVISION | grep triliovault-o | awk '{print $2}')
+    if [ -n "${tvo}" ]
+    then 
+      helm uninstall "${tvo}" -n "${tvo_ns}"
+      retValue=$?
+      if [ "${retValue}" -ne 0 ]
+      then
+        exit_status=1
+      fi
     fi
   fi
   return ${exit_status}
@@ -186,9 +194,9 @@ while test $# -gt 0; do
     -r|--resources)
       shift
       if [[ "$*" == -* || $# -eq 0 ]]; then
-        export TVK_resources="Restore Backup Backupplan Hook Target Policy License"
+        export TVK_resources="ClusterRestore ClusterBackup ClusterBackupPlan Restore Backup Backupplan Hook Target Policy License"
         echo "No resources specified, will be deleting all resources listed below"
-        echo "Restore Backup Backupplan Hook Target Policy License"
+        echo "ClusterRestore ClusterBackup ClusterBackupPlan Restore Backup Backupplan Hook Target Policy License"
 	echo
         continue
       else

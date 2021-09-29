@@ -351,18 +351,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Download Preflight Packages from Artifact
-        uses: actions/download-artifact@v2
-        if: needs.pre-release.outputs.release_preflight == 'true'
-        with:
-          name: preflight
-          path: build
+        #- name: Download Preflight Packages from Artifact
+        #uses: actions/download-artifact@v2
+        #if: needs.pre-release.outputs.release_preflight == 'true'
+        #with:
+        #  name: preflight
+        #  path: build
 
-      - name: Download Cleanup Packages from Artifact
+        #- name: Download Cleanup Packages from Artifact
+        #uses: actions/download-artifact@v2
+        #if: needs.pre-release.outputs.release_cleanup == 'true'
+        #with:
+        #  name: cleanup
+        #  path: build
+       
+      - name: Download All (Preflight, Cleanup) Packages from Artifact
         uses: actions/download-artifact@v2
-        if: needs.pre-release.outputs.release_cleanup == 'true'
         with:
-          name: cleanup
           path: build
 
       - name: Update GoReleaser Config for Release
