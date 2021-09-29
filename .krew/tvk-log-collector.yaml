@@ -14,7 +14,28 @@ spec:
         os: linux
         arch: amd64
     uri: https://github.com/trilioData/tvk-plugins/releases/download/LOG_COLLECTOR_VERSION/log-collector_LOG_COLLECTOR_VERSION_linux_amd64.tar.gz
-    sha256: LOG_COLLECTOR_LINUX_TAR_CHECKSUM
+    sha256: LOG_COLLECTOR_LINUX_AMD64_TAR_CHECKSUM
+    bin: log-collector
+    files:
+    - from: '*'
+      to: .
+
+  - selector:
+      matchLabels:
+        os: linux
+        arch: arm64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/LOG_COLLECTOR_VERSION/log-collector_LOG_COLLECTOR_VERSION_linux_arm64.tar.gz
+    sha256: LOG_COLLECTOR_LINUX_ARM64_TAR_CHECKSUM
+    bin: log-collector
+    files:
+    - from: '*'
+      to: .
+  - selector:
+      matchLabels:
+        os: linux
+        arch: arm
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/LOG_COLLECTOR_VERSION/log-collector_LOG_COLLECTOR_VERSION_linux_arm.tar.gz
+    sha256: LOG_COLLECTOR_LINUX_ARM_TAR_CHECKSUM
     bin: log-collector
     files:
     - from: '*'
@@ -25,7 +46,17 @@ spec:
         os: darwin
         arch: amd64
     uri: https://github.com/trilioData/tvk-plugins/releases/download/LOG_COLLECTOR_VERSION/log-collector_LOG_COLLECTOR_VERSION_darwin_amd64.tar.gz
-    sha256: LOG_COLLECTOR_DARWIN_TAR_CHECKSUM
+    sha256: LOG_COLLECTOR_DARWIN_AMD64_TAR_CHECKSUM
+    bin: log-collector
+    files:
+    - from: '*'
+      to: .
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: arm64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/LOG_COLLECTOR_VERSION/log-collector_LOG_COLLECTOR_VERSION_darwin_arm64.tar.gz
+    sha256: LOG_COLLECTOR_DARWIN_ARM64_TAR_CHECKSUM
     bin: log-collector
     files:
     - from: '*'
@@ -36,7 +67,27 @@ spec:
         os: windows
         arch: amd64
     uri: https://github.com/trilioData/tvk-plugins/releases/download/LOG_COLLECTOR_VERSION/log-collector_LOG_COLLECTOR_VERSION_windows_amd64.zip
-    sha256: LOG_COLLECTOR_WINDOWS_TAR_CHECKSUM
+    sha256: LOG_COLLECTOR_WINDOWS_AMD64_TAR_CHECKSUM
+    bin: log-collector.exe
+    files:
+    - from: '*'
+      to: .
+  - selector:
+      matchLabels:
+        os: windows
+        arch: arm64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/LOG_COLLECTOR_VERSION/log-collector_LOG_COLLECTOR_VERSION_windows_arm64.zip
+    sha256: LOG_COLLECTOR_WINDOWS_ARM64_TAR_CHECKSUM
+    bin: log-collector.exe
+    files:
+    - from: '*'
+      to: .
+  - selector:
+      matchLabels:
+        os: windows
+        arch: arm
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/LOG_COLLECTOR_VERSION/log-collector_LOG_COLLECTOR_VERSION_windows_arm.zip
+    sha256: LOG_COLLECTOR_WINDOWS_ARM_TAR_CHECKSUM
     bin: log-collector.exe
     files:
     - from: '*'

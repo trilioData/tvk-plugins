@@ -33,15 +33,35 @@ tvk_target_browser_yaml=$build_dir/$tvk_target_browser_yaml
 # shellcheck disable=SC2154
 target_browser_tar_archive="target-browser_${git_version}_linux_amd64.tar.gz"
 tar_checksum="$(eval "${checksum_cmd[@]}" "$build_dir/${target_browser_tar_archive}" | awk '{print $1;}')"
-sed -i "s/TARGET_BROWSER_LINUX_TAR_CHECKSUM/${tar_checksum}/g" $tvk_target_browser_yaml
+sed -i "s/TARGET_BROWSER_LINUX_AMD64_TAR_CHECKSUM/${tar_checksum}/g" $tvk_target_browser_yaml
+
+target_browser_tar_archive="target-browser_${git_version}_linux_arm64.tar.gz"
+tar_checksum="$(eval "${checksum_cmd[@]}" "$build_dir/${target_browser_tar_archive}" | awk '{print $1;}')"
+sed -i "s/TARGET_BROWSER_LINUX_ARM64_TAR_CHECKSUM/${tar_checksum}/g" $tvk_target_browser_yaml
+
+target_browser_tar_archive="target-browser_${git_version}_linux_arm.tar.gz"
+tar_checksum="$(eval "${checksum_cmd[@]}" "$build_dir/${target_browser_tar_archive}" | awk '{print $1;}')"
+sed -i "s/TARGET_BROWSER_LINUX_ARM_TAR_CHECKSUM/${tar_checksum}/g" $tvk_target_browser_yaml
 
 target_browser_tar_archive="target-browser_${git_version}_darwin_amd64.tar.gz"
 tar_checksum="$(eval "${checksum_cmd[@]}" "$build_dir/${target_browser_tar_archive}" | awk '{print $1;}')"
-sed -i "s/TARGET_BROWSER_DARWIN_TAR_CHECKSUM/${tar_checksum}/g" $tvk_target_browser_yaml
+sed -i "s/TARGET_BROWSER_DARWIN_AMD64_TAR_CHECKSUM/${tar_checksum}/g" $tvk_target_browser_yaml
+
+target_browser_tar_archive="target-browser_${git_version}_darwin_arm64.tar.gz"
+tar_checksum="$(eval "${checksum_cmd[@]}" "$build_dir/${target_browser_tar_archive}" | awk '{print $1;}')"
+sed -i "s/TARGET_BROWSER_DARWIN_ARM64_TAR_CHECKSUM/${tar_checksum}/g" $tvk_target_browser_yaml
 
 target_browser_tar_archive="target-browser_${git_version}_windows_amd64.zip"
 tar_checksum="$(eval "${checksum_cmd[@]}" "$build_dir/${target_browser_tar_archive}" | awk '{print $1;}')"
-sed -i "s/TARGET_BROWSER_WINDOWS_TAR_CHECKSUM/${tar_checksum}/g" $tvk_target_browser_yaml
+sed -i "s/TARGET_BROWSER_WINDOWS_AMD64_TAR_CHECKSUM/${tar_checksum}/g" $tvk_target_browser_yaml
+
+target_browser_tar_archive="target-browser_${git_version}_windows_arm64.zip"
+tar_checksum="$(eval "${checksum_cmd[@]}" "$build_dir/${target_browser_tar_archive}" | awk '{print $1;}')"
+sed -i "s/TARGET_BROWSER_WINDOWS_ARM64_TAR_CHECKSUM/${tar_checksum}/g" $tvk_target_browser_yaml
+
+target_browser_tar_archive="target-browser_${git_version}_windows_arm.zip"
+tar_checksum="$(eval "${checksum_cmd[@]}" "$build_dir/${target_browser_tar_archive}" | awk '{print $1;}')"
+sed -i "s/TARGET_BROWSER_WINDOWS_ARM_TAR_CHECKSUM/${tar_checksum}/g" $tvk_target_browser_yaml
 
 sed -i "s/TARGET_BROWSER_VERSION/$git_version/g" $tvk_target_browser_yaml
 
