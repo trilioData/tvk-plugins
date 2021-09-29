@@ -12,7 +12,8 @@ sudo chmod 600 "${KUBECONFIG}"
 
 trap 'cleanup' EXIT
 
-take_input --storageclass csi-gce-pd --snapshotclass default-snapshot-class
+# add extra flags if needed '--snapshotclass default-snapshot-class'
+take_input --storageclass csi-gce-pd
 
 testKubectl() {
   check_kubectl

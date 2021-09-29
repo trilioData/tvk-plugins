@@ -135,26 +135,37 @@ jobs:
     - name: Build Preflight Package
       run: make build-preflight
 
-    - name: Set up Cloud SDK
-      if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
-      uses: google-github-actions/setup-gcloud@master
-      with:
-        project_id: ${{ secrets.GCS_PROJECT_ID }}
-        service_account_key: ${{ secrets.GKE_SA_KEY }}
-        export_default_credentials: true
+    - name: Setup EKS cluster kube-config
+      run: |
+        echo "Creating EKS kube-config file"
+        printf "%s" "$eks_kube_config" > kubeconfig
+      env:
+        eks_kube_config: ${{ secrets.EKS_KUBECONFIG }}
 
-    - name: Authenticate and Connect to GKE cluster
-      if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
-      uses: google-github-actions/get-gke-credentials@main
-      with:
-        cluster_name: ${{ env.GKE_CLUSTER }}
-        location: ${{ env.GKE_ZONE }}
-        use_auth_provider: true
-        credentials: ${{ secrets.GKE_SA_KEY }}
+    # TODO: Commented out GKE setup related changes, will be reverted once ci-cluster is set on GKE
+    #    - name: Set up Cloud SDK
+    #      if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
+    #      uses: google-github-actions/setup-gcloud@master
+    #      with:
+    #        project_id: ${{ secrets.GCS_PROJECT_ID }}
+    #        service_account_key: ${{ secrets.GKE_SA_KEY }}
+    #        export_default_credentials: true
+    #
+    #    - name: Authenticate and Connect to GKE cluster
+    #      if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
+    #      uses: google-github-actions/get-gke-credentials@main
+    #      with:
+    #        cluster_name: ${{ env.GKE_CLUSTER }}
+    #        location: ${{ env.GKE_ZONE }}
+    #        use_auth_provider: true
+    #        credentials: ${{ secrets.GKE_SA_KEY }}
 
+    # TODO: remove env section this step, once ci-cluster is set on GKE
     - name: Run Preflight Integration Tests
       if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
       run: make test-preflight-integration
+      env:
+        KUBECONFIG: kubeconfig
 
     - name: Ensure Required Utilities Installed
       run: make install-required-utilities
@@ -297,27 +308,37 @@ jobs:
       - name: Ensure Required Utilities Installed
         run: make install-required-utilities
 
-      - name: Set up Cloud SDK
-        if: (needs.pre-build.outputs.testTargetBrowser == 'true') || startsWith(github.ref, 'refs/tags/')
-        uses: google-github-actions/setup-gcloud@master
-        with:
-          project_id: ${{ secrets.GCS_PROJECT_ID }}
-          service_account_key: ${{ secrets.GKE_SA_KEY }}
-          export_default_credentials: true
+      - name: Setup EKS cluster kube-config
+        run: |
+          echo "Creating EKS kube-config file"
+          printf "%s" "$eks_kube_config" > kubeconfig
+        env:
+          eks_kube_config: ${{ secrets.EKS_KUBECONFIG }}
 
-      - name: Authenticate and Connect to GKE cluster
-        if: (needs.pre-build.outputs.testTargetBrowser == 'true') || startsWith(github.ref, 'refs/tags/')
-        uses: google-github-actions/get-gke-credentials@main
-        with:
-          cluster_name: ${{ env.GKE_CLUSTER }}
-          location: ${{ env.GKE_ZONE }}
-          use_auth_provider: true
-          credentials: ${{ secrets.GKE_SA_KEY }}
+      # TODO: Commented out GKE setup related changes, will be reverted once ci-cluster is set on GKE
+      #      - name: Set up Cloud SDK
+      #        if: (needs.pre-build.outputs.testTargetBrowser == 'true') || startsWith(github.ref, 'refs/tags/')
+      #        uses: google-github-actions/setup-gcloud@master
+      #        with:
+      #          project_id: ${{ secrets.GCS_PROJECT_ID }}
+      #          service_account_key: ${{ secrets.GKE_SA_KEY }}
+      #          export_default_credentials: true
+      #
+      #      - name: Authenticate and Connect to GKE cluster
+      #        if: (needs.pre-build.outputs.testTargetBrowser == 'true') || startsWith(github.ref, 'refs/tags/')
+      #        uses: google-github-actions/get-gke-credentials@main
+      #        with:
+      #          cluster_name: ${{ env.GKE_CLUSTER }}
+      #          location: ${{ env.GKE_ZONE }}
+      #          use_auth_provider: true
+      #          credentials: ${{ secrets.GKE_SA_KEY }}
 
+      # TODO: remove env section this step, once ci-cluster is set on GKE
       - name: Run Target-Browser Tests
         if: (needs.pre-build.outputs.testTargetBrowser == 'true') || startsWith(github.ref, 'refs/tags/')
         run: make test-target-browser-integration
         env:
+          KUBECONFIG: kubeconfig
           job_name: target-browser
           build_id: tb-${{ github.run_id }}
           nfs_server_ip: ${{ secrets.NFS_SERVER_IP }}
