@@ -165,7 +165,7 @@ func verifyBackupPlansAndBackupsOnNFS(backupPlans, backups int) (backupPlanUIDs 
 		return InterceptGomegaFailures(func() {
 			backupPlanUIDs, err = shell.ReadChildDir(TargetLocation)
 			Expect(err).To(BeNil())
-			log.Info(len(backupPlanUIDs), " backupplans present on target location")
+			log.Info(len(backupPlanUIDs), " backupPlans present on target location")
 			Expect(len(backupPlanUIDs)).To(Equal(backupPlans))
 		})
 	}, timeout, interval).Should(BeEmpty())
