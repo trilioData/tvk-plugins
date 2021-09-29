@@ -364,7 +364,7 @@ jobs:
         with:
           name: cleanup
           path: build
-       
+
       - name: Update GoReleaser Config for Release
         run: hack/update-goreleaser-yaml.sh
         env:
