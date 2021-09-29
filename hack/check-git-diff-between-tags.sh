@@ -16,6 +16,7 @@ echo "::set-output name=create_release::true"
 echo "::set-output name=release_preflight::true"
 echo "::set-output name=release_log_collector::true"
 echo "::set-output name=release_target_browser::true"
+echo "::set-output name=release_tvk_oneclick::true"
 exit 0
 # fallback logic ends here
 
@@ -34,6 +35,7 @@ echo "checking paths of modified files-"
 preflight_changed=false
 log_collector_changed=false
 target_browser_changed=false
+tvk_oneclick_changed=false
 
 cmd_dir="cmd"
 tools_dir="tools"
@@ -42,6 +44,7 @@ internal_dir="internal"
 target_browser_dir="target-browser"
 
 preflight_dir=$tools_dir/preflight
+tvk_oneclick_dir=$tools_dir/tvk-oneclick
 
 # shellcheck disable=SC2086
 git diff --name-only $previous_tag $current_tag $tools_dir >files.txt
@@ -71,10 +74,14 @@ while IFS= read -r file; do
     echo "target-browser related code changes have been detected"
     echo "::set-output name=release_target_browser::true"
     target_browser_changed=true
+  elif [[ $tvk_oneclick_changed == false && $file == $tvk_oneclick_dir/* ]]; then
+    echo "tvk-oneclick related code changes have been detected"
+    echo "::set-output name=release_tvk_oneclick::true"
+    tvk_oneclick_changed=true
   fi
 done <files.txt
 
-if [[ $preflight_changed == true || $log_collector_changed == true || $target_browser_changed == true ]]; then
-  echo "Creating Release as files related to preflight, log-collector or target-browser have been changed"
+if [[ $preflight_changed == true || $log_collector_changed == true || $target_browser_changed == true || $tvk_oneclick_changed == true ]]; then
+  echo "Creating Release as files related to preflight, log-collector or target-browser or tvk-oneclick have been changed"
   echo "::set-output name=create_release::true"
 fi
