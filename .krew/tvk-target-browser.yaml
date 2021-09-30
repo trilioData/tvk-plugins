@@ -71,6 +71,8 @@ spec:
     files:
     - from: '*'
       to: .
+
+  # TODO: remove/comment following two selectors 'windows/arm64' & 'windows/arm' while adding it to 'plugins' dir, as these are not supported by krew as of now.
   - selector:
       matchLabels:
         os: windows

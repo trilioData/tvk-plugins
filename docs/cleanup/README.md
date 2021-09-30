@@ -8,9 +8,7 @@ application, Helm charts, Custom reources and CRDs in a Kubernetes cluster.
 1. krew - kubectl-plugin manager. Install from [here](https://krew.sigs.k8s.io/docs/user-guide/setup/install/)
 2. kubectl - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
-**Supported OS and Architectures**:
-
-OS:
+**Supported OS:**
 - Linux
 - darwin
 

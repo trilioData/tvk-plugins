@@ -15,21 +15,17 @@ Plugin currently supports GET operation on target-browser's `/backupplan`, `/bac
         2. In Resource Management, `Backup Plans` tab will be selected by default.
         3. Click on `Targets` tab.
         4. Look for the required target name in the list and ensure that in `Browsing` column toggle is `Enabled` for that target.
-
   4. TVK's web-backend service should be up and running.
 
-  **Supported OS and Architectures**:
-  
-  OS:
-  - Linux
-  - darwin
-  - Windows
-  
-  Arch:
-  - amd64
-  - x86
-  
-  
+**Supported OS and Architectures:**
+- linux/amd64
+- linux/x86
+- linux/arm
+- linux/arm64
+- darwin/amd64
+- darwin/arm64
+- windows/amd64
+
 ## Installation, Upgrade, Removal of Plugins:
   
   - Add TVK custom plugin index of krew:

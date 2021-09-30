@@ -8,16 +8,13 @@ tvk-log-collector collects the logs, config and events of resources. Pod Logs ca
 2. kubectl - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
 **Supported OS and Architectures**:
-
-OS:
-- Linux
-- darwin
-- Windows
-
-Arch:
-- amd64
-- x86
-
+- linux/amd64
+- linux/x86
+- linux/arm
+- linux/arm64
+- darwin/amd64
+- darwin/arm64
+- windows/amd64
 
 ## Installation, Upgrade, Removal of Plugins:
 
