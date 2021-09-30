@@ -14,9 +14,7 @@ some sample backups and restore.
 6. yq(version >= 4). Information can be found @[here](https://github.com/mikefarah/yq) 
 
 
-**Supported OS and Architectures**:
-
-OS:
+**Supported OS:**
 - Linux
 - darwin
 
@@ -59,7 +57,7 @@ OS:
 - Installation:
 
     ```
-    kubectl krew install tvk-oneclick/tvk-oneclick
+    kubectl krew install tvk-plugins/tvk-oneclick
   ```  
 
 - Upgrade:
