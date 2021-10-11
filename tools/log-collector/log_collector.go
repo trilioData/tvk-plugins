@@ -96,51 +96,50 @@ func (l *LogCollector) CollectLogsAndDump() error {
 }
 
 // getResourceObjects returns list of objects for given resourcePath
-func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.APIResource) (objects unstructured.UnstructuredList,
-	err error) {
+func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.APIResource) (objects unstructured.UnstructuredList) {
 
 	if resource.Namespaced && !l.Clustered {
 		for index := range l.Namespaces {
 			var obj unstructured.UnstructuredList
 			listPath := fmt.Sprintf("%s/namespaces/%s/%s", resourcePath, l.Namespaces[index], resource.Name)
-			err = l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&obj)
+			err := l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&obj)
 			if err != nil {
-				if !discovery.IsGroupDiscoveryFailedError(err) {
-					log.Errorf("%s", err.Error())
-					return objects, err
-				}
 				if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
-					log.Warnf("%s", err.Error())
-					return objects, nil
+					log.Warnf("api error : %s", err.Error())
+					continue
 				}
 				/* TODO() Currently error is ignore here, as we do not want to halt the log-collection utility because of
 				single resources GET err. In future, if we add --continue-on-error type flag then, we'll update it and return
-				error depending on --continue-on-error flag value */
+				error depending on --continue-on-error flag value
+				if !discovery.IsGroupDiscoveryFailedError(err) {
+					log.Errorf("%s", err.Error())
+					return objects, err
+				} */
 				log.Warnf("%s", err.Error())
-				return unstructured.UnstructuredList{}, nil
+				continue
 			}
 			objects.Items = append(objects.Items, obj.Items...)
 		}
-		return objects, nil
+		return objects
 	}
 	listPath := fmt.Sprintf("%s/%s", resourcePath, resource.Name)
-	err = l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&objects)
+	err := l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&objects)
 	if err != nil {
-		if !discovery.IsGroupDiscoveryFailedError(err) {
-			log.Errorf("%s", err.Error())
-			return objects, err
-		}
 		if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
 			log.Warnf("%s", err.Error())
-			return objects, nil
+			return objects
 		}
 		/* TODO() Currently error is ignore here, as we do not want to halt the log-collection utility because of
 		single resources GET err. In future, if we add --continue-on-error type flag then, we'll update it and return
-		error depending on --continue-on-error flag value */
+		error depending on --continue-on-error flag value
+		 if !discovery.IsGroupDiscoveryFailedError(err) {
+			log.Errorf("%s", err.Error())
+			return objects, nil
+		} */
 		log.Warnf("%s", err.Error())
-		return unstructured.UnstructuredList{}, nil
+		return unstructured.UnstructuredList{}
 	}
-	return objects, nil
+	return objects
 }
 
 // writeEventsToFile writes events to the file
@@ -361,11 +360,9 @@ func (l *LogCollector) filterResourceObjects(resourcePath string,
 
 	if (!resource.Namespaced && clusteredResources.Has(resource.Kind)) ||
 		(resource.Namespaced && !excludeResources.Has(resource.Kind)) {
+
 		log.Infof("Fetching '%s' Resource", resource.Kind)
-		allObjects, err = l.getResourceObjects(resourcePath, resource)
-		if err != nil {
-			return allObjects, err
-		}
+		allObjects = l.getResourceObjects(resourcePath, resource)
 
 		if resource.Name == CRD {
 			allObjects, err = filterTvkSnapshotAndCSICRD(allObjects)
@@ -490,10 +487,7 @@ func (l *LogCollector) writeObjectsAndLogs(objects unstructured.UnstructuredList
 func (l *LogCollector) getTrilioGroupResources(trilioGVResources []apiv1.APIResource, groupVersion string) error {
 	log.Info("Checking Trilio Group")
 	for index := range trilioGVResources {
-		objectList, err := l.getResourceObjects(getAPIGroupVersionResourcePath(groupVersion), &trilioGVResources[index])
-		if err != nil {
-			return err
-		}
+		objectList := l.getResourceObjects(getAPIGroupVersionResourcePath(groupVersion), &trilioGVResources[index])
 		resourceDir := filepath.Join(trilioGVResources[index].Kind)
 		for _, obj := range objectList.Items {
 			if obj.GetKind() == LicenseKind {
@@ -553,10 +547,7 @@ func (l *LogCollector) CheckIsOpenshift() bool {
 func (l *LogCollector) getOcpResourcesByOwnerRef(resourcePath string,
 	resource *apiv1.APIResource) (objects unstructured.UnstructuredList, err error) {
 
-	allObjects, err := l.getResourceObjects(resourcePath, resource)
-	if err != nil {
-		return objects, err
-	}
+	allObjects := l.getResourceObjects(resourcePath, resource)
 
 	for _, object := range allObjects.Items {
 
@@ -629,11 +620,7 @@ func (l *LogCollector) checkIfNamespacesExist() (err error) {
 // getResourceEvents write YAML's for all events of resources related to trilio
 func (l *LogCollector) getResourceEvents(eventResource *apiv1.APIResource, resourceMap map[string][]types.NamespacedName) error {
 
-	eventObjects, err := l.getResourceObjects(getAPIGroupVersionResourcePath(CoreGv), eventResource)
-	if err != nil {
-		log.Errorf("Unable to Write Events : %s", err.Error())
-		return err
-	}
+	eventObjects := l.getResourceObjects(getAPIGroupVersionResourcePath(CoreGv), eventResource)
 	events, aErr := aggregateEvents(eventObjects, resourceMap)
 	if aErr != nil {
 		log.Errorf("Unable to process Events : %s", aErr.Error())
