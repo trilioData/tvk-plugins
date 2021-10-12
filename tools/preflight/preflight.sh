@@ -321,7 +321,7 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
-    ${LABEL_FOR_LOG_COLLECTION}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   containers:
   - name: dnsutils
@@ -371,7 +371,7 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
-    ${LABEL_K8S_PART_OF}:${LABEL_K8S_PART_OF_VALUE}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   accessModes:
     - ReadWriteOnce
@@ -387,7 +387,7 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
-    ${LABEL_K8S_PART_OF}:${LABEL_K8S_PART_OF_VALUE}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   containers:
   - name: busybox
@@ -443,7 +443,7 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
-    ${LABEL_K8S_PART_OF}:${LABEL_K8S_PART_OF_VALUE}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   volumeSnapshotClassName: ${SNAPSHOT_CLASS}
   source:
@@ -482,7 +482,7 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
-    ${LABEL_K8S_PART_OF}:${LABEL_K8S_PART_OF_VALUE}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   accessModes:
     - ReadWriteOnce
@@ -502,7 +502,7 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
-    ${LABEL_K8S_PART_OF}:${LABEL_K8S_PART_OF_VALUE}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   containers:
   - name: busybox
@@ -565,7 +565,7 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
-    ${LABEL_K8S_PART_OF}:${LABEL_K8S_PART_OF_VALUE}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   volumeSnapshotClassName: ${SNAPSHOT_CLASS}
   source:
@@ -604,7 +604,7 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
-    ${LABEL_K8S_PART_OF}:${LABEL_K8S_PART_OF_VALUE}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   accessModes:
     - ReadWriteOnce
@@ -624,7 +624,7 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
-    ${LABEL_K8S_PART_OF}:${LABEL_K8S_PART_OF_VALUE}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   containers:
   - name: busybox
