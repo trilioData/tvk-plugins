@@ -5,7 +5,7 @@ metadata:
 spec:
   homepage: https://github.com/trilioData/tvk-plugins/blob/master/docs/log-collector/README.md
   shortDescription: TVK Log-Collector to collect logs of TVK Resources
-  version: v1.1.0-rc1
+  version: v1.1.0-rc2
   caveats: |
     Curl and Git neeed to be installed on system for Krew index update to work properly
   platforms:
@@ -13,8 +13,8 @@ spec:
       matchLabels:
         os: linux
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc1/log-collector_v1.1.0-rc1_linux_amd64.tar.gz
-    sha256: 70481a1cddb70d50bf2a085c42798a840185dc971468d019cb425488afe1d56c
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc2/log-collector_v1.1.0-rc2_linux_amd64.tar.gz
+    sha256: 645b7c740aab819208a9567862de1be18f0083df06779f57ca698b42cbf5312f
     bin: log-collector
     files:
     - from: '*'
@@ -24,8 +24,8 @@ spec:
       matchLabels:
         os: linux
         arch: arm64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc1/log-collector_v1.1.0-rc1_linux_arm64.tar.gz
-    sha256: 13177608a91212fff71e6b62f6d6721966ddef69bb73a40bc1152e0639ac5fa7
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc2/log-collector_v1.1.0-rc2_linux_arm64.tar.gz
+    sha256: e1e1d362e347517ac66fed4ced0e5a4e809076c0015e5ac57b4bb4d327ae5905
     bin: log-collector
     files:
     - from: '*'
@@ -34,8 +34,8 @@ spec:
       matchLabels:
         os: linux
         arch: arm
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc1/log-collector_v1.1.0-rc1_linux_arm.tar.gz
-    sha256: a38cdb8ab23237fda081629c9e33db20e0173612a31c5ebf16ac05ccb0531ef1
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc2/log-collector_v1.1.0-rc2_linux_arm.tar.gz
+    sha256: b5732a31681314eb2c79b4b27bd2067a6cfc2bf258752fa7d0e43dd9c8a4e2db
     bin: log-collector
     files:
     - from: '*'
@@ -45,8 +45,8 @@ spec:
       matchLabels:
         os: darwin
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc1/log-collector_v1.1.0-rc1_darwin_amd64.tar.gz
-    sha256: cb2b67ca2b0628ba155d49754fe7d08f27ddf23b58d2f54dd5c941b23d84d47e
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc2/log-collector_v1.1.0-rc2_darwin_amd64.tar.gz
+    sha256: 9c12030e99279e252f6e6f51bb840371216393a6ea7de125f98881e76955db4f
     bin: log-collector
     files:
     - from: '*'
@@ -55,8 +55,8 @@ spec:
       matchLabels:
         os: darwin
         arch: arm64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc1/log-collector_v1.1.0-rc1_darwin_arm64.tar.gz
-    sha256: 33880dddd00d11ce173feab58d5726f6887b59c45e05dbdcc072c490dad2f9fb
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc2/log-collector_v1.1.0-rc2_darwin_arm64.tar.gz
+    sha256: 0b3b02f9c38887756c61c921f3949e087ab494a496131fd67662c99d15a5eb4d
     bin: log-collector
     files:
     - from: '*'
@@ -66,18 +66,20 @@ spec:
       matchLabels:
         os: windows
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc1/log-collector_v1.1.0-rc1_windows_amd64.zip
-    sha256: 3296944858a966c4336d90cd6a27429004da6283ea8e8e73bb89c13b97a9995f
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc2/log-collector_v1.1.0-rc2_windows_amd64.zip
+    sha256: d49cda61bacfed9f8f46ed46a1cbb201b709d6068ae4c3354f93d0940e74055b
     bin: log-collector.exe
     files:
     - from: '*'
       to: .
+
+  # TODO: remove/comment following two selectors 'windows/arm64' & 'windows/arm' while adding it to 'plugins' dir, as these are not supported by krew as of now.
   #  - selector:
   #      matchLabels:
   #        os: windows
   #        arch: arm64
-  #    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc1/log-collector_v1.1.0-rc1_windows_arm64.zip
-  #    sha256: 628ae0beb634c813f49eb0e0b814f7fa5cde70252f6a23eefdab55a19e5b920f
+  #    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc2/log-collector_v1.1.0-rc2_windows_arm64.zip
+  #    sha256: 542f1a77be64857d3a2675dd4351624fb027e0d207639f696eaa972ebf418d2c
   #    bin: log-collector.exe
   #    files:
   #    - from: '*'
@@ -86,8 +88,8 @@ spec:
   #      matchLabels:
   #        os: windows
   #        arch: arm
-  #    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc1/log-collector_v1.1.0-rc1_windows_arm.zip
-  #    sha256: 143962bfaf17861ab0cd21fedfbd90d8daa183932d64d910de0b5963c6632248
+  #    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc2/log-collector_v1.1.0-rc2_windows_arm.zip
+  #    sha256: 6379fd52c15185d47bc8781a6f6f429f59920b6e2d028fbbcb6d01e178cfe56b
   #    bin: log-collector.exe
   #    files:
   #    - from: '*'

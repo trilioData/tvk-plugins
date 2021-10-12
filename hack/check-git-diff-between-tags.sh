@@ -6,14 +6,13 @@ set -euo pipefail
 # shellcheck disable=SC2006
 current_tag=$(git describe --abbrev=0 --tags)
 
-# validate if current tag directly references the supplied commit
+# validate if current tag directly references the supplied commit, this check needed for goreleaser
 git describe --exact-match --tags --match "$current_tag"
 
 # shellcheck disable=SC2046
 # shellcheck disable=SC2006
-# add flag '--exclude=v*-rc*', if need to compute diff from last stable tag instead of RC
-previous_tag=$(git describe --abbrev=0 --tags --match=v[0-9].[0-9].[0-9] --exclude="${current_tag}" --exclude=v*-alpha* --exclude=v*-beta* $(git rev-list --tags --skip=1 --max-count=1))
-
+# add flag '-v -e "v*-rc*"', if need to compute diff from last stable tag instead of RC
+previous_tag=$(git tag --sort=-creatordate | grep -e "v[0-9].[0-9].[0-9]" | grep -v -e "$current_tag" -e "v*-alpha*" -e "v*-beta*" | head -n 1)
 # use hard coded values if required
 #current_tag=v0.0.6-main
 #previous_tag=v0.0.5-dev
