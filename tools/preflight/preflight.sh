@@ -339,7 +339,7 @@ spec:
         cpu: "500m"
   restartPolicy: Always
 EOF
-    kubectl wait --for=condition=ready --timeout=2m pod/"${DNS_UTILS}"
+    kubectl wait --for=condition=ready --timeout=3m pod/"${DNS_UTILS}"
     kubectl exec -it "${DNS_UTILS}" -- nslookup kubernetes.default
   } &>>"${LOG_FILE}"
 
@@ -411,7 +411,7 @@ spec:
       readOnly: false
 EOF
 
-  kubectl wait --for=condition=ready --timeout=2m pod/"${SOURCE_POD}" &>>"${LOG_FILE}"
+  kubectl wait --for=condition=ready --timeout=3m pod/"${SOURCE_POD}" &>>"${LOG_FILE}"
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
     echolog "${GREEN} ${CHECK} Created source pod and pvc${NC}\n"
@@ -649,7 +649,7 @@ spec:
       readOnly: false
 EOF
 
-  kubectl wait --for=condition=ready --timeout=2m pod/"${UNUSED_RESTORE_POD}" &>>"${LOG_FILE}"
+  kubectl wait --for=condition=ready --timeout=3m pod/"${UNUSED_RESTORE_POD}" &>>"${LOG_FILE}"
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
     echolog "${GREEN} ${CHECK} Created restore pod from volume snapshot of unused pv${NC}\n"
@@ -702,7 +702,7 @@ cleanup() {
 
   echolog "${GREEN} ${CHECK} Cleaned up all the resources${NC}\n"
 
-  sed -i -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" "${LOG_FILE}"
+  sed -i -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" "${LOG_FILE}" || true
 
   return ${exit_status}
 }
