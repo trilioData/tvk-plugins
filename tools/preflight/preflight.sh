@@ -4,6 +4,8 @@
 
 set -o pipefail
 
+TIMESTAMP=$(date +%F_%H-%M-%S)
+
 # COLOUR CONSTANTS
 GREEN='\033[0;32m'
 GREEN_BOLD='\033[0;32m\e[1m'
@@ -12,14 +14,15 @@ RED='\033[0;31m'
 RED_BOLD='\033[0;31m\e[1m'
 BROWN='\033[0;33m'
 NC='\033[0m'
+BLUE='\033[1;36m'
 
 CHECK='\xE2\x9C\x94'
 CROSS='\xE2\x9D\x8C'
 
 MIN_HELM_VERSION="3.0.0"
+STORAGE_SNAPSHOT_CLASS_CHECK_SUCCESS=true
 MIN_K8S_VERSION="1.18.0"
 PREFLIGHT_RUN_SUCCESS=true
-STORAGE_SNAPSHOT_CLASS_CHECK_SUCCESS=true
 
 # shellcheck disable=SC2018
 RANDOM_STRING=$(
@@ -35,6 +38,16 @@ UNUSED_RESTORE_POD="unused-restored-pod-${RANDOM_STRING}"
 UNUSED_RESTORE_PVC="unused-restored-pvc-${RANDOM_STRING}"
 UNUSED_VOLUME_SNAP_SRC="unused-source-pvc-${RANDOM_STRING}"
 DNS_UTILS="dnsutils-${RANDOM_STRING}"
+LABEL_K8S_PART_OF="app.kubernetes.io/part-of"
+LABEL_K8S_PART_OF_VALUE="k8s-triliovault"
+
+LOG_FILE=preflight-log-${TIMESTAMP}.log
+
+echolog() (
+  echo -n "[$(date +'%F %H:%M:%S')] " &>>"${LOG_FILE}"
+  echo -e "${BLUE}[ INFO ]${NC}" "$@" | tee -a "${LOG_FILE}"
+  echo
+)
 
 print_help() {
   echo "
@@ -51,7 +64,7 @@ Params:
 
 take_input() {
   if [[ -z "${1}" ]]; then
-    echo "Error: --storageclass needed to run pre flight checks!"
+    echolog "Error: --storageclass needed to run pre flight checks!"
     print_help
     exit 1
   fi
@@ -62,7 +75,7 @@ take_input() {
         STORAGE_CLASS=$2
         shift 2
       else
-        echo "Error: flag --storageclass value may not be empty!"
+        echolog "Error: flag --storageclass value may not be empty!"
         print_help
         exit 1
       fi
@@ -72,7 +85,7 @@ take_input() {
         SNAPSHOT_CLASS=$2
         shift 2
       else
-        echo "Error: flag --snapshotclass value may not be empty. Either set the value or skip this flag!"
+        echolog "Error: flag --snapshotclass value may not be empty. Either set the value or skip this flag!"
         print_help
         exit 1
       fi
@@ -82,7 +95,7 @@ take_input() {
         KUBECONFIG_PATH=$2
         shift 2
       else
-        echo "Error: flag --kubeconfig value may not be empty. Either set the value or skip this flag!"
+        echolog "Error: flag --kubeconfig value may not be empty. Either set the value or skip this flag!"
         print_help
         exit 1
       fi
@@ -92,14 +105,14 @@ take_input() {
       exit
       ;;
     *)
-      echo "Error: wrong input parameter $1 passed. Check Usage!"
+      echolog "Error: wrong input parameter $1 passed. Check Usage!"
       print_help
       exit 1
       ;;
     esac
   done
   if [[ -z "${STORAGE_CLASS}" ]]; then
-    echo "Error: --storageclass flag needed to run pre flight checks!"
+    echolog "Error: --storageclass flag needed to run pre flight checks!"
     print_help
     exit 1
   fi
@@ -107,13 +120,14 @@ take_input() {
 
 check_kubectl() {
   echo
-  echo -e "${LIGHT_BLUE}Checking for kubectl...${NC}\n"
+  echolog "${LIGHT_BLUE}Checking for kubectl...${NC}\n"
   local exit_status=0
-  if ! command -v "kubectl" >/dev/null 2>&1; then
-    echo -e "${RED} ${CROSS} Unable to find kubectl${NC}\n"
+  if ! command -v "kubectl" &>>/dev/null; then
+    echolog "${RED} ${CROSS} Unable to find kubectl${NC}\n"
     exit_status=1
   else
-    echo -e "${GREEN} ${CHECK} Found kubectl${NC}\n"
+    echo "kubectl found at path -" "$(! command -v "kubectl")" &>>"${LOG_FILE}"
+    echolog "${GREEN} ${CHECK} Found kubectl${NC}\n"
   fi
   return ${exit_status}
 }
@@ -123,12 +137,12 @@ check_kubectl_access() {
   if [[ -n ${KUBECONFIG_PATH} ]]; then
     export KUBECONFIG=${KUBECONFIG_PATH}
   fi
-  echo -e "${LIGHT_BLUE}Checking access to the Kubernetes context $(kubectl config current-context)...${NC}\n"
+  echolog "${LIGHT_BLUE}Checking access to the Kubernetes context $(kubectl config current-context)...${NC}\n"
 
   if [[ $(kubectl get ns default) ]]; then
-    echo -e "${GREEN} ${CHECK} Able to access the default Kubernetes namespace${NC}\n"
+    echolog "${GREEN} ${CHECK} Able to access the default Kubernetes namespace${NC}\n"
   else
-    echo -e "${RED} ${CROSS} Unable to access the default Kubernetes namespace${NC}\n"
+    echolog "${RED} ${CROSS} Unable to access the default Kubernetes namespace${NC}\n"
     exit_status=1
   fi
   return ${exit_status}
@@ -154,68 +168,69 @@ check_if_ocp() {
 }
 
 check_helm_version() {
-  echo -e "${LIGHT_BLUE}Checking for required Helm version (>= v${MIN_HELM_VERSION})...${NC}\n"
+  echolog "${LIGHT_BLUE}Checking for required Helm version (>= v${MIN_HELM_VERSION})...${NC}\n"
   local exit_status=0
 
   # Abort successfully in case of OCP setup
   if [[ $(check_if_ocp) == "Y" ]]; then
-    echo -e "${GREEN} ${CHECK} Helm not needed for OCP clusters${NC}\n"
+    echolog "${GREEN} ${CHECK} Helm not needed for OCP clusters${NC}\n"
     return ${exit_status}
   fi
 
-  if ! command -v "helm" >/dev/null 2>&1; then
-    echo -e "${RED} ${CROSS} Unable to find helm${NC}\n"
+  if ! command -v "helm" &>>/dev/null; then
+    echolog "${RED} ${CROSS} Unable to find helm${NC}\n"
     exit_status=1
   else
-    echo -e "${GREEN} ${CHECK} Found helm${NC}\n"
+    echo "helm found at path -" "$(! command -v "helm")" &>>"${LOG_FILE}"
+    echolog "${GREEN} ${CHECK} Found helm${NC}\n"
   fi
 
   local helm_version
   helm_version=$(helm version --template "{{ .Version }}")
   if [[ ${helm_version} != "<no value>" ]]; then
-    echo -e "${GREEN} ${CHECK} Helm version ${helm_version} meets minimum required version v${MIN_HELM_VERSION}${NC}\n"
+    echolog "${GREEN} ${CHECK} Helm version ${helm_version} meets minimum required version v${MIN_HELM_VERSION}${NC}\n"
   fi
 
   return ${exit_status}
 }
 
 check_kubernetes_version() {
-  echo -e "${LIGHT_BLUE}Checking for required Kubernetes version (>= v${MIN_K8S_VERSION})...${NC}\n"
+  echolog "${LIGHT_BLUE}Checking for required Kubernetes version (>= v${MIN_K8S_VERSION})...${NC}\n"
   local exit_status=0
   local k8s_version
   k8s_version=$(kubectl version --short | grep Server | awk '{print $3}')
 
   if version_gt_eq "${k8s_version:1}" "${MIN_K8S_VERSION}"; then
-    echo -e "${GREEN} ${CHECK} Kubernetes version (${k8s_version}) meets minimum requirements${NC}\n"
+    echolog "${GREEN} ${CHECK} Kubernetes version (${k8s_version}) meets minimum requirements${NC}\n"
   else
-    echo -e "${RED} ${CROSS} Kubernetes version (${k8s_version}) does not meet minimum requirements${NC}\n"
+    echolog "${RED} ${CROSS} Kubernetes version (${k8s_version}) does not meet minimum requirements${NC}\n"
     exit_status=1
   fi
   return ${exit_status}
 }
 
 check_kubernetes_rbac() {
-  echo -e "${LIGHT_BLUE}Checking if Kubernetes RBAC is enabled...${NC}\n"
+  echolog "${LIGHT_BLUE}Checking if Kubernetes RBAC is enabled...${NC}\n"
   local exit_status=0
   # The below shellcheck conflicts with pipefail
   # shellcheck disable=SC2143
   if [[ $(kubectl api-versions | grep rbac.authorization.k8s.io) ]]; then
-    echo -e "${GREEN} ${CHECK} Kubernetes RBAC is enabled${NC}\n"
+    echolog "${GREEN} ${CHECK} Kubernetes RBAC is enabled${NC}\n"
   else
-    echo -e "${RED} ${CROSS} Kubernetes RBAC is not enabled${NC}\n"
+    echolog "${RED} ${CROSS} Kubernetes RBAC is not enabled${NC}\n"
     exit_status=1
   fi
   return ${exit_status}
 }
 
 check_storage_snapshot_class() {
-  echo -e "${LIGHT_BLUE}Checking if a StorageClass and VolumeSnapshotClass are present...${NC}\n"
+  echolog "${LIGHT_BLUE}Checking if a StorageClass and VolumeSnapshotClass are present...${NC}\n"
   local exit_status=0
   # shellcheck disable=SC2143
   if [[ $(kubectl get storageclass | grep -E "(^|\s)${STORAGE_CLASS}($|\s)") ]]; then
-    echo -e "${GREEN} ${CHECK} Storage class \"${STORAGE_CLASS}\" found${NC}\n"
+    echolog "${GREEN} ${CHECK} Storage class \"${STORAGE_CLASS}\" found${NC}\n"
   else
-    echo -e "${RED} ${CROSS} Storage class \"${STORAGE_CLASS}\" not found${NC}\n"
+    echolog "${RED} ${CROSS} Storage class \"${STORAGE_CLASS}\" not found${NC}\n"
     exit_status=1
   fi
 
@@ -242,28 +257,28 @@ check_storage_snapshot_class() {
     fi
 
     if [[ -z "${SNAPSHOT_CLASS}" ]]; then
-      echo -e "${RED} ${CROSS} Volume snapshot class having same driver as StorageClass's provisioner=$provisioner not found in cluster${NC}\n"
+      echolog "${RED} ${CROSS} Volume snapshot class having same driver as StorageClass's provisioner=$provisioner not found in cluster${NC}\n"
       exit_status=1
       return ${exit_status}
     else
-      echo -e "${GREEN} ${CHECK} Extracted volume snapshot class \"${SNAPSHOT_CLASS}\" found in cluster${NC}\n"
-      echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" driver matches with given StorageClass's provisioner=$provisioner${NC}\n"
+      echolog "${GREEN} ${CHECK} Extracted volume snapshot class \"${SNAPSHOT_CLASS}\" found in cluster${NC}\n"
+      echolog "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" driver matches with given StorageClass's provisioner=$provisioner${NC}\n"
       return
     fi
   fi
 
   # shellcheck disable=SC2143
   if [[ $(kubectl get volumesnapshotclass | grep -E "(^|\s)${SNAPSHOT_CLASS}($|\s)") ]]; then
-    echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" found in cluster${NC}\n"
+    echolog "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" found in cluster${NC}\n"
     # shellcheck disable=SC1009
-    if [[ $(kubectl get volumesnapshotclass "${SNAPSHOT_CLASS}" -oyaml | grep -E "(^)driver: ${provisioner}($)") ]]; then
-      echo -e "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" driver matches with given StorageClass's provisioner=$provisioner${NC}\n"
+    if [[ $(kubectl get volumesnapshotclass "${SNAPSHOT_CLASS}" -oyaml | grep -E "(^)driver: ${provisioner}") ]]; then
+      echolog "${GREEN} ${CHECK} Volume snapshot class \"${SNAPSHOT_CLASS}\" driver matches with given StorageClass's provisioner=$provisioner${NC}\n"
     else
-      echo -e "${RED} ${CROSS} Volume snapshot class \"${SNAPSHOT_CLASS}\" driver does not match with given StorageClass's provisioner=$provisioner${NC}\n"
+      echolog "${RED} ${CROSS} Volume snapshot class \"${SNAPSHOT_CLASS}\" driver does not match with given StorageClass's provisioner=$provisioner${NC}\n"
       exit_status=1
     fi
   else
-    echo -e "${RED} ${CROSS} Volume snapshot class \"${SNAPSHOT_CLASS}\" not found in cluster${NC}\n"
+    echolog "${RED} ${CROSS} Volume snapshot class \"${SNAPSHOT_CLASS}\" not found in cluster${NC}\n"
     exit_status=1
   fi
 
@@ -279,14 +294,14 @@ check_csi() {
     "volumesnapshots.snapshot.storage.k8s.io"
   )
 
-  echo -e "${LIGHT_BLUE}Checking if CSI APIs are installed in cluster...${NC}\n"
+  echolog "${LIGHT_BLUE}Checking if CSI APIs are installed in cluster...${NC}\n"
 
   for api in "${common_required_apis[@]}"; do
     # shellcheck disable=SC2143
     if [[ $(kubectl get crds | grep "${api}") ]]; then
-      echo -e "${GREEN} ${CHECK} Found ${api}${NC}\n"
+      echolog "${GREEN} ${CHECK} Found ${api}${NC}\n"
     else
-      echo -e "${RED} ${CROSS} Not Found ${api}${NC}\n"
+      echolog "${RED} ${CROSS} Not Found ${api}${NC}\n"
       exit_status=1
     fi
   done
@@ -294,10 +309,11 @@ check_csi() {
 }
 
 check_dns_resolution() {
-  echo -e "${LIGHT_BLUE}Checking if DNS resolution working in K8s cluster...${NC}\n"
+  echolog "${LIGHT_BLUE}Checking if DNS resolution working in K8s cluster...${NC}\n"
   local exit_status=0
 
-  cat <<EOF | kubectl apply -f - &>/dev/null
+  {
+    cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
@@ -305,6 +321,7 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   containers:
   - name: dnsutils
@@ -313,32 +330,40 @@ spec:
       - sleep
       - "3600"
     imagePullPolicy: IfNotPresent
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
   restartPolicy: Always
 EOF
+    kubectl wait --for=condition=ready --timeout=3m pod/"${DNS_UTILS}"
+    kubectl exec -it "${DNS_UTILS}" -- nslookup kubernetes.default
+  } &>>"${LOG_FILE}"
 
-  kubectl wait --for=condition=ready --timeout=5m pod/"${DNS_UTILS}" &>/dev/null
-  kubectl exec -it "${DNS_UTILS}" -- nslookup kubernetes.default &>/dev/null
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
-    echo -e "${GREEN} ${CHECK} Able to resolve DNS \"kubernetes.default\" service inside pods${NC}\n"
+    echolog "${GREEN} ${CHECK} Able to resolve DNS \"kubernetes.default\" service inside pods${NC}\n"
   else
-    echo -e "${RED} ${CROSS} Could not resolve DNS \"kubernetes.default\" service inside pod${NC}\n"
+    echolog "${RED} ${CROSS} Could not resolve DNS \"kubernetes.default\" service inside pod${NC}\n"
     exit_status=1
   fi
-  kubectl delete pod "${DNS_UTILS}" &>/dev/null
+  kubectl delete pod "${DNS_UTILS}" &>>"${LOG_FILE}"
   return ${exit_status}
 }
 
 check_volume_snapshot() {
-  echo -e "${LIGHT_BLUE}Checking if volume snapshot and restore enabled in K8s cluster...${NC}\n"
+  echolog "${LIGHT_BLUE}Checking if volume snapshot and restore enabled in K8s cluster...${NC}\n"
   local err_status=1
   local success_status=0
   local retries=45
   local sleep=5
 
-  echo -e "${BROWN} Creating source pod and pvc for volume-snapshot check${NC}\n"
+  echolog "${BROWN} Creating source pod and pvc for volume-snapshot check${NC}\n"
 
-  cat <<EOF | kubectl apply -f - &>/dev/null
+  cat <<EOF | kubectl apply -f - &>>"${LOG_FILE}"
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
@@ -346,6 +371,7 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   accessModes:
     - ReadWriteOnce
@@ -361,12 +387,20 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   containers:
   - name: busybox
     image: busybox
     command: ["/bin/sh", "-c"]
     args: ["touch /demo/data/sample-file.txt && sleep 3000"]
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
     volumeMounts:
     - name: source-data
       mountPath: /demo/data
@@ -377,12 +411,12 @@ spec:
       readOnly: false
 EOF
 
-  kubectl wait --for=condition=ready --timeout=5m pod/"${SOURCE_POD}" &>/dev/null
+  kubectl wait --for=condition=ready --timeout=3m pod/"${SOURCE_POD}" &>>"${LOG_FILE}"
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
-    echo -e "${GREEN} ${CHECK} Successfully created source pod [Ready] and pvc ${NC}\n"
+    echolog "${GREEN} ${CHECK} Created source pod and pvc${NC}\n"
   else
-    echo -e "${RED} ${CROSS} Error waiting for source pod and pvc to be in [Ready] state${NC}\n"
+    echolog "${RED} ${CROSS} Error creating source pod and pvc${NC}\n"
     return ${err_status}
   fi
 
@@ -394,14 +428,14 @@ EOF
   elif [[ $(echo "$api_service" | grep "v1beta1.snapshot.storage.k8s.io") ]]; then
     snapshotVersion="v1beta1"
   else
-    echo -e "${RED} ${CROSS} Volume snapshot crd version [v1 or v1beta1] not found in cluster${NC}\n"
+    echolog "${RED} ${CROSS} Volume snapshot crd version [v1 or v1beta1] not found in cluster${NC}\n"
     return ${err_status}
   fi
 
-  echo -e "${BROWN} Creating volume snapshot from source pvc${NC}\n"
+  echolog "${BROWN} Creating volume snapshot from source pvc${NC}\n"
 
   # shellcheck disable=SC2006
-  cat <<EOF | kubectl apply -f - &>/dev/null
+  cat <<EOF | kubectl apply -f - &>>"${LOG_FILE}"
 apiVersion: snapshot.storage.k8s.io/${snapshotVersion}
 kind: VolumeSnapshot
 metadata:
@@ -409,6 +443,7 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   volumeSnapshotClassName: ${SNAPSHOT_CLASS}
   source:
@@ -417,18 +452,18 @@ EOF
 
   # shellcheck disable=SC2181
   if [[ $? -ne 0 ]]; then
-    echo -e "${RED_BOLD} ${CROSS} Error creating volume snapshot from source pvc${NC}\n"
+    echolog "${RED_BOLD} ${CROSS} Error creating volume snapshot from source pvc${NC}\n"
     return ${err_status}
   fi
 
   while true; do
     if [[ ${retries} -eq 0 ]]; then
-      echo -e "${RED_BOLD} ${CROSS} Volume snapshot from source pvc not readyToUse (waited 150 sec)${NC}\n"
+      echolog "${RED_BOLD} ${CROSS} Volume snapshot from source pvc not readyToUse (waited 150 sec)${NC}\n"
       return ${err_status}
     fi
     # shellcheck disable=SC2143
     if [[ $(kubectl get volumesnapshot "${VOLUME_SNAP_SRC}" -o yaml | grep 'readyToUse: true') ]]; then
-      echo -e "${GREEN} ${CHECK} Created volume snapshot from source pvc and is readyToUse${NC}\n"
+      echolog "${GREEN} ${CHECK} Created volume snapshot from source pvc and is readyToUse${NC}\n"
       break
     else
       sleep "${sleep}"
@@ -437,9 +472,9 @@ EOF
     fi
   done
 
-  echo -e "${BROWN} Creating restore pod from volume snapshot${NC}\n"
+  echolog "${BROWN} Creating restore pod from volume snapshot${NC}\n"
 
-  cat <<EOF | kubectl apply -f - &>/dev/null
+  cat <<EOF | kubectl apply -f - &>>"${LOG_FILE}"
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
@@ -447,6 +482,7 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   accessModes:
     - ReadWriteOnce
@@ -466,6 +502,7 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   containers:
   - name: busybox
@@ -473,6 +510,13 @@ spec:
     args:
     - sleep
     - "3600"
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
     volumeMounts:
     - name: source-data
       mountPath: /demo/data
@@ -483,37 +527,37 @@ spec:
       readOnly: false
 EOF
 
-  kubectl wait --for=condition=ready --timeout=5m pod/"${RESTORE_POD}" &>/dev/null
+  kubectl wait --for=condition=ready --timeout=3m pod/"${RESTORE_POD}" &>>"${LOG_FILE}"
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
-    echo -e "${GREEN} ${CHECK} Successfully created restore pod [Ready] from volume snapshot${NC}\n"
+    echolog "${GREEN} ${CHECK} Created restore pod from volume snapshot${NC}\n"
   else
-    echo -e "${RED_BOLD} ${CROSS} Error waiting for restore pod and pvc from volume snapshot to be in [Ready] state${NC}\n"
+    echolog "${RED_BOLD} ${CROSS} Error creating pod and pvc from volume snapshot${NC}\n"
     return ${err_status}
   fi
 
-  kubectl exec -it "${RESTORE_POD}" -- ls /demo/data/sample-file.txt &>/dev/null
+  echo "Check for file -> " "$(kubectl exec -it "${RESTORE_POD}" -- ls /demo/data/sample-file.txt)" &>>"${LOG_FILE}"
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
-    echo -e "${GREEN} ${CHECK} Restored pod has expected data${NC}\n"
+    echolog "${GREEN} ${CHECK} Restored pod has expected data${NC}\n"
   else
-    echo -e "${RED_BOLD} ${CROSS} Restored pod does not have expected data${NC}\n"
+    echolog "${RED_BOLD} ${CROSS} Restored pod does not have expected data${NC}\n"
     return ${err_status}
   fi
 
-  kubectl delete --ignore-not-found=true pod/"${SOURCE_POD}" &>/dev/null
+  kubectl delete --ignore-not-found=true pod/"${SOURCE_POD}" &>>"${LOG_FILE}"
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
-    echo -e "${GREEN} ${CHECK} Deleted source pod${NC}\n"
+    echolog "${GREEN} ${CHECK} Deleted source pod${NC}\n"
   else
-    echo -e "${RED_BOLD} ${CROSS} Error cleaning up source pod${NC}\n"
+    echolog "${RED_BOLD} ${CROSS} Error cleaning up source pod${NC}\n"
     exit_status=1
   fi
 
-  echo -e "${BROWN} Creating volume snapshot from unused source pvc${NC}\n"
+  echolog "${BROWN} Creating volume snapshot from unused source pvc${NC}\n"
 
   # shellcheck disable=SC2143
-  cat <<EOF | kubectl apply -f - &>/dev/null
+  cat <<EOF | kubectl apply -f - &>>"${LOG_FILE}"
 apiVersion: snapshot.storage.k8s.io/${snapshotVersion}
 kind: VolumeSnapshot
 metadata:
@@ -521,6 +565,7 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   volumeSnapshotClassName: ${SNAPSHOT_CLASS}
   source:
@@ -529,18 +574,18 @@ EOF
 
   # shellcheck disable=SC2181
   if [[ $? -ne 0 ]]; then
-    echo -e "${RED_BOLD} ${CROSS} Error creating volume snapshot from unused source pvc${NC}\n"
+    echolog "${RED_BOLD} ${CROSS} Error creating volume snapshot from unused source pvc${NC}\n"
     return ${err_status}
   fi
 
   while true; do
     if [[ ${retries} -eq 0 ]]; then
-      echo -e "${RED_BOLD} ${CROSS} Volume snapshot from source pvc not readyToUse (waited 150 sec)${NC}\n"
+      echolog "${RED_BOLD} ${CROSS} Volume snapshot from source pvc not readyToUse (waited 150 sec)${NC}\n"
       return ${err_status}
     fi
     # shellcheck disable=SC2143
     if [[ $(kubectl get volumesnapshot "${UNUSED_VOLUME_SNAP_SRC}" -o yaml | grep 'readyToUse: true') ]]; then
-      echo -e "${GREEN} ${CHECK} Created volume snapshot from unused source pvc and is readyToUse${NC}\n"
+      echolog "${GREEN} ${CHECK} Created volume snapshot from unused source pvc and is readyToUse${NC}\n"
       break
     else
       sleep "${sleep}"
@@ -549,9 +594,9 @@ EOF
     fi
   done
 
-  echo -e "${BROWN} Creating restore pod from volume snapshot of unused pv${NC}\n"
+  echolog "${BROWN} Creating restore pod from volume snapshot of unused pv${NC}\n"
 
-  cat <<EOF | kubectl apply -f - &>/dev/null
+  cat <<EOF | kubectl apply -f - &>>"${LOG_FILE}"
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
@@ -559,6 +604,7 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   accessModes:
     - ReadWriteOnce
@@ -578,6 +624,7 @@ metadata:
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
+    ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
   containers:
   - name: busybox
@@ -585,6 +632,13 @@ spec:
     args:
     - sleep
     - "3600"
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
     volumeMounts:
     - name: source-data
       mountPath: /demo/data
@@ -595,21 +649,21 @@ spec:
       readOnly: false
 EOF
 
-  kubectl wait --for=condition=ready --timeout=5m pod/"${UNUSED_RESTORE_POD}" &>/dev/null
+  kubectl wait --for=condition=ready --timeout=3m pod/"${UNUSED_RESTORE_POD}" &>>"${LOG_FILE}"
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
-    echo -e "${GREEN} ${CHECK} Successfully created restore pod [Ready] from volume snapshot of unused pv${NC}\n"
+    echolog "${GREEN} ${CHECK} Created restore pod from volume snapshot of unused pv${NC}\n"
   else
-    echo -e "${RED_BOLD} ${CROSS} Error waiting for restore pod and pvc from volume snapshot of unused pv to be in [Ready] state${NC}\n"
+    echolog "${RED_BOLD} ${CROSS} Error creating pod and pvc from volume snapshot of unused pv${NC}\n"
     return ${err_status}
   fi
 
-  kubectl exec -it "${UNUSED_RESTORE_POD}" -- ls /demo/data/sample-file.txt &>/dev/null
+  kubectl exec -it "${UNUSED_RESTORE_POD}" -- ls /demo/data/sample-file.txt &>>"${LOG_FILE}"
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
-    echo -e "${GREEN} ${CHECK} Restored pod from volume snapshot of unused pv has expected data${NC}\n"
+    echolog "${GREEN} ${CHECK} Restored pod from volume snapshot of unused pv has expected data${NC}\n"
   else
-    echo -e "${RED_BOLD} ${CROSS} Restored pod from volume snapshot of unused pv does not have expected data${NC}\n"
+    echolog "${RED_BOLD} ${CROSS} Restored pod from volume snapshot of unused pv does not have expected data${NC}\n"
     return ${err_status}
   fi
 
@@ -619,25 +673,36 @@ EOF
 cleanup() {
   local exit_status=0
 
-  echo -e "\n${LIGHT_BLUE}Cleaning up residual resources...${NC}"
+  echolog "${LIGHT_BLUE} Cleaning up residual resources...${NC}\n"
 
   declare -a pvc=("${SOURCE_PVC}" "${RESTORE_PVC}" "${UNUSED_RESTORE_PVC}")
   for res in "${pvc[@]}"; do
-    kubectl delete pvc -n "${NAMESPACE}" "${res}" --force --grace-period=0 --timeout=5s &>/dev/null || true
-    kubectl patch pvc -n "${NAMESPACE}" "${res}" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' &>/dev/null || true
+    echo "Cleaning PVC - ${res}" &>>"${LOG_FILE}"
+    kubectl delete pvc -n "${NAMESPACE}" "${res}" --force --grace-period=0 --timeout=5s &>>"${LOG_FILE}" || true
+    kubectl patch pvc -n "${NAMESPACE}" "${res}" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' &>>"${LOG_FILE}" || true
+    echo &>>"${LOG_FILE}"
   done
 
   declare -a vsnaps=("${VOLUME_SNAP_SRC}" "${UNUSED_VOLUME_SNAP_SRC}")
   for res in "${vsnaps[@]}"; do
-    kubectl delete volumesnapshot -n "${NAMESPACE}" "${res}" --force --grace-period=0 --timeout=5s &>/dev/null || true
-    kubectl patch volumesnapshot -n "${NAMESPACE}" "${res}" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' &>/dev/null || true
+    echo &>>"${LOG_FILE}"
+    echo "Cleaning VolumeSnapshot - ${res}" &>>"${LOG_FILE}"
+    kubectl delete volumesnapshot -n "${NAMESPACE}" "${res}" --force --grace-period=0 --timeout=5s &>>"${LOG_FILE}" || true
+    kubectl patch volumesnapshot -n "${NAMESPACE}" "${res}" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' &>>"${LOG_FILE}" || true
+    echo &>>"${LOG_FILE}"
   done
 
-  kubectl delete --force --grace-period=0 pod "${SOURCE_POD}" "${RESTORE_POD}" "${UNUSED_RESTORE_POD}" &>/dev/null || true
+  echo &>>"${LOG_FILE}"
+  echo "Cleaning Pods -" "${SOURCE_POD}" "${RESTORE_POD}" "${UNUSED_RESTORE_POD}" &>>"${LOG_FILE}"
+  kubectl delete --force --grace-period=0 pod "${SOURCE_POD}" "${RESTORE_POD}" "${UNUSED_RESTORE_POD}" &>>"${LOG_FILE}" || true
+  echo &>>"${LOG_FILE}"
 
-  kubectl delete all -l preflight-run="${RANDOM_STRING}" --force --grace-period=0 &>/dev/null || true
+  echo "Cleaning all resources related to label - preflight-run:" "${RANDOM_STRING}" &>>"${LOG_FILE}"
+  kubectl delete all -l preflight-run="${RANDOM_STRING}" --force --grace-period=0 &>>"${LOG_FILE}" || true
 
-  echo -e "\n${GREEN} ${CHECK} Cleaned up all the resources${NC}\n"
+  echolog "${GREEN} ${CHECK} Cleaned up all the resources${NC}\n"
+
+  sed -i -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" "${LOG_FILE}" || true
 
   return ${exit_status}
 }
@@ -661,8 +726,9 @@ export -f cleanup
 take_input "$@"
 
 echo
-echo -e "${GREEN_BOLD}--- Running Pre-flight Checks Before Installing Triliovault for Kubernetes ---${NC}\n"
-echo -e "${BROWN}Might take a few minutes...${NC}\n"
+echolog "${GREEN_BOLD}--- Running Pre-flight Checks ---${NC}\n"
+echolog "${BROWN}Writing logs to file -> ${LOG_FILE}${NC}\n"
+echolog "${BROWN}Might take a few minutes to execute all Pre-flight Checks...${NC}\n"
 
 trap "cleanup" EXIT
 
@@ -722,13 +788,13 @@ if [ $STORAGE_SNAPSHOT_CLASS_CHECK_SUCCESS == "true" ]; then
     PREFLIGHT_RUN_SUCCESS=false
   fi
 else
-  echo -e "${LIGHT_BLUE}Skipping 'VOLUME_SNAPSHOT' check as 'STORAGE_SNAPSHOT_CLASS' preflight check failed${NC}\n"
+  echolog "${LIGHT_BLUE}Skipping 'VOLUME_SNAPSHOT' check as 'STORAGE_SNAPSHOT_CLASS' preflight check failed${NC}\n"
 fi
 
 # Print status of Pre-flight checks
 if [ $PREFLIGHT_RUN_SUCCESS == "true" ]; then
-  echo -e "\n${GREEN_BOLD}All Pre-flight Checks Succeeded!${NC}\n"
+  echolog "${GREEN_BOLD}All Pre-flight Checks Succeeded!${NC}\n"
 else
-  echo -e "\n${RED_BOLD}Some Pre-flight Checks Failed!${NC}\n"
+  echolog "${RED_BOLD}Some Pre-flight Checks Failed!${NC}\n"
   exit 1
 fi
