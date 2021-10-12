@@ -9,21 +9,10 @@ current_tag=$(git describe --abbrev=0 --tags)
 # validate if current tag directly references the supplied commit
 git describe --exact-match --tags --match "$current_tag"
 
-# TODO: remove this fallback logic once first stable tag/release is published
-# Fallback logic for first tag push, as there'll be no previous tag to compare against
-echo "Creating release with both preflight and log-collector packages"
-echo "::set-output name=create_release::true"
-echo "::set-output name=release_preflight::true"
-echo "::set-output name=release_log_collector::true"
-echo "::set-output name=release_target_browser::true"
-echo "::set-output name=release_tvk_oneclick::true"
-echo "::set-output name=release_cleanup::true"
-exit 0
-# fallback logic ends here
-
 # shellcheck disable=SC2046
 # shellcheck disable=SC2006
-previous_tag=$(git describe --abbrev=0 --tags --match=v[0-9].[0-9].[0-9] --exclude="${current_tag}" --exclude=v*-alpha* --exclude=v*-beta* --exclude=v*-rc* $(git rev-list --tags --skip=1 --max-count=1))
+# add flag '--exclude=v*-rc*', if need to compute diff from last stable tag instead of RC
+previous_tag=$(git describe --abbrev=0 --tags --match=v[0-9].[0-9].[0-9] --exclude="${current_tag}" --exclude=v*-alpha* --exclude=v*-beta* $(git rev-list --tags --skip=1 --max-count=1))
 
 # use hard coded values if required
 #current_tag=v0.0.6-main
@@ -53,10 +42,12 @@ cleanup_dir=$tools_dir/cleanup
 git diff --name-only $previous_tag $current_tag $tools_dir >files.txt
 # shellcheck disable=SC2086
 git diff --name-only $previous_tag $current_tag $cmd_dir >>files.txt
+# shellcheck disable=SC2086
+git diff --name-only $previous_tag $current_tag $internal_dir >>files.txt
 
 count=$(wc -l <files.txt)
 if [[ $count -eq 0 ]]; then
-  echo "directory 'tools' has not been not modified"
+  echo "no plugin directory has been modified... skipping release"
   echo "::set-output name=create_release::false"
   exit
 fi
@@ -101,3 +92,12 @@ if [[ $preflight_changed == true || $log_collector_changed == true || $target_br
   echo "Creating Release as files related to preflight, log-collector, target-browser, tvk-oneclick or cleanup have been changed"
   echo "::set-output name=create_release::true"
 fi
+
+# use hard coded values if required for releasing specific plugin package
+#echo "Creating release with user defined values"
+#echo "::set-output name=create_release::true"
+#echo "::set-output name=release_preflight::true"
+#echo "::set-output name=release_log_collector::true"
+#echo "::set-output name=release_target_browser::true"
+#echo "::set-output name=release_tvk_oneclick::true"
+#echo "::set-output name=release_cleanup::true"
