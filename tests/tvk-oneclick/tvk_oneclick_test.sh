@@ -13,13 +13,12 @@ export input_config=tests/tvk-oneclick/input_config
 # shellcheck disable=SC1091
 source tools/tvk-oneclick/tvk-oneclick.sh --source-only
 
-
 #install yq
 sudo snap install yq
 sudo cp /snap/bin/yq /bin/
 
 testinstallTVK() {
-  install_tvk 
+  install_tvk
   rc=$?
   # shellcheck disable=SC2181
   if [ $rc != "0" ]; then
@@ -31,7 +30,7 @@ testinstallTVK() {
 
 testconfigure_ui() {
   rc=0
-  configure_ui 
+  configure_ui
   rc=$?
   # shellcheck disable=SC2181
   if [ $rc != "0" ]; then
@@ -58,7 +57,7 @@ testcreate_target() {
   return $rc
 }
 
-testsample_test(){
+testsample_test() {
   sample_test
   rc=$?
   # shellcheck disable=SC2181
@@ -69,7 +68,7 @@ testsample_test(){
   return $rc
 }
 
-testsample_test_helm(){
+testsample_test_helm() {
   sed -i "s/\(backup_way *= *\).*/\1\'Helm_based\'/" "$input_config"
   sed -i "s/\(bk_plan_name *= *\).*/\1\'trilio-test-helm\'/" "$input_config"
   sed -i "s/\(backup_name *= *\).*/\1\'trilio-test-helm\'/" "$input_config"
@@ -84,7 +83,7 @@ testsample_test_helm(){
   return $rc
 }
 
-testsample_test_namespace(){
+testsample_test_namespace() {
   sed -i "s/\(backup_way *= *\).*/\1\'Namespace_based\'/" "$input_config"
   sed -i "s/\(bk_plan_name *= *\).*/\1\'trilio-test-namespace\'/" "$input_config"
   sed -i "s/\(backup_name *= *\).*/\1\'trilio-test-namespace\'/" "$input_config"
@@ -99,7 +98,7 @@ testsample_test_namespace(){
   return $rc
 }
 
-testsample_test_operator(){
+testsample_test_operator() {
   sed -i "s/\(backup_way *= *\).*/\1\'Operator_based\'/" "$input_config"
   sed -i "s/\(bk_plan_name *= *\).*/\1\'trilio-test-operator\'/" "$input_config"
   sed -i "s/\(backup_name *= *\).*/\1\'trilio-test-operator\'/" "$input_config"
@@ -116,7 +115,7 @@ testsample_test_operator(){
 
 cleanup() {
   local rc=$?
-  
+
   # cleanup namespaces and helm release
   INSTALL_NAMESPACE=
   #shellcheck disable=SC2143
@@ -143,7 +142,6 @@ cleanup() {
   vcluster delete "$build_id" -n default
   exit ${rc}
 }
-
 
 trap "cleanup" EXIT
 
@@ -196,4 +194,3 @@ else
   echo -e "Some TVK-oneclick Checks Failed!"
   exit 1
 fi
-
