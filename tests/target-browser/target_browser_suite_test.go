@@ -204,8 +204,8 @@ func runCmdBackupPlan(args []string) []targetbrowser.BackupPlan {
 		output, err = command.CombinedOutput()
 		if err != nil {
 			log.Errorf(fmt.Sprintf("Error to execute command %s", err.Error()))
+			log.Infof("BackupPlan data is %s", output)
 		}
-		log.Debugf("BackupPlan data is %s", output)
 		return strings.Contains(string(output), "502 Bad Gateway")
 	}, apiRetryTimeout, interval).Should(BeFalse())
 
@@ -251,8 +251,8 @@ func runCmdBackup(args []string) []targetbrowser.Backup {
 		output, err = command.CombinedOutput()
 		if err != nil {
 			log.Infof(fmt.Sprintf("Error to execute command %s", err.Error()))
+			log.Infof("Backup data is %s", output)
 		}
-		log.Debugf("Backup data is %s", output)
 		return strings.Contains(string(output), "502 Bad Gateway")
 	}, apiRetryTimeout, interval).Should(BeFalse())
 
