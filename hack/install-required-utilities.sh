@@ -43,14 +43,16 @@ install_helm_if_needed() {
 }
 
 install_krew_if_needed() {
-  if hash kubectl krew 2>/dev/null; then
+  if hash kubectl-krew 2>/dev/null; then
     echo >&2 "using krew from the host system and not reinstalling"
   else
     set -x
     cd "$(mktemp -d)" &&
-      curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/krew.tar.gz" &&
-      tar zxvf krew.tar.gz &&
-      KREW=./krew-"$(uname | tr '[:upper:]' '[:lower:]')_$(uname -m | sed -e 's/x86_64/amd64/' -e 's/arm.*$/arm/')" &&
+      OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
+      ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
+      curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/krew-${OS}_${ARCH}.tar.gz" &&
+      tar zxvf krew-"${OS}"_"${ARCH}".tar.gz &&
+      KREW=./krew-"${OS}_${ARCH}" &&
       "$KREW" install krew
     sudo mv ~/.krew/bin/kubectl-krew /usr/local/bin/
     kubectl krew
