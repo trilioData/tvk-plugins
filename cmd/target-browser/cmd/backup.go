@@ -77,6 +77,11 @@ for specific backupPlan using available flags and options.`,
 		if cmd.Flags().Changed(ExpirationEndTimeFlag) && expirationStartTime == "" {
 			expirationStartTime = time.Now().Format(time.RFC3339)
 		}
+
+		if expirationStartTime == expirationEndTime && expirationEndTime != "" {
+			return fmt.Errorf("[%s] and [%s] flag values %s and %s can't be same", ExpirationStarTimeFlag,
+				ExpirationEndTimeFlag, expirationStartTime, expirationEndTime)
+		}
 		return getBackupList(args)
 	},
 }
