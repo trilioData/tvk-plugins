@@ -1,0 +1,68 @@
+custom: {}
+helmCharts:
+  - dataSnapshots:
+      - backupType: Full
+        conditions:
+          - phase: Snapshot
+            reason: Snapshot InProgress
+            status: InProgress
+            timestamp: "2021-05-18T17:39:35Z"
+          - phase: Snapshot
+            reason: Snapshot Completed
+            status: Completed
+            timestamp: "2021-05-18T17:41:12Z"
+          - phase: Upload
+            reason: Upload InProgress
+            status: InProgress
+            timestamp: "2021-05-18T17:41:12Z"
+          - phase: Upload
+            reason: Upload Completed
+            status: Completed
+            timestamp: "2021-05-18T17:43:06Z"
+        persistentVolumeClaimMetadata: |
+          {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{"meta.helm.sh/release-name":"mysql","meta.helm.sh/release-namespace":"temp-ns","pv.kubernetes.io/bind-completed":"yes","pv.kubernetes.io/bound-by-controller":"yes","volume.beta.kubernetes.io/storage-provisioner":"pd.csi.storage.gke.io","volume.kubernetes.io/selected-node":"gke-dev-cluster-dev-cluster-pool-eab0992b-0zp2"},"creationTimestamp":"2021-05-18T06:15:49Z","finalizers":["kubernetes.io/pvc-protection"],"labels":{"app":"mysql","app.kubernetes.io/managed-by":"Helm","chart":"mysql-1.6.2","heritage":"Helm","release":"mysql"},"name":"mysql","namespace":"temp-ns","resourceVersion":"164398856","selfLink":"/api/v1/namespaces/temp-ns/persistentvolumeclaims/mysql","uid":"613be9f8-c4c8-4557-bd27-4f6c64629c7d"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"csi-gce-pd","volumeMode":"Filesystem","volumeName":"pvc-613be9f8-c4c8-4557-bd27-4f6c64629c7d"},"status":{"accessModes":["ReadWriteOnce"],"capacity":{"storage":"1Gi"},"phase":"Bound"}}
+        persistentVolumeClaimName: mysql
+        podContainersMap:
+          - containers:
+              - mysql
+            podName: mysql-7df4dccf76-9sgxd
+        size: "238886912"
+        snapshotSize: "1073741824"
+        uploaded: true
+        volumeSnapshot:
+          retryCount: 1
+          status: Completed
+          volumeSnapshot:
+            apiVersion: snapshot.storage.k8s.io/v1beta1
+            kind: VolumeSnapshot
+            name: mysql-9d654196-0cd6-4d5b-944f-785b6e44d495
+            namespace: temp-ns
+            resourceVersion: "164465258"
+            uid: 3fc7b7c9-43f8-45f2-a342-b2fbcd8474b2
+    release: mysql
+    resources:
+      - groupVersionKind:
+          group: apps
+          kind: Deployment
+          version: v1
+        objects:
+          - mysql
+      - groupVersionKind:
+          kind: Secret
+          version: v1
+        objects:
+          - mysql
+          - sh.helm.release.v1.mysql.v1
+      - groupVersionKind:
+          kind: ConfigMap
+          version: v1
+        objects:
+          - mysql-test
+      - groupVersionKind:
+          kind: Service
+          version: v1
+        objects:
+          - helm-mysql-mysql
+    revision: 1
+    storageBackend: Secret
+    version: v3

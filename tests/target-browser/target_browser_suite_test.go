@@ -195,7 +195,7 @@ func deleteTarget(enableBrowsing bool) {
 }
 
 func runCmdBackupPlan(args []string) []targetbrowser.BackupPlan {
-	args = append(args, commonArgs...)
+	args = append(args, commonArgsWithJSONOutputFormat...)
 	var output []byte
 	var err error
 	Eventually(func() bool {
@@ -244,7 +244,7 @@ func runCmdBackupPlan(args []string) []targetbrowser.BackupPlan {
 func runCmdBackup(args []string) []targetbrowser.Backup {
 	var output []byte
 	var err error
-	args = append(args, commonArgs...)
+	args = append(args, commonArgsWithJSONOutputFormat...)
 	Eventually(func() bool {
 		command := exec.Command(targetBrowserBinaryFilePath, args...)
 		log.Info("Backup command is: ", command)

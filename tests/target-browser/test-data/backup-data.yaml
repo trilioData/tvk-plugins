@@ -1,0 +1,81 @@
+metadata:
+  next: -1
+  total: 1
+results:
+  - generatedField:
+      scheduleType: OnDemand
+      tvkInstanceUID: 5de36c61-60d4-40b2-b199-82326e3fb614
+    metadata:
+      creationTimestamp: "2021-05-10T20:10:40Z"
+      finalizers:
+        - backup-cleanup-finalizer
+      generation: 1
+      labels:
+        app.kubernetes.io/managed-by: k8s-triliovault-ui
+        app.kubernetes.io/name: k8s-triliovault
+        app.kubernetes.io/part-of: k8s-triliovault
+      name: sample-backup
+      namespace: default
+      ownerReferences:
+        - apiVersion: triliovault.trilio.io/v1
+          kind: BackupPlan
+          name: bp11
+          uid: f7f17b64-320f-43f8-8ca3-234f157df9d5
+      resourceVersion: "14613"
+      selfLink: /apis/triliovault.trilio.io/v1/namespaces/default/backups/sample-backup
+      uid: 529efb26-9f06-443a-a263-c42f1af04493
+    spec:
+      backupPlan:
+        apiVersion: triliovault.trilio.io/v1
+        kind: BackupPlan
+        name: bp11
+        namespace: default
+        resourceVersion: "12368"
+        uid: f7f17b64-320f-43f8-8ca3-234f157df9d5
+      type: Full
+    status:
+      applicationType: Custom
+      backupScope: App
+      completionTimestamp: "2021-05-10T20:11:06Z"
+      condition:
+        - phase: MetaSnapshot
+          reason: MetaSnapshot InProgress
+          status: InProgress
+          timestamp: "2021-05-10T20:10:40Z"
+        - phase: MetaSnapshot
+          reason: MetaSnapshot Completed
+          status: Completed
+          timestamp: "2021-05-10T20:10:56Z"
+        - phase: MetadataUpload
+          reason: MetadataUpload InProgress
+          status: InProgress
+          timestamp: "2021-05-10T20:10:56Z"
+        - phase: MetadataUpload
+          reason: MetadataUpload Completed
+          status: Completed
+          timestamp: "2021-05-10T20:11:06Z"
+      location: f7f17b64-320f-43f8-8ca3-234f157df9d5/529efb26-9f06-443a-a263-c42f1af04493
+      percentageCompletion: 100
+      phase: MetadataUpload
+      phaseStatus: InProgress
+      size: "0"
+      snapshot:
+        custom:
+          resources:
+            - groupVersionKind:
+                kind: Pod
+                version: v1
+              objects:
+                - sample-pod
+      startTimestamp: "2021-05-10T20:10:40Z"
+      stats:
+        hookExists: false
+        target:
+          apiVersion: triliovault.trilio.io/v1
+          kind: Target
+          name: test1-backup
+          namespace: default
+          resourceVersion: "11069"
+          uid: 3d196e0f-7988-40c0-95d0-2f8a3e1f0bc8
+      status: Available
+      type: Full
