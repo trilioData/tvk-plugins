@@ -216,7 +216,7 @@ install_tvk() {
       if [[ $old_tvm_version == 2.1* ]] && [[ $new_triliovault_manager_version == 2.5* ]]; then
         svc_type=$(kubectl get svc k8s-triliovault-ingress-gateway -o 'jsonpath={.spec.type}')
         if [[ $svc_type == LoadBalancer ]]; then
-          get_host=$(kubectl get ingress k8s-triliovault-ingress-master -o 'jsonpath={.spec.rules[0].host}')
+          get_host=$(kubectl get ingress k8s-triliovault-master -o 'jsonpath={.spec.rules[0].host}')
           cat <<EOF | kubectl apply -f - 1>> >(logit) 2>> >(logit)
 apiVersion: triliovault.trilio.io/v1
 kind: TrilioVaultManager
@@ -404,7 +404,7 @@ configure_nodeport_for_tvkui() {
   node=$(kubectl get pods "$gateway" -n "$get_ns" -o jsonpath='{.spec.nodeName}' 2>> >(logit))
   ip=$(kubectl get node "$node" -n "$get_ns" -o jsonpath='{.status.addresses[?(@.type=="ExternalIP")].address}' 2>> >(logit))
   port=$(kubectl get svc k8s-triliovault-ingress-gateway -n "$get_ns" -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}' 2>> >(logit))
-  if ! kubectl patch ingress k8s-triliovault-ingress-master -n "$get_ns" -p '{"spec":{"rules":[{"host":"'"${tvkhost_name}"'"}]}}'; then
+  if ! kubectl patch ingress k8s-triliovault-master -n "$get_ns" -p '{"spec":{"rules":[{"host":"'"${tvkhost_name}"'"}]}}'; then
     echo "TVK UI configuration failed, please check ingress"
     return 1
   fi
@@ -468,7 +468,7 @@ configure_loadbalancer_for_tvkUI() {
     return 1
   fi
   external_ip=$(kubectl get svc k8s-triliovault-ingress-gateway -n "$get_ns" -o 'jsonpath={.status.loadBalancer.ingress[0].ip}' 2>> >(logit))
-  kubectl patch ingress k8s-triliovault-ingress-master -n "$get_ns" -p '{"spec":{"rules":[{"host":"'"${tvkhost_name}.${domain}"'"}]}}' 1>> >(logit) 2>> >(logit)
+  kubectl patch ingress k8s-triliovault-master -n "$get_ns" -p '{"spec":{"rules":[{"host":"'"${tvkhost_name}.${domain}"'"}]}}' 1>> >(logit) 2>> >(logit)
   doctl compute domain records create "${domain}" --record-type A --record-name "${tvkhost_name}" --record-data "${external_ip}" 1>> >(logit) 2>> >(logit)
   retCode=$?
   if [[ "$retCode" -ne 0 ]]; then
