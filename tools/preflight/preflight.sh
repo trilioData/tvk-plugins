@@ -8,10 +8,10 @@ TIMESTAMP=$(date +%F_%H-%M-%S)
 
 # COLOUR CONSTANTS
 GREEN='\033[0;32m'
-GREEN_BOLD='\033[0;32m\e[1m'
+GREEN_BOLD='\033[1;32m'
 LIGHT_BLUE='\033[1;34m'
 RED='\033[0;31m'
-RED_BOLD='\033[0;31m\e[1m'
+RED_BOLD='\033[1;31m'
 BROWN='\033[0;33m'
 NC='\033[0m'
 BLUE='\033[1;36m'
@@ -26,7 +26,7 @@ PREFLIGHT_RUN_SUCCESS=true
 
 # shellcheck disable=SC2018
 RANDOM_STRING=$(
-  tr -dc a-z </dev/urandom | head -c 6
+  LC_ALL=C tr -dc a-z </dev/urandom | head -c 6
   echo ''
 )
 SOURCE_POD="source-pod-${RANDOM_STRING}"
@@ -44,7 +44,7 @@ LABEL_K8S_PART_OF_VALUE="k8s-triliovault"
 LOG_FILE=preflight-log-${TIMESTAMP}.log
 
 echolog() (
-  echo -n "[$(date +'%F %H:%M:%S')] " &>>"${LOG_FILE}"
+  echo -n "[$(date +'%F %H:%M:%S')] " >>"${LOG_FILE}" 2>&1
   echo -e "${BLUE}[ INFO ]${NC}" "$@" | tee -a "${LOG_FILE}"
   echo
 )
@@ -122,11 +122,11 @@ check_kubectl() {
   echo
   echolog "${LIGHT_BLUE}Checking for kubectl...${NC}\n"
   local exit_status=0
-  if ! command -v "kubectl" &>>/dev/null; then
+  if ! command -v "kubectl" &>/dev/null; then
     echolog "${RED} ${CROSS} Unable to find kubectl${NC}\n"
     exit_status=1
   else
-    echo "kubectl found at path -" "$(! command -v "kubectl")" &>>"${LOG_FILE}"
+    echo "kubectl found at path -" "$(! command -v "kubectl")" >>"${LOG_FILE}" 2>&1
     echolog "${GREEN} ${CHECK} Found kubectl${NC}\n"
   fi
   return ${exit_status}
@@ -177,11 +177,11 @@ check_helm_version() {
     return ${exit_status}
   fi
 
-  if ! command -v "helm" &>>/dev/null; then
+  if ! command -v "helm" &>/dev/null; then
     echolog "${RED} ${CROSS} Unable to find helm${NC}\n"
     exit_status=1
   else
-    echo "helm found at path -" "$(! command -v "helm")" &>>"${LOG_FILE}"
+    echo "helm found at path -" "$(! command -v "helm")" >>"${LOG_FILE}" 2>&1
     echolog "${GREEN} ${CHECK} Found helm${NC}\n"
   fi
 
@@ -340,17 +340,27 @@ spec:
   restartPolicy: Always
 EOF
     kubectl wait --for=condition=ready --timeout=3m pod/"${DNS_UTILS}"
-    kubectl exec -it "${DNS_UTILS}" -- nslookup kubernetes.default
-  } &>>"${LOG_FILE}"
+    n=0
+    until [ "$n" -ge 3 ]; do
+      kubectl exec -it "${DNS_UTILS}" -- nslookup kubernetes.default
+      # shellcheck disable=SC2181
+      if [ $? -eq 0 ]; then
+        exit_status=0
+        break
+      else
+        n=$((n + 1))
+        exit_status=1
+      fi
+    done
+  } >>"${LOG_FILE}" 2>&1
 
   # shellcheck disable=SC2181
-  if [[ $? -eq 0 ]]; then
+  if [[ $exit_status -eq 0 ]]; then
     echolog "${GREEN} ${CHECK} Able to resolve DNS \"kubernetes.default\" service inside pods${NC}\n"
   else
     echolog "${RED} ${CROSS} Could not resolve DNS \"kubernetes.default\" service inside pod${NC}\n"
-    exit_status=1
   fi
-  kubectl delete pod "${DNS_UTILS}" &>>"${LOG_FILE}"
+  kubectl delete pod "${DNS_UTILS}" >>"${LOG_FILE}" 2>&1
   return ${exit_status}
 }
 
@@ -363,7 +373,7 @@ check_volume_snapshot() {
 
   echolog "${BROWN} Creating source pod and pvc for volume-snapshot check${NC}\n"
 
-  cat <<EOF | kubectl apply -f - &>>"${LOG_FILE}"
+  cat <<EOF | kubectl apply -f - >>"${LOG_FILE}" 2>&1
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
@@ -411,7 +421,7 @@ spec:
       readOnly: false
 EOF
 
-  kubectl wait --for=condition=ready --timeout=3m pod/"${SOURCE_POD}" &>>"${LOG_FILE}"
+  kubectl wait --for=condition=ready --timeout=3m pod/"${SOURCE_POD}" >>"${LOG_FILE}" 2>&1
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
     echolog "${GREEN} ${CHECK} Created source pod and pvc${NC}\n"
@@ -435,7 +445,7 @@ EOF
   echolog "${BROWN} Creating volume snapshot from source pvc${NC}\n"
 
   # shellcheck disable=SC2006
-  cat <<EOF | kubectl apply -f - &>>"${LOG_FILE}"
+  cat <<EOF | kubectl apply -f - >>"${LOG_FILE}" 2>&1
 apiVersion: snapshot.storage.k8s.io/${snapshotVersion}
 kind: VolumeSnapshot
 metadata:
@@ -474,7 +484,7 @@ EOF
 
   echolog "${BROWN} Creating restore pod from volume snapshot${NC}\n"
 
-  cat <<EOF | kubectl apply -f - &>>"${LOG_FILE}"
+  cat <<EOF | kubectl apply -f - >>"${LOG_FILE}" 2>&1
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
@@ -527,7 +537,7 @@ spec:
       readOnly: false
 EOF
 
-  kubectl wait --for=condition=ready --timeout=3m pod/"${RESTORE_POD}" &>>"${LOG_FILE}"
+  kubectl wait --for=condition=ready --timeout=3m pod/"${RESTORE_POD}" >>"${LOG_FILE}" 2>&1
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
     echolog "${GREEN} ${CHECK} Created restore pod from volume snapshot${NC}\n"
@@ -536,7 +546,7 @@ EOF
     return ${err_status}
   fi
 
-  echo "Check for file -> " "$(kubectl exec -it "${RESTORE_POD}" -- ls /demo/data/sample-file.txt)" &>>"${LOG_FILE}"
+  echo "Check for file -> " "$(kubectl exec -it "${RESTORE_POD}" -- ls /demo/data/sample-file.txt)" >>"${LOG_FILE}" 2>&1
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
     echolog "${GREEN} ${CHECK} Restored pod has expected data${NC}\n"
@@ -545,7 +555,7 @@ EOF
     return ${err_status}
   fi
 
-  kubectl delete --ignore-not-found=true pod/"${SOURCE_POD}" &>>"${LOG_FILE}"
+  kubectl delete --ignore-not-found=true pod/"${SOURCE_POD}" >>"${LOG_FILE}" 2>&1
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
     echolog "${GREEN} ${CHECK} Deleted source pod${NC}\n"
@@ -557,7 +567,7 @@ EOF
   echolog "${BROWN} Creating volume snapshot from unused source pvc${NC}\n"
 
   # shellcheck disable=SC2143
-  cat <<EOF | kubectl apply -f - &>>"${LOG_FILE}"
+  cat <<EOF | kubectl apply -f - >>"${LOG_FILE}" 2>&1
 apiVersion: snapshot.storage.k8s.io/${snapshotVersion}
 kind: VolumeSnapshot
 metadata:
@@ -596,7 +606,7 @@ EOF
 
   echolog "${BROWN} Creating restore pod from volume snapshot of unused pv${NC}\n"
 
-  cat <<EOF | kubectl apply -f - &>>"${LOG_FILE}"
+  cat <<EOF | kubectl apply -f - >>"${LOG_FILE}" 2>&1
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
@@ -649,7 +659,7 @@ spec:
       readOnly: false
 EOF
 
-  kubectl wait --for=condition=ready --timeout=3m pod/"${UNUSED_RESTORE_POD}" &>>"${LOG_FILE}"
+  kubectl wait --for=condition=ready --timeout=3m pod/"${UNUSED_RESTORE_POD}" >>"${LOG_FILE}" 2>&1
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
     echolog "${GREEN} ${CHECK} Created restore pod from volume snapshot of unused pv${NC}\n"
@@ -658,7 +668,7 @@ EOF
     return ${err_status}
   fi
 
-  kubectl exec -it "${UNUSED_RESTORE_POD}" -- ls /demo/data/sample-file.txt &>>"${LOG_FILE}"
+  kubectl exec -it "${UNUSED_RESTORE_POD}" -- ls /demo/data/sample-file.txt >>"${LOG_FILE}" 2>&1
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
     echolog "${GREEN} ${CHECK} Restored pod from volume snapshot of unused pv has expected data${NC}\n"
@@ -677,28 +687,28 @@ cleanup() {
 
   declare -a pvc=("${SOURCE_PVC}" "${RESTORE_PVC}" "${UNUSED_RESTORE_PVC}")
   for res in "${pvc[@]}"; do
-    echo "Cleaning PVC - ${res}" &>>"${LOG_FILE}"
-    kubectl delete pvc -n "${NAMESPACE}" "${res}" --force --grace-period=0 --timeout=5s &>>"${LOG_FILE}" || true
-    kubectl patch pvc -n "${NAMESPACE}" "${res}" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' &>>"${LOG_FILE}" || true
-    echo &>>"${LOG_FILE}"
+    echo "Cleaning PVC - ${res}" >>"${LOG_FILE}" 2>&1
+    kubectl delete pvc -n "${NAMESPACE}" "${res}" --force --grace-period=0 --timeout=5s >>"${LOG_FILE}" 2>&1 || true
+    kubectl patch pvc -n "${NAMESPACE}" "${res}" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' >>"${LOG_FILE}" 2>&1 || true
+    echo >>"${LOG_FILE}" 2>&1
   done
 
   declare -a vsnaps=("${VOLUME_SNAP_SRC}" "${UNUSED_VOLUME_SNAP_SRC}")
   for res in "${vsnaps[@]}"; do
-    echo &>>"${LOG_FILE}"
-    echo "Cleaning VolumeSnapshot - ${res}" &>>"${LOG_FILE}"
-    kubectl delete volumesnapshot -n "${NAMESPACE}" "${res}" --force --grace-period=0 --timeout=5s &>>"${LOG_FILE}" || true
-    kubectl patch volumesnapshot -n "${NAMESPACE}" "${res}" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' &>>"${LOG_FILE}" || true
-    echo &>>"${LOG_FILE}"
+    echo >>"${LOG_FILE}" 2>&1
+    echo "Cleaning VolumeSnapshot - ${res}" >>"${LOG_FILE}" 2>&1
+    kubectl delete volumesnapshot -n "${NAMESPACE}" "${res}" --force --grace-period=0 --timeout=5s >>"${LOG_FILE}" 2>&1 || true
+    kubectl patch volumesnapshot -n "${NAMESPACE}" "${res}" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' >>"${LOG_FILE}" 2>&1 || true
+    echo >>"${LOG_FILE}" 2>&1
   done
 
-  echo &>>"${LOG_FILE}"
-  echo "Cleaning Pods -" "${SOURCE_POD}" "${RESTORE_POD}" "${UNUSED_RESTORE_POD}" &>>"${LOG_FILE}"
-  kubectl delete --force --grace-period=0 pod "${SOURCE_POD}" "${RESTORE_POD}" "${UNUSED_RESTORE_POD}" &>>"${LOG_FILE}" || true
-  echo &>>"${LOG_FILE}"
+  echo >>"${LOG_FILE}" 2>&1
+  echo "Cleaning Pods -" "${SOURCE_POD}" "${RESTORE_POD}" "${UNUSED_RESTORE_POD}" >>"${LOG_FILE}" 2>&1
+  kubectl delete --force --grace-period=0 pod "${SOURCE_POD}" "${RESTORE_POD}" "${UNUSED_RESTORE_POD}" >>"${LOG_FILE}" 2>&1 || true
+  echo >>"${LOG_FILE}" 2>&1
 
-  echo "Cleaning all resources related to label - preflight-run:" "${RANDOM_STRING}" &>>"${LOG_FILE}"
-  kubectl delete all -l preflight-run="${RANDOM_STRING}" --force --grace-period=0 &>>"${LOG_FILE}" || true
+  echo "Cleaning all resources related to label - preflight-run:" "${RANDOM_STRING}" >>"${LOG_FILE}" 2>&1
+  kubectl delete all -l preflight-run="${RANDOM_STRING}" --force --grace-period=0 >>"${LOG_FILE}" 2>&1 || true
 
   echolog "${GREEN} ${CHECK} Cleaned up all the resources${NC}\n"
 
@@ -791,7 +801,7 @@ else
   echolog "${LIGHT_BLUE}Skipping 'VOLUME_SNAPSHOT' check as 'STORAGE_SNAPSHOT_CLASS' preflight check failed${NC}\n"
 fi
 
-# Print status of Pre-flight checks
+#Print status of Pre-flight checks
 if [ $PREFLIGHT_RUN_SUCCESS == "true" ]; then
   echolog "${GREEN_BOLD}All Pre-flight Checks Succeeded!${NC}\n"
 else
