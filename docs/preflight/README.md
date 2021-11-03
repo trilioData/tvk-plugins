@@ -7,6 +7,7 @@ met before installing Triliovault for Kubernetes application in a Kubernetes clu
 
 1. krew - kubectl-plugin manager. Install from [here](https://krew.sigs.k8s.io/docs/user-guide/setup/install/)
 2. kubectl - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+3. bash(>=v3.2.x) should be present on system
 
 **Supported OS:**
 - Linux
@@ -21,7 +22,7 @@ The following checks included in preflight:
 - Ensure *kubectl* is pointed to k8s cluster (i.e can access the remote target cluster)
 - Ensure *helm*  utility is present on system and pointed to the cluster
   - If *helmVersion=~v3*, then *tiller* is not needed on cluster
-- Ensure minimum Kubernetes version >= 1.17.x
+- Ensure minimum Kubernetes version >= 1.18.x
 - Ensure RBAC is enabled in cluster
 - Ensure provided storageClass is present in cluster
   1. Provided storageClass's `provisioner` [JSON Path: `storageclass.provisioner`] should match with provided volumeSnapshotClass's `driver`[JSON Path: `volumesnapshotclass.driver`]
