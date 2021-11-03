@@ -18,6 +18,7 @@ Refer [`docs`](docs) for the documentation of preflight and log-collector plugin
 Also, steps to install, uninstall, upgrade and uninstall respective plugin are mentioned in docs.
 
 `Quick Links`: [`preflight`](docs/preflight/README.md)  [`log-collector`](docs/log-collector/README.md) [`target-browser`](docs/target-browser/README.md)
+[`cleanup`](docs/cleanup/README.md) [`tvk-oneclick`](docs/tvk-oneclick/README.md) 
 
 ## Contribution:
 
