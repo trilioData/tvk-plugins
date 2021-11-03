@@ -138,6 +138,8 @@ make ready
     export PREFLIGHT_VERSION=<preflight-release-tag>
     export LOG_COLLECTOR_VERSION=<log-collector-release-tag>
     export TARGET_BROWSER_VERSION=<target-browser-release-tag>
+    export CLEANUP_VERSION=<cleanup-release-tag>
+    export TVK_ONECLICK_VERSION=<tvk-oneclick-release-tag>
     ```
    
     Preflight:
