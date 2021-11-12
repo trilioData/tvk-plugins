@@ -54,7 +54,7 @@ var (
 	targetYaml                  = "target.yaml"
 	tlsKeyFile                  = "tls.key"
 	tlsCertFile                 = "tls.crt"
-	masterIngName               = "k8s-triliovault-ingress-master"
+	masterIngName               = "k8s-triliovault-master"
 	tlsSecretName               = "ssl-certs"
 	nfsIPAddr                   string
 	nfsServerPath               string

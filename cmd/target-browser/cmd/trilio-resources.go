@@ -26,7 +26,7 @@ func trilioResourcesCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringSliceVar(&kinds, kindsFlag, []string{}, kindsUsage)
+	cmd.Flags().StringSliceVar(&kinds, KindsFlag, []string{}, kindsUsage)
 
 	cmd.Flags().StringVar(&backupPlanUID, BackupPlanUIDFlag, backupPlanUIDDefault, backupPlanUIDUsage)
 

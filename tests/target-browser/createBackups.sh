@@ -86,6 +86,10 @@ for ((i = 0; i < $1; i++)); do
       # copy modified files to NFS location
       mv "${src_dir}"/test_files/backup-modified.json "${backuppath}"/backup.json
       mv "${src_dir}"/test_files/backupplan-modified.json "${backuppath}"/backupplan.json
+      if [ "$6" == "resource-metadata" ]; then
+        mkdir -p "${backuppath}"/custom/metadata-snapshot
+        cp "${src_dir}"/test_files/metadata.json "${backuppath}"/custom/metadata-snapshot/metadata.json
+      fi
     elif [ "$3" == "cluster_backup" ]; then
       cp "${src_dir}"/test_files/cluster-backup-with-placeholders.json "${src_dir}"/test_files/cluster-backup-modified.json
       cp "${src_dir}"/test_files/cluster-backupplan-with-placeholders.json "${src_dir}"/test_files/cluster-backupplan-modified.json

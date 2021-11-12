@@ -70,26 +70,26 @@ const (
 	operationScopeUsage = "Filter backup/backupPlan for [SingleNamespace, MultiNamespace]. " +
 		"Supported values can be in any case capital, small or mixed."
 
-	groupFlag      = "group"
+	GroupFlag      = "group"
 	groupFlagShort = "g"
 	groupDefault   = ""
 	groupUsage     = "API group name of resource whose resource-metadata needs to be retrieved"
 
-	versionFlag      = "version"
+	VersionFlag      = "version"
 	versionFlagShort = "v"
 	versionDefault   = ""
 	versionUsage     = "API version of resource whose resource-metadata needs to be retrieved"
 
-	kindFlag      = "kind"
+	KindFlag      = "kind"
 	kindFlagShort = "k"
 	kindDefault   = ""
 	kindUsage     = "API resource Kind of backed up resource whose resource-metadata needs to be retrieved"
 
-	nameFlag    = "name"
+	NameFlag    = "name"
 	nameDefault = ""
 	nameUsage   = "name of backed up resource whose resource-metadata needs to be retrieved"
 
-	kindsFlag  = "kinds"
+	KindsFlag  = "kinds"
 	kindsUsage = "List of kinds of trilio resources. Available kinds: ClusterBackup, ClusterBackupPlan," +
 		" Backup, BackupPlan, Target, Secret, Policy, Hook"
 
