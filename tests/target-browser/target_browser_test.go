@@ -1782,10 +1782,7 @@ var _ = Describe("Target Browser Tests", func() {
 				if isLast {
 					// delete target & remove all files & directories created for this Context - only once After all It in this context
 					deleteTarget(false)
-					for _, backupPlans := range backupPlanUIDs {
-						_, err := shell.RmRf(filepath.Join(TargetLocation, backupPlans))
-						Expect(err).To(BeNil())
-					}
+					removeBackupPlanDir(backupPlanUIDs)
 				}
 			})
 
@@ -1860,10 +1857,7 @@ var _ = Describe("Target Browser Tests", func() {
 				if isLast {
 					// delete target & remove all files & directories created for this Context - only once After all It in this context
 					deleteTarget(false)
-					for _, backupPlans := range backupPlanUIDs {
-						_, err := shell.RmRf(filepath.Join(TargetLocation, backupPlans))
-						Expect(err).To(BeNil())
-					}
+					removeBackupPlanDir(backupPlanUIDs)
 				}
 			})
 
