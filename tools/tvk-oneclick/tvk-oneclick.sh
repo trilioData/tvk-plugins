@@ -1,8 +1,6 @@
 #!/bin/bash
 
-
 #This program is use to install/configure/test TVK product with one click and few required inputs
-
 
 #This module is used to perform preflight check which checks if all the pre-requisites are satisfied before installing Triliovault for Kubernetes application in a Kubernetes cluster
 masterIngName=k8s-triliovault-master
@@ -77,8 +75,6 @@ vercomp() {
   fi
   return 0
 }
-
-
 
 #function to print waiting symbol
 wait_install() {
@@ -203,7 +199,7 @@ install_tvk() {
     return 1
   fi
   echo "Triliovault operator is running"
-  
+
   #set value for tvm_name
   tvm_name="triliovault-manager"
   #check if TVK manager is installed
@@ -230,7 +226,7 @@ install_tvk() {
     else
       echo "Upgrading triliovault manager.."
       tvm_upgrade=1
-      vercomp  "2.5" "$new_triliovault_manager_version"
+      vercomp "2.5" "$new_triliovault_manager_version"
       ret_val=$?
       if [[ $ret_val == 2 ]] || [[ $ret_val == 1 ]]; then
         svc_type=$(kubectl get svc k8s-triliovault-ingress-gateway -n "$get_ns" -o 'jsonpath={.spec.type}')
@@ -265,9 +261,9 @@ EOF
         fi
       fi
     fi
-    
+
   fi
-    
+
   # Create TrilioVaultManager CR
   sleep 10
   cat <<EOF | kubectl apply -f - 1>> >(logit) 2>> >(logit)
@@ -314,7 +310,6 @@ EOF
   fi
   install_license "$tvk_ns"
 }
-
 
 #This module is use to install license
 install_license() {
@@ -365,7 +360,6 @@ EOF
     echo "License is installed successfully"
   fi
 }
-
 
 #This module is used to configure TVK UI
 configure_ui() {
@@ -510,8 +504,6 @@ configure_loadbalancer_for_tvkUI() {
   echo "Info:UI may take 30 min to come up"
 }
 
-
-
 call_s3cfg_doks() {
   access_key=$1
   secret_key=$2
@@ -622,7 +614,7 @@ create_doks_s3() {
     target_namespace="default"
   fi
   if [[ $(kubectl get target "$target_name" -n "$target_namespace" 2>> >(logit)) ]]; then
-    if kubectl get target "$target_name"  -n  "$target_namespace" -o 'jsonpath={.status.status}' 2>/dev/null | grep -q Unavailable; then
+    if kubectl get target "$target_name" -n "$target_namespace" -o 'jsonpath={.status.status}' 2>/dev/null | grep -q Unavailable; then
       echo "Target with same name already exists but is in Unavailable state"
       return 1
     else
@@ -786,7 +778,7 @@ create_aws_s3() {
     target_namespace="default"
   fi
   if [[ $(kubectl get target "$target_name" -n "$target_namespace" 2>> >(logit)) ]]; then
-    if kubectl get target "$target_name"  -n  "$target_namespace" -o 'jsonpath={.status.status}' 2>/dev/null | grep -q Unavailable; then
+    if kubectl get target "$target_name" -n "$target_namespace" -o 'jsonpath={.status.status}' 2>/dev/null | grep -q Unavailable; then
       echo "Target with same name already exists but is in Unavailable state"
       return 1
     else
@@ -895,7 +887,7 @@ create_target() {
       ret_code=$?
       if [ "$ret_code" -ne 0 ]; then
         return 1
-      fi 
+      fi
       ;;
     2)
       create_aws_s3
@@ -930,7 +922,7 @@ create_target() {
         return 1
       else
         echo "Target with same name already exists"
-	return 0
+        return 0
       fi
       if [[ "$if_resource_exists_still_proceed" != "Y" ]] && [[ "$if_resource_exists_still_proceed" != "y" ]]; then
         exit 1
@@ -980,7 +972,6 @@ EOF
     echo "Target is Available to use"
   fi
 }
-
 
 #This module is used to test TVK backup and restore for user.
 sample_test() {
@@ -1118,12 +1109,12 @@ EOM
     spin='-\|/'
     i=0
     endtime=$(python3 -c "import time;timeout = int(time.time()) + 60*$runtime;print(\"{0}\".format(timeout))")
-    while [[ $(python3 -c "import time;timeout = int(time.time());print(\"{0}\".format(timeout))") -le $endtime ]] && kubectl get pod -l  app.kubernetes.io/instance=my-wordpress -n $backup_namespace -o jsonpath="{.items[*].status.conditions[*].status}" | grep -q False; do
+    while [[ $(python3 -c "import time;timeout = int(time.time());print(\"{0}\".format(timeout))") -le $endtime ]] && kubectl get pod -l app.kubernetes.io/instance=my-wordpress -n $backup_namespace -o jsonpath="{.items[*].status.conditions[*].status}" | grep -q False; do
       i=$(((i + 1) % 4))
       printf "\r %s" "${spin:$i:1}"
       sleep .1
     done
-    if kubectl get pod -l  app.kubernetes.io/instance=my-wordpress -n $backup_namespace -o  jsonpath="{.items[*].status.conditions[*].status}" | grep -q False;then
+    if kubectl get pod -l app.kubernetes.io/instance=my-wordpress -n $backup_namespace -o jsonpath="{.items[*].status.conditions[*].status}" | grep -q False; then
       echo "Wordpress Application taking more time than usual to be in Ready state, Exiting.."
       return 1
     fi
@@ -1141,11 +1132,11 @@ EOM
       echo "MySQL operator will require enough resources, else the deployment will fail"
       helm repo add presslabs https://presslabs.github.io/charts 1>> >(logit) 2>> >(logit)
       errormessage=$(helm install mysql-operator presslabs/mysql-operator -n $backup_namespace 2>> >(logit))
-      if echo "$errormessage"  | grep -Eq 'Error:|error:'; then
+      if echo "$errormessage" | grep -Eq 'Error:|error:'; then
         echo "Mysql operator Installation failed with error: $errormessage"
         return 1
       fi
-        echo "Installing MySQL Operator..."
+      echo "Installing MySQL Operator..."
     fi
     runtime=15
     spin='-\|/'
@@ -1192,14 +1183,14 @@ EOM
     echo "Requested application is Up and Running!"
     #Creating backupplan
     {
-     yq eval -i 'del(.spec.backupPlanComponents)' backupplan.yaml
-     yq eval -i '.spec.backupPlanComponents.operators[0].operatorId="my-cluster"' backupplan.yaml
-     yq eval -i '.spec.backupPlanComponents.operators[0].customResources[0].groupVersionKind.group="mysql.presslabs.org" | .spec.backupPlanComponents.operators[0].customResources[0].groupVersionKind.group style="double"' backupplan.yaml
-     yq eval -i '.spec.backupPlanComponents.operators[0].customResources[0].groupVersionKind.version="v1alpha1" | .spec.backupPlanComponents.operators[0].customResources[0].groupVersionKind.version style="double"' backupplan.yaml
-     yq eval -i '.spec.backupPlanComponents.operators[0].customResources[0].groupVersionKind.kind="MysqlCluster" | .spec.backupPlanComponents.operators[0].customResources[0].groupVersionKind.kind style="double"' backupplan.yaml
-     yq eval -i '.spec.backupPlanComponents.operators[0].customResources[0].objects[0]="my-cluster"' backupplan.yaml
-     yq eval -i '.spec.backupPlanComponents.operators[0].operatorResourceSelector[0].matchLabels.name="mysql-operator"' backupplan.yaml
-     yq eval -i '.spec.backupPlanComponents.operators[0].applicationResourceSelector[0].matchLabels.app="mysql-operator"' backupplan.yaml
+      yq eval -i 'del(.spec.backupPlanComponents)' backupplan.yaml
+      yq eval -i '.spec.backupPlanComponents.operators[0].operatorId="my-cluster"' backupplan.yaml
+      yq eval -i '.spec.backupPlanComponents.operators[0].customResources[0].groupVersionKind.group="mysql.presslabs.org" | .spec.backupPlanComponents.operators[0].customResources[0].groupVersionKind.group style="double"' backupplan.yaml
+      yq eval -i '.spec.backupPlanComponents.operators[0].customResources[0].groupVersionKind.version="v1alpha1" | .spec.backupPlanComponents.operators[0].customResources[0].groupVersionKind.version style="double"' backupplan.yaml
+      yq eval -i '.spec.backupPlanComponents.operators[0].customResources[0].groupVersionKind.kind="MysqlCluster" | .spec.backupPlanComponents.operators[0].customResources[0].groupVersionKind.kind style="double"' backupplan.yaml
+      yq eval -i '.spec.backupPlanComponents.operators[0].customResources[0].objects[0]="my-cluster"' backupplan.yaml
+      yq eval -i '.spec.backupPlanComponents.operators[0].operatorResourceSelector[0].matchLabels.name="mysql-operator"' backupplan.yaml
+      yq eval -i '.spec.backupPlanComponents.operators[0].applicationResourceSelector[0].matchLabels.app="mysql-operator"' backupplan.yaml
     } 1>> >(logit) 2>> >(logit)
     ;;
   4)
@@ -1211,9 +1202,9 @@ EOM
       echo "Waiting for application to be in Ready state"
     else
       {
-       helm repo add bitnami https://charts.bitnami.com/bitnami
-       helm repo update 1>> >(logit)
-       helm install mongotest bitnami/mongodb -n $backup_namespace
+        helm repo add bitnami https://charts.bitnami.com/bitnami
+        helm repo update 1>> >(logit)
+        helm install mongotest bitnami/mongodb -n $backup_namespace
       } 2>> >(logit)
       echo "Installing App..."
     fi
@@ -1221,7 +1212,7 @@ EOM
     spin='-\|/'
     i=0
     endtime=$(python3 -c "import time;timeout = int(time.time()) + 60*$runtime;print(\"{0}\".format(timeout))")
-    while [[ $(python3 -c "import time;timeout = int(time.time());print(\"{0}\".format(timeout))") -le $endtime ]] && kubectl get pod -l app.kubernetes.io/name=mongodb -n $backup_namespace -o  jsonpath="{.items[*].status.conditions[*].status}" | grep -q -w False; do
+    while [[ $(python3 -c "import time;timeout = int(time.time());print(\"{0}\".format(timeout))") -le $endtime ]] && kubectl get pod -l app.kubernetes.io/name=mongodb -n $backup_namespace -o jsonpath="{.items[*].status.conditions[*].status}" | grep -q -w False; do
       i=$(((i + 1) % 4))
       printf "\r %s" "${spin:$i:1}"
       sleep .1
@@ -1376,7 +1367,7 @@ EOF
       retcode=$?
       if [ "$retcode" -ne 0 ]; then
         echo "Error while restoring"
-	return 1
+        return 1
       fi
     fi
     cmd="kubectl get restore $restore_name -n $restore_namespace -o 'jsonpath={.status.status}' 2>/dev/null | grep -e Completed -e Failed"
@@ -1389,9 +1380,6 @@ EOF
     fi
   fi
 }
-
-
-
 
 print_usage() {
   echo "
@@ -1481,7 +1469,7 @@ main() {
   if [[ ${SAMPLE_TEST} == 'True' ]]; then
     sample_test
   fi
-    
+
 }
 
 logit() {
