@@ -1451,6 +1451,7 @@ main() {
   if [ ${Non_interact} ]; then
     read -r -p "Please enter path for config file: " input_config
     # shellcheck source=/dev/null
+    # shellcheck disable=SC2086
     . $input_config
     export input_config=$input_config
   fi
