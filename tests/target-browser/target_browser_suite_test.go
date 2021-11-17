@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/yaml"
 
 	"github.com/trilioData/tvk-plugins/cmd/target-browser/cmd"
 	"github.com/trilioData/tvk-plugins/internal"
@@ -193,11 +194,36 @@ func deleteTarget(enableBrowsing bool) {
 	checkPvcDeleted(ctx, k8sClient, installNs)
 	log.Infof("Deleted target %s successfully", TargetName)
 }
+func mergeArgs(args []string) (string, []string) {
+	var opFormat string
+	for idx, val := range args {
+		if val == flagOutputFormat && len(args) > idx+1 {
+			opFormat = args[idx+1]
+			break
+		}
+	}
+	if opFormat != "" {
+		for _, val := range commonArgs {
+			if val != flagOutputFormat && val != internal.FormatJSON {
+				args = append(args, val)
+			}
+		}
+	} else {
+		args = append(args, commonArgs...)
+	}
+	return opFormat, args
+}
 
 func runCmdBackupPlan(args []string) []targetbrowser.BackupPlan {
-	args = append(args, commonArgsWithJSONOutputFormat...)
-	var output []byte
-	var err error
+	var (
+		output         []byte
+		err            error
+		opFormat       string
+		backupPlanList targetbrowser.BackupPlanList
+		respBytes      bytes.Buffer
+	)
+
+	opFormat, args = mergeArgs(args)
 	Eventually(func() bool {
 		command := exec.Command(targetBrowserBinaryFilePath, args...)
 		log.Info("BackupPlan command is: ", command)
@@ -208,9 +234,12 @@ func runCmdBackupPlan(args []string) []targetbrowser.BackupPlan {
 		}
 		return strings.Contains(string(output), "502 Bad Gateway")
 	}, apiRetryTimeout, interval).Should(BeFalse())
-
+	if opFormat == internal.FormatYAML {
+		output, err = yaml.YAMLToJSON(output)
+		Expect(err).To(BeNil())
+	}
 	finalOutput := string(output)
-	var backupPlanList targetbrowser.BackupPlanList
+
 	Eventually(func() error {
 		if len(finalOutput) == 0 {
 			return nil
@@ -227,7 +256,6 @@ func runCmdBackupPlan(args []string) []targetbrowser.BackupPlan {
 			Fail(err.Error())
 		}
 
-		var respBytes bytes.Buffer
 		jsq.Writer(&respBytes)
 
 		err = json.Unmarshal(respBytes.Bytes(), &backupPlanList.Results)
@@ -242,9 +270,13 @@ func runCmdBackupPlan(args []string) []targetbrowser.BackupPlan {
 }
 
 func runCmdBackup(args []string) []targetbrowser.Backup {
-	var output []byte
-	var err error
-	args = append(args, commonArgsWithJSONOutputFormat...)
+	var (
+		output   []byte
+		err      error
+		opFormat string
+	)
+
+	opFormat, args = mergeArgs(args)
 	Eventually(func() bool {
 		command := exec.Command(targetBrowserBinaryFilePath, args...)
 		log.Info("Backup command is: ", command)
@@ -255,7 +287,10 @@ func runCmdBackup(args []string) []targetbrowser.Backup {
 		}
 		return strings.Contains(string(output), "502 Bad Gateway")
 	}, apiRetryTimeout, interval).Should(BeFalse())
-
+	if opFormat == internal.FormatYAML {
+		output, err = yaml.YAMLToJSON(output)
+		Expect(err).To(BeNil())
+	}
 	finalOutput := string(output)
 	var backupList targetbrowser.BackupList
 	Eventually(func() error {

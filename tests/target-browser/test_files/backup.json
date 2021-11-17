@@ -1,11 +1,11 @@
 {
-  "kind": "BackupPlan",
+  "kind": "Backup",
   "apiVersion": "triliovault.trilio.io/v1",
   "metadata": {
     "name": "sample-backup",
     "namespace": "default",
     "selfLink": "/apis/triliovault.trilio.io/v1/namespaces/default/backups/sample-backup",
-    "uid": "529efb26-9f06-443a-a263-c42f1af04493",
+    "uid": "BACKUP-UUID",
     "resourceVersion": "14613",
     "generation": 1,
     "creationTimestamp": "2021-05-10T20:10:40Z",
@@ -19,7 +19,7 @@
         "apiVersion": "triliovault.trilio.io/v1",
         "kind": "BackupPlan",
         "name": "bp11",
-        "uid": "f7f17b64-320f-43f8-8ca3-234f157df9d5"
+        "uid": "BACKUPPLAN-UUID"
       }
     ],
     "finalizers": [
@@ -32,7 +32,7 @@
       "kind": "BackupPlan",
       "namespace": "default",
       "name": "bp11",
-      "uid": "f7f17b64-320f-43f8-8ca3-234f157df9d5",
+      "uid": "BACKUPPLAN-UUID",
       "apiVersion": "triliovault.trilio.io/v1",
       "resourceVersion": "12368"
     }
@@ -41,7 +41,7 @@
     "backupScope": "App",
     "applicationType": "Custom",
     "type": "Full",
-    "location": "f7f17b64-320f-43f8-8ca3-234f157df9d5/529efb26-9f06-443a-a263-c42f1af04493",
+    "location": "BACKUPPLAN-UUID/BACKUP-UUID",
     "startTimestamp": "2021-05-10T20:10:40Z",
     "completionTimestamp": "2021-05-10T20:11:06Z",
     "phase": "MetadataUpload",

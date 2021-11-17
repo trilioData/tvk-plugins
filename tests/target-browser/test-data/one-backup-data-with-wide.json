@@ -1,0 +1,15 @@
+[
+  {
+    "BACKUPPLAN UID": "af2edd0f-2b7b-441e-b9a0-5a9eccbc90a2",
+    "END TIME": "2021-05-10T20:11:06Z",
+    "EXPIRATION TIME": "",
+    "KIND": "Backup",
+    "NAME": "sample-backup",
+    "SIZE": "0",
+    "START TIME": "2021-05-10T20:10:40Z",
+    "STATUS": "Available",
+    "TVK INSTANCE": "2d5bc2c8-d0d1-4b9f-9927-7b17cef71d25",
+    "TYPE": "Full",
+    "UID": "2d5bc2c8-d0d1-4b9f-9927-7b17cef71d25"
+  }
+]

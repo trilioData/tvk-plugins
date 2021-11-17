@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,7 +21,9 @@ import (
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	"github.com/trilioData/tvk-plugins/cmd/target-browser/cmd"
 	"github.com/trilioData/tvk-plugins/internal"
@@ -72,13 +75,13 @@ const (
 	backupExpirationStartDate = "2021-09-13"
 	backupExpirationEndDate   = "2021-09-14"
 	startTime                 = "00:00:00"
+	backupMetadataHelm        = "backup-metadata-helm.json"
 )
 
 var (
 	backupStatus = []string{"Available", "Failed", "InProgress"}
 	commonArgs   = []string{flagTargetName, TargetName, flagTargetNamespace,
-		installNs, flagKubeConfig, kubeConf}
-	commonArgsWithJSONOutputFormat = append(commonArgs, flagOutputFormat, internal.FormatJSON)
+		installNs, flagOutputFormat, internal.FormatJSON, flagKubeConfig, kubeConf}
 )
 
 var _ = Describe("Target Browser Tests", func() {
@@ -129,7 +132,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s & %s both are given", flagCaCert, flagInsecureSkip), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagInsecureSkip, strconv.FormatBool(true), flagCaCert, "ca-cert-file-path"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -139,7 +142,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given with zero value", flagCaCert), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagCaCert, ""}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -178,7 +181,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It("Should fail if target CR status does not have 'browsingEnabled=true'", func() {
 				args := []string{cmdGet, cmdBackupPlan}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				cmd := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := cmd.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -219,7 +222,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It("Should fail if target browser's ingress resource not found", func() {
 				args := []string{cmdGet, cmdBackupPlan}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -253,7 +256,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should pass if flag %s & %s both are provided", cmd.UseHTTPS, cmd.CertificateAuthorityFlag), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagUseHTTPS, flagCaCert, filepath.Join(testDataDirRelPath, tlsCertFile)}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				_, err := command.CombinedOutput()
 				Expect(err).ShouldNot(HaveOccurred())
@@ -261,7 +264,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is not provided", cmd.UseHTTPS), func() {
 				args := []string{cmdGet, cmdBackupPlan}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				_, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -269,7 +272,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is provided but %s is not provided", cmd.UseHTTPS, cmd.CertificateAuthorityFlag), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagUseHTTPS}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -279,7 +282,7 @@ var _ = Describe("Target Browser Tests", func() {
 			It(fmt.Sprintf("Should fail if flag %s is provided but %s is not provided", cmd.CertificateAuthorityFlag, cmd.UseHTTPS), func() {
 				isLast = true
 				args := []string{cmdGet, cmdBackupPlan, flagCaCert, filepath.Join(testDataDirRelPath, tlsCertFile)}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				_, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -289,23 +292,17 @@ var _ = Describe("Target Browser Tests", func() {
 		Context(fmt.Sprintf("Backup & BackupPlan test-cases for %s flag", cmd.OutputFormatFlag), func() {
 			var (
 				backupPlanUIDs                   []string
-				noOfBackupPlansToCreate          = 1
+				noOfBackupPlansToCreate          = 2
 				noOfBackupsToCreatePerBackupPlan = 1
 				once                             sync.Once
 				isLast                           bool
-				tvkInstanceUID                   string
-				backupPlanUID                    = "f7f17b64-320f-43f8-8ca3-234f157df9d5"
-				defaultNoOfColumns               = 5
-				backupRow                        = []string{"sample-backup", "Backup", "529efb26-9f06-443a-a263-c42f1af04493",
-					"Full", "Available", backupPlanUID, tvkInstanceUID, "2021-05-10T20:10:40Z", "2021-05-10T20:11:06Z"}
-				backupPlanRow = []string{"bp11", "BackupPlan", backupPlanUID, "Custom", tvkInstanceUID,
-					"2021-05-10 20:11:06 +0000 UTC", "2021-05-10T20:03:55Z"}
+				backupUID                        string
 			)
 			BeforeEach(func() {
 				once.Do(func() {
 					createTarget(true)
-					tvkInstanceUID = guid.New().String()
-					createBackups(noOfBackupPlansToCreate, noOfBackupsToCreatePerBackupPlan, tvkInstanceUID, "mutate-tvk-id")
+					backupUID = guid.New().String()
+					createBackups(noOfBackupPlansToCreate, noOfBackupsToCreatePerBackupPlan, backupUID, "mutate-tvk-id")
 					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
 					verifyBrowserCacheBPlan(noOfBackupPlansToCreate)
 				})
@@ -318,120 +315,195 @@ var _ = Describe("Target Browser Tests", func() {
 				}
 			})
 			It(fmt.Sprintf("Should fail cmd BackupPlan if flag %s is given without value", cmd.OutputFormatFlag), func() {
-				args := []string{cmdGet, cmdBackupPlan}
-				args = append(args, commonArgs...)
-				args = append(args, flagOutputFormat)
+				args := []string{cmdGet, cmdBackupPlan, flagTargetName, TargetName, flagTargetNamespace,
+					installNs, flagKubeConfig, kubeConf, flagOutputFormat}
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
 				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagOutputFormat)))
 			})
 
-			It(fmt.Sprintf("Should fail cmd backupPlan if flag %s is given invalid value", cmd.OutputFormatFlag), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagOutputFormat, "invalid"}
-				args = append(args, commonArgs...)
+			It(fmt.Sprintf("Should fail cmd backupPlan if flag %s is given and value is invalid", cmd.OutputFormatFlag), func() {
+				args := []string{cmdGet, cmdBackupPlan, flagTargetName, TargetName, flagTargetNamespace,
+					installNs, flagOutputFormat, "invalid", flagKubeConfig, kubeConf}
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
 				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.OutputFormatFlag)))
 			})
 
-			It(fmt.Sprintf("Should succed cmd backupPlan if flag %s is given and value is %s", cmd.OutputFormatFlag, internal.FormatJSON), func() {
+			It(fmt.Sprintf("Should succeed cmd backupPlan if flag %s is given and value is %s", cmd.OutputFormatFlag, internal.FormatJSON), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagOutputFormat, internal.FormatJSON}
-				args = append(args, commonArgs...)
-				command := exec.Command(targetBrowserBinaryFilePath, args...)
-				output, err := command.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
-				validateMetadata(output, "backupPlan-data.json")
+				backupPlanData := runCmdBackupPlan(args)
+				Expect(len(backupPlanData)).To(Equal(noOfBackupPlansToCreate))
+				for index := 0; index < len(backupPlanData)-1; index++ {
+					Expect(backupPlanData[index].Kind).To(Equal(internal.BackupPlanKind))
+					Expect(backupPlanData[index].TvkInstanceID).To(Equal(backupUID))
+				}
 			})
 
-			It(fmt.Sprintf("Should succed cmd backupPlan if flag %s is given and value is %s", cmd.OutputFormatFlag, internal.FormatYAML), func() {
+			It(fmt.Sprintf("Should get one backupPlan for specific backupPlan UID if flag %s is given and value is %s",
+				cmd.OutputFormatFlag, internal.FormatJSON), func() {
+				args := []string{cmdGet, cmdBackupPlan, backupPlanUIDs[1], flagOutputFormat, internal.FormatJSON}
+				backupPlanData := runCmdBackupPlan(args)
+				Expect(len(backupPlanData)).To(Equal(1))
+				Expect(backupPlanData[0].UID).To(Equal(backupPlanUIDs[1]))
+			})
+
+			It(fmt.Sprintf("Should succeed cmd backupPlan if flag %s is given and value is %s", cmd.OutputFormatFlag, internal.FormatYAML), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagOutputFormat, internal.FormatYAML}
-				args = append(args, commonArgs...)
-				command := exec.Command(targetBrowserBinaryFilePath, args...)
-				output, err := command.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
-				validateMetadata(output, "backupPlan-data.yaml")
-			})
-
-			It(fmt.Sprintf("Should succed cmd backupPlan if flag %s is not provided", cmd.OutputFormatFlag), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagOutputFormat, internal.FormatWIDE}
-				args = append(args, commonArgs...)
-				command := exec.Command(targetBrowserBinaryFilePath, args...)
-				output, err := command.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
-				for idx := 0; idx < defaultNoOfColumns; idx++ {
-					Expect(string(output)).Should(ContainSubstring(backupPlanRow[idx]))
+				backupPlanData := runCmdBackupPlan(args)
+				Expect(len(backupPlanData)).To(Equal(noOfBackupPlansToCreate))
+				for index := 0; index < len(backupPlanData)-1; index++ {
+					Expect(backupPlanData[index].Kind).To(Equal(internal.BackupPlanKind))
+					Expect(backupPlanData[index].TvkInstanceID).To(Equal(backupUID))
 				}
 			})
 
-			It(fmt.Sprintf("Should succed cmd backupPlan if flag %s is given and value is %s", cmd.OutputFormatFlag, internal.FormatWIDE), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagOutputFormat, internal.FormatWIDE}
-				args = append(args, commonArgs...)
+			It(fmt.Sprintf("Should get one backupPlan for specific backupPlan UID if flag %s is given and value is %s",
+				cmd.OutputFormatFlag, internal.FormatYAML), func() {
+				args := []string{cmdGet, cmdBackupPlan, backupPlanUIDs[1], flagOutputFormat, internal.FormatYAML}
+				backupPlanData := runCmdBackupPlan(args)
+				Expect(len(backupPlanData)).To(Equal(1))
+				Expect(backupPlanData[0].UID).To(Equal(backupPlanUIDs[1]))
+			})
+
+			It(fmt.Sprintf("Should succeed cmd backupPlan if flag %s is not provided", cmd.OutputFormatFlag), func() {
+				args := []string{cmdGet, cmdBackupPlan, flagTargetName, TargetName, flagTargetNamespace,
+					installNs, flagKubeConfig, kubeConf}
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).ShouldNot(HaveOccurred())
-				for _, item := range backupPlanRow {
-					Expect(string(output)).Should(ContainSubstring(item))
-				}
+				output = convertTSVToJSON(output)
+				validateMetadata(output, "backupPlan-data-without-wide.json")
 			})
+
+			It(fmt.Sprintf("Should get one backupPlan for specific backupPlan UID if flag %s is not provided",
+				cmd.OutputFormatFlag), func() {
+				args := []string{cmdGet, cmdBackupPlan, backupPlanUIDs[0], flagTargetName, TargetName, flagTargetNamespace,
+					installNs, flagKubeConfig, kubeConf}
+				command := exec.Command(targetBrowserBinaryFilePath, args...)
+				output, err := command.CombinedOutput()
+				Expect(err).ShouldNot(HaveOccurred())
+				output = convertTSVToJSON(output)
+				validateMetadata(output, "one-backupPlan-data-without-wide.json")
+			})
+
+			It(fmt.Sprintf("Should succeed cmd backupPlan if flag %s is given and value is %s", cmd.OutputFormatFlag, internal.FormatWIDE), func() {
+				args := []string{cmdGet, cmdBackupPlan, flagTargetName, TargetName, flagTargetNamespace,
+					installNs, flagKubeConfig, kubeConf, flagOutputFormat, internal.FormatWIDE}
+				command := exec.Command(targetBrowserBinaryFilePath, args...)
+				output, err := command.CombinedOutput()
+				Expect(err).ShouldNot(HaveOccurred())
+				output = convertTSVToJSON(output)
+				validateMetadata(output, "backupPlan-data-with-wide.json")
+			})
+
+			It(fmt.Sprintf("Should get one backupPlan for specific backupPlan UID if flag %s is given and value is %s",
+				cmd.OutputFormatFlag, internal.FormatWIDE), func() {
+				args := []string{cmdGet, cmdBackupPlan, backupPlanUIDs[0], flagTargetName, TargetName, flagTargetNamespace,
+					installNs, flagKubeConfig, kubeConf, flagOutputFormat, internal.FormatWIDE}
+				command := exec.Command(targetBrowserBinaryFilePath, args...)
+				output, err := command.CombinedOutput()
+				Expect(err).ShouldNot(HaveOccurred())
+				output = convertTSVToJSON(output)
+				validateMetadata(output, "one-backupPlan-data-with-wide.json")
+			})
+
 			It(fmt.Sprintf("Should fail cmd Backup if flag %s is given without value", cmd.OutputFormatFlag), func() {
-				args := []string{cmdGet, cmdBackup}
-				args = append(args, commonArgs...)
-				args = append(args, flagOutputFormat)
+				args := []string{cmdGet, cmdBackup, flagTargetName, TargetName, flagTargetNamespace,
+					installNs, flagKubeConfig, kubeConf, flagOutputFormat}
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
 				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagOutputFormat)))
 			})
 
-			It(fmt.Sprintf("Should fail cmd backup if flag %s is given invalid value", cmd.OutputFormatFlag), func() {
-				args := []string{cmdGet, cmdBackup, flagOutputFormat, "invalid"}
-				args = append(args, commonArgs...)
+			It(fmt.Sprintf("Should fail cmd backup if flag %s is given and value is invalid", cmd.OutputFormatFlag), func() {
+				args := []string{cmdGet, cmdBackup, flagTargetName, TargetName, flagTargetNamespace,
+					installNs, flagOutputFormat, "invalid", flagKubeConfig, kubeConf}
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
 				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("[%s] flag invalid value", cmd.OutputFormatFlag)))
 			})
 
-			It(fmt.Sprintf("Should succed cmd backup if flag %s is given and value is %s", cmd.OutputFormatFlag, internal.FormatJSON), func() {
+			It(fmt.Sprintf("Should succeed cmd backup if flag %s is given and value is %s", cmd.OutputFormatFlag, internal.FormatJSON), func() {
 				args := []string{cmdGet, cmdBackup, flagOutputFormat, internal.FormatJSON}
-				args = append(args, commonArgs...)
-				command := exec.Command(targetBrowserBinaryFilePath, args...)
-				output, err := command.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
-				validateMetadata(output, "backup-data.json")
+				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(noOfBackupPlansToCreate * noOfBackupsToCreatePerBackupPlan))
+				for index := 0; index < len(backupData)-1; index++ {
+					Expect(backupData[index].Kind).To(Equal(internal.BackupKind))
+					Expect(backupData[index].UID).To(Equal(backupUID))
+				}
 			})
 
-			It(fmt.Sprintf("Should succed cmd backup if flag %s is given and value is %s", cmd.OutputFormatFlag, internal.FormatYAML), func() {
+			It(fmt.Sprintf("Should get one backup for specific backup UID if flag %s is given and value is %s",
+				cmd.OutputFormatFlag, internal.FormatJSON), func() {
+				args := []string{cmdGet, cmdBackup, backupUID, flagOutputFormat, internal.FormatJSON}
+				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(1))
+				Expect(backupData[0].UID).To(Equal(backupUID))
+			})
+
+			It(fmt.Sprintf("Should succeed cmd backup if flag %s is given and value is %s", cmd.OutputFormatFlag, internal.FormatYAML), func() {
 				args := []string{cmdGet, cmdBackup, flagOutputFormat, internal.FormatYAML}
-				args = append(args, commonArgs...)
-				command := exec.Command(targetBrowserBinaryFilePath, args...)
-				output, err := command.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
-				validateMetadata(output, "backup-data.yaml")
+				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(noOfBackupPlansToCreate * noOfBackupsToCreatePerBackupPlan))
+				for index := 0; index < len(backupData)-1; index++ {
+					Expect(backupData[index].Kind).To(Equal(internal.BackupKind))
+					Expect(backupData[index].UID).To(Equal(backupUID))
+				}
+			})
+			It(fmt.Sprintf("Should get one backup for specific backup UID if flag %s is given and value is %s",
+				cmd.OutputFormatFlag, internal.FormatYAML), func() {
+				args := []string{cmdGet, cmdBackup, backupUID, flagOutputFormat, internal.FormatYAML}
+				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(1))
+				Expect(backupData[0].UID).To(Equal(backupUID))
 			})
 
-			It(fmt.Sprintf("Should succed cmd backup if flag %s is not provided", cmd.OutputFormatFlag), func() {
-				args := []string{cmdGet, cmdBackup, flagOutputFormat, internal.FormatWIDE}
-				args = append(args, commonArgs...)
+			It(fmt.Sprintf("Should get one backup for specific backup UID if flag %s is not privded",
+				cmd.OutputFormatFlag), func() {
+				args := []string{cmdGet, cmdBackup, backupUID, flagTargetName, TargetName, flagTargetNamespace,
+					installNs, flagKubeConfig, kubeConf}
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).ShouldNot(HaveOccurred())
-				for idx := 0; idx < defaultNoOfColumns; idx++ {
-					Expect(string(output)).Should(ContainSubstring(backupRow[idx]))
-				}
+				output = convertTSVToJSON(output)
+				validateMetadata(output, "one-backup-data-without-wide.json")
 			})
-			It(fmt.Sprintf("Should succed cmd backup if flag %s is given and value is %s", cmd.OutputFormatFlag, internal.FormatWIDE), func() {
-				isLast = true
-				args := []string{cmdGet, cmdBackup, flagOutputFormat, internal.FormatWIDE}
-				args = append(args, commonArgs...)
+
+			It(fmt.Sprintf("Should succeed cmd backup if flag %s is not provided", cmd.OutputFormatFlag), func() {
+				args := []string{cmdGet, cmdBackup, flagTargetName, TargetName, flagTargetNamespace,
+					installNs, flagKubeConfig, kubeConf}
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).ShouldNot(HaveOccurred())
-				for _, item := range backupRow {
-					Expect(string(output)).Should(ContainSubstring(item))
-				}
+				output = convertTSVToJSON(output)
+				validateMetadata(output, "backup-data-without-wide.json")
+			})
+
+			It(fmt.Sprintf("Should get one backup for specific backup UID if flag %s is given and value is %s",
+				cmd.OutputFormatFlag, internal.FormatWIDE), func() {
+				args := []string{cmdGet, cmdBackup, backupUID, flagTargetName, TargetName, flagTargetNamespace,
+					installNs, flagKubeConfig, kubeConf, flagOutputFormat, internal.FormatWIDE}
+				command := exec.Command(targetBrowserBinaryFilePath, args...)
+				output, err := command.CombinedOutput()
+				Expect(err).ShouldNot(HaveOccurred())
+				output = convertTSVToJSON(output)
+				validateMetadata(output, "one-backup-data-with-wide.json")
+			})
+
+			It(fmt.Sprintf("Should succeed cmd backup if flag %s is given and value is %s", cmd.OutputFormatFlag, internal.FormatWIDE), func() {
+				isLast = true
+				args := []string{cmdGet, cmdBackup, flagTargetName, TargetName, flagTargetNamespace,
+					installNs, flagKubeConfig, kubeConf, flagOutputFormat, internal.FormatWIDE}
+				command := exec.Command(targetBrowserBinaryFilePath, args...)
+				output, err := command.CombinedOutput()
+				Expect(err).ShouldNot(HaveOccurred())
+				output = convertTSVToJSON(output)
+				validateMetadata(output, "backup-data-with-wide.json")
 			})
 		})
 	})
@@ -516,11 +588,12 @@ var _ = Describe("Target Browser Tests", func() {
 				args := []string{cmdGet, cmdBackupPlan, flagOrderBy, backupTimestamp}
 				backupPlanData := runCmdBackupPlan(args)
 				for index := 0; index < len(backupPlanData)-1; index++ {
-					if backupPlanData[index].SuccessfulBackup != 0 && backupPlanData[index+1].SuccessfulBackup != 0 &&
-						!backupPlanData[index].SuccessfulBackupTimestamp.Time.Equal(backupPlanData[index+1].
-							SuccessfulBackupTimestamp.Time) {
-						Expect(backupPlanData[index].SuccessfulBackupTimestamp.Time.Before(backupPlanData[index+1].
-							SuccessfulBackupTimestamp.Time)).Should(BeTrue())
+					if backupPlanData[index].SuccessfulBackup != 0 && backupPlanData[index+1].SuccessfulBackup != 0 {
+						bkpTS1, _ := time.Parse(time.RFC3339, backupPlanData[index].SuccessfulBackupTimestamp)
+						bkpTS2, _ := time.Parse(time.RFC3339, backupPlanData[index+1].SuccessfulBackupTimestamp)
+						if !bkpTS1.Equal(bkpTS2) {
+							Expect(bkpTS1.Before(bkpTS2)).Should(BeTrue())
+						}
 					}
 				}
 			})
@@ -530,11 +603,12 @@ var _ = Describe("Target Browser Tests", func() {
 				args := []string{cmdGet, cmdBackupPlan, flagOrderBy, hyphen + backupTimestamp}
 				backupPlanData := runCmdBackupPlan(args)
 				for index := 0; index < len(backupPlanData)-1; index++ {
-					if backupPlanData[index].SuccessfulBackup != 0 && backupPlanData[index+1].SuccessfulBackup != 0 &&
-						!backupPlanData[index].SuccessfulBackupTimestamp.Time.Equal(backupPlanData[index+1].
-							SuccessfulBackupTimestamp.Time) {
-						Expect(backupPlanData[index].SuccessfulBackupTimestamp.Time.After(backupPlanData[index+1].
-							SuccessfulBackupTimestamp.Time)).Should(BeTrue())
+					if backupPlanData[index].SuccessfulBackup != 0 && backupPlanData[index+1].SuccessfulBackup != 0 {
+						bkpTS1, _ := time.Parse(time.RFC3339, backupPlanData[index].SuccessfulBackupTimestamp)
+						bkpTS2, _ := time.Parse(time.RFC3339, backupPlanData[index+1].SuccessfulBackupTimestamp)
+						if !bkpTS1.Equal(bkpTS2) {
+							Expect(bkpTS1.After(bkpTS2)).Should(BeTrue())
+						}
 					}
 				}
 			})
@@ -569,7 +643,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given without value", flagOrderBy), func() {
 				args := []string{cmdGet, cmdBackupPlan}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				args = append(args, flagOrderBy)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
@@ -587,7 +661,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should succeed if flag %s is given zero value", flagOrderBy), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagOrderBy, ""}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				cmd := exec.Command(targetBrowserBinaryFilePath, args...)
 				_, err := cmd.CombinedOutput()
 				Expect(err).ShouldNot(HaveOccurred())
@@ -595,7 +669,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given 'invalid' value", flagOrderBy), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagOrderBy, "invalid"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				cmd := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := cmd.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -630,7 +704,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given negative value", cmd.PageSizeFlag), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagPageSize, "-1"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -654,7 +728,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It("Should fail using backupPlanUID 'invalidUID'", func() {
 				args := []string{cmdGet, cmdBackupPlan, "invalidUID"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -663,7 +737,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given without value", flagCreationStartTime), func() {
 				args := []string{cmdGet, cmdBackupPlan}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				args = append(args, flagCreationStartTime)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
@@ -673,7 +747,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given zero value", flagCreationStartTime), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagCreationStartTime, ""}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -682,7 +756,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given 'invalid' value", flagCreationStartTime), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagCreationStartTime, "invalid"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -722,7 +796,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given without value", flagCreationEndTime), func() {
 				args := []string{cmdGet, cmdBackupPlan}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				args = append(args, flagCreationEndTime)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
@@ -732,7 +806,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given 'invalid' value", flagCreationEndTime), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagCreationEndTime, "invalid"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -742,7 +816,7 @@ var _ = Describe("Target Browser Tests", func() {
 			It(fmt.Sprintf("Should fail if flag %s is given valid & flag %s is given 'invalid' value",
 				flagCreationStartTime, flagCreationEndTime), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagCreationStartTime, backupCreationStartDate, flagCreationEndTime, "invalid"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -752,7 +826,7 @@ var _ = Describe("Target Browser Tests", func() {
 			It(fmt.Sprintf("Should fail if flag %s is given valid & flag %s is given 'invalid' value",
 				flagCreationEndTime, flagCreationStartTime), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagCreationEndTime, backupCreationStartDate, flagCreationStartTime, "invalid"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -761,7 +835,7 @@ var _ = Describe("Target Browser Tests", func() {
 			It(fmt.Sprintf("Should fail if flag %s is given valid & flag %s is not provided",
 				flagCreationEndTime, flagCreationStartTime), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagCreationEndTime, backupCreationStartDate}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -772,7 +846,7 @@ var _ = Describe("Target Browser Tests", func() {
 				flagCreationStartTime, flagCreationEndTime), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagCreationStartTime, backupCreationStartDate,
 					flagCreationEndTime, backupCreationStartDate}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -784,7 +858,7 @@ var _ = Describe("Target Browser Tests", func() {
 				isLast = true
 				args := []string{cmdGet, cmdBackupPlan, flagCreationStartTime, backupCreationEndDate,
 					flagCreationEndTime, backupCreationStartDate}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -834,7 +908,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given without value", flagOperationScope), func() {
 				args := []string{cmdGet, cmdBackupPlan}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				args = append(args, flagOperationScope)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
@@ -925,7 +999,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given without value", flagTvkInstanceUIDFlag), func() {
 				args := []string{cmdGet, cmdBackupPlan}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				args = append(args, flagTvkInstanceUIDFlag)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
@@ -1050,7 +1124,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given without value", cmd.BackupStatusFlag), func() {
 				args := []string{cmdGet, cmdBackup, flagBackupPlanUIDFlag, backupPlanUIDs[1]}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				args = append(args, flagBackupStatus)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
@@ -1060,7 +1134,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given 'invalid' value", cmd.BackupStatusFlag), func() {
 				args := []string{cmdGet, cmdBackup, flagBackupStatus, "invalid"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1069,7 +1143,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should succeed if flag %s is given zero value", cmd.BackupStatusFlag), func() {
 				args := []string{cmdGet, cmdBackup, flagBackupStatus, ""}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				_, err := command.CombinedOutput()
 				Expect(err).ShouldNot(HaveOccurred())
@@ -1122,7 +1196,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given negative value", cmd.PageSizeFlag), func() {
 				args := []string{cmdGet, cmdBackup, flagPageSize, "-1"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1155,7 +1229,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should succeed if flag %s is given zero value", flagOrderBy), func() {
 				args := []string{cmdGet, cmdBackup, flagOrderBy, ""}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				cmd := exec.Command(targetBrowserBinaryFilePath, args...)
 				_, err := cmd.CombinedOutput()
 				Expect(err).ShouldNot(HaveOccurred())
@@ -1163,7 +1237,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given 'invalid' value", flagOrderBy), func() {
 				args := []string{cmdGet, cmdBackup, flagOrderBy, "invalid"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				cmd := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := cmd.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1172,7 +1246,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It("Should fail if path param is given 'invalidUID' value", func() {
 				args := []string{cmdGet, cmdBackup, "invalidUID"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1180,7 +1254,7 @@ var _ = Describe("Target Browser Tests", func() {
 			})
 			It(fmt.Sprintf("Should fail if flag %s is given without value", flagCreationStartTime), func() {
 				args := []string{cmdGet, cmdBackup}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				args = append(args, flagCreationStartTime)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
@@ -1190,7 +1264,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given 'invalid' value", flagCreationStartTime), func() {
 				args := []string{cmdGet, cmdBackup, flagCreationStartTime, "invalid"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1230,7 +1304,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given without value", flagCreationEndTime), func() {
 				args := []string{cmdGet, cmdBackup}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				args = append(args, flagCreationEndTime)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
@@ -1241,7 +1315,7 @@ var _ = Describe("Target Browser Tests", func() {
 			It(fmt.Sprintf("Should fail if flag %s is given valid & flag %s is given 'invalid' value",
 				flagCreationStartTime, flagCreationEndTime), func() {
 				args := []string{cmdGet, cmdBackup, flagCreationStartTime, backupCreationStartDate, flagCreationEndTime, "invalid"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1251,7 +1325,7 @@ var _ = Describe("Target Browser Tests", func() {
 			It(fmt.Sprintf("Should fail if flag %s is given valid & flag %s is given 'invalid' value",
 				flagCreationEndTime, flagCreationStartTime), func() {
 				args := []string{cmdGet, cmdBackup, flagCreationEndTime, backupCreationStartDate, flagCreationStartTime, "invalid"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1262,7 +1336,7 @@ var _ = Describe("Target Browser Tests", func() {
 				flagCreationStartTime, flagCreationEndTime), func() {
 				args := []string{cmdGet, cmdBackup, flagCreationStartTime, backupCreationEndDate,
 					flagCreationEndTime, backupCreationStartDate}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1272,7 +1346,7 @@ var _ = Describe("Target Browser Tests", func() {
 				flagCreationStartTime, flagCreationEndTime), func() {
 				args := []string{cmdGet, cmdBackup, flagCreationStartTime, backupCreationStartDate,
 					flagCreationEndTime, backupCreationStartDate}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1282,7 +1356,7 @@ var _ = Describe("Target Browser Tests", func() {
 			It(fmt.Sprintf("Should fail if flag %s is given valid & flag %s is not provided",
 				flagCreationEndTime, flagCreationStartTime), func() {
 				args := []string{cmdGet, cmdBackup, flagCreationEndTime, backupCreationStartDate}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1292,7 +1366,7 @@ var _ = Describe("Target Browser Tests", func() {
 			//test case for flag expiration
 			It(fmt.Sprintf("Should fail if flag %s is given without value", flagExpirationStartTime), func() {
 				args := []string{cmdGet, cmdBackup}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				args = append(args, flagExpirationStartTime)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
@@ -1302,7 +1376,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given without value", flagExpirationEndTime), func() {
 				args := []string{cmdGet, cmdBackup}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				args = append(args, flagExpirationEndTime)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
@@ -1312,7 +1386,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given zero value", flagExpirationEndTime), func() {
 				args := []string{cmdGet, cmdBackup, flagExpirationEndTime, ""}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1322,7 +1396,7 @@ var _ = Describe("Target Browser Tests", func() {
 			It(fmt.Sprintf("Should fail if flag %s is given valid & flag %s is given 'invalid' value",
 				flagExpirationStartTime, flagExpirationEndTime), func() {
 				args := []string{cmdGet, cmdBackup, flagExpirationStartTime, backupCreationStartDate, flagExpirationEndTime, "invalid"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1332,7 +1406,7 @@ var _ = Describe("Target Browser Tests", func() {
 			It(fmt.Sprintf("Should fail if flag %s is given valid & flag %s is given 'invalid' value",
 				flagExpirationEndTime, flagExpirationStartTime), func() {
 				args := []string{cmdGet, cmdBackup, flagExpirationEndTime, backupCreationStartDate, flagExpirationStartTime, "invalid"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1385,7 +1459,7 @@ var _ = Describe("Target Browser Tests", func() {
 				flagExpirationStartTime, flagExpirationEndTime), func() {
 				args := []string{cmdGet, cmdBackup, flagExpirationStartTime, backupExpirationEndDate,
 					flagExpirationEndTime, backupExpirationEndDate}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1396,7 +1470,7 @@ var _ = Describe("Target Browser Tests", func() {
 			It(fmt.Sprintf("Should fail if flag %s is given valid value & flag %s is not provided",
 				flagExpirationStartTime, flagExpirationEndTime), func() {
 				args := []string{cmdGet, cmdBackup, flagExpirationStartTime, backupExpirationEndDate}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1406,7 +1480,7 @@ var _ = Describe("Target Browser Tests", func() {
 				flagExpirationStartTime, flagExpirationEndTime), func() {
 				isLast = true
 				args := []string{cmdGet, cmdBackup, flagExpirationStartTime, "2021-05-19", flagExpirationEndTime, backupCreationEndDate}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1460,7 +1534,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given without value", flagTvkInstanceUIDFlag), func() {
 				args := []string{cmdGet, cmdBackup}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				args = append(args, flagTvkInstanceUIDFlag)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
@@ -1520,7 +1594,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given without value", flagOperationScope), func() {
 				args := []string{cmdGet, cmdBackup}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				args = append(args, flagOperationScope)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
@@ -1625,7 +1699,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s not given", cmd.BackupUIDFlag), func() {
 				args := []string{cmdGet, cmdMetadata, flagBackupPlanUIDFlag, backupPlanUIDs[0]}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1635,7 +1709,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given without value", cmd.BackupPlanUIDFlag), func() {
 				args := []string{cmdGet, cmdMetadata}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				args = append(args, flagBackupPlanUIDFlag)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
@@ -1645,7 +1719,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail if flag %s is given without value", cmd.BackupUIDFlag), func() {
 				args := []string{cmdGet, cmdMetadata}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				args = append(args, flagBackupUIDFlag)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
@@ -1655,7 +1729,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail  metadata if flag %s is given zero value", cmd.BackupUIDFlag), func() {
 				args := []string{cmdGet, cmdMetadata, flagBackupPlanUIDFlag, backupPlanUIDs[0], flagBackupUIDFlag, ""}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1664,7 +1738,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should fail  metadata if flag %s is given invalid value", cmd.BackupUIDFlag), func() {
 				args := []string{cmdGet, cmdMetadata, flagBackupPlanUIDFlag, backupPlanUIDs[0], flagBackupUIDFlag, "invalid"}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
@@ -1673,7 +1747,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should filter metadata if flag %s is given zero value", cmd.BackupPlanUIDFlag), func() {
 				args := []string{cmdGet, cmdMetadata, flagBackupPlanUIDFlag, "", flagBackupUIDFlag, backupUID}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).ShouldNot(HaveOccurred())
@@ -1682,7 +1756,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should filter metadata if flag %s is given valid value", cmd.BackupPlanUIDFlag), func() {
 				args := []string{cmdGet, cmdMetadata, flagBackupUIDFlag, backupUID}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).ShouldNot(HaveOccurred())
@@ -1692,7 +1766,7 @@ var _ = Describe("Target Browser Tests", func() {
 			It("Should filter metadata on BackupPlan and backup", func() {
 				isLast = true
 				args := []string{cmdGet, cmdMetadata, flagBackupPlanUIDFlag, backupPlanUIDs[0], flagBackupUIDFlag, backupUID}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).ShouldNot(HaveOccurred())
@@ -1739,7 +1813,7 @@ var _ = Describe("Target Browser Tests", func() {
 			})
 
 			It(fmt.Sprintf("Should fail cmd metadata if flag %s is given invalid value", cmd.OutputFormatFlag), func() {
-				args := []string{cmdGet, cmdMetadata, flagOutputFormat, "invalid"}
+				args := []string{cmdGet, cmdMetadata, flagBackupUIDFlag, backupUID, flagOutputFormat, "invalid"}
 				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
@@ -1754,17 +1828,17 @@ var _ = Describe("Target Browser Tests", func() {
 				output, err := command.CombinedOutput()
 				Expect(err).ShouldNot(HaveOccurred())
 				log.Debugf("Metadata is %s", output)
-				validateMetadata(output, "backup-metadata-helm.json")
+				validateMetadata(output, backupMetadataHelm)
 			})
 
 			It("Should filter metadata on BackupPlan and backup", func() {
 				args := []string{cmdGet, cmdMetadata, flagBackupPlanUIDFlag, backupPlanUIDs[0], flagBackupUIDFlag, backupUID}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).ShouldNot(HaveOccurred())
 				log.Debugf("Metadata is %s", output)
-				validateMetadata(output, "backup-metadata-helm.json")
+				validateMetadata(output, backupMetadataHelm)
 			})
 
 			It(fmt.Sprintf("Should filter metadata on BackupPlan and backup using flag %s and value is %s",
@@ -1777,7 +1851,7 @@ var _ = Describe("Target Browser Tests", func() {
 				output, err := command.CombinedOutput()
 				Expect(err).ShouldNot(HaveOccurred())
 				log.Debugf("Metadata is %s", output)
-				validateMetadata(output, "backup-metadata-helm.yaml")
+				validateMetadata(output, backupMetadataHelm, internal.FormatYAML)
 			})
 
 		})
@@ -1812,7 +1886,7 @@ var _ = Describe("Target Browser Tests", func() {
 			It("Should filter metadata on BackupPlan and backup", func() {
 				isLast = true
 				args := []string{cmdGet, cmdMetadata, flagBackupPlanUIDFlag, backupPlanUIDs[0], flagBackupUIDFlag, backupUID}
-				args = append(args, commonArgsWithJSONOutputFormat...)
+				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).ShouldNot(HaveOccurred())
@@ -2106,12 +2180,19 @@ func removeBackupPlanDir(backupPlanUIDs []string) {
 	}
 }
 
-func validateMetadata(data []byte, metadataFileName string) {
+func validateMetadata(data []byte, metadataFileName string, dataType ...string) {
 	re := regexp.MustCompile("(?m)[\r\n]+^.*location.*$")
 	metadata := re.ReplaceAllString(string(data), "")
+	re = regexp.MustCompile("(?m)[\r\n]+^.*uid.*$")
+	metadata = re.ReplaceAllString(metadata, "")
+
 	jsonFile, err := os.Open(filepath.Join(testDataDirRelPath, metadataFileName))
 	Expect(err).To(BeNil())
 	defer jsonFile.Close()
 	expectedMetadata, _ := ioutil.ReadAll(jsonFile)
+	if strings.Join(dataType, "") == internal.FormatYAML {
+		expectedMetadata, err = yaml.JSONToYAML(expectedMetadata)
+		Expect(err).To(BeNil())
+	}
 	Expect(reflect.DeepEqual(expectedMetadata, metadata))
 }

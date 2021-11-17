@@ -1,0 +1,16 @@
+[
+  {
+    "KIND": "BackupPlan",
+    "NAME": "sample-backupPlan",
+    "TVK INSTANCE": "caa3f8e8-2941-4cc9-b3b4-1ffbedb91c0c",
+    "TYPE": "Custom",
+    "UID": "38889a24-5d81-4644-9b14-ddfbfde94a36"
+  },
+  {
+    "KIND": "BackupPlan",
+    "NAME": "sample-backupPlan",
+    "TVK INSTANCE": "caa3f8e8-2941-4cc9-b3b4-1ffbedb91c0c",
+    "TYPE": "Custom",
+    "UID": "34b42cbb-4554-4057-b551-dc9cc0fab15f"
+  }
+]

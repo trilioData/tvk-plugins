@@ -1,0 +1,10 @@
+[
+  {
+    "KIND": "Backup",
+    "NAME": "sample-backup",
+    "SIZE": "0",
+    "STATUS": "Available",
+    "TYPE": "Full",
+    "UID": "2d5bc2c8-d0d1-4b9f-9927-7b17cef71d25"
+  }
+]
