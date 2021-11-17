@@ -202,15 +202,7 @@ func mergeArgs(args []string) (string, []string) {
 			break
 		}
 	}
-	if opFormat != "" {
-		for _, val := range commonArgs {
-			if val != flagOutputFormat && val != internal.FormatJSON {
-				args = append(args, val)
-			}
-		}
-	} else {
-		args = append(args, commonArgs...)
-	}
+	args = append(args, commonArgs...)
 	return opFormat, args
 }
 
@@ -390,7 +382,7 @@ func getTargetBrowserIngress() *v1beta1.Ingress {
 }
 
 func verifyBrowserCacheBPlan(noOfBackupPlan int) {
-	args := []string{cmdGet, cmdBackupPlan}
+	args := []string{cmdGet, cmdBackupPlan, flagOutputFormat, internal.FormatJSON}
 	Eventually(func() bool {
 		backupPlanData := runCmdBackupPlan(args)
 		return len(backupPlanData) == noOfBackupPlan || len(backupPlanData) == cmd.PageSizeDefault
