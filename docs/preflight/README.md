@@ -1,7 +1,10 @@
 # TVK Preflight Plugin
 
-**tvk-preflight** is a kubectl plugin which checks if all the pre-requisites are  
-met before installing Triliovault for Kubernetes application in a Kubernetes cluster.
+**tvk-preflight** is a kubectl plugin which checks if all the pre-requisites are met before installing Triliovault for Kubernetes
+application in a Kubernetes cluster.
+
+This plugin automatically generates log file(`preflight-log-<date-time>.log`) for each preflight run which can be used to
+get more information around check being performed by this plugin.
 
 ## Pre-requisites:
 
@@ -15,23 +18,25 @@ met before installing Triliovault for Kubernetes application in a Kubernetes clu
 
 ## Checks Performed during Preflight
 
-Some checks are performed on system from where the application is installed and some are performed on the K8s cluster.  
-The following checks included in preflight:
+Preflight plugin performs checks on system where this plugin is installed and few checks are performed on the K8s cluster
+where current-context of kubeconfig is pointing to.
 
-- Ensure *kubectl* utility is present on system
-- Ensure *kubectl* is pointed to k8s cluster (i.e can access the remote target cluster)
-- Ensure *helm*  utility is present on system and pointed to the cluster
+The following checks are included in preflight:
+
+- Ensures *kubectl* utility is present on system
+- Ensures *kubectl* is pointed to k8s cluster (i.e can access the remote target cluster)
+- Ensures *helm*  utility is present on system and pointed to the cluster
   - If *helmVersion=~v3*, then *tiller* is not needed on cluster
-- Ensure minimum Kubernetes version >= 1.18.x
-- Ensure RBAC is enabled in cluster
-- Ensure provided storageClass is present in cluster
+- Ensures minimum Kubernetes version >= 1.18.x
+- Ensures RBAC is enabled in cluster
+- Ensures provided storageClass is present in cluster
   1. Provided storageClass's `provisioner` [JSON Path: `storageclass.provisioner`] should match with provided volumeSnapshotClass's `driver`[JSON Path: `volumesnapshotclass.driver`]
   2. If volumeSnapshotClass is not provided then, volumeSnapshotClass which satisfies condition `[i]` will be selected.
   If there's are multiple volumeSnapshotClasses satisfying condition `[i]`, default volumeSnapshotClass[which has annotation `snapshot.storage.kubernetes.io/is-default-class: "true"` set]
   will be used for further pre-flight checks.
   3. Pre-flight check fails if no volumeSnapshotClass is found[after considering all above mentioned conditions].
-- Ensure at least one volumeSnapshotClass is marked as *default* in cluster if user has not provided volumeSnapshotClass as input.
-- Ensure all required features are present
+- Ensures at least one volumeSnapshotClass is marked as *default* in cluster if user has not provided volumeSnapshotClass as input.
+- Ensures all required features are present
   - No Alpha features required for k8s version >= 1.17.x
 - Ensure CSI apis are present in cluster
   - "volumesnapshotclasses.snapshot.storage.k8s.io"
@@ -40,13 +45,13 @@ The following checks included in preflight:
 - Ensure DNS resolution works as expected in the cluster
   - Creates a new pod (*dnsutils-${RANDOM_STRING}*) then resolves *kubernetes.default* service from inside the pod
 - Ensure Volume Snapshot functionality works as expected for both used and unused PVs
-  - Create a source Pod and PVC (*source-pod-${RANDOM_STRING}* and *source-pvc-${RANDOM_STRING}*)
-  - Create a Volume snapshot from a used PV (*snapshot-source-pvc-${RANDOM_STRING}*) from the *source-pvc-${RANDOM_STRING}*
-  - Create a volume snapshot from unused PV (delete the source pod before snapshoting)
-  - Create a restore Pod and PVC (*restored-pod-${RANDOM_STRING}* and *restored-pvc-${RANDOM_STRING}*)
-  - Create a resotre Pod and PVC from unused pv snapshot
+  - Creates a source Pod and PVC (*source-pod-${RANDOM_STRING}* and *source-pvc-${RANDOM_STRING}*)
+  - Creates a Volume snapshot from a used PV (*snapshot-source-pvc-${RANDOM_STRING}*) from the *source-pvc-${RANDOM_STRING}*
+  - Creates a volume snapshot from unused PV (delete the source pod before snapshoting)
+  - Creates a restore Pod and PVC (*restored-pod-${RANDOM_STRING}* and *restored-pvc-${RANDOM_STRING}*)
+  - Creates a resotre Pod and PVC from unused pv snapshot
   - Ensure data in restored pod/pvc is correct
-- Cleanup of all the intermediate resources created
+- Cleanup of all the intermediate resources created during preflight checks' execution.
 
 
 ## Installation, Upgrade, Removal of Plugins :
@@ -59,20 +64,20 @@ The following checks included in preflight:
 
 - Installation:
 
-    ```
-    kubectl krew install tvk-plugins/tvk-preflight
+  ```
+  kubectl krew install tvk-plugins/tvk-preflight
   ```  
 
 - Upgrade:
 
-    ```
-    kubectl krew upgrade tvk-preflight
+  ```
+  kubectl krew upgrade tvk-preflight
   ```  
 
 - Removal:
 
- 	```
- 	kubectl krew uninstall tvk-preflight
+  ```
+  kubectl krew uninstall tvk-preflight
   ```  
 
 ## Usage:
