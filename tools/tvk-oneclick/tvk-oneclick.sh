@@ -1,9 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #This program is use to install/configure/test TVK product with one click and few required inputs
 
 #This module is used to perform preflight check which checks if all the pre-requisites are satisfied before installing Triliovault for Kubernetes application in a Kubernetes cluster
 masterIngName=k8s-triliovault-master
+ingressGateway=k8s-triliovault-ingress-gateway
 
 preflight_checks() {
   ret=$(kubectl krew 2>/dev/null)
@@ -16,10 +17,17 @@ preflight_checks() {
   # shellcheck disable=SC2236
   if [[ ! -z "$ret" ]]; then
     echo "Skipping/Upgrading plugin tvk-preflight installation as it is already installed"
-    kubectl krew upgrade tvk-preflight 2>> >(logit)
+    ret_val=$(kubectl krew upgrade tvk-preflight 2>&1)
     retcode=$?
     if [ "$retcode" -ne 0 ]; then
-      echo "Failed to uggrade tvk-plugins/tvk-preflight plugin"
+      echo "$ret_val" | grep -q "can't upgrade, the newest version is already installed"
+      ret=$?
+      if [ "$ret" -ne 0 ]; then
+        echo "Failed to uggrade tvk-plugins/tvk-preflight plugin"
+	return 1
+      else
+	echo "tvk-preflight is already the newest version"
+      fi
     fi
   else
     plugin_url='https://github.com/trilioData/tvk-plugins.git'
@@ -110,8 +118,8 @@ install_tvk() {
   helm repo add triliovault http://charts.k8strilio.net/trilio-stable/k8s-triliovault 1>> >(logit) 2>> >(logit)
   helm repo update 1>> >(logit) 2>> >(logit)
   if [[ -z ${input_config} ]]; then
-    read -r -p "Please provide the operator version to be installed (default - 2.1.0): " operator_version
-    read -r -p "Please provide the triliovault manager version (default - v2.1.1-alpha): " triliovault_manager_version
+    read -r -p "Please provide the operator version to be installed (default - 2.6.0): " operator_version
+    read -r -p "Please provide the triliovault manager version (default - 2.6.1): " triliovault_manager_version
     read -r -p "Namespace name in which TVK should be installed: (default - default): " tvk_ns
     read -r -p "Proceed even if resource exists y/n (default - y): " if_resource_exists_still_proceed
   fi
@@ -119,10 +127,10 @@ install_tvk() {
     if_resource_exists_still_proceed='y'
   fi
   if [[ -z "$operator_version" ]]; then
-    operator_version='2.1.0'
+    operator_version='2.6.0'
   fi
   if [[ -z "$triliovault_manager_version" ]]; then
-    triliovault_manager_version='v2.1.1-alpha'
+    triliovault_manager_version='2.6.1'
   fi
   if [[ -z "$tvk_ns" ]]; then
     tvk_ns="default"
@@ -134,7 +142,7 @@ install_tvk() {
     if [[ -z "$ret" ]]; then
       if ! kubectl create ns $tvk_ns 2>> >(logit); then
         echo "$tvk_ns namespace creation failed"
-
+        return 1
       fi
     fi
     # Install triliovault operator
@@ -203,12 +211,13 @@ install_tvk() {
   #set value for tvm_name
   tvm_name="triliovault-manager"
   #check if TVK manager is installed
-  if [[ $(kubectl get pods -l app=k8s-triliovault-control-plane -A 2>/dev/null) ]] && [[ $(kubectl get pods -l app=k8s-triliovault-admission-webhook -A 2>/dev/null) ]]; then
+  ret_code=$(kubectl get tvm -A 2>/dev/null)
+  if [[ ! -z "$ret_code" ]]; then
     echo "Triliovault manager is already installed"
     if [[ "$if_resource_exists_still_proceed" != "Y" ]] && [[ "$if_resource_exists_still_proceed" != "y" ]]; then
       exit 1
     fi
-    tvm_name=$(kubectl get tvm -A | awk '{print $1}' | sed -n 2p)
+    tvm_name=$(kubectl get tvm -A | awk '{print $2}' | sed -n 2p)
     tvk_ns="$get_ns"
     #Check if TVM can be upgraded
     old_tvm_version=$(kubectl get TrilioVaultManager -n "$get_ns" -o json | grep releaseVersion | awk '{print$2}' | sed 's/[a-z-]//g' | sed -e 's/^"//' -e 's/"$//')
@@ -229,7 +238,7 @@ install_tvk() {
       vercomp "2.5" "$new_triliovault_manager_version"
       ret_val=$?
       if [[ $ret_val == 2 ]] || [[ $ret_val == 1 ]]; then
-        svc_type=$(kubectl get svc k8s-triliovault-ingress-gateway -n "$get_ns" -o 'jsonpath={.spec.type}')
+        svc_type=$(kubectl get svc "$ingressGateway" -n "$get_ns" -o 'jsonpath={.spec.type}')
         if [[ $svc_type == LoadBalancer ]]; then
           get_host=$(kubectl get ingress "$masterIngName" -n "$get_ns" -o 'jsonpath={.spec.rules[0].host}')
           cat <<EOF | kubectl apply -f - 1>> >(logit) 2>> >(logit)
@@ -266,7 +275,44 @@ EOF
 
   # Create TrilioVaultManager CR
   sleep 10
-  cat <<EOF | kubectl apply -f - 1>> >(logit) 2>> >(logit)
+  vercomp "2.6" "$new_triliovault_manager_version"
+  ret_val=$?
+  if [[ $ret_val == 2 ]] || [[ $ret_val == 1 ]] && [[ $tvm_upgrade != 1 ]]; then
+
+    cat <<EOF | kubectl apply -f - 1>> >(logit) 2>> >(logit)
+apiVersion: triliovault.trilio.io/v1
+kind: TrilioVaultManager
+metadata:
+  labels:
+    triliovault: k8s
+  name: ${tvm_name}
+  namespace: ${tvk_ns}
+spec:
+  trilioVaultAppVersion: ${triliovault_manager_version}
+  applicationScope: Cluster
+  # TVK components configuration, currently supports control-plane, web, exporter, web-backend, ingress-controller, admission-webhook.
+  # User can configure resources for all componentes and can configure service type and host for the ingress-controller
+  componentConfiguration:
+    web-backend:
+      resources:
+        requests:
+          memory: "400Mi"
+          cpu: "200m"
+        limits:
+          memory: "2584Mi"
+          cpu: "1000m"
+    ingress-controller:
+      service:
+        type: LoadBalancer
+      host: "trilio.co.us"
+EOF
+  retcode=$?
+  if [ "$retcode" -ne 0 ]; then
+    echo "There is error in installingi/upgrading triliovault manager,please resolve and try again" 2>> >(logit)
+    return 1
+  fi
+  else
+    cat <<EOF | kubectl apply -f - 1>> >(logit) 2>> >(logit)
 apiVersion: triliovault.trilio.io/v1
 kind: TrilioVaultManager
 metadata:
@@ -280,10 +326,6 @@ spec:
     version: v3
   applicationScope: Cluster
 EOF
-  retcode=$?
-  if [ "$retcode" -ne 0 ]; then
-    echo "There is error in installingi/upgrading triliovault manager,please resolve and try again" 2>> >(logit)
-    return 1
   fi
   sleep 2
   if [[ $tvm_upgrade == 1 ]]; then
@@ -314,27 +356,36 @@ EOF
 #This module is use to install license
 install_license() {
   tvk_ns=$1
-  ret=$(kubectl get license -n "$tvk_ns" 2>> >(logit) | grep -q Active)
-  ret_code=$?
-  ret=$(kubectl get license -A 2>> >(logit) | grep -q Active)
-  ret_code_A=$?
-  if [ "$ret_code" -eq 0 ] || [ "$ret_code_A" -eq 0 ]; then
-    echo "License is already installed and is in active state"
-    return
+  flag=0
+  ret=$(kubectl get license -n "$tvk_ns" 2>> >(logit) | awk '{print $1}' | sed -n 2p)
+  if [[ ! -z "$ret" ]]; then
+    ret_val=$(kubectl get license "$ret" -n "$get_ns" 2>> >(logit) | grep -q Active)
+    ret_code_A=$?
+    if [ "$ret_code_A" -eq 0 ]; then
+      echo "License is already installed and is in active state"
+      return
+    fi
+    #license is installed but is in inactive state
+    echo "License is already installed and is in inactive state"
+    flag=1
   fi
+
   echo "Installing required packages.."
   {
     pip3 install requests
     pip3 install beautifulsoup4
     pip3 install lxml
+    pip3 install yaml
+
   } 1>> >(logit) 2>> >(logit)
   echo "Installing Freetrial license..."
   cat <<EOF | python3
-#!/usr/bin/python3
+#!/usr/bin/env python3
 from bs4 import BeautifulSoup
 import sys
 import subprocess
 import warnings
+import yaml
 warnings.filterwarnings("ignore")
 import requests
 headers = {'Content-type': 'application/x-www-form-urlencoded; charset=utf-8'}
@@ -348,9 +399,18 @@ soup = BeautifulSoup(contents, 'lxml')
 sys.stdout = open("license_file1.yaml", "w")
 print(soup.body.find('div', attrs={'class':'yaml-content'}).text)
 sys.stdout.close()
+if($flag == 1):
+  with open('license_file1.yaml') as f:
+    doc = yaml.safe_load(f)
+  doc['metadata']['name'] = "$ret"
+
+  with open('license_file1.yaml', 'w') as f:
+    yaml.dump(doc, f)
+
 result = subprocess.check_output("kubectl apply -f license_file1.yaml -n $tvk_ns", shell=True)
 EOF
-  sleep 5
+  cmd="kubectl get license -n $tvk_ns 2>> >(logit) | awk '{print $2}' | sed -n 2p | grep Active"
+  wait_install 5 "$cmd"
   ret=$(kubectl get license -n "$tvk_ns" 2>> >(logit) | grep -q Active)
   ret_code=$?
   if [ "$ret_code" -ne 0 ]; then
@@ -384,7 +444,7 @@ configure_ui() {
   case $ui_access_type in
   3)
     get_ns=$(kubectl get deployments -l "release=triliovault-operator" -A 2>> >(logit) | awk '{print $1}' | sed -n 2p)
-    echo "kubectl port-forward --address 0.0.0.0 svc/k8s-triliovault-ingress-gateway -n $get_ns 80:80 &"
+    echo "kubectl port-forward --address 0.0.0.0 svc/$ingressGateway -n $get_ns 80:80 &"
     echo "Copy & paste the command above into your terminal session and TVK management console traffic will be forwarded to your localhost IP of 127.0.0.1 via port 80."
     ;;
   2)
@@ -418,19 +478,19 @@ configure_nodeport_for_tvkui() {
     tvkhost_name="tvk-doks.com"
   fi
   get_ns=$(kubectl get deployments -l "release=triliovault-operator" -A 2>> >(logit) | awk '{print $1}' | sed -n 2p)
-  gateway=$(kubectl get pods --no-headers=true -n "$get_ns" 2>/dev/null | awk '/k8s-triliovault-ingress-gateway/{print $1}')
+  gateway=$(kubectl get pods --no-headers=true -n "$get_ns" 2>/dev/null | awk '/$ingressGateway/{print $1}')
   if [[ -z "$gateway" ]]; then
-    echo "Not able to find k8s-triliovault-ingress-gateway resource,TVK UI configuration failed"
+    echo "Not able to find $ingressGateway resource,TVK UI configuration failed"
     return 1
   fi
   node=$(kubectl get pods "$gateway" -n "$get_ns" -o jsonpath='{.spec.nodeName}' 2>> >(logit))
   ip=$(kubectl get node "$node" -n "$get_ns" -o jsonpath='{.status.addresses[?(@.type=="ExternalIP")].address}' 2>> >(logit))
-  port=$(kubectl get svc k8s-triliovault-ingress-gateway -n "$get_ns" -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}' 2>> >(logit))
+  port=$(kubectl get svc "$ingressGateway" -n "$get_ns" -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}' 2>> >(logit))
   if ! kubectl patch ingress "$masterIngName" -n "$get_ns" -p '{"spec":{"rules":[{"host":"'"${tvkhost_name}"'"}]}}'; then
     echo "TVK UI configuration failed, please check ingress"
     return 1
   fi
-  if ! kubectl patch svc k8s-triliovault-ingress-gateway -n "$get_ns" -p '{"spec": {"type": "NodePort"}}' 1>> >(logit) 2>> >(logit); then
+  if ! kubectl patch svc "$ingressGateway" -n "$get_ns" -p '{"spec": {"type": "NodePort"}}' 1>> >(logit) 2>> >(logit); then
     echo "TVK UI configuration failed, please check ingress"
     return 1
   fi
@@ -476,19 +536,19 @@ configure_loadbalancer_for_tvkUI() {
     echo "Please check the current-context"
     return 1
   fi
-  if ! kubectl patch svc k8s-triliovault-ingress-gateway -n "$get_ns" -p '{"spec": {"type": "LoadBalancer"}}' 1>> >(logit) 2>> >(logit); then
+  if ! kubectl patch svc "$ingressGateway" -n "$get_ns" -p '{"spec": {"type": "LoadBalancer"}}' 1>> >(logit) 2>> >(logit); then
     echo "TVK UI configuration failed, please check ingress"
     return 1
   fi
   echo "Configuring UI......This may take some time"
-  cmd="kubectl get svc k8s-triliovault-ingress-gateway -n $get_ns -o 'jsonpath={.status.loadBalancer}'"
+  cmd="kubectl get svc $ingressGateway -n $get_ns -o 'jsonpath={.status.loadBalancer}'"
   wait_install 20 "$cmd"
-  val_status=$(kubectl get svc k8s-triliovault-ingress-gateway -n "$get_ns" -o 'jsonpath={.status.loadBalancer}')
+  val_status=$(kubectl get svc "$ingressGateway" -n "$get_ns" -o 'jsonpath={.status.loadBalancer}')
   if [[ $val_status == '{}' ]] || [[ $val_status == 'map[]' ]]; then
     echo "Loadbalancer taking time to get External IP"
     return 1
   fi
-  external_ip=$(kubectl get svc k8s-triliovault-ingress-gateway -n "$get_ns" -o 'jsonpath={.status.loadBalancer.ingress[0].ip}' 2>> >(logit))
+  external_ip=$(kubectl get svc "$ingressGateway" -n "$get_ns" -o 'jsonpath={.status.loadBalancer.ingress[0].ip}' 2>> >(logit))
   kubectl patch ingress "$masterIngName" -n "$get_ns" -p '{"spec":{"rules":[{"host":"'"${tvkhost_name}.${domain}"'"}]}}' 1>> >(logit) 2>> >(logit)
   doctl compute domain records create "${domain}" --record-type A --record-name "${tvkhost_name}" --record-data "${external_ip}" 1>> >(logit) 2>> >(logit)
   retCode=$?

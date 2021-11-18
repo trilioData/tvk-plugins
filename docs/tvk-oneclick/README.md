@@ -5,11 +5,6 @@ It installs the TVK Operator, the TVM Application, configures the TVK Management
 
 ## Pre-requisites:
 
-Users need to run a script **install_prereq.sh** to install the pre-requisites required for TVK-OneClick plugin.
-
-**NOTE:** Users should have **root** previledges to run the **install_prereq.sh** script. 
-If any of the prerequisites fail to install due to environment or network access issues, they can be installed individually before running the TVK-OneClick plugin.
-
 1. krew - kubectl-plugin manager. Install from [here](https://krew.sigs.k8s.io/docs/user-guide/setup/install/)
 2. kubectl - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 3. Helm (version >= 3)
@@ -23,10 +18,6 @@ If any of the prerequisites fail to install due to environment or network access
 OS:
 - Linux
 - darwin
-
-Arch:
-- amd64
-- x86
 
 
 ## TVK-OneClick plugin performs the following tasks:
@@ -80,7 +71,7 @@ There are two way to use the TVK-OneClick plugin:
 
 **1. Interactive**:
         The plugin asks for various inputs that enable it to perform installation and deployment operations. 
-        For interactive installation of TVK operator and manager, configure TVK UI, create a target and run samepl backup restore, run below command:
+        For interactive installation of TVK operator and manager, configure TVK UI, create a target and run sameple backup restore, run below command:
 
 kubectl tvk-oneclick [options] 
 
@@ -100,10 +91,10 @@ kubectl tvk-oneclick -c -t -s
 ```
 
 **2. Non-interactive**:
-	TVK-OneClick can be executed in a non-interactive method by leveraging values from an input_config file. To use the plugin in a non-interactive way, create an input_config (https://github.com/digitalocean/Kubernetes-Starter-Kit-Developers/blob/main/06-b-triliovault-for-kubernetes/input_config) file. After creating the input config file, run the following command to execute the plugin in a non-interactive fashion. The non-interative method will perform preflight checks, installation, configuration (Management Console and Target) as well as run sample backup and restore tests similar to the interactive mode but in a single workflow.
+	TVK-OneClick can be executed in a non-interactive method by leveraging values from an input_config file. To use the plugin in a non-interactive way, create an input_config (https://github.com/trilioData/tvk-plugins/blob/main/tests/tvk-oneclick/input_config) file. After creating the input config file, run the following command to execute the plugin in a non-interactive fashion. The non-interative method will perform preflight checks, installation, configuration (Management Console and Target) as well as run sample backup and restore tests similar to the interactive mode but in a single workflow.
 
 Sample input_config file can be found here:
-https://github.com/digitalocean/Kubernetes-Starter-Kit-Developers/blob/main/06-b-triliovault-for-kubernetes/input_config
+https://github.com/trilioData/tvk-plugins/blob/main/tests/tvk-oneclick/input_config
 
 This sample_config input file leverages your DO credentials and DO DNS information to create/configure a target within DO Spaces, and to configure the management console leveraging a Kubernetes LoadBalancer.
 
