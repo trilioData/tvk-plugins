@@ -24,9 +24,9 @@ preflight_checks() {
       ret=$?
       if [ "$ret" -ne 0 ]; then
         echo "Failed to uggrade tvk-plugins/tvk-preflight plugin"
-	return 1
+        return 1
       else
-	echo "tvk-preflight is already the newest version"
+        echo "tvk-preflight is already the newest version"
       fi
     fi
   else
@@ -306,11 +306,11 @@ spec:
         type: LoadBalancer
       host: "trilio.co.us"
 EOF
-  retcode=$?
-  if [ "$retcode" -ne 0 ]; then
-    echo "There is error in installingi/upgrading triliovault manager,please resolve and try again" 2>> >(logit)
-    return 1
-  fi
+    retcode=$?
+    if [ "$retcode" -ne 0 ]; then
+      echo "There is error in installingi/upgrading triliovault manager,please resolve and try again" 2>> >(logit)
+      return 1
+    fi
   else
     cat <<EOF | kubectl apply -f - 1>> >(logit) 2>> >(logit)
 apiVersion: triliovault.trilio.io/v1
