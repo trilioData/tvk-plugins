@@ -586,7 +586,7 @@ EOF
   if [[ $? -eq 0 ]]; then
     echolog "${GREEN} ${CHECK} Deleted source pod${NC}\n"
   else
-    echolog "${RED_BOLD} ${CROSS} Error cleaning up source pod${NC}\n"
+    echolog "${RED} ${CROSS} Error cleaning up source pod${NC}\n"
     exit_status=1
   fi
 
@@ -745,13 +745,17 @@ cleanup() {
     echo >>"${LOG_FILE}" 2>&1
   done
 
-  echo >>"${LOG_FILE}" 2>&1
-  echo "Cleaning Pods -" "${SOURCE_POD}" "${RESTORE_POD}" "${UNUSED_RESTORE_POD}" >>"${LOG_FILE}" 2>&1
-  kubectl delete --force --grace-period=0 pod "${SOURCE_POD}" "${RESTORE_POD}" "${UNUSED_RESTORE_POD}" >>"${LOG_FILE}" 2>&1 || true
-  echo >>"${LOG_FILE}" 2>&1
+  declare -a pods=("${SOURCE_POD}" "${RESTORE_POD}" "${UNUSED_RESTORE_POD}")
+  for res in "${pods[@]}"; do
+    echo >>"${LOG_FILE}" 2>&1
+    echo "Deleting pod - ${res}" >>"${LOG_FILE}" 2>&1
+    kubectl delete po -n "${NAMESPACE}" "${res}" --force --grace-period=0 --timeout=5s >>"${LOG_FILE}" 2>&1 || true
+    kubectl patch po -n "${NAMESPACE}" "${res}" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' >>"${LOG_FILE}" 2>&1 || true
+    echo >>"${LOG_FILE}" 2>&1
+  done
 
   echo "Cleaning all resources related to label - preflight-run:" "${RANDOM_STRING}" >>"${LOG_FILE}" 2>&1
-  kubectl delete all -l preflight-run="${RANDOM_STRING}" --force --grace-period=0 >>"${LOG_FILE}" 2>&1 || true
+  kubectl delete all -l preflight-run="${RANDOM_STRING}" --force --grace-period=0 --timeout=5s >>"${LOG_FILE}" 2>&1 || true
 
   echolog "${GREEN} ${CHECK} Cleaned up all the resources${NC}\n"
 
