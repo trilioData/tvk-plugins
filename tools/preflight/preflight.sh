@@ -360,7 +360,7 @@ EOF
   else
     echolog "${RED} ${CROSS} Could not resolve DNS \"kubernetes.default\" service inside pod${NC}\n"
   fi
-  kubectl delete pod "${DNS_UTILS}" >>"${LOG_FILE}" 2>&1
+  kubectl delete --force --grace-period=0 --timeout=5s pod "${DNS_UTILS}" --v=8 >>"${LOG_FILE}" 2>&1
   return ${exit_status}
 }
 
@@ -555,7 +555,7 @@ EOF
     return ${err_status}
   fi
 
-  kubectl delete --ignore-not-found=true pod/"${SOURCE_POD}" >>"${LOG_FILE}" 2>&1
+  kubectl delete --force --grace-period=0 --timeout=5s --ignore-not-found=true pod/"${SOURCE_POD}" >>"${LOG_FILE}" 2>&1
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
     echolog "${GREEN} ${CHECK} Deleted source pod${NC}\n"

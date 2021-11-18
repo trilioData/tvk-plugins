@@ -1,0 +1,139 @@
+[2021-11-18 20:45:38] [1;36m[ INFO ][0m [1;32m--- Running Pre-flight Checks ---[0m
+
+[2021-11-18 20:45:38] [1;36m[ INFO ][0m [0;33mWriting logs to file -> preflight-log-2021-11-18_20-45-38.log[0m
+
+[2021-11-18 20:45:38] [1;36m[ INFO ][0m [0;33mMight take a few minutes to execute all Pre-flight Checks...[0m
+
+[2021-11-18 20:45:38] [1;36m[ INFO ][0m [1;34mChecking for kubectl...[0m
+
+kubectl found at path - /usr/local/bin/kubectl
+[2021-11-18 20:45:38] [1;36m[ INFO ][0m [0;32m ✔ Found kubectl[0m
+
+[2021-11-18 20:45:38] [1;36m[ INFO ][0m [1;34mChecking access to the Kubernetes context gke_amazing-chalice-243510_europe-north1-a_pallav-gke...[0m
+
+[2021-11-18 20:45:41] [1;36m[ INFO ][0m [0;32m ✔ Able to access the default Kubernetes namespace[0m
+
+[2021-11-18 20:45:41] [1;36m[ INFO ][0m [1;34mChecking for required Helm version (>= v3.0.0)...[0m
+
+helm found at path - /usr/sbin/helm
+[2021-11-18 20:45:46] [1;36m[ INFO ][0m [0;32m ✔ Found helm[0m
+
+[2021-11-18 20:45:47] [1;36m[ INFO ][0m [0;32m ✔ Helm version v3.6.3 meets minimum required version v3.0.0[0m
+
+[2021-11-18 20:45:47] [1;36m[ INFO ][0m [1;34mChecking for required Kubernetes version (>= v1.18.0)...[0m
+
+[2021-11-18 20:45:48] [1;36m[ INFO ][0m [0;32m ✔ Kubernetes version (v1.19.14-gke.1900) meets minimum requirements[0m
+
+[2021-11-18 20:45:48] [1;36m[ INFO ][0m [1;34mChecking if Kubernetes RBAC is enabled...[0m
+
+[2021-11-18 20:45:50] [1;36m[ INFO ][0m [0;32m ✔ Kubernetes RBAC is enabled[0m
+
+[2021-11-18 20:45:50] [1;36m[ INFO ][0m [1;34mChecking if a StorageClass and VolumeSnapshotClass are present...[0m
+
+[2021-11-18 20:45:51] [1;36m[ INFO ][0m [0;32m ✔ Storage class "csi-gce-pd" found[0m
+
+[2021-11-18 20:45:54] [1;36m[ INFO ][0m [0;32m ✔ Volume snapshot class "default-snapshot-class" found in cluster[0m
+
+[2021-11-18 20:45:55] [1;36m[ INFO ][0m [0;32m ✔ Volume snapshot class "default-snapshot-class" driver matches with given StorageClass's provisioner=pd.csi.storage.gke.io[0m
+
+[2021-11-18 20:45:55] [1;36m[ INFO ][0m [1;34mChecking if CSI APIs are installed in cluster...[0m
+
+[2021-11-18 20:45:58] [1;36m[ INFO ][0m [0;32m ✔ Found volumesnapshotclasses.snapshot.storage.k8s.io[0m
+
+[2021-11-18 20:46:01] [1;36m[ INFO ][0m [0;32m ✔ Found volumesnapshotcontents.snapshot.storage.k8s.io[0m
+
+[2021-11-18 20:46:02] [1;36m[ INFO ][0m [0;32m ✔ Found volumesnapshots.snapshot.storage.k8s.io[0m
+
+[2021-11-18 20:46:03] [1;36m[ INFO ][0m [1;34mChecking if DNS resolution working in K8s cluster...[0m
+
+pod/dnsutils-keogol created
+pod/dnsutils-keogol condition met
+Server:		10.215.240.10
+Address:	10.215.240.10#53
+
+Name:	kubernetes.default.svc.cluster.local
+Address: 10.215.240.1
+
+[2021-11-18 20:46:11] [1;36m[ INFO ][0m [0;32m ✔ Able to resolve DNS "kubernetes.default" service inside pods[0m
+
+I1118 20:46:11.463841  568450 loader.go:375] Config loaded from file:  /home/pallavmathur/.kube/config
+warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.
+I1118 20:46:11.468968  568450 request.go:1097] Request Body: {"gracePeriodSeconds":0,"propagationPolicy":"Background"}
+I1118 20:46:11.469011  568450 round_trippers.go:420] DELETE https://35.228.43.178/api/v1/namespaces/default/pods/dnsutils-keogol
+I1118 20:46:11.469017  568450 round_trippers.go:427] Request Headers:
+I1118 20:46:11.469021  568450 round_trippers.go:431]     Content-Type: application/json
+I1118 20:46:11.469026  568450 round_trippers.go:431]     Accept: application/json
+I1118 20:46:11.469029  568450 round_trippers.go:431]     User-Agent: kubectl/v1.19.2 (linux/amd64) kubernetes/f574309
+I1118 20:46:12.472369  568450 round_trippers.go:446] Response Status: 200 OK in 1003 milliseconds
+I1118 20:46:12.472463  568450 round_trippers.go:449] Response Headers:
+I1118 20:46:12.472485  568450 round_trippers.go:452]     Audit-Id: 4f994309-b33f-4475-949c-7c5fc45ef31b
+I1118 20:46:12.472500  568450 round_trippers.go:452]     Cache-Control: no-cache, private
+I1118 20:46:12.472547  568450 round_trippers.go:452]     Content-Type: application/json
+I1118 20:46:12.472561  568450 round_trippers.go:452]     Date: Thu, 18 Nov 2021 15:16:12 GMT
+I1118 20:46:12.472762  568450 request.go:1097] Response Body: {"kind":"Pod","apiVersion":"v1","metadata":{"name":"dnsutils-keogol","namespace":"default","selfLink":"/api/v1/namespaces/default/pods/dnsutils-keogol","uid":"2d9e7fc7-c70b-4452-8ad5-e47195ecea16","resourceVersion":"2663180","creationTimestamp":"2021-11-18T15:16:05Z","deletionTimestamp":"2021-11-18T15:16:12Z","deletionGracePeriodSeconds":0,"labels":{"app.kubernetes.io/part-of":"k8s-triliovault","preflight-run":"keogol","trilio":"tvk-preflight"},"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"Pod\",\"metadata\":{\"annotations\":{},\"labels\":{\"app.kubernetes.io/part-of\":\"k8s-triliovault\",\"preflight-run\":\"keogol\",\"trilio\":\"tvk-preflight\"},\"name\":\"dnsutils-keogol\",\"namespace\":\"default\"},\"spec\":{\"containers\":[{\"command\":[\"sleep\",\"3600\"],\"image\":\"gcr.io/kubernetes-e2e-test-images/dnsutils:1.3\",\"imagePullPolicy\":\"IfNotPresent\",\"name\":\"dnsutils\",\"resources\":{\"limits\":{\"cpu\":\"500m\",\"memory\":\"128Mi\"},\"requests\" [truncated 3706 chars]
+pod "dnsutils-keogol" force deleted
+I1118 20:46:12.473867  568450 round_trippers.go:420] GET https://35.228.43.178/api/v1/namespaces/default/pods?fieldSelector=metadata.name%3Ddnsutils-keogol
+I1118 20:46:12.473900  568450 round_trippers.go:427] Request Headers:
+I1118 20:46:12.473919  568450 round_trippers.go:431]     Accept: application/json
+I1118 20:46:12.473935  568450 round_trippers.go:431]     User-Agent: kubectl/v1.19.2 (linux/amd64) kubernetes/f574309
+I1118 20:46:13.560340  568450 round_trippers.go:446] Response Status: 200 OK in 1086 milliseconds
+I1118 20:46:13.560491  568450 round_trippers.go:449] Response Headers:
+I1118 20:46:13.560525  568450 round_trippers.go:452]     Content-Length: 134
+I1118 20:46:13.560541  568450 round_trippers.go:452]     Date: Thu, 18 Nov 2021 15:16:12 GMT
+I1118 20:46:13.560556  568450 round_trippers.go:452]     Audit-Id: 0a4c9f57-b896-40fc-8d5c-bfccc3b70eb0
+I1118 20:46:13.560569  568450 round_trippers.go:452]     Cache-Control: no-cache, private
+I1118 20:46:13.560585  568450 round_trippers.go:452]     Content-Type: application/json
+I1118 20:46:13.560642  568450 request.go:1097] Response Body: {"kind":"PodList","apiVersion":"v1","metadata":{"selfLink":"/api/v1/namespaces/default/pods","resourceVersion":"2663186"},"items":[]}
+[2021-11-18 20:46:13] [1;36m[ INFO ][0m [1;34mChecking if volume snapshot and restore enabled in K8s cluster...[0m
+
+[2021-11-18 20:46:13] [1;36m[ INFO ][0m [0;33m Creating source pod and pvc for volume-snapshot check[0m
+
+persistentvolumeclaim/source-pvc-keogol created
+pod/source-pod-keogol created
+pod/source-pod-keogol condition met
+[2021-11-18 20:46:41] [1;36m[ INFO ][0m [0;32m ✔ Created source pod and pvc[0m
+
+[2021-11-18 20:46:43] [1;36m[ INFO ][0m [0;33m Creating volume snapshot from source pvc[0m
+
+volumesnapshot.snapshot.storage.k8s.io/snapshot-source-pvc-keogol created
+[2021-11-18 20:47:15] [1;36m[ INFO ][0m [0;32m ✔ Created volume snapshot from source pvc and is readyToUse[0m
+
+[2021-11-18 20:47:15] [1;36m[ INFO ][0m [0;33m Creating restore pod from volume snapshot[0m
+
+persistentvolumeclaim/restored-pvc-keogol created
+pod/restored-pod-keogol created
+pod/restored-pod-keogol condition met
+[2021-11-18 20:48:04] [1;36m[ INFO ][0m [0;32m ✔ Created restore pod from volume snapshot[0m
+
+Check for file ->  [0;0m/demo/data/sample-file.txt[m
+[2021-11-18 20:48:08] [1;36m[ INFO ][0m [0;32m ✔ Restored pod has expected data[0m
+
+warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.
+pod "source-pod-keogol" force deleted
+[2021-11-18 20:48:10] [1;36m[ INFO ][0m [0;32m ✔ Deleted source pod[0m
+
+[2021-11-18 20:48:10] [1;36m[ INFO ][0m [0;33m Creating volume snapshot from unused source pvc[0m
+
+volumesnapshot.snapshot.storage.k8s.io/unused-source-pvc-keogol created
+[2021-11-18 20:48:45] [1;36m[ INFO ][0m [1;34m Cleaning up residual resources...[0m
+
+Cleaning PVC - source-pvc-keogol
+warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.
+
+Cleaning PVC - restored-pvc-keogol
+warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.
+
+Cleaning PVC - unused-restored-pvc-keogol
+warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.
+
+
+Cleaning VolumeSnapshot - snapshot-source-pvc-keogol
+warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.
+
+
+Cleaning VolumeSnapshot - unused-source-pvc-keogol
+warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.
+
+
+Cleaning Pods - source-pod-keogol restored-pod-keogol unused-restored-pod-keogol
+warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.
