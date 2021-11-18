@@ -212,7 +212,7 @@ install_tvk() {
   tvm_name="triliovault-manager"
   #check if TVK manager is installed
   ret_code=$(kubectl get tvm -A 2>/dev/null)
-  if [[ ! -z "$ret_code" ]]; then
+  if [[ -n "$ret_code" ]]; then
     echo "Triliovault manager is already installed"
     if [[ "$if_resource_exists_still_proceed" != "Y" ]] && [[ "$if_resource_exists_still_proceed" != "y" ]]; then
       exit 1
@@ -358,7 +358,7 @@ install_license() {
   tvk_ns=$1
   flag=0
   ret=$(kubectl get license -n "$tvk_ns" 2>> >(logit) | awk '{print $1}' | sed -n 2p)
-  if [[ ! -z "$ret" ]]; then
+  if [[ -n "$ret" ]]; then
     ret_val=$(kubectl get license "$ret" -n "$get_ns" 2>> >(logit) | grep -q Active)
     ret_code_A=$?
     if [ "$ret_code_A" -eq 0 ]; then
