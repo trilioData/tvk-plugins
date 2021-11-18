@@ -360,7 +360,7 @@ EOF
   else
     echolog "${RED} ${CROSS} Could not resolve DNS \"kubernetes.default\" service inside pod${NC}\n"
   fi
-  kubectl delete --force --grace-period=0 --timeout=5s pod "${DNS_UTILS}" --v=8 >>"${LOG_FILE}" 2>&1
+  kubectl delete --force --grace-period=0 --timeout=5s pod "${DNS_UTILS}" >>"${LOG_FILE}" 2>&1
   return ${exit_status}
 }
 
