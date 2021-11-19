@@ -101,6 +101,9 @@ thresholdCapacity='1000Gi'
 
 [Sample test parameters]
 
+#Sample test execution requires Target creation parameters also.
+#If already created, the re-creation part will be skipped.
+
 #Whether or not sample test should be executed [True, False]
 SAMPLE_TEST=True
 
