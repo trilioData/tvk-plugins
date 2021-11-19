@@ -11,8 +11,7 @@ PREFLIGHT=True
 #Whenthet plugin should proceed even if preflight checks fail.Allowedvalues=[Y,y,n,N]
 proceed_even_PREFLIGHT_fail='Y'
 
-#Specify storage class name to be used for pvc to be created,if not set default class would be considered.This paramere is also required for 
-sample test.
+#Specify storage class name to be used for pvc to be created,if not set default class would be considered.This paramere is also required for sample test.
 storage_class=
 
 #[TVK installation parameters]
