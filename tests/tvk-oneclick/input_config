@@ -44,7 +44,7 @@ domain='domainname'
 tvkhost_name='tvkdemo'
 
 #Specify cluster name to get the kubeconfig for TVK UI. If not specified, cluster name is taken from current context.
-cluster_name='trilio-test2
+cluster_name='trilio-test2'
 
 [Target creation parameters]
 
