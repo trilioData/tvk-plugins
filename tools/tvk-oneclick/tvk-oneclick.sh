@@ -419,6 +419,7 @@ EOF
   else
     echo "License is installed successfully"
   fi
+  rm -f license_file1.yaml
 }
 
 #This module is used to configure TVK UI
