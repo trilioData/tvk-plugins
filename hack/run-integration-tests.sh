@@ -8,6 +8,7 @@ COMPONENTS=("$@")
 export STORAGE_CLASS="csi-gce-pd"
 export APP_SCOPE="Namespaced"
 export JOB_TYPE="github-actions"
+export UPDATE_INGRESS="true"
 
 cleanup() {
   local rc=$?
@@ -64,17 +65,24 @@ helm_install() {
 
   helm install --debug "${HELM_RELEASE_NAME}" --namespace "${install_namespace}" --set "${ARGS}" k8s-triliovault-dev/k8s-triliovault --wait --timeout=10m
 
-  kubectl patch svc k8s-triliovault-ingress-gateway -p '{"spec": {"type": "LoadBalancer"}}' -n "${install_namespace}"
-  node_external_ip=""
-  SECONDS=0
-  while [[ -z "$node_external_ip" && ($SECONDS -le 300) ]]; do
-    node_external_ip=$(kubectl get svc k8s-triliovault-ingress-gateway -o=jsonpath='{.status.loadBalancer.ingress[0].ip}' -n "${install_namespace}")
-    sleep 5
-  done
-  if [[ -n "${node_external_ip}" ]]; then
-    sudo -- bash -c "echo \"${node_external_ip} ${INGRESS_HOST}\" >>/etc/hosts"
-  else
-    exit 1
+  if [[ -n "${UPDATE_INGRESS}" ]]; then
+    selector=$(kubectl get svc k8s-triliovault-ingress-gateway -n "${install_namespace}" -o wide | awk '{print $NF}' | tail -n +2)
+    node=$(kubectl get pods -o wide -l "$selector" -n "${install_namespace}" | awk '{print $7}' | tail -n +2)
+    instance_info=$(gcloud compute instances describe "$node" --zone "${GKE_ZONE}" --format=json | jq '.| "\(.tags.items[0]) \(.networkInterfaces[].network)"')
+    IFS=" " read -r -a node_port <<<"$(kubectl get svc k8s-triliovault-ingress-gateway -n "${install_namespace}" --template='{{range .spec.ports}}{{print "\n" .nodePort}}{{end}}' | tr '\n' ' ')"
+    node_external_ip=$(kubectl get no "$node" -o=jsonpath='{.status.addresses[?(@.type=="ExternalIP")].address}')
+    port=""
+    for ((c = 0; c < ${#node_port}; c++)); do
+      if [[ ${node_port[$c]} != "" ]]; then
+        port+="tcp:${node_port[$c]},"
+      fi
+    done
+    gcloud compute firewall-rules create "${JOB_TYPE}"-"${install_namespace}" --allow="$port" --source-ranges="0.0.0.0/0" --target-tags="$(echo "${instance_info}" | awk '{print $1}' | sed 's/"//g')" --network="$(echo "${instance_info}" | awk '{print $2}' | sed 's/"//g' | awk -F'/' '{print $NF}')"
+    if [[ -n "${node_external_ip}" ]]; then
+      sudo -- bash -c "echo \"${node_external_ip} ${INGRESS_HOST}\" >>/etc/hosts"
+    else
+      exit 1
+    fi
   fi
 
 }

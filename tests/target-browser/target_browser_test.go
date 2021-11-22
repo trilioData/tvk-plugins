@@ -283,7 +283,7 @@ var _ = Describe("Target Browser Tests", func() {
 				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				_, err := command.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
+				Expect(err).Should(HaveOccurred())
 			})
 		})
 	})

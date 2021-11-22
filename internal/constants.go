@@ -34,6 +34,8 @@ const (
 	ClusterBackupKind         = "ClusterBackup"
 	ClusterBackupPlanKind     = "ClusterBackupPlan"
 	IngressKind               = "Ingress"
+	IngressControllerLabel    = "k8s-triliovault-ingress-gateway"
+	ServiceTypeNodePort       = "NodePort"
 )
 
 var (

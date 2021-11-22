@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"path"
+	"strconv"
 
 	log "github.com/sirupsen/logrus"
 
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -98,10 +100,29 @@ func getTvkHostAndTargetBrowserAPIPath(ctx context.Context, cl client.Client, ta
 			}
 		}
 	}
-
 	return tvkHost, targetBrowserPath, nil
 }
 
 func getTrilioResourcesAPIPath(uid string) string {
 	return path.Join(internal.BackupAPIPath, uid, internal.TrilioResourcesAPIPath)
+}
+
+func getNodePortAndServiceType(ctx context.Context, cl client.Client,
+	target *unstructured.Unstructured) (nodePortHTTP, nodePortHTTPS, svcType string, err error) {
+	ingressService := &corev1.Service{}
+	err = cl.Get(ctx, types.NamespacedName{Name: internal.IngressControllerLabel, Namespace: target.GetNamespace()}, ingressService)
+	if err != nil {
+		log.Error(err, "error while getting ingress service")
+		return "", "", "", err
+	}
+	svcType = string(ingressService.Spec.Type)
+	for index := range ingressService.Spec.Ports {
+		port := ingressService.Spec.Ports[index]
+		if port.Port == 80 {
+			nodePortHTTP = strconv.Itoa(int(port.NodePort))
+		} else if port.Port == 443 {
+			nodePortHTTPS = strconv.Itoa(int(port.NodePort))
+		}
+	}
+	return
 }
