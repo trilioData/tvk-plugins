@@ -233,13 +233,15 @@ install_tvk() {
       install_license "$tvk_ns"
       return
     else
-      echo "Upgrading triliovault manager.."
+      echo "checking if triliovault manager can be upgraded"
       tvm_upgrade=1
       vercomp "2.5" "$new_triliovault_manager_version"
       ret_val=$?
       vercomp "2.6" "$new_triliovault_manager_version"
       ret_val1=$?
-      if [[ $ret_val == 2 ]] || [[ $ret_val == 1 ]] && [[ $ret_val1 == 3 ]]; then
+      vercomp "$old_tvm_version" "2.5"
+      ret_val2=$? 
+      if [[ $ret_val == 2 ]] || [[ $ret_val == 1 ]] && [[ $ret_val1 == 3 ]] && [[ $ret_val2 == 2 ]] || [[ $ret_val2 == 1 ]]; then
         svc_type=$(kubectl get svc "$ingressGateway" -n "$get_ns" -o 'jsonpath={.spec.type}')
         if [[ $svc_type == LoadBalancer ]]; then
           get_host=$(kubectl get ingress k8s-triliovault-ingress-master -n "$get_ns" -o 'jsonpath={.spec.rules[0].host}')
@@ -265,10 +267,42 @@ EOF
           retcode=$?
           if [ "$retcode" -ne 0 ]; then
             echo "There is error upgrading triliovault manager,please resolve and try again" 2>> >(logit)
+	    return 1
           else
-            echo "Triliovault manager upgraded successfully"
+            echo "Upgrading Triliovault manager"
           fi
-          return 1
+        fi
+      elif [[ $ret_val1 == 2 ]] || [[ $ret_val1 == 1 ]] && [[ $ret_val2 == 2 ]] || [[ $ret_val2 == 1 ]]; then
+        svc_type=$(kubectl get svc "$ingressGateway" -n "$get_ns" -o 'jsonpath={.spec.type}')
+        if [[ $svc_type == LoadBalancer ]]; then
+          get_host=$(kubectl get ingress k8s-triliovault-ingress-master -n "$get_ns" -o 'jsonpath={.spec.rules[0].host}')
+          cat <<EOF | kubectl apply -f - 1>> >(logit) 2>> >(logit)
+apiVersion: triliovault.trilio.io/v1
+kind: TrilioVaultManager
+metadata:
+  labels:
+    triliovault: triliovault
+  name: ${tvm_name}
+  namespace: ${tvk_ns}
+spec:
+  trilioVaultAppVersion: ${triliovault_manager_version}
+  ingressConfig:
+    host: "${get_host}"
+  # TVK components configuration, currently supports control-plane, web, exporter, web-backend, ingress-controller, admission-webhook.
+  # User can configure resources for all componentes and can configure service type and host for the ingress-controller
+  componentConfiguration:
+    ingress-controller:
+      service:
+        type: LoadBalancer
+  applicationScope: Cluster
+EOF
+          retcode=$?
+          if [ "$retcode" -ne 0 ]; then
+            echo "There is error upgrading triliovault manager,please resolve and try again" 2>> >(logit)
+	    return 0
+          else
+            echo "Upgrading Triliovault manager"
+          fi
         fi
       elif [[ $ret_val1 == 2 ]] || [[ $ret_val1 == 1 ]]; then
         svc_type=$(kubectl get svc "$ingressGateway" -n "$get_ns" -o 'jsonpath={.spec.type}')
@@ -321,21 +355,20 @@ EOF
         retcode=$?
         if [ "$retcode" -ne 0 ]; then
           echo "There is error upgrading triliovault manager,please resolve and try again" 2>> >(logit)
+	  return 1
         else
-          echo "Triliovault manager upgraded successfully"
+          echo "Upgrading Triliovault manager"
         fi
-        return 1
       fi
     fi
-  fi
+  else
+    # Create TrilioVaultManager CR
+    sleep 10
+    vercomp "2.6" "$new_triliovault_manager_version"
+    ret_val=$?
+    if [[ $ret_val == 2 ]] || [[ $ret_val == 1 ]] && [[ $tvm_upgrade != 1 ]]; then
 
-  # Create TrilioVaultManager CR
-  sleep 10
-  vercomp "2.6" "$new_triliovault_manager_version"
-  ret_val=$?
-  if [[ $ret_val == 2 ]] || [[ $ret_val == 1 ]] && [[ $tvm_upgrade != 1 ]]; then
-
-    cat <<EOF | kubectl apply -f - 1>> >(logit) 2>> >(logit)
+      cat <<EOF | kubectl apply -f - 1>> >(logit) 2>> >(logit)
 apiVersion: triliovault.trilio.io/v1
 kind: TrilioVaultManager
 metadata:
@@ -362,13 +395,13 @@ spec:
         type: LoadBalancer
       host: "trilio.co.us"
 EOF
-    retcode=$?
-    if [ "$retcode" -ne 0 ]; then
-      echo "There is error in installingi/upgrading triliovault manager,please resolve and try again" 2>> >(logit)
-      return 1
-    fi
-  else
-    cat <<EOF | kubectl apply -f - 1>> >(logit) 2>> >(logit)
+      retcode=$?
+      if [ "$retcode" -ne 0 ]; then
+        echo "There is error in installingi/upgrading triliovault manager,please resolve and try again" 2>> >(logit)
+        return 1
+      fi
+    else
+      cat <<EOF | kubectl apply -f - 1>> >(logit) 2>> >(logit)
 apiVersion: triliovault.trilio.io/v1
 kind: TrilioVaultManager
 metadata:
@@ -382,10 +415,16 @@ spec:
     version: v3
   applicationScope: Cluster
 EOF
+      retcode=$?
+      if [ "$retcode" -ne 0 ]; then
+        echo "There is error in installingi/upgrading triliovault manager,please resolve and try again" 2>> >(logit)
+        return 1
+      fi
+    fi
   fi
-  sleep 2
+  sleep 5
   if [[ $tvm_upgrade == 1 ]]; then
-    echo "Upgrading Triliovault manager..."
+    echo "Waiting for Pods to come up.."
   else
     echo "Installing Triliovault manager...."
   fi
