@@ -689,7 +689,7 @@ EOF
     return 1
   fi
   external_ip=$(kubectl get svc "$ingressGateway" -n "$get_ns" -o 'jsonpath={.status.loadBalancer.ingress[0].ip}' 2>> >(logit))
-  if [[ $ret_val != 2 ]] || [[ $ret_val != 1 ]]; then
+  if [[ $ret_val != 2 ]] && [[ $ret_val != 1 ]]; then
     kubectl patch ingress "$masterIngName" -n "$get_ns" -p '{"spec":{"rules":[{"host":"'"${tvkhost_name}.${domain}"'"}]}}' 1>> >(logit) 2>> >(logit)
   fi
   doctl compute domain records create "${domain}" --record-type A --record-name "${tvkhost_name}" --record-data "${external_ip}" 1>> >(logit) 2>> >(logit)
