@@ -237,7 +237,9 @@ install_tvk() {
       tvm_upgrade=1
       vercomp "2.5" "$new_triliovault_manager_version"
       ret_val=$?
-      if [[ $ret_val == 2 ]] || [[ $ret_val == 1 ]]; then
+      vercomp "2.6" "$new_triliovault_manager_version"
+      ret_val1=$?
+      if [[ $ret_val == 2 ]] || [[ $ret_val == 1 ]] && [[ $ret_val1 == 3 ]]; then
         svc_type=$(kubectl get svc "$ingressGateway" -n "$get_ns" -o 'jsonpath={.spec.type}')
         if [[ $svc_type == LoadBalancer ]]; then
           get_host=$(kubectl get ingress "$masterIngName" -n "$get_ns" -o 'jsonpath={.spec.rules[0].host}')
@@ -268,9 +270,63 @@ EOF
           fi
           return 1
         fi
+      elif [[ $ret_val1 == 2 ]] || [[ $ret_val1 == 1 ]]; then
+        svc_type=$(kubectl get svc "$ingressGateway" -n "$get_ns" -o 'jsonpath={.spec.type}')
+        if [[ $svc_type == LoadBalancer ]]; then
+          get_host=$(kubectl get ingress "$masterIngName" -n "$get_ns" -o 'jsonpath={.spec.rules[0].host}')
+          cat <<EOF | kubectl apply -f - 1>> >(logit) 2>> >(logit)
+apiVersion: triliovault.trilio.io/v1
+kind: TrilioVaultManager
+metadata:
+  labels:
+    triliovault: triliovault
+  name: ${tvm_name}
+  namespace: ${tvk_ns}
+spec:
+  trilioVaultAppVersion: ${triliovault_manager_version}
+  ingressConfig:
+    host: "${get_host}"
+  # TVK components configuration, currently supports control-plane, web, exporter, web-backend, ingress-controller, admission-webhook.
+  # User can configure resources for all componentes and can configure service type and host for the ingress-controller
+  componentConfiguration:
+    ingress-controller:
+      service:
+        type: LoadBalancer
+  applicationScope: Cluster
+EOF
+	elif [[ $svc_type == NodePort ]]; then
+          get_host=$(kubectl get ingress "$masterIngName" -n "$get_ns" -o 'jsonpath={.spec.rules[0].host}')
+          cat <<EOF | kubectl apply -f - 1>> >(logit) 2>> >(logit)
+apiVersion: triliovault.trilio.io/v1
+kind: TrilioVaultManager
+metadata:
+  labels:
+    triliovault: triliovault
+  name: ${tvm_name}
+  namespace: ${tvk_ns}
+spec:
+  trilioVaultAppVersion: ${triliovault_manager_version}
+  ingressConfig:
+    host: "${get_host}"
+  # TVK components configuration, currently supports control-plane, web, exporter, web-backend, ingress-controller, admission-webhook.
+  # User can configure resources for all componentes and can configure service type and host for the ingress-controller
+  componentConfiguration:
+    ingress-controller:
+      service:
+        type: NodePort
+  applicationScope: Cluster
+EOF
+        fi
+		
+        retcode=$?
+        if [ "$retcode" -ne 0 ]; then
+          echo "There is error upgrading triliovault manager,please resolve and try again" 2>> >(logit)
+        else
+          echo "Triliovault manager upgraded successfully"
+        fi
+      return 1
       fi
     fi
-
   fi
 
   # Create TrilioVaultManager CR
@@ -479,7 +535,8 @@ configure_nodeport_for_tvkui() {
     tvkhost_name="tvk-doks.com"
   fi
   get_ns=$(kubectl get deployments -l "release=triliovault-operator" -A 2>> >(logit) | awk '{print $1}' | sed -n 2p)
-  gateway=$(kubectl get pods --no-headers=true -n "$get_ns" 2>/dev/null | awk '/$ingressGateway/{print $1}')
+  # shellcheck disable=SC1083
+  gateway=$(kubectl get pods --no-headers=true -n "$get_ns" 2>/dev/null | awk "/$ingressGateway/"{'print $1}')
   if [[ -z "$gateway" ]]; then
     echo "Not able to find $ingressGateway resource,TVK UI configuration failed"
     return 1
@@ -487,13 +544,54 @@ configure_nodeport_for_tvkui() {
   node=$(kubectl get pods "$gateway" -n "$get_ns" -o jsonpath='{.spec.nodeName}' 2>> >(logit))
   ip=$(kubectl get node "$node" -n "$get_ns" -o jsonpath='{.status.addresses[?(@.type=="ExternalIP")].address}' 2>> >(logit))
   port=$(kubectl get svc "$ingressGateway" -n "$get_ns" -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}' 2>> >(logit))
-  if ! kubectl patch ingress "$masterIngName" -n "$get_ns" -p '{"spec":{"rules":[{"host":"'"${tvkhost_name}"'"}]}}'; then
-    echo "TVK UI configuration failed, please check ingress"
-    return 1
-  fi
-  if ! kubectl patch svc "$ingressGateway" -n "$get_ns" -p '{"spec": {"type": "NodePort"}}' 1>> >(logit) 2>> >(logit); then
-    echo "TVK UI configuration failed, please check ingress"
-    return 1
+    # Getting tvm version and setting the configs accordingly
+  tvm_name=$(kubectl get tvm -A | awk '{print $2}' | sed -n 2p)
+  tvk_ns=$(kubectl get tvm -A | awk '{print $1}' | sed -n 2p)
+  tvm_version=$(kubectl get TrilioVaultManager -n "$get_ns" -o json | grep releaseVersion | awk '{print$2}' | sed 's/[a-z-]//g' | sed -e 's/^"//' -e 's/"$//')
+  vercomp "2.6.0" "$tvm_version"
+  ret_val=$?
+  if [[ $ret_val == 2 ]] || [[ $ret_val == 1 ]]; then
+    retry=5
+    while [[ $retry -gt 0 ]]; do
+      cat <<EOF | kubectl apply -f - 1>> >(logit) 2>> >(logit)
+apiVersion: triliovault.trilio.io/v1
+kind: TrilioVaultManager
+metadata:
+  labels:
+    triliovault: k8s
+  name: $tvm_name
+  namespace: $tvk_ns
+spec:
+  applicationScope: Cluster
+  ingressConfig:
+    host: ${tvkhost_name}
+  # TVK components configuration, currently supports control-plane, web, exporter, web-backend, ingress-controller, admission-webhook.
+  # User can configure resources for all componentes and can configure service type and host for the ingress-controller
+  componentConfiguration:
+    ingress-controller:
+      service:
+        type: NodePort
+EOF
+      ret_code=$?
+      if [[ "$ret_code" -eq 0 ]]; then
+        break
+      else
+        retry="$((retry-1))"
+      fi
+    done
+    if [[ "$ret_code" -ne 0 ]]; then
+      echo "Error while configuring TVM CRD.."
+      return 1
+    fi
+  else
+    if ! kubectl patch ingress "$masterIngName" -n "$get_ns" -p '{"spec":{"rules":[{"host":"'"${tvkhost_name}"'"}]}}'; then
+      echo "TVK UI configuration failed, please check ingress"
+      return 1
+    fi
+    if ! kubectl patch svc "$ingressGateway" -n "$get_ns" -p '{"spec": {"type": "NodePort"}}' 1>> >(logit) 2>> >(logit); then
+      echo "TVK UI configuration failed, please check ingress"
+      return 1
+    fi
   fi
   cluster_name=$(kubectl config view --minify -o jsonpath='{.clusters[].name}' | cut -d'-' -f3-)
   doctl kubernetes cluster kubeconfig show "${cluster_name}" >config_"${cluster_name}" 2>> >(logit)
@@ -537,20 +635,63 @@ configure_loadbalancer_for_tvkUI() {
     echo "Please check the current-context"
     return 1
   fi
-  if ! kubectl patch svc "$ingressGateway" -n "$get_ns" -p '{"spec": {"type": "LoadBalancer"}}' 1>> >(logit) 2>> >(logit); then
-    echo "TVK UI configuration failed, please check ingress"
-    return 1
+  # Getting tvm version and setting the configs accordingly
+  tvm_name=$(kubectl get tvm -A | awk '{print $2}' | sed -n 2p)
+  tvk_ns=$(kubectl get tvm -A | awk '{print $1}' | sed -n 2p)
+  tvm_version=$(kubectl get TrilioVaultManager -n "$get_ns" -o json | grep releaseVersion | awk '{print$2}' | sed 's/[a-z-]//g' | sed -e 's/^"//' -e 's/"$//')
+  vercomp "2.6.0" "$tvm_version"
+  ret_val=$?
+  if [[ $ret_val == 2 ]] || [[ $ret_val == 1 ]]; then
+    retry=5
+    while [[ $retry -gt 0 ]]; do
+      cat <<EOF | kubectl apply -f - 1>> >(logit) 2>> >(logit)
+apiVersion: triliovault.trilio.io/v1
+kind: TrilioVaultManager
+metadata:
+  labels:
+    triliovault: k8s
+  name: $tvm_name
+  namespace: $tvk_ns
+spec:
+  applicationScope: Cluster
+  ingressConfig:
+    host: ${tvkhost_name}.${domain}
+  # TVK components configuration, currently supports control-plane, web, exporter, web-backend, ingress-controller, admission-webhook.
+  # User can configure resources for all componentes and can configure service type and host for the ingress-controller
+  componentConfiguration:
+    ingress-controller:
+      service:
+        type: LoadBalancer
+EOF
+      ret_code=$?
+      if [[ "$ret_code" -eq 0 ]]; then
+        break
+      else
+        retry="$((retry-1))"
+      fi
+    done
+    if [[ "$ret_code" -ne 0 ]]; then
+      echo "Error while configuring TVM CRD.."
+      return 1
+    fi    
+  else
+    if ! kubectl patch svc "$ingressGateway" -n "$get_ns" -p '{"spec": {"type": "LoadBalancer"}}' 1>> >(logit) 2>> >(logit); then
+      echo "TVK UI configuration failed, please check ingress"
+      return 1
+    fi
   fi
-  echo "Configuring UI......This may take some time"
-  cmd="kubectl get svc $ingressGateway -n $get_ns -o 'jsonpath={.status.loadBalancer}'"
-  wait_install 20 "$cmd"
-  val_status=$(kubectl get svc "$ingressGateway" -n "$get_ns" -o 'jsonpath={.status.loadBalancer}')
-  if [[ $val_status == '{}' ]] || [[ $val_status == 'map[]' ]]; then
-    echo "Loadbalancer taking time to get External IP"
-    return 1
-  fi
-  external_ip=$(kubectl get svc "$ingressGateway" -n "$get_ns" -o 'jsonpath={.status.loadBalancer.ingress[0].ip}' 2>> >(logit))
-  kubectl patch ingress "$masterIngName" -n "$get_ns" -p '{"spec":{"rules":[{"host":"'"${tvkhost_name}.${domain}"'"}]}}' 1>> >(logit) 2>> >(logit)
+    echo "Configuring UI......This may take some time"
+    cmd="kubectl get svc $ingressGateway -n $get_ns -o 'jsonpath={.status.loadBalancer}'"
+    wait_install 20 "$cmd"
+    val_status=$(kubectl get svc "$ingressGateway" -n "$get_ns" -o 'jsonpath={.status.loadBalancer}')
+    if [[ $val_status == '{}' ]] || [[ $val_status == 'map[]' ]]; then
+      echo "Loadbalancer taking time to get External IP"
+      return 1
+    fi
+    external_ip=$(kubectl get svc "$ingressGateway" -n "$get_ns" -o 'jsonpath={.status.loadBalancer.ingress[0].ip}' 2>> >(logit))
+    if [[ $ret_val != 2 ]] || [[ $ret_val != 1 ]]; then
+      kubectl patch ingress "$masterIngName" -n "$get_ns" -p '{"spec":{"rules":[{"host":"'"${tvkhost_name}.${domain}"'"}]}}' 1>> >(logit) 2>> >(logit)
+    fi
   doctl compute domain records create "${domain}" --record-type A --record-name "${tvkhost_name}" --record-data "${external_ip}" 1>> >(logit) 2>> >(logit)
   retCode=$?
   if [[ "$retCode" -ne 0 ]]; then
