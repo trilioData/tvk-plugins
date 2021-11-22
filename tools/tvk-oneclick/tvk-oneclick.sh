@@ -153,6 +153,7 @@ install_tvk() {
       echo "There is some error in helm install triliovaul operator,please resolve and try again" 2>> >(logit)
       return 1
     fi
+    get_ns=$(kubectl get deployments -l "release=triliovault-operator" -A 2>> >(logit) | awk '{print $1}' | sed -n 2p)
   else
     tvk_ns="$get_ns"
     echo "Triliovault operator is already installed!"
@@ -207,7 +208,6 @@ install_tvk() {
     return 1
   fi
   echo "Triliovault operator is running"
-
   #set value for tvm_name
   tvm_name="triliovault-manager"
   #check if TVK manager is installed
