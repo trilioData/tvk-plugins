@@ -310,7 +310,7 @@ check_csi() {
 
 check_dns_resolution() {
   echolog "${LIGHT_BLUE}Checking if DNS resolution working in K8s cluster...${NC}\n"
-  local exit_status=0
+  local exit_status=1
 
   {
     cat <<EOF | kubectl apply -f -
@@ -339,19 +339,25 @@ spec:
         cpu: "500m"
   restartPolicy: Always
 EOF
-    kubectl wait --for=condition=ready --timeout=3m pod/"${DNS_UTILS}"
-    n=0
-    until [ "$n" -ge 3 ]; do
-      kubectl exec -it "${DNS_UTILS}" -- nslookup kubernetes.default
-      # shellcheck disable=SC2181
-      if [ $? -eq 0 ]; then
-        exit_status=0
-        break
-      else
-        n=$((n + 1))
-        exit_status=1
-      fi
-    done
+    echo "Waiting for dns pod ${DNS_UTILS} to become 'Ready'" >>"${LOG_FILE}" 2>&1
+    kubectl wait --for=condition=ready --timeout=3m pod/"${DNS_UTILS}" >>"${LOG_FILE}" 2>&1
+    # shellcheck disable=SC2181
+    if [[ $? -eq 0 ]]; then
+      n=0
+      until [ "$n" -ge 3 ]; do
+        kubectl exec -it "${DNS_UTILS}" -- nslookup kubernetes.default
+        # shellcheck disable=SC2181
+        if [ $? -eq 0 ]; then
+          exit_status=0
+          break
+        else
+          echo "Retrying to check dns resolution for service kubernetes.default" >>"${LOG_FILE}" 2>&1
+          n=$((n + 1))
+          sleep 2
+        fi
+      done
+    fi
+
   } >>"${LOG_FILE}" 2>&1
 
   # shellcheck disable=SC2181
@@ -360,7 +366,7 @@ EOF
   else
     echolog "${RED} ${CROSS} Could not resolve DNS \"kubernetes.default\" service inside pod${NC}\n"
   fi
-  kubectl delete pod "${DNS_UTILS}" >>"${LOG_FILE}" 2>&1
+  kubectl delete --force --grace-period=0 --timeout=5s pod "${DNS_UTILS}" >>"${LOG_FILE}" 2>&1
   return ${exit_status}
 }
 
@@ -368,11 +374,12 @@ check_volume_snapshot() {
   echolog "${LIGHT_BLUE}Checking if volume snapshot and restore enabled in K8s cluster...${NC}\n"
   local err_status=1
   local success_status=0
-  local retries=45
+  local retries=60
   local sleep=5
 
   echolog "${BROWN} Creating source pod and pvc for volume-snapshot check${NC}\n"
 
+  # shellcheck disable=SC2129
   cat <<EOF | kubectl apply -f - >>"${LOG_FILE}" 2>&1
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -421,6 +428,7 @@ spec:
       readOnly: false
 EOF
 
+  echo "Waiting for source pod ${SOURCE_POD} to become 'Ready'" >>"${LOG_FILE}" 2>&1
   kubectl wait --for=condition=ready --timeout=3m pod/"${SOURCE_POD}" >>"${LOG_FILE}" 2>&1
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
@@ -468,7 +476,7 @@ EOF
 
   while true; do
     if [[ ${retries} -eq 0 ]]; then
-      echolog "${RED_BOLD} ${CROSS} Volume snapshot from source pvc not readyToUse (waited 150 sec)${NC}\n"
+      echolog "${RED_BOLD} ${CROSS} Volume snapshot from source pvc not readyToUse (waited 300 sec)${NC}\n"
       return ${err_status}
     fi
     # shellcheck disable=SC2143
@@ -476,6 +484,7 @@ EOF
       echolog "${GREEN} ${CHECK} Created volume snapshot from source pvc and is readyToUse${NC}\n"
       break
     else
+      echo "Waiting for Volume snapshot from source pvc be become 'readyToUse:true'" >>"${LOG_FILE}" 2>&1
       sleep "${sleep}"
       ((retries--))
       continue
@@ -484,6 +493,7 @@ EOF
 
   echolog "${BROWN} Creating restore pod from volume snapshot${NC}\n"
 
+  # shellcheck disable=SC2129
   cat <<EOF | kubectl apply -f - >>"${LOG_FILE}" 2>&1
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -537,6 +547,7 @@ spec:
       readOnly: false
 EOF
 
+  echo "Waiting for restore pod ${RESTORE_POD} to become 'Ready'" >>"${LOG_FILE}" 2>&1
   kubectl wait --for=condition=ready --timeout=3m pod/"${RESTORE_POD}" >>"${LOG_FILE}" 2>&1
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
@@ -546,21 +557,36 @@ EOF
     return ${err_status}
   fi
 
-  echo "Check for file -> " "$(kubectl exec -it "${RESTORE_POD}" -- ls /demo/data/sample-file.txt)" >>"${LOG_FILE}" 2>&1
+  exec_status=1
+  n=0
+  echo "Checking for file -> /demo/data/sample-file.txt in restore pod ${RESTORE_POD}" >>"${LOG_FILE}" 2>&1
+  until [ "$n" -ge 3 ]; do
+    kubectl exec -it "${RESTORE_POD}" -- ls /demo/data/sample-file.txt >>"${LOG_FILE}" 2>&1
+    # shellcheck disable=SC2181
+    if [ $? -eq 0 ]; then
+      exec_status=0
+      break
+    else
+      echo "Retrying exec to check data from Restored pod ${RESTORE_POD} from volume snapshot of source PVC" >>"${LOG_FILE}" 2>&1
+      n=$((n + 1))
+      sleep 2
+    fi
+  done
+
   # shellcheck disable=SC2181
-  if [[ $? -eq 0 ]]; then
+  if [[ $exec_status -eq 0 ]]; then
     echolog "${GREEN} ${CHECK} Restored pod has expected data${NC}\n"
   else
     echolog "${RED_BOLD} ${CROSS} Restored pod does not have expected data${NC}\n"
     return ${err_status}
   fi
 
-  kubectl delete --ignore-not-found=true pod/"${SOURCE_POD}" >>"${LOG_FILE}" 2>&1
+  kubectl delete --force --grace-period=0 --timeout=5s --ignore-not-found=true pod/"${SOURCE_POD}" >>"${LOG_FILE}" 2>&1
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
     echolog "${GREEN} ${CHECK} Deleted source pod${NC}\n"
   else
-    echolog "${RED_BOLD} ${CROSS} Error cleaning up source pod${NC}\n"
+    echolog "${RED} ${CROSS} Error cleaning up source pod${NC}\n"
     exit_status=1
   fi
 
@@ -598,6 +624,7 @@ EOF
       echolog "${GREEN} ${CHECK} Created volume snapshot from unused source pvc and is readyToUse${NC}\n"
       break
     else
+      echo "Waiting for Volume snapshot from unused pvc be become 'readyToUse:true'" >>"${LOG_FILE}" 2>&1
       sleep "${sleep}"
       ((retries--))
       continue
@@ -606,6 +633,7 @@ EOF
 
   echolog "${BROWN} Creating restore pod from volume snapshot of unused pv${NC}\n"
 
+  # shellcheck disable=SC2129
   cat <<EOF | kubectl apply -f - >>"${LOG_FILE}" 2>&1
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -659,6 +687,7 @@ spec:
       readOnly: false
 EOF
 
+  echo "Waiting for restore pod ${UNUSED_RESTORE_POD} from volume snapshot of unused pv to become 'Ready'" >>"${LOG_FILE}" 2>&1
   kubectl wait --for=condition=ready --timeout=3m pod/"${UNUSED_RESTORE_POD}" >>"${LOG_FILE}" 2>&1
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
@@ -668,9 +697,23 @@ EOF
     return ${err_status}
   fi
 
-  kubectl exec -it "${UNUSED_RESTORE_POD}" -- ls /demo/data/sample-file.txt >>"${LOG_FILE}" 2>&1
+  exec_status=1
+  n=0
+  until [ "$n" -ge 3 ]; do
+    kubectl exec -it "${UNUSED_RESTORE_POD}" -- ls /demo/data/sample-file.txt >>"${LOG_FILE}" 2>&1
+    # shellcheck disable=SC2181
+    if [ $? -eq 0 ]; then
+      exec_status=0
+      break
+    else
+      echo "Retrying exec to check data from Restored pod ${UNUSED_RESTORE_POD} from volume snapshot of unused pv" >>"${LOG_FILE}" 2>&1
+      n=$((n + 1))
+      sleep 2
+    fi
+  done
+
   # shellcheck disable=SC2181
-  if [[ $? -eq 0 ]]; then
+  if [[ $exec_status -eq 0 ]]; then
     echolog "${GREEN} ${CHECK} Restored pod from volume snapshot of unused pv has expected data${NC}\n"
   else
     echolog "${RED_BOLD} ${CROSS} Restored pod from volume snapshot of unused pv does not have expected data${NC}\n"
@@ -702,13 +745,17 @@ cleanup() {
     echo >>"${LOG_FILE}" 2>&1
   done
 
-  echo >>"${LOG_FILE}" 2>&1
-  echo "Cleaning Pods -" "${SOURCE_POD}" "${RESTORE_POD}" "${UNUSED_RESTORE_POD}" >>"${LOG_FILE}" 2>&1
-  kubectl delete --force --grace-period=0 pod "${SOURCE_POD}" "${RESTORE_POD}" "${UNUSED_RESTORE_POD}" >>"${LOG_FILE}" 2>&1 || true
-  echo >>"${LOG_FILE}" 2>&1
+  declare -a pods=("${SOURCE_POD}" "${RESTORE_POD}" "${UNUSED_RESTORE_POD}")
+  for res in "${pods[@]}"; do
+    echo >>"${LOG_FILE}" 2>&1
+    echo "Deleting pod - ${res}" >>"${LOG_FILE}" 2>&1
+    kubectl delete po -n "${NAMESPACE}" "${res}" --force --grace-period=0 --timeout=5s >>"${LOG_FILE}" 2>&1 || true
+    kubectl patch po -n "${NAMESPACE}" "${res}" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' >>"${LOG_FILE}" 2>&1 || true
+    echo >>"${LOG_FILE}" 2>&1
+  done
 
   echo "Cleaning all resources related to label - preflight-run:" "${RANDOM_STRING}" >>"${LOG_FILE}" 2>&1
-  kubectl delete all -l preflight-run="${RANDOM_STRING}" --force --grace-period=0 >>"${LOG_FILE}" 2>&1 || true
+  kubectl delete all -l preflight-run="${RANDOM_STRING}" --force --grace-period=0 --timeout=5s >>"${LOG_FILE}" 2>&1 || true
 
   echolog "${GREEN} ${CHECK} Cleaned up all the resources${NC}\n"
 
