@@ -20,6 +20,24 @@ Also, steps to install, uninstall, upgrade and uninstall respective plugin are m
 `Quick Links`: [`preflight`](docs/preflight/README.md)  [`log-collector`](docs/log-collector/README.md) [`target-browser`](docs/target-browser/README.md)
 [`cleanup`](docs/cleanup/README.md) [`tvk-oneclick`](docs/tvk-oneclick/README.md) 
 
+
+#### Plugin Installation with Network Proxy:
+
+If you want to use Krew with proxy(`HTTP`/`HTTPS`), you can configure environment variables HTTP_PROXY, HTTPS_PROXY and NO_PROXY as
+required:
+```bash
+export HTTP_PROXY="http://username:password&proxy-ip:port"
+export HTTPS_PROXY="http://username:password&proxy-ip:port"
+export NO_PROXY=".github.com,github.com,.githubusercontent.com,githubusercontent.com,ip1,ip2:port2,.example.com"
+```
+
+For HTTPS proxy, you'll have to add the proxy server certificate authority's certificates on your local system.
+Refer [`document`](https://manuals.gfi.com/en/kerio/connect/content/server-configuration/ssl-certificates/adding-trusted-root-certificates-to-the-server-1605.html)
+to do the same.
+
+Refer [document](https://krew.sigs.k8s.io/docs/user-guide/advanced-configuration/#custom-network-proxy) for the latest updates
+on krew with proxy setup.
+
 ## Contribution:
 
 Refer [`CONTRIBUTION.md`](docs/CONTRIBUTION.md) to make contribution to this repository.
