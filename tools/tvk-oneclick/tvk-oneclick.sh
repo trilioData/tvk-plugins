@@ -240,7 +240,7 @@ install_tvk() {
       vercomp "2.6" "$new_triliovault_manager_version"
       ret_val1=$?
       vercomp "$old_tvm_version" "2.5"
-      ret_val2=$? 
+      ret_val2=$?
       if [[ $ret_val == 2 ]] || [[ $ret_val == 1 ]] && [[ $ret_val1 == 3 ]] && [[ $ret_val2 == 2 ]] || [[ $ret_val2 == 1 ]]; then
         svc_type=$(kubectl get svc "$ingressGateway" -n "$get_ns" -o 'jsonpath={.spec.type}')
         if [[ $svc_type == LoadBalancer ]]; then
@@ -267,7 +267,7 @@ EOF
           retcode=$?
           if [ "$retcode" -ne 0 ]; then
             echo "There is error upgrading triliovault manager,please resolve and try again" 2>> >(logit)
-	    return 1
+            return 1
           else
             echo "Upgrading Triliovault manager"
           fi
@@ -299,7 +299,7 @@ EOF
           retcode=$?
           if [ "$retcode" -ne 0 ]; then
             echo "There is error upgrading triliovault manager,please resolve and try again" 2>> >(logit)
-	    return 0
+            return 0
           else
             echo "Upgrading Triliovault manager"
           fi
@@ -355,7 +355,7 @@ EOF
         retcode=$?
         if [ "$retcode" -ne 0 ]; then
           echo "There is error upgrading triliovault manager,please resolve and try again" 2>> >(logit)
-	  return 1
+          return 1
         else
           echo "Upgrading Triliovault manager"
         fi
