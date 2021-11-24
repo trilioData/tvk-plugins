@@ -75,8 +75,8 @@ delete_tvk_op() {
   # Delete Triliovault-manager and Triliovault-operator using helm/label
   if (helm list -A | grep -v REVISION | grep triliovault >/dev/null 2>&1); then
     echo "Uninstalling Trilivault-manager"
-    tvm=$(helm list -A | grep -v REVISION | grep triliovault-[0-9] | awk '{print $1}')
-    tvm_ns=$(helm list -A | grep -v REVISION | grep triliovault-[0-9] | awk '{print $2}')
+    tvm=$(helm list -A | grep -v REVISION | grep 'triliovault-[0-9]' | awk '{print $1}')
+    tvm_ns=$(helm list -A | grep -v REVISION | grep 'triliovault-[0-9]' | awk '{print $2}')
     if [ -n "${tvm}" ]; then
       helm uninstall "${tvm}" -n "${tvm_ns}"
       retValue=$?
