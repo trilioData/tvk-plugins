@@ -69,24 +69,14 @@ delete_tvk_op() {
       fi
     fi
 
-    # Delete k8s-triliovault-resource-cleaner cronjob
-    tvkcron=$(kubectl get cronjob --no-headers -n openshift-operators 2>/dev/null | grep k8s-triliovault | awk '{print $1}')
-    if [ -n "${tvkcron}" ]; then
-      echo "Deleting k8s-triliovault-resource-cleaner cronjob"
-      kubectl delete cronjob "${tvkcron}" -n openshift-operators
-      retValue=$?
-      if [ "${retValue}" -ne 0 ]; then
-        exit_status=1
-      fi
-    fi
   fi
 
   # For Upstream OR in case if TVK installed on OCP using "helm"
   # Delete Triliovault-manager and Triliovault-operator using helm/label
   if (helm list -A | grep -v REVISION | grep triliovault >/dev/null 2>&1); then
     echo "Uninstalling Trilivault-manager"
-    tvm=$(helm list -A | grep -v REVISION | grep triliovault-v | awk '{print $1}')
-    tvm_ns=$(helm list -A | grep -v REVISION | grep triliovault-v | awk '{print $2}')
+    tvm=$(helm list -A | grep -v REVISION | grep triliovault-[0-9] | awk '{print $1}')
+    tvm_ns=$(helm list -A | grep -v REVISION | grep triliovault-[0-9] | awk '{print $2}')
     if [ -n "${tvm}" ]; then
       helm uninstall "${tvm}" -n "${tvm_ns}"
       retValue=$?
@@ -105,6 +95,19 @@ delete_tvk_op() {
       fi
     fi
   fi
+
+  # Delete k8s-triliovault-resource-cleaner cronjob
+  tvkcron=$(kubectl get cronjob --no-headers -A 2>/dev/null | grep k8s-triliovault | awk '{print $2}')
+  tvkcron_ns=$(kubectl get cronjob --no-headers -A 2>/dev/null | grep k8s-triliovault | awk '{print $1}')
+  if [ -n "${tvkcron}" ]; then
+    echo "Deleting k8s-triliovault-resource-cleaner cronjob"
+    kubectl delete cronjob "${tvkcron}" -n "${tvkcron_ns}"
+    retValue=$?
+    if [ "${retValue}" -ne 0 ]; then
+      exit_status=1
+    fi
+  fi
+
   return ${exit_status}
 }
 
