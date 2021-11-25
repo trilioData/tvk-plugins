@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	v1 "k8s.io/api/networking/v1"
 
@@ -46,11 +47,32 @@ func (targetBrowserConfig *Config) Authenticate(ctx context.Context) (*AuthInfo,
 	if err != nil {
 		return nil, err
 	}
-
 	if tvkHost == "" || targetBrowserPath == "" {
 		return nil, fmt.Errorf("either tvkHost or targetBrowserPath could not retrieved for"+
 			" target %s namespace %s", targetBrowserConfig.TargetName, targetBrowserConfig.TargetNamespace)
 	}
+
+	nodePortHTTP, nodePortHTTPS, svcType, err := getNodePortAndServiceType(ctx, cl, target)
+	if err != nil {
+		return nil, err
+	}
+	tvkURL, err := url.Parse(tvkHost)
+	if err != nil {
+		return nil, err
+	}
+	if targetBrowserConfig.UseHTTPS {
+		tvkURL.Scheme = internal.HTTPSscheme
+		if svcType == internal.ServiceTypeNodePort {
+			tvkURL.Path = fmt.Sprintf("%s:%s", tvkHost, nodePortHTTPS)
+		}
+	} else {
+		tvkURL.Scheme = internal.HTTPscheme
+		if svcType == internal.ServiceTypeNodePort {
+			tvkURL.Path = fmt.Sprintf("%s:%s", tvkHost, nodePortHTTP)
+		}
+	}
+
+	tvkHost = tvkURL.String()
 
 	jweToken, httpClient, err := targetBrowserConfig.Login(tvkHost)
 	if err != nil {

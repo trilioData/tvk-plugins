@@ -69,11 +69,6 @@ func (auth *AuthInfo) TriggerAPI(apiPath, queryParam string) ([]byte, error) {
 	}
 
 	tvkURL.Path = path.Join(tvkURL.Path, auth.TargetBrowserPath, apiPath)
-	tvkURL.Scheme = internal.HTTPscheme
-	if auth.UseHTTPS {
-		tvkURL.Scheme = internal.HTTPSscheme
-	}
-
 	tvkURL.RawQuery = queryParam
 	req, err := http.NewRequest(http.MethodGet, tvkURL.String(), nil)
 	if err != nil {
