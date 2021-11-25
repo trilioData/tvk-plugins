@@ -110,7 +110,7 @@ func getTrilioResourcesAPIPath(uid string) string {
 func getNodePortAndServiceType(ctx context.Context, cl client.Client,
 	target *unstructured.Unstructured) (nodePortHTTP, nodePortHTTPS, svcType string, err error) {
 	ingressService := &corev1.Service{}
-	err = cl.Get(ctx, types.NamespacedName{Name: internal.IngressControllerLabel, Namespace: target.GetNamespace()}, ingressService)
+	err = cl.Get(ctx, types.NamespacedName{Name: internal.IngressServiceLabel, Namespace: target.GetNamespace()}, ingressService)
 	if err != nil {
 		log.Error(err, "error while getting ingress service")
 		return "", "", "", err

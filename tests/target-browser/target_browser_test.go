@@ -258,7 +258,6 @@ var _ = Describe("Target Browser Tests", func() {
 				Expect(err).ShouldNot(HaveOccurred())
 			})
 
-			// TODO: code for use-https needs to change respective to this test
 			It(fmt.Sprintf("Should fail if flag %s is not provided", cmd.UseHTTPS), func() {
 				args := []string{cmdGet, cmdBackupPlan}
 				args = append(args, commonArgs...)
@@ -276,7 +275,6 @@ var _ = Describe("Target Browser Tests", func() {
 				Expect(string(output)).Should(ContainSubstring("certificate signed by unknown authority"))
 			})
 
-			// TODO: code for use-https needs to change respective to this test
 			It(fmt.Sprintf("Should fail if flag %s is provided but %s is not provided", cmd.CertificateAuthorityFlag, cmd.UseHTTPS), func() {
 				isLast = true
 				args := []string{cmdGet, cmdBackupPlan, flagCaCert, filepath.Join(testDataDirRelPath, tlsCertFile)}
