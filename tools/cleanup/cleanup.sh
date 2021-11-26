@@ -73,39 +73,55 @@ delete_tvk_op() {
 
   # For Upstream OR in case if TVK installed on OCP using "helm"
   # Delete Triliovault-manager and Triliovault-operator using helm/label
-  if (helm list -A | grep -v REVISION | grep triliovault >/dev/null 2>&1); then
-    echo "Uninstalling Trilivault-manager"
-    tvm=$(helm list -A | grep -v REVISION | grep 'triliovault-[0-9]' | awk '{print $1}')
-    tvm_ns=$(helm list -A | grep -v REVISION | grep 'triliovault-[0-9]' | awk '{print $2}')
-    if [ -n "${tvm}" ]; then
-      helm uninstall "${tvm}" -n "${tvm_ns}"
-      retValue=$?
-      if [ "${retValue}" -ne 0 ]; then
-        exit_status=1
-      fi
-    fi
-    echo "Uninstalling Trilivault-operator"
-    tvo=$(helm list -A | grep -v REVISION | grep triliovault-o | awk '{print $1}')
-    tvo_ns=$(helm list -A | grep -v REVISION | grep triliovault-o | awk '{print $2}')
-    if [ -n "${tvo}" ]; then
-      helm uninstall "${tvo}" -n "${tvo_ns}"
-      retValue=$?
-      if [ "${retValue}" -ne 0 ]; then
-        exit_status=1
-      fi
-    fi
-  fi
+  # Fetch non-deuplicate namespace
+  tvm_ns=$(helm list -A | grep -v REVISION | grep 'triliovault' | awk '{print $2}' | uniq)
+  if [ -n "${tvm_ns}" ]; then
+    for ns in ${tvm_ns}; do
 
-  # Delete k8s-triliovault-resource-cleaner cronjob
-  tvkcron=$(kubectl get cronjob --no-headers -A 2>/dev/null | grep k8s-triliovault | awk '{print $2}')
-  tvkcron_ns=$(kubectl get cronjob --no-headers -A 2>/dev/null | grep k8s-triliovault | awk '{print $1}')
-  if [ -n "${tvkcron}" ]; then
-    echo "Deleting k8s-triliovault-resource-cleaner cronjob"
-    kubectl delete cronjob "${tvkcron}" -n "${tvkcron_ns}"
-    retValue=$?
-    if [ "${retValue}" -ne 0 ]; then
-      exit_status=1
-    fi
+      # Deleting Trilivault-manager CR
+      tvm_name=$(kubectl get triliovaultmanager --no-headers -n "${ns}" | awk '{print $1}')
+      echo "Patching triliovaultmanager CR ${tvm_name} in namespace ${ns}"
+      kubectl patch triliovaultmanager "${tvm_name}" -p '{"metadata":{"finalizers":[]}}' --type=merge -n "${ns}"
+      echo "Deleting triliovaultmanager CR ${tvm_name} in namespace ${ns}"
+      kubectl delete triliovaultmanager "${tvm_name}" -n "${ns}"
+      retValue=$?
+      if [ "${retValue}" -ne 0 ]; then
+        exit_status=1
+      fi
+
+      # Uninstall Trilivault-manager
+      tvm=$(helm list -n "${ns}" | grep -v REVISION | grep 'triliovault-[0-9]' | awk '{print $1}')
+      if [ -n "${tvm}" ]; then
+        echo "Uninstalling Trilivault-manager helm chart in namespace ${ns}"
+        helm uninstall "${tvm}" -n "${ns}"
+        retValue=$?
+        if [ "${retValue}" -ne 0 ]; then
+          exit_status=1
+        fi
+      fi
+
+      # Uninstall Trilivault-operator
+      tvo=$(helm list -n "${ns}" | grep -v REVISION | grep triliovault-o | awk '{print $1}')
+      if [ -n "${tvo}" ]; then
+        echo "Uninstalling Trilivault-operator in namespace ${ns}"
+        helm uninstall "${tvo}" -n "${ns}"
+        retValue=$?
+        if [ "${retValue}" -ne 0 ]; then
+          exit_status=1
+        fi
+      fi
+
+      # Delete k8s-triliovault-resource-cleaner cronjob
+      tvkcron=$(kubectl get cronjob --no-headers -n "${ns}" 2>/dev/null | grep k8s-triliovault | awk '{print $1}')
+      if [ -n "${tvkcron}" ]; then
+        echo "Deleting k8s-triliovault-resource-cleaner cronjob in namespace ${ns}"
+        kubectl delete cronjob "${tvkcron}" -n "${ns}"
+        retValue=$?
+        if [ "${retValue}" -ne 0 ]; then
+          exit_status=1
+        fi
+      fi
+    done
   fi
 
   return ${exit_status}
@@ -116,7 +132,19 @@ delete_tvk_crd() {
   # Check all the namespaces for restores, delete the restores
   # Delete Triliovault CRDs
   local exit_status=0
+
   for tvkcrd in $(kubectl get crd --no-headers 2>/dev/null | grep triliovault | awk '{print $1}'); do
+    # Patch CRDs
+    if [[ ${tvkcrd} == "backups.triliovault.trilio.io" ]]; then
+      echo "Patching crd backups.triliovault.trilio.io"
+      kubectl patch crd backups.triliovault.trilio.io -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null 
+    fi
+
+    if [[ ${tvkcrd} == "triliovaultmanagers.triliovault.trilio.io" ]]; then
+      echo "Patching crd triliovaultmanagers.triliovault.trilio.io"
+      kubectl patch crd triliovaultmanagers.triliovault.trilio.io -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null
+    fi
+
     # Delete
     echo "kubectl delete crd ${tvkcrd}"
     kubectl delete crd "${tvkcrd}"
