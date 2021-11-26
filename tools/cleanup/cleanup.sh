@@ -137,7 +137,7 @@ delete_tvk_crd() {
     # Patch CRDs
     if [[ ${tvkcrd} == "backups.triliovault.trilio.io" ]]; then
       echo "Patching crd backups.triliovault.trilio.io"
-      kubectl patch crd backups.triliovault.trilio.io -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null 
+      kubectl patch crd backups.triliovault.trilio.io -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null
     fi
 
     if [[ ${tvkcrd} == "triliovaultmanagers.triliovault.trilio.io" ]]; then
