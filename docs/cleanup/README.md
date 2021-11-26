@@ -65,7 +65,7 @@ Options:
         -h, --help                show brief help
         -n, --noninteractive      run script in non-interactive mode
         -c, --crd                 delete Triliovault CRDs
-        -t, --tvm                 delete Triliovault Manager or Opereator
+        -t, --tvm                 delete Triliovault Manager or Operator
         -r, --resources \"resource1 resource2..\"
                                   specify list of Triliovault CRs to delete
                                   If not provided, all Triliovault CRs (listed below) will be deleted
