@@ -27,8 +27,8 @@ delete_tvk_res() {
         # Fetch given resource name
         for name in $(kubectl get "${res}" -n "${ns}" --no-headers 2>/dev/null | awk '{print $1}' | uniq); do
           # Delete
-          echo "kubectl delete ${res} ${name} -n ${ns} "
-          kubectl delete "${res}" "${name}" -n "${ns}"
+          echo "kubectl delete ${res} ${name} --force --grace-period=0 --timeout=5s -n ${ns} "
+          kubectl delete "${res}" "${name}" --force --grace-period=0 --timeout=5s -n "${ns}"
           retValue=$?
           if [ "${retValue}" -ne 0 ]; then
             exit_status=1
@@ -51,7 +51,7 @@ delete_tvk_op() {
     # Delete k8s-triliovault operator
     if (kubectl get subscription k8s-triliovault -n openshift-operators >/dev/null 2>&1); then
       echo "Uninstalling k8s-triliovault operator"
-      kubectl delete subscription k8s-triliovault -n openshift-operators
+      kubectl delete subscription k8s-triliovault --force --grace-period=0 --timeout=5s -n openshift-operators
       retValue=$?
       if [ "${retValue}" -ne 0 ]; then
         exit_status=1
@@ -62,7 +62,7 @@ delete_tvk_op() {
     tvkcsversion=$(kubectl get clusterserviceversion --no-headers -n openshift-operators 2>/dev/null | grep k8s-triliovault | awk '{print $1}')
     if [ -n "${tvkcsversion}" ]; then
       echo "Deleting k8s-triliovault clusterserviceversion"
-      kubectl delete clusterserviceversion "${tvkcsversion}" -n openshift-operators
+      kubectl delete clusterserviceversion "${tvkcsversion}" --force --grace-period=0 --timeout=5s -n openshift-operators
       retValue=$?
       if [ "${retValue}" -ne 0 ]; then
         exit_status=1
@@ -77,16 +77,26 @@ delete_tvk_op() {
   tvm_ns=$(helm list -A | grep -v REVISION | grep 'triliovault' | awk '{print $2}' | uniq)
   if [ -n "${tvm_ns}" ]; then
     for ns in ${tvm_ns}; do
-
       # Deleting Trilivault-manager CR
       tvm_name=$(kubectl get triliovaultmanager --no-headers -n "${ns}" | awk '{print $1}')
-      echo "Patching triliovaultmanager CR ${tvm_name} in namespace ${ns}"
-      kubectl patch triliovaultmanager "${tvm_name}" -p '{"metadata":{"finalizers":[]}}' --type=merge -n "${ns}"
       echo "Deleting triliovaultmanager CR ${tvm_name} in namespace ${ns}"
-      kubectl delete triliovaultmanager "${tvm_name}" -n "${ns}"
+      kubectl delete triliovaultmanager "${tvm_name}" --force --grace-period=0 --timeout=5s -n "${ns}"
       retValue=$?
       if [ "${retValue}" -ne 0 ]; then
-        exit_status=1
+        echo "Failed deleting triliovaultmanager CR ${tvm_name} in namespace ${ns}"
+        echo "Patching triliovaultmanager CR ${tvm_name} in namespace ${ns}"
+        kubectl patch triliovaultmanager "${tvm_name}" -p '{"metadata":{"finalizers":[]}}' --type=merge -n "${ns}"
+        if (kubectl get triliovaultmanager "${tvm_name}" -n "${ns}" 2>/dev/null); then
+          echo "2nd attempt - Deleting triliovaultmanager CR ${tvm_name} in namespace ${ns}"
+          kubectl delete triliovaultmanager "${tvm_name}" --force --grace-period=0 --timeout=5s -n "${ns}"
+          retValue=$?
+          if [ "${retValue}" -ne 0 ]; then
+            echo "Failed deleting triliovaultmanager CR ${tvm_name} in namespace ${ns} even after patching, check manually..."
+            exit_status=1
+          fi
+        else
+          echo "Deleted triliovaultmanager CR ${tvm_name} in namespace ${ns}"
+        fi
       fi
 
       # Uninstall Trilivault-manager
@@ -134,23 +144,25 @@ delete_tvk_crd() {
   local exit_status=0
 
   for tvkcrd in $(kubectl get crd --no-headers 2>/dev/null | grep triliovault | awk '{print $1}'); do
-    # Patch CRDs
-    if [[ ${tvkcrd} == "backups.triliovault.trilio.io" ]]; then
-      echo "Patching crd backups.triliovault.trilio.io"
-      kubectl patch crd backups.triliovault.trilio.io -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null
-    fi
-
-    if [[ ${tvkcrd} == "triliovaultmanagers.triliovault.trilio.io" ]]; then
-      echo "Patching crd triliovaultmanagers.triliovault.trilio.io"
-      kubectl patch crd triliovaultmanagers.triliovault.trilio.io -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null
-    fi
-
     # Delete
     echo "kubectl delete crd ${tvkcrd}"
-    kubectl delete crd "${tvkcrd}"
+    kubectl delete crd "${tvkcrd}" --force --grace-period=0 --timeout=5s
     retValue=$?
     if [ "${retValue}" -ne 0 ]; then
-      exit_status=1
+      echo "Failed deleting crd ${tvkcrd}"
+      echo "Patching crd ${tvkcrd}"
+      kubectl patch crd "${tvkcrd}" -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null
+      if (kubectl get crd "${tvkcrd}" 2>/dev/null); then
+        echo "2nd attempt - Deleting crd ${tvkcrd}"
+        kubectl delete crd "${tvkcrd}" --force --grace-period=0 --timeout=5s
+        retValue=$?
+        if [ "${retValue}" -ne 0 ]; then
+          echo "Failed deleting crd ${tvkcrd} even after patching, check manually..."
+          exit_status=1
+        fi
+      else
+        echo "Deleted crd ${tvkcrd}"
+      fi
     fi
   done
   return ${exit_status}
