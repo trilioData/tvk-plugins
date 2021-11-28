@@ -125,7 +125,7 @@ update-target-browser-manifest:
 update-tvk-oneclick-manifests:
 	./hack/update-tvk-oneclick-manifests.sh
 
-update-plugin-manifests: update-preflight-manifest update-log-collector-manifest update-target-browser-manifest update-cleanup-manifest
+update-plugin-manifests: update-preflight-manifest update-log-collector-manifest update-target-browser-manifest update-cleanup-manifest update-tvk-oneclick-manifests
 
 ready: fmt vet lint verify-code-patterns
 
