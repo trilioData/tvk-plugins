@@ -4,7 +4,7 @@ metadata:
   name: tvk-target-browser
 spec:
   homepage: https://github.com/trilioData/tvk-plugins/blob/master/docs/target-browser/README.md
-  shortDescription: TVK Target Browser queries mounted target to get details of backup, backupPlan, backup metadata, etc.
+  shortDescription: TVK Target Browser queries mounted target to get details of backup, backupPlan, backup metadata, backup resource-metadata, trilio-resources etc.
   version: TARGET_BROWSER_VERSION
   caveats: |
     Curl and Git neeed to be installed on system for Krew index update to work properly
@@ -107,13 +107,13 @@ spec:
     kubectl tvk-target-browser get backupPlan --target-name <name> --target-namespace <namespace>
 
     # List of backupPlans using HTTPS
-    kubectl tvk-target-browser get backupPlan --target-name <name> --target-namespace <namespace> --use-https true --certificate-authority <certificate-path>
+    kubectl tvk-target-browser get backupPlan --target-name <name> --target-namespace <namespace> --use-https --certificate-authority <certificate-path>
 
     # List of backups
     kubectl tvk-target-browser get backup --target-name <name> --target-namespace <namespace>
 
     # List of backups using HTTPS
-    kubectl tvk-target-browser get backup --target-name <name> --target-namespace <namespace> --use-https true --certificate-authority <certificate-path>
+    kubectl tvk-target-browser get backup --target-name <name> --target-namespace <namespace> --use-https --certificate-authority <certificate-path>
 
     # List of backups using backupPlan UID
     kubectl tvk-target-browser get backup --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
@@ -125,15 +125,27 @@ spec:
     kubectl tvk-target-browser get backup <backup-uid> --target-name <name> --target-namespace <namespace>
 
     # Metadata of specific backup object
+    kubectl tvk-target-browser get metadata --backup-uid <uid> --target-name <name> --target-namespace <namespace>
+
+    # Metadata of specific backup and backupPlan
     kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
 
     # Metadata of specific backup object using HTTPS
-    kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace> --use-https true --certificate-authority <certificate-path>
+    kubectl tvk-target-browser get metadata --backup-uid <uid> --target-name <name> --target-namespace <namespace> --use-https --certificate-authority <certificate-path>
 
     # Resource Metadata of specific backup object
+    kubectl tvk-target-browser get resource-metadata --backup-uid <uid> --target-name <name> --target-namespace <namespace> --group <group> --version <version> --kind <kind> --name <resource-name>
+
+    # Resource Metadata of specific backup object using HTTPS
+    kubectl tvk-target-browser get resource-metadata --backup-uid <uid> --target-name <name> --target-namespace <namespace> --group <group> --version <version> --kind <kind> --name <resource-name> --use-https --certificate-authority <certificate-path>
+
+    # Resource Metadata of specific backup and backupPlan
     kubectl tvk-target-browser get resource-metadata --backup-uid <uid> --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace> --group <group> --version <version> --kind <kind> --name <resource-name>
 
-    # Trilio Resources for specific backup object
+    # Trilio Resources of specific backup object
+    kubectl tvk-target-browser get backup trilio-resources <backup-uid> --kinds ClusterBackupPlan,Backup,Hook --target-name <name> --target-namespace <namespace>
+
+    # Trilio Resources of specific backup and backupPlan
     kubectl tvk-target-browser get backup trilio-resources <backup-uid> --backup-plan-uid <uid> --kinds ClusterBackupPlan,Backup,Hook --target-name <name> --target-namespace <namespace>
 
     # List of backups: filter by [expirationStartTime] and [expirationEndTime]

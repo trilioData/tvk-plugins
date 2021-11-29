@@ -11,6 +11,7 @@ func init() {
 	getCmd.AddCommand(metadataCmd())
 }
 
+// nolint:lll // ignore long line lint errors
 // metadataCmd represents the metadata command
 func metadataCmd() *cobra.Command {
 	var cmd = &cobra.Command{
@@ -18,7 +19,13 @@ func metadataCmd() *cobra.Command {
 		Short: "Get Backup high level metadata details",
 		Long:  `Performs GET operation on target-browser's '/metadata' API and gets Backup high level metadata details`,
 		Example: `  # Get metadata details of specific backup
+  kubectl tvk-target-browser get metadata --backup-uid <uid> --target-name <name> --target-namespace <namespace>
+
+  # Get metadata details of specific backup and backupPlan
   kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
+
+  # Get metadata details of specific backup using HTTPS
+  kubectl tvk-target-browser get metadata --backup-uid <uid> --target-name <name> --target-namespace <namespace> --use-https --certificate-authority <certificate-path>
 `,
 		RunE: getMetadata,
 	}

@@ -22,8 +22,8 @@ var (
 var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "get command retrieves specific resource",
-	Long: `Performs GET operation on target-browser's '/backup', '/backupPlan' and '/metadata' APIs and gets specific resource [backup, backupPlan, metadata, etc]
-which retrieves single object or list of objects of that resource.`,
+	Long: `Performs GET operation on target-browser's '/backup', '/backupPlan', '/metadata', '/resource-metadata' and '/trilio-resources' APIs and
+gets specific resource [backup, backupPlan, metadata, resource-metadata, trilio-resources etc] which retrieves single object or list of objects of that resource.`,
 
 	Example: `  # List of backups
   kubectl tvk-target-browser get backup --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
@@ -32,7 +32,13 @@ which retrieves single object or list of objects of that resource.`,
   kubectl tvk-target-browser get backupPlan --target-name <name> --target-namespace <namespace>
 
   # Metadata of specific backup object
-  kubectl tvk-target-browser get metadata --backup-uid <uid> --backup-plan-uid <uid> --target-name <name> --target-namespace <namespace>
+  kubectl tvk-target-browser get metadata --backup-uid <uid> --target-name <name> --target-namespace <namespace>
+
+  # Resource metadata of specific backup
+  kubectl tvk-target-browser get resource-metadata --backup-uid <uid> --name <name> --group <group> --version <version> --kind <kind>
+
+  # Trilio resources of specific backup
+  kubectl tvk-target-browser get backup trilio-resources <uid> --kinds ClusterBackupPlan,Backup,Hook --target-name <name> --target-namespace <namespace>
 `,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error

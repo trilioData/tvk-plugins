@@ -20,7 +20,10 @@ for specific backupPlan using available flags and options.`,
 
   # List of backups
   kubectl tvk-target-browser get backup --target-name <name> --target-namespace <namespace>
-  
+
+  # List of backups using HTTPS
+  kubectl tvk-target-browser get backup --target-name <name> --target-namespace <namespace> --use-https --certificate-authority <certificate-path>
+
   # Get specific backup
   kubectl tvk-target-browser get backup <backup-uid> --target-name <name> --target-namespace <namespace>
 

@@ -20,7 +20,14 @@ func trilioResourcesCmd() *cobra.Command {
 		Short: "Get trilio resources for specific backup",
 		Long:  `Performs GET operation on target-browser's '/backup/{backupUID}/trilio-resources' API and gets trilio resources for backup`,
 		Example: `  # Get trilio resources for specific backup
-  kubectl tvk-target-browser get backup trilio-resources <backup-uid> --backup-plan-uid <uid> --kinds ClusterBackupPlan,Backup,Hook --target-name <name> --target-namespace <namespace>`,
+  kubectl tvk-target-browser get backup trilio-resources <backup-uid> --kinds ClusterBackupPlan,Backup,Hook --target-name <name> --target-namespace <namespace>
+
+  # Get trilio resources for specific backup and backupPlan
+  kubectl tvk-target-browser get backup trilio-resources <backup-uid> --backup-plan-uid <uid> --kinds ClusterBackupPlan,Backup,Hook --target-name <name> --target-namespace <namespace>
+
+  # Get trilio resources for specific backup using HTTPS
+  kubectl tvk-target-browser get backup trilio-resources <backup-uid> --kinds ClusterBackupPlan,Backup,Hook --target-name <name> --target-namespace <namespace> --use-https --certificate-authority <certificate-path>
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return getTrilioResources(args)
 		},
