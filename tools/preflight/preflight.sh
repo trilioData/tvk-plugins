@@ -56,6 +56,8 @@ Usage:
 kubectl tvk-preflight --storageclass <storage_class_name> --snapshotclass <volume_snapshot_class>
 Params:
 	--storageclass	name of storage class being used in k8s cluster
+	--local-registry name of the local registry to get images from (OPTIONAL)
+	--image-pull-secret name of the secret configured for authentication (OPTIONAL)
 	--snapshotclass name of volume snapshot class being used in k8s cluster (OPTIONAL)
 	--kubeconfig	path to kube config (OPTIONAL)
 --------------------------------------------------------------
@@ -100,6 +102,26 @@ take_input() {
         exit 1
       fi
       ;;
+    --local-registry)
+      if [[ -n "$2" ]]; then
+        LOCAL_REGISTRY=$2
+        shift 2
+      else
+        echolog "Error: flag --local-registry value may not be empty. Either set the value or skip this flag!"
+        print_help
+        exit 1
+      fi
+      ;;
+    --image-pull-secret)
+      if [[ -n "$2" ]]; then
+        IMAGE_PULL_SECRET=$2
+        shift 2
+      else
+        echolog "Error: flag --image-pull-secret value may not be empty. Either set the value or skip this flag!"
+        print_help
+        exit 1
+      fi
+      ;;
     -h | --help)
       print_help
       exit
@@ -114,6 +136,10 @@ take_input() {
   if [[ -z "${STORAGE_CLASS}" ]]; then
     echolog "Error: --storageclass flag needed to run pre flight checks!"
     print_help
+    exit 1
+  fi
+  if [[ -z "${LOCAL_REGISTRY}" && -n "${IMAGE_PULL_SECRET}" ]]; then
+    echo "Error Cannot Give Pull Secret if LOCAL_REGISTRY is not provided!"
     exit 1
   fi
 }
@@ -309,6 +335,16 @@ check_csi() {
 }
 
 check_dns_resolution() {
+  if [[ -n "${LOCAL_REGISTRY}" ]]; then
+    IMG_PATH=${LOCAL_REGISTRY}
+    if [[ -n "${IMAGE_PULL_SECRET}" ]]; then
+      UPDATED_SPEC="imagePullSecrets:\n- name: ${IMAGE_PULL_SECRET}"
+    else
+      UPDATED_SPEC=""
+    fi
+  else
+    IMG_PATH="gcr.io/kubernetes-e2e-test-images"
+  fi
   echolog "${LIGHT_BLUE}Checking if DNS resolution working in K8s cluster...${NC}\n"
   local exit_status=1
 
@@ -323,9 +359,10 @@ metadata:
     preflight-run: ${RANDOM_STRING}
     ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
+  ${UPDATED_SPEC}
   containers:
   - name: dnsutils
-    image: gcr.io/kubernetes-e2e-test-images/dnsutils:1.3
+    image: ${IMG_PATH}/dnsutils:1.3
     command:
       - sleep
       - "3600"
@@ -371,6 +408,16 @@ EOF
 }
 
 check_volume_snapshot() {
+  if [[ -n "${LOCAL_REGISTRY}" ]]; then
+      IMG_PATH="${LOCAL_REGISTRY}/busybox"
+      if [[ -n "${IMAGE_PULL_SECRET}" ]]; then
+        UPDATED_SPEC="imagePullSecrets:\n- name: ${IMAGE_PULL_SECRET}"
+      else
+        UPDATED_SPEC=""
+      fi
+    else
+      IMG_PATH="busybox"
+    fi
   echolog "${LIGHT_BLUE}Checking if volume snapshot and restore enabled in K8s cluster...${NC}\n"
   local err_status=1
   local success_status=0
@@ -406,9 +453,10 @@ metadata:
     preflight-run: ${RANDOM_STRING}
     ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
+  ${UPDATED_SPEC}
   containers:
   - name: busybox
-    image: busybox
+    image: ${IMG_PATH}
     command: ["/bin/sh", "-c"]
     args: ["touch /demo/data/sample-file.txt && sleep 3000"]
     resources:
@@ -524,9 +572,10 @@ metadata:
     preflight-run: ${RANDOM_STRING}
     ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
+  ${UPDATED_SPEC}
   containers:
   - name: busybox
-    image: busybox
+    image: ${IMG_PATH}
     args:
     - sleep
     - "3600"
@@ -664,9 +713,10 @@ metadata:
     preflight-run: ${RANDOM_STRING}
     ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
+  ${UPDATED_SPEC}
   containers:
   - name: busybox
-    image: busybox
+    image: ${IMG_PATH}
     args:
     - sleep
     - "3600"
