@@ -54,6 +54,7 @@ which retrieves single object or list of objects of that resource.`,
 			OutputFormat:           outputFormat,
 			OperationScope:         operationScope,
 			TvkInstanceUID:         tvkInstanceUID,
+			Cli:                    true,
 		}
 		return nil
 	},
