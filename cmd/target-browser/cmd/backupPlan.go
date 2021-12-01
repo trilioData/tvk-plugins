@@ -19,10 +19,13 @@ func backupPlanCmd() *cobra.Command {
 		Short:   "Get specific BackupPlan or list of BackupPlans",
 		Long: `Performs GET operation on target-browser's '/backupplan' API and gets specific BackupPlan or list of BackupPlans from mounted target location
 using available flags and options.`,
-		Example: `  # List of backupPlans	
+		Example: `  # List of backupPlans
   kubectl tvk-target-browser get backupPlan --target-name <name> --target-namespace <namespace>
 
-  # Get specific backupPlan
+  # List of backupPlans using HTTPS
+  kubectl tvk-target-browser get backupPlan --target-name <name> --target-namespace <namespace> --use-https --certificate-authority <certificate-path>
+
+ # Get specific backupPlan
   kubectl tvk-target-browser get backupPlan <backup-plan-uid> --target-name <name> --target-namespace <namespace>
 
   # List of backupPlans: order by [name]

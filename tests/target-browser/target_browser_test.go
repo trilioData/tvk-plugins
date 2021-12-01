@@ -1656,8 +1656,8 @@ var _ = Describe("Target Browser Tests", func() {
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("required flag(s) \"%s\", \"%s\", \"%s\", \"%s\", \"%s\" not set",
-					cmd.BackupPlanUIDFlag, cmd.BackupUIDFlag, cmd.KindFlag, cmd.NameFlag, cmd.VersionFlag)))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("required flag(s) \"%s\", \"%s\", \"%s\", \"%s\" not set",
+					cmd.BackupUIDFlag, cmd.KindFlag, cmd.NameFlag, cmd.VersionFlag)))
 			})
 
 			It(fmt.Sprintf("Should fail if flag %s, %s & %s not given", cmd.KindFlag, cmd.NameFlag, cmd.VersionFlag), func() {
@@ -1670,14 +1670,14 @@ var _ = Describe("Target Browser Tests", func() {
 					cmd.KindFlag, cmd.NameFlag, cmd.VersionFlag)))
 			})
 
-			It(fmt.Sprintf("Should fail if flag %s & %s not given", cmd.BackupPlanUIDFlag, cmd.BackupUIDFlag), func() {
+			It(fmt.Sprintf("Should fail if flag %s not given", cmd.BackupUIDFlag), func() {
 				args := []string{cmdGet, cmdResourceMetadata, flagKind, "", flagName, "", flagVersion, ""}
 				args = append(args, commonArgs...)
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("required flag(s) \"%s\", \"%s\" not set",
-					cmd.BackupPlanUIDFlag, cmd.BackupUIDFlag)))
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("required flag(s) \"%s\" not set",
+					cmd.BackupUIDFlag)))
 			})
 
 			It(fmt.Sprintf("Should fail if flag %s is given without value", cmd.BackupUIDFlag), func() {
@@ -1688,16 +1688,6 @@ var _ = Describe("Target Browser Tests", func() {
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
 				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagBackupUIDFlag)))
-			})
-
-			It(fmt.Sprintf("Should fail if flag %s is given without value", cmd.BackupPlanUIDFlag), func() {
-				args := []string{cmdGet, cmdResourceMetadata, flagKind, "", flagName, "", flagVersion, "", flagBackupUIDFlag, ""}
-				args = append(args, commonArgs...)
-				args = append(args, flagBackupPlanUIDFlag)
-				command := exec.Command(targetBrowserBinaryFilePath, args...)
-				output, err := command.CombinedOutput()
-				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("flag needs an argument: %s", flagBackupPlanUIDFlag)))
 			})
 
 			It(fmt.Sprintf("Should fail if flag %s is given without value", cmd.KindFlag), func() {

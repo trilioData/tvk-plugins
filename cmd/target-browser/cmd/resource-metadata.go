@@ -11,6 +11,7 @@ func init() {
 	getCmd.AddCommand(resourceMetadataCmd())
 }
 
+// nolint:lll // ignore long line lint errors
 // resourceMetadataCmd represents the resource-metadata command
 func resourceMetadataCmd() *cobra.Command {
 	var cmd = &cobra.Command{
@@ -18,8 +19,13 @@ func resourceMetadataCmd() *cobra.Command {
 		Short: "Get metadata details of particular resource from backup",
 		Long:  `Performs GET operation on target-browser's '/resource-metadata' API and gets Application metadata from backup`,
 		Example: `  # Get resource-metadata details of specific backup
-  kubectl tvk-target-browser get resource-metadata --backup-uid <uid> --backup-plan-uid <uid> --name <name> --group <group> 
-	--version <version> --kind <kind>
+  kubectl tvk-target-browser get resource-metadata --backup-uid <uid> --name <name> --group <group> --version <version> --kind <kind>
+
+  # Get resource-metadata details of specific backup and backupPlan
+  kubectl tvk-target-browser get resource-metadata --backup-uid <uid> --backup-plan-uid <uid> --name <name> --group <group> --version <version> --kind <kind>
+
+  # Get resource-metadata details of specific backup using HTTPS
+  kubectl tvk-target-browser get resource-metadata --backup-uid <uid> --name <name> --group <group> --version <version> --kind <kind> --use-https --certificate-authority <certificate-path>
 `,
 		RunE: getResourceMetadata,
 	}
@@ -27,13 +33,9 @@ func resourceMetadataCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&group, GroupFlag, groupFlagShort, groupDefault, groupUsage)
 
 	cmd.Flags().StringVar(&backupPlanUID, BackupPlanUIDFlag, backupPlanUIDDefault, backupPlanUIDUsage)
-	err := cmd.MarkFlagRequired(BackupPlanUIDFlag)
-	if err != nil {
-		log.Fatalf("Invalid option or missing required flag %s - %s", BackupPlanUIDFlag, err.Error())
-	}
 
 	cmd.Flags().StringVar(&backupUID, BackupUIDFlag, backupUIDDefault, backupUIDUsage)
-	err = cmd.MarkFlagRequired(BackupUIDFlag)
+	err := cmd.MarkFlagRequired(BackupUIDFlag)
 	if err != nil {
 		log.Fatalf("Invalid option or missing required flag %s - %s", BackupUIDFlag, err.Error())
 	}
