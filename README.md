@@ -14,7 +14,7 @@ kubectl-plugins for log-collector, preflight and target-browser CLI.
 
 ## Documentation:
 
-Refer [`docs`](docs) for the documentation of preflight and log-collector plugins.
+Refer [`docs`](docs) for the documentation of all available plugins.
 Also, steps to install, uninstall, upgrade and uninstall respective plugin are mentioned in docs.
 
 `Quick Links`: [`preflight`](docs/preflight/README.md)  [`log-collector`](docs/log-collector/README.md) [`target-browser`](docs/target-browser/README.md)

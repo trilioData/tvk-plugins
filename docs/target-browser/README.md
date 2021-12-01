@@ -17,6 +17,9 @@ target-browser's `/backupplan`, `/backup`, `/metadata`, `/resource-metadata`, an
         4. Look for the required target name in the list and ensure that in `Browsing` column toggle is `Enabled` for
            that target.
 4. TVK's web-backend service should be up and running.
+5. TVK's target-browser ingress path[`spec.rules[*].host`] should be accessible.
+    1. If there's no DNS record for ingress-gateway service IP and ingress host path then, create one for it on your local system[`/etc/hosts`].
+    2. If ingress-gateway service is `NodePort` type then, make sure NodePort is properly exposed from all cluster nodes.
 
 **Supported OS and Architectures:**
 
@@ -28,31 +31,62 @@ target-browser's `/backupplan`, `/backup`, `/metadata`, `/resource-metadata`, an
 - darwin/arm64
 - windows/amd64
 
-## Installation, Upgrade, Removal of Plugins:
 
-- Add TVK custom plugin index of krew:
+## Installation, Upgrade, Removal of Plugins :
 
-  ```bash
-  kubectl krew index add tvk-plugins https://github.com/trilioData/tvk-plugins.git
-  ```
+#### 1. With `krew`:
 
-- Installation:
+  - Add TVK custom plugin index of krew:
+  
+    ```bash
+    kubectl krew index add tvk-plugins https://github.com/trilioData/tvk-plugins.git
+    ```
+  
+  - Installation:
+  
+    ```bash
+    kubectl krew install tvk-plugins/tvk-target-browser
+    ```
+  
+  - Upgrade:
+  
+    ```bash
+    kubectl krew upgrade tvk-target-browser
+    ```
+  
+  - Removal:
+  
+    ```bash
+    kubectl krew uninstall tvk-target-browser
+    ```
 
-  ```bash
-  kubectl krew install tvk-plugins/tvk-target-browser
-  ```
+#### 2. Without `krew`:
 
-- Upgrade:
+1. List of available releases: https://github.com/trilioData/tvk-plugins/releases
+2. Choose a version of target-browser plugin to install and check if release assets have target-browser plugin's package
+   [target-browser_${version}_${OS}_${ARCH}.tar.gz] for your desired OS & Architecture.
+3. Set env variable `version=v1.x.x` [update with your desired version].
 
-  ```bash
-  kubectl krew upgrade tvk-target-browser
-  ```
+##### Linux/macOS
 
-- Removal:
+- Bash or ZSH shells
+```bash
+(
+  set -ex; cd "$(mktemp -d)" &&
+  OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
+  ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
+  package_name="target-browser_${version}_${OS}_${ARCH}.tar.gz" &&
+  curl -fsSLO "https://github.com/trilioData/tvk-plugins/releases/download/"${version}"/${package_name}" &&
+  tar zxvf ${package_name} && sudo mv target-browser /usr/local/bin/kubectl-tvk_target_browser
+)
+```
+Verify installation with `kubectl tvk-target-browser --help`
 
-  ```bash
-  kubectl krew uninstall tvk-target-browser
-  ```
+##### Windows
+
+1. Download `target-browser_${version}_windows_${ARCH}.tar.gz` from the Releases page to a directory and unzip the package.
+2. Launch a command prompt (target-browser.exe).
+
 
 ## Usage:
 
