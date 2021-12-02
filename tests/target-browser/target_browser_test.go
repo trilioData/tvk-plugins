@@ -369,45 +369,38 @@ var _ = Describe("Target Browser Tests", func() {
 			})
 
 			It(fmt.Sprintf("Should succeed cmd backupPlan if flag %s is not provided", cmd.OutputFormatFlag), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagTargetName, TargetName, flagTargetNamespace,
-					installNs, flagKubeConfig, kubeConf}
-				command := exec.Command(targetBrowserBinaryFilePath, args...)
-				output, err := command.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
-				output = convertTSVToJSON(output)
-				validateMetadata(output, "backupPlan-data-without-wide.json")
+				args := []string{cmdGet, cmdBackupPlan}
+				backupPlanData := runCmdBackupPlan(args)
+				Expect(len(backupPlanData)).To(Equal(noOfBackupPlansToCreate))
+				for index := 0; index < len(backupPlanData)-1; index++ {
+					Expect(backupPlanData[index].Kind).To(Equal(internal.BackupPlanKind))
+					Expect(backupPlanData[index].TvkInstanceID).To(Equal(backupUID))
+				}
 			})
 
 			It(fmt.Sprintf("Should get one backupPlan for specific backupPlan UID if flag %s is not provided",
 				cmd.OutputFormatFlag), func() {
-				args := []string{cmdGet, cmdBackupPlan, backupPlanUIDs[0], flagTargetName, TargetName, flagTargetNamespace,
-					installNs, flagKubeConfig, kubeConf}
-				command := exec.Command(targetBrowserBinaryFilePath, args...)
-				output, err := command.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
-				output = convertTSVToJSON(output)
-				validateMetadata(output, "one-backupPlan-data-without-wide.json")
+				args := []string{cmdGet, cmdBackupPlan, backupPlanUIDs[0]}
+				backupPlanData := runCmdBackupPlan(args)
+				Expect(len(backupPlanData)).To(Equal(1))
+				Expect(backupPlanData[0].UID).To(Equal(backupPlanUIDs[0]))
 			})
 
 			It(fmt.Sprintf("Should succeed cmd backupPlan if flag %s is given and value is %s", cmd.OutputFormatFlag, internal.FormatWIDE), func() {
-				args := []string{cmdGet, cmdBackupPlan, flagTargetName, TargetName, flagTargetNamespace,
-					installNs, flagKubeConfig, kubeConf, flagOutputFormat, internal.FormatWIDE}
-				command := exec.Command(targetBrowserBinaryFilePath, args...)
-				output, err := command.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
-				output = convertTSVToJSON(output)
-				validateMetadata(output, "backupPlan-data-with-wide.json")
+				args := []string{cmdGet, cmdBackupPlan, flagOutputFormat, internal.FormatWIDE}
+				outputWide := exeCommand(args)
+				args = []string{cmdGet, cmdBackupPlan, flagOutputFormat, internal.FormatJSON}
+				outputJSON := exeCommand(args)
+				Expect(reflect.DeepEqual(outputWide, outputJSON))
 			})
 
 			It(fmt.Sprintf("Should get one backupPlan for specific backupPlan UID if flag %s is given and value is %s",
 				cmd.OutputFormatFlag, internal.FormatWIDE), func() {
-				args := []string{cmdGet, cmdBackupPlan, backupPlanUIDs[0], flagTargetName, TargetName, flagTargetNamespace,
-					installNs, flagKubeConfig, kubeConf, flagOutputFormat, internal.FormatWIDE}
-				command := exec.Command(targetBrowserBinaryFilePath, args...)
-				output, err := command.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
-				output = convertTSVToJSON(output)
-				validateMetadata(output, "one-backupPlan-data-with-wide.json")
+				args := []string{cmdGet, cmdBackupPlan, backupPlanUIDs[0], flagOutputFormat, internal.FormatWIDE}
+				outputWide := exeCommand(args)
+				args = []string{cmdGet, cmdBackupPlan, backupPlanUIDs[0], flagOutputFormat, internal.FormatJSON}
+				outputJSON := exeCommand(args)
+				Expect(reflect.DeepEqual(outputWide, outputJSON))
 			})
 
 			It(fmt.Sprintf("Should fail cmd Backup if flag %s is given without value", cmd.OutputFormatFlag), func() {
@@ -465,45 +458,41 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should get one backup for specific backup UID if flag %s is not privded",
 				cmd.OutputFormatFlag), func() {
-				args := []string{cmdGet, cmdBackup, backupUID, flagTargetName, TargetName, flagTargetNamespace,
-					installNs, flagKubeConfig, kubeConf}
-				command := exec.Command(targetBrowserBinaryFilePath, args...)
-				output, err := command.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
-				output = convertTSVToJSON(output)
-				validateMetadata(output, "one-backup-data-without-wide.json")
+				args := []string{cmdGet, cmdBackup, backupUID}
+				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(1))
+				Expect(backupData[0].UID).To(Equal(backupUID))
 			})
 
 			It(fmt.Sprintf("Should succeed cmd backup if flag %s is not provided", cmd.OutputFormatFlag), func() {
-				args := []string{cmdGet, cmdBackup, flagTargetName, TargetName, flagTargetNamespace,
-					installNs, flagKubeConfig, kubeConf}
-				command := exec.Command(targetBrowserBinaryFilePath, args...)
-				output, err := command.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
-				output = convertTSVToJSON(output)
-				validateMetadata(output, "backup-data-without-wide.json")
+				args := []string{cmdGet, cmdBackup}
+				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(noOfBackupPlansToCreate * noOfBackupsToCreatePerBackupPlan))
+				for index := 0; index < len(backupData)-1; index++ {
+					Expect(backupData[index].Kind).To(Equal(internal.BackupKind))
+					Expect(backupData[index].UID).To(Equal(backupUID))
+				}
 			})
 
 			It(fmt.Sprintf("Should get one backup for specific backup UID if flag %s is given and value is %s",
 				cmd.OutputFormatFlag, internal.FormatWIDE), func() {
-				args := []string{cmdGet, cmdBackup, backupUID, flagTargetName, TargetName, flagTargetNamespace,
-					installNs, flagKubeConfig, kubeConf, flagOutputFormat, internal.FormatWIDE}
-				command := exec.Command(targetBrowserBinaryFilePath, args...)
-				output, err := command.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
-				output = convertTSVToJSON(output)
-				validateMetadata(output, "one-backup-data-with-wide.json")
+				args := []string{cmdGet, cmdBackup, backupUID, flagOutputFormat, internal.FormatWIDE}
+				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(1))
+				Expect(backupData[0].UID).To(Equal(backupUID))
+				Expect(backupData[0].TvkInstanceID).To(Equal(backupUID))
 			})
 
 			It(fmt.Sprintf("Should succeed cmd backup if flag %s is given and value is %s", cmd.OutputFormatFlag, internal.FormatWIDE), func() {
 				isLast = true
-				args := []string{cmdGet, cmdBackup, flagTargetName, TargetName, flagTargetNamespace,
-					installNs, flagKubeConfig, kubeConf, flagOutputFormat, internal.FormatWIDE}
-				command := exec.Command(targetBrowserBinaryFilePath, args...)
-				output, err := command.CombinedOutput()
-				Expect(err).ShouldNot(HaveOccurred())
-				output = convertTSVToJSON(output)
-				validateMetadata(output, "backup-data-with-wide.json")
+				args := []string{cmdGet, cmdBackup, flagOutputFormat, internal.FormatWIDE}
+				backupData := runCmdBackup(args)
+				Expect(len(backupData)).To(Equal(noOfBackupPlansToCreate * noOfBackupsToCreatePerBackupPlan))
+				for index := 0; index < len(backupData)-1; index++ {
+					Expect(backupData[index].Kind).To(Equal(internal.BackupKind))
+					Expect(backupData[index].UID).To(Equal(backupUID))
+					Expect(backupData[0].TvkInstanceID).To(Equal(backupUID))
+				}
 			})
 		})
 	})

@@ -329,7 +329,7 @@ func convertTSVToJSON(tsvData []byte) []byte {
 
 	output, err := json.MarshalIndent(res, "  ", "  ")
 	Expect(err).To(BeNil())
-	return output
+	return parseData(output)
 }
 
 func formatData(tsvData []byte) string {
@@ -360,4 +360,42 @@ func formatData(tsvData []byte) string {
 	tsvDataList[0] = strings.Join(row, " ")
 
 	return strings.Join(tsvDataList, "\n")
+}
+
+var backupPlanSelector = []string{
+	"NAME as Name",
+	"KIND as Kind",
+	"UID",
+	"TYPE as Type",
+	"TVK INSTANCE as TVK Instance",
+	"SUCCESSFUL BACKUP as Successful Backup",
+	"SUCCESSFUL BACKUP TIMESTAMP as Successful Backup Timestamp",
+	"CREATION TIME as Creation Time",
+}
+
+var backupSelector = []string{
+	"NAME as Name",
+	"KIND as Kind",
+	"UID",
+	"TYPE as Type",
+	"STATUS as Status",
+	"SIZE as Size",
+	"BACKUPPLAN UID as BackupPlan UID",
+	"START TIME as Start Time",
+	"END TIME as End Time",
+	"TVK INSTANCE  as TVK Instance",
+	"EXPIRATION TIME as Expiration Time",
+}
+
+func parseData(respData []byte) []byte {
+	type result struct {
+		Result interface{} `json:"results"`
+	}
+	var r result
+	r.Result = []interface{}{respData}
+	err := json.Unmarshal(respData, &r.Result)
+	Expect(err).To(BeNil())
+	respDataByte, err := json.MarshalIndent(r, "", "  ")
+	Expect(err).To(BeNil())
+	return respDataByte
 }

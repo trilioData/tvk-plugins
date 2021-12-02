@@ -208,11 +208,23 @@ func mergeArgs(args []string) (string, []string) {
 
 func runCmdBackupPlan(args []string) []targetbrowser.BackupPlan {
 	var (
-		output         []byte
-		err            error
-		opFormat       string
 		backupPlanList targetbrowser.BackupPlanList
-		respBytes      bytes.Buffer
+	)
+	respBytes := exeCommand(args)
+
+	err := json.Unmarshal(respBytes.Bytes(), &backupPlanList.Results)
+	if err != nil {
+		Fail(fmt.Sprintf("Failed to unmarshal backupplan command's data %s", err.Error()))
+	}
+	return backupPlanList.Results
+}
+
+func exeCommand(args []string) bytes.Buffer {
+	var (
+		output          []byte
+		opFormat        string
+		bkpPlanSelector = targetbrowser.BackupPlanSelector
+		err             error
 	)
 
 	opFormat, args = mergeArgs(args)
@@ -229,15 +241,23 @@ func runCmdBackupPlan(args []string) []targetbrowser.BackupPlan {
 	if opFormat == internal.FormatYAML {
 		output, err = yaml.YAMLToJSON(output)
 		Expect(err).To(BeNil())
+	} else if opFormat == internal.FormatWIDE || opFormat == "" {
+		output = convertTSVToJSON(output)
+		bkpPlanSelector = backupPlanSelector
 	}
-	finalOutput := string(output)
+	return formatOutput(string(output), bkpPlanSelector)
+}
 
+func formatOutput(finalOutput string, selector []string) bytes.Buffer {
+	var (
+		err       error
+		respBytes bytes.Buffer
+	)
 	Eventually(func() error {
 		if len(finalOutput) == 0 {
 			return nil
 		}
-
-		jsq := gojsonq.New().FromString(finalOutput).From(internal.Results).Select(targetbrowser.BackupPlanSelector...)
+		jsq := gojsonq.New().FromString(finalOutput).From(internal.Results).Select(selector...)
 		if err = jsq.Error(); err != nil {
 			log.Warn(err.Error())
 			if strings.Contains(err.Error(), "looking for beginning of value") {
@@ -249,23 +269,19 @@ func runCmdBackupPlan(args []string) []targetbrowser.BackupPlan {
 		}
 
 		jsq.Writer(&respBytes)
-
-		err = json.Unmarshal(respBytes.Bytes(), &backupPlanList.Results)
-		if err != nil {
-			Fail(fmt.Sprintf("Failed to unmarshal backupplan command's data %s", err.Error()))
-		}
-
 		return nil
 	}, time.Second*30, interval).Should(BeNil())
-
-	return backupPlanList.Results
+	return respBytes
 }
 
 func runCmdBackup(args []string) []targetbrowser.Backup {
 	var (
-		output   []byte
-		err      error
-		opFormat string
+		output      []byte
+		err         error
+		opFormat    string
+		bkpSelector = targetbrowser.BackupSelector
+		respBytes   bytes.Buffer
+		backupList  targetbrowser.BackupList
 	)
 
 	opFormat, args = mergeArgs(args)
@@ -282,36 +298,16 @@ func runCmdBackup(args []string) []targetbrowser.Backup {
 	if opFormat == internal.FormatYAML {
 		output, err = yaml.YAMLToJSON(output)
 		Expect(err).To(BeNil())
+	} else if opFormat == internal.FormatWIDE || opFormat == "" {
+		output = convertTSVToJSON(output)
+		bkpSelector = backupSelector
 	}
-	finalOutput := string(output)
-	var backupList targetbrowser.BackupList
-	Eventually(func() error {
-		if len(finalOutput) == 0 {
-			return nil
-		}
 
-		jsq := gojsonq.New().FromString(finalOutput).From(internal.Results).Select(targetbrowser.BackupSelector...)
-		if err = jsq.Error(); err != nil {
-			log.Warn(err.Error())
-			if strings.Contains(err.Error(), "looking for beginning of value") {
-				slicedStrings := strings.SplitAfter(finalOutput, "\n")
-				finalOutput = strings.Join(slicedStrings[1:], "\n")
-				return err
-			}
-			Fail(err.Error())
-		}
-
-		var respBytes bytes.Buffer
-		jsq.Writer(&respBytes)
-
-		err = json.Unmarshal(respBytes.Bytes(), &backupList.Results)
-		if err != nil {
-			Fail(fmt.Sprintf("Failed to unmarshal backup command's output %s.", err.Error()))
-		}
-
-		return nil
-	}, time.Second*30, interval).Should(BeNil())
-
+	respBytes = formatOutput(string(output), bkpSelector)
+	err = json.Unmarshal(respBytes.Bytes(), &backupList.Results)
+	if err != nil {
+		Fail(fmt.Sprintf("Failed to unmarshal backup command's output %s.", err.Error()))
+	}
 	return backupList.Results
 }
 
