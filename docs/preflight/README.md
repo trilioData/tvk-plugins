@@ -49,7 +49,7 @@ The following checks are included in preflight:
   - Creates a Volume snapshot from a used PV (*snapshot-source-pvc-${RANDOM_STRING}*) from the *source-pvc-${RANDOM_STRING}*
   - Creates a volume snapshot from unused PV (delete the source pod before snapshoting)
   - Creates a restore Pod and PVC (*restored-pod-${RANDOM_STRING}* and *restored-pvc-${RANDOM_STRING}*)
-  - Creates a resotre Pod and PVC from unused pv snapshot
+  - Creates a restore Pod and PVC from unused pv snapshot
   - Ensure data in restored pod/pvc is correct
 - Cleanup of all the intermediate resources created during preflight checks' execution.
 
