@@ -98,7 +98,7 @@ take_input() {
         shift 2
       else
         echolog "Error: flag --kubeconfig value may not be empty. Either set the value or skip this flag!"
-        print_helpq
+        print_help
         exit 1
       fi
       ;;
