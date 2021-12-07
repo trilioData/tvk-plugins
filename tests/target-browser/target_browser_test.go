@@ -296,13 +296,14 @@ var _ = Describe("Target Browser Tests", func() {
 				noOfBackupsToCreatePerBackupPlan = 1
 				once                             sync.Once
 				isLast                           bool
-				backupUID                        string
+				backupUID, tvkUID                string
 			)
 			BeforeEach(func() {
 				once.Do(func() {
 					createTarget(true)
 					backupUID = guid.New().String()
-					createBackups(noOfBackupPlansToCreate, noOfBackupsToCreatePerBackupPlan, backupUID, "mutate-tvk-id")
+					tvkUID = guid.New().String()
+					createBackups(noOfBackupPlansToCreate, noOfBackupsToCreatePerBackupPlan, backupUID, "mutate-tvk-id", tvkUID)
 					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
 					verifyBrowserCacheBPlan(noOfBackupPlansToCreate)
 				})
@@ -338,7 +339,7 @@ var _ = Describe("Target Browser Tests", func() {
 				Expect(len(backupPlanData)).To(Equal(noOfBackupPlansToCreate))
 				for index := 0; index < len(backupPlanData)-1; index++ {
 					Expect(backupPlanData[index].Kind).To(Equal(internal.BackupPlanKind))
-					Expect(backupPlanData[index].TvkInstanceID).To(Equal(backupUID))
+					Expect(backupPlanData[index].TvkInstanceID).To(Equal(tvkUID))
 				}
 			})
 
@@ -356,7 +357,7 @@ var _ = Describe("Target Browser Tests", func() {
 				Expect(len(backupPlanData)).To(Equal(noOfBackupPlansToCreate))
 				for index := 0; index < len(backupPlanData)-1; index++ {
 					Expect(backupPlanData[index].Kind).To(Equal(internal.BackupPlanKind))
-					Expect(backupPlanData[index].TvkInstanceID).To(Equal(backupUID))
+					Expect(backupPlanData[index].TvkInstanceID).To(Equal(tvkUID))
 				}
 			})
 
@@ -374,7 +375,7 @@ var _ = Describe("Target Browser Tests", func() {
 				Expect(len(backupPlanData)).To(Equal(noOfBackupPlansToCreate))
 				for index := 0; index < len(backupPlanData)-1; index++ {
 					Expect(backupPlanData[index].Kind).To(Equal(internal.BackupPlanKind))
-					Expect(backupPlanData[index].TvkInstanceID).To(Equal(backupUID))
+					Expect(backupPlanData[index].TvkInstanceID).To(Equal(tvkUID))
 				}
 			})
 
@@ -388,18 +389,18 @@ var _ = Describe("Target Browser Tests", func() {
 
 			It(fmt.Sprintf("Should succeed cmd backupPlan if flag %s is given and value is %s", cmd.OutputFormatFlag, internal.FormatWIDE), func() {
 				args := []string{cmdGet, cmdBackupPlan, flagOutputFormat, internal.FormatWIDE}
-				outputWide := exeCommand(args)
+				outputWide := exeCommand(args, cmdBackupPlan)
 				args = []string{cmdGet, cmdBackupPlan, flagOutputFormat, internal.FormatJSON}
-				outputJSON := exeCommand(args)
+				outputJSON := exeCommand(args, cmdBackupPlan)
 				Expect(reflect.DeepEqual(outputWide, outputJSON))
 			})
 
 			It(fmt.Sprintf("Should get one backupPlan for specific backupPlan UID if flag %s is given and value is %s",
 				cmd.OutputFormatFlag, internal.FormatWIDE), func() {
 				args := []string{cmdGet, cmdBackupPlan, backupPlanUIDs[0], flagOutputFormat, internal.FormatWIDE}
-				outputWide := exeCommand(args)
+				outputWide := exeCommand(args, cmdBackupPlan)
 				args = []string{cmdGet, cmdBackupPlan, backupPlanUIDs[0], flagOutputFormat, internal.FormatJSON}
-				outputJSON := exeCommand(args)
+				outputJSON := exeCommand(args, cmdBackupPlan)
 				Expect(reflect.DeepEqual(outputWide, outputJSON))
 			})
 
@@ -480,7 +481,7 @@ var _ = Describe("Target Browser Tests", func() {
 				backupData := runCmdBackup(args)
 				Expect(len(backupData)).To(Equal(1))
 				Expect(backupData[0].UID).To(Equal(backupUID))
-				Expect(backupData[0].TvkInstanceID).To(Equal(backupUID))
+				Expect(backupData[0].TvkInstanceID).To(Equal(tvkUID))
 			})
 
 			It(fmt.Sprintf("Should succeed cmd backup if flag %s is given and value is %s", cmd.OutputFormatFlag, internal.FormatWIDE), func() {
@@ -491,7 +492,7 @@ var _ = Describe("Target Browser Tests", func() {
 				for index := 0; index < len(backupData)-1; index++ {
 					Expect(backupData[index].Kind).To(Equal(internal.BackupKind))
 					Expect(backupData[index].UID).To(Equal(backupUID))
-					Expect(backupData[0].TvkInstanceID).To(Equal(backupUID))
+					Expect(backupData[0].TvkInstanceID).To(Equal(tvkUID))
 				}
 			})
 		})
@@ -948,10 +949,10 @@ var _ = Describe("Target Browser Tests", func() {
 
 		Context("Filtering BackupPlans based on TVK Instance ID", func() {
 			var (
-				backupPlanUIDs      []string
-				tvkInstanceIDValues []string
-				once                sync.Once
-				isLast              bool
+				backupUID                           string
+				tvkInstanceIDValues, backupPlanUIDs []string
+				once                                sync.Once
+				isLast                              bool
 			)
 			BeforeEach(func() {
 				once.Do(func() {
@@ -961,8 +962,10 @@ var _ = Describe("Target Browser Tests", func() {
 						guid.New().String(),
 						guid.New().String(),
 					}
-					for _, value := range tvkInstanceIDValues {
-						createBackups(1, 1, value, "mutate-tvk-id")
+					backupUID = guid.New().String()
+
+					for _, tvkUID := range tvkInstanceIDValues {
+						createBackups(1, 1, backupUID, "mutate-tvk-id", tvkUID)
 					}
 					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(2, 2)
 					verifyBrowserCacheBPlan(2)
@@ -1491,24 +1494,28 @@ var _ = Describe("Target Browser Tests", func() {
 
 		Context("Filtering Backups based on TVK Instance ID", func() {
 			var (
-				backupPlanUIDs      []string
-				tvkInstanceIDValues []string
-				once                sync.Once
-				isLast              bool
+				backupUID                           string
+				tvkInstanceIDValues, backupPlanUIDs []string
+				once                                sync.Once
+				isLast                              bool
 			)
 			BeforeEach(func() {
 				once.Do(func() {
+
 					createTarget(true)
 					// Generating backupPlans and backups with different TVK instance UID
 					tvkInstanceIDValues = []string{
 						guid.New().String(),
 						guid.New().String(),
 					}
-					for _, value := range tvkInstanceIDValues {
-						createBackups(1, 1, value, "mutate-tvk-id")
+					backupUID = guid.New().String()
+
+					for _, tvkUID := range tvkInstanceIDValues {
+						createBackups(1, 1, backupUID, "mutate-tvk-id", tvkUID)
 					}
 					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(2, 2)
 					verifyBrowserCacheBPlan(2)
+
 				})
 			})
 			AfterEach(func() {

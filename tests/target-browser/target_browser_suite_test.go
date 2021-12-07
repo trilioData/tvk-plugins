@@ -210,7 +210,7 @@ func runCmdBackupPlan(args []string) []targetbrowser.BackupPlan {
 	var (
 		backupPlanList targetbrowser.BackupPlanList
 	)
-	respBytes := exeCommand(args)
+	respBytes := exeCommand(args, cmdBackupPlan)
 
 	err := json.Unmarshal(respBytes.Bytes(), &backupPlanList.Results)
 	if err != nil {
@@ -219,33 +219,40 @@ func runCmdBackupPlan(args []string) []targetbrowser.BackupPlan {
 	return backupPlanList.Results
 }
 
-func exeCommand(args []string) bytes.Buffer {
+func exeCommand(args []string, cmdName string) bytes.Buffer {
 	var (
-		output          []byte
-		opFormat        string
-		bkpPlanSelector = targetbrowser.BackupPlanSelector
-		err             error
+		output   []byte
+		opFormat string
+		selector = targetbrowser.BackupPlanSelector
+		err      error
 	)
 
 	opFormat, args = mergeArgs(args)
 	Eventually(func() bool {
 		command := exec.Command(targetBrowserBinaryFilePath, args...)
-		log.Info("BackupPlan command is: ", command)
+		log.Infof("%s command is: %s", cmdName, command)
 		output, err = command.CombinedOutput()
 		if err != nil {
 			log.Errorf(fmt.Sprintf("Error to execute command %s", err.Error()))
-			log.Infof("BackupPlan data is %s", output)
+			log.Infof("%s data is %s", cmdName, output)
 		}
 		return strings.Contains(string(output), "502 Bad Gateway")
 	}, apiRetryTimeout, interval).Should(BeFalse())
+
+	if cmdName == cmdBackup {
+		selector = targetbrowser.BackupSelector
+	}
 	if opFormat == internal.FormatYAML {
 		output, err = yaml.YAMLToJSON(output)
 		Expect(err).To(BeNil())
 	} else if opFormat == internal.FormatWIDE || opFormat == "" {
 		output = convertTSVToJSON(output)
-		bkpPlanSelector = backupPlanSelector
+		selector = backupPlanSelector
+		if cmdName == cmdBackup {
+			selector = backupSelector
+		}
 	}
-	return formatOutput(string(output), bkpPlanSelector)
+	return formatOutput(string(output), selector)
 }
 
 func formatOutput(finalOutput string, selector []string) bytes.Buffer {
@@ -276,34 +283,11 @@ func formatOutput(finalOutput string, selector []string) bytes.Buffer {
 
 func runCmdBackup(args []string) []targetbrowser.Backup {
 	var (
-		output      []byte
-		err         error
-		opFormat    string
-		bkpSelector = targetbrowser.BackupSelector
-		respBytes   bytes.Buffer
-		backupList  targetbrowser.BackupList
+		err        error
+		backupList targetbrowser.BackupList
 	)
 
-	opFormat, args = mergeArgs(args)
-	Eventually(func() bool {
-		command := exec.Command(targetBrowserBinaryFilePath, args...)
-		log.Info("Backup command is: ", command)
-		output, err = command.CombinedOutput()
-		if err != nil {
-			log.Infof(fmt.Sprintf("Error to execute command %s", err.Error()))
-			log.Infof("Backup data is %s", output)
-		}
-		return strings.Contains(string(output), "502 Bad Gateway")
-	}, apiRetryTimeout, interval).Should(BeFalse())
-	if opFormat == internal.FormatYAML {
-		output, err = yaml.YAMLToJSON(output)
-		Expect(err).To(BeNil())
-	} else if opFormat == internal.FormatWIDE || opFormat == "" {
-		output = convertTSVToJSON(output)
-		bkpSelector = backupSelector
-	}
-
-	respBytes = formatOutput(string(output), bkpSelector)
+	respBytes := exeCommand(args, cmdBackup)
 	err = json.Unmarshal(respBytes.Bytes(), &backupList.Results)
 	if err != nil {
 		Fail(fmt.Sprintf("Failed to unmarshal backup command's output %s.", err.Error()))
