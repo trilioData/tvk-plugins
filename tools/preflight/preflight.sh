@@ -57,7 +57,7 @@ kubectl tvk-preflight --storageclass <storage_class_name> --snapshotclass <volum
 Params:
   --storageclass  name of storage class being used in k8s cluster
   --local-registry name of the local registry to get images from (OPTIONAL)
-  --service-account name of the service account (OPTIONAL)
+  --service-account-name name of the service account (OPTIONAL)
   --image-pull-secret name of the secret configured for authentication (OPTIONAL)
   --snapshotclass name of volume snapshot class being used in k8s cluster (OPTIONAL)
   --kubeconfig  path to kube config (OPTIONAL)
@@ -123,12 +123,12 @@ take_input() {
         exit 1
       fi
       ;;
-    --service-account)
+    --service-account-name)
       if [[ -n "$2" ]]; then
-        SERVICE_ACCOUNT=$2
+        SERVICE_ACCOUNT_NAME=$2
         shift 2
       else
-        echolog "Error: flag --service-account value may not be empty. Either set the value or skip this flag!"
+        echolog "Error: flag --service-account-name value may not be empty. Either set the value or skip this flag!"
         print_help
         exit 1
       fi
@@ -346,19 +346,8 @@ check_csi() {
 }
 
 check_dns_resolution() {
-
-  if [[ -n "${SERVICE_ACCOUNT}" ]]; then
-    SVC_ACC="serviceAccountName: ${SERVICE_ACCOUNT}"
-  else
-    SVC_ACC=""
-  fi
   if [[ -n "${LOCAL_REGISTRY}" ]]; then
     IMG_PATH=${LOCAL_REGISTRY}
-    if [[ -n "${IMAGE_PULL_SECRET}" ]]; then
-      UPDATED_SPEC="imagePullSecrets:\n- name: ${IMAGE_PULL_SECRET}"
-    else
-      UPDATED_SPEC=""
-    fi
   else
     IMG_PATH="gcr.io/kubernetes-e2e-test-images"
   fi
@@ -376,8 +365,9 @@ metadata:
     preflight-run: ${RANDOM_STRING}
     ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
-  ${SVC_ACC}
-  ${UPDATED_SPEC}
+  imagePullSecrets:
+    - name: ${IMAGE_PULL_SECRET}
+  serviceAccountName: ${SERVICE_ACCOUNT_NAME}
   containers:
   - name: dnsutils
     image: ${IMG_PATH}/dnsutils:1.3
@@ -426,18 +416,8 @@ EOF
 }
 
 check_volume_snapshot() {
-  if [[ -n "${SERVICE_ACCOUNT}" ]]; then
-    SVC_ACC="serviceAccountName: ${SERVICE_ACCOUNT}"
-  else
-    SVC_ACC=""
-  fi
   if [[ -n "${LOCAL_REGISTRY}" ]]; then
     IMG_PATH="${LOCAL_REGISTRY}/busybox"
-    if [[ -n "${IMAGE_PULL_SECRET}" ]]; then
-      UPDATED_SPEC="imagePullSecrets:\n- name: ${IMAGE_PULL_SECRET}"
-    else
-      UPDATED_SPEC=""
-    fi
   else
     IMG_PATH="busybox"
   fi
@@ -476,8 +456,9 @@ metadata:
     preflight-run: ${RANDOM_STRING}
     ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
-  ${SVC_ACC}
-  ${UPDATED_SPEC}
+  imagePullSecrets:
+  - name: ${IMAGE_PULL_SECRET}
+  serviceAccountName: ${SERVICE_ACCOUNT_NAME}
   containers:
   - name: busybox
     image: ${IMG_PATH}
@@ -596,8 +577,9 @@ metadata:
     preflight-run: ${RANDOM_STRING}
     ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
-  ${SVC_ACC}
-  ${UPDATED_SPEC}
+  imagePullSecrets:
+    - name: ${IMAGE_PULL_SECRET}
+  serviceAccountName: ${SERVICE_ACCOUNT_NAME}
   containers:
   - name: busybox
     image: ${IMG_PATH}
@@ -738,8 +720,9 @@ metadata:
     preflight-run: ${RANDOM_STRING}
     ${LABEL_K8S_PART_OF}: ${LABEL_K8S_PART_OF_VALUE}
 spec:
-  ${SVC_ACC}
-  ${UPDATED_SPEC}
+  imagePullSecrets:
+    - name: ${IMAGE_PULL_SECRET}
+  serviceAccountName: ${SERVICE_ACCOUNT_NAME}
   containers:
   - name: busybox
     image: ${IMG_PATH}
