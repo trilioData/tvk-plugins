@@ -32,8 +32,8 @@ The following checks are included in preflight:
 - Ensures provided storageClass is present in cluster
   1. Provided storageClass's `provisioner` [JSON Path: `storageclass.provisioner`] should match with provided volumeSnapshotClass's `driver`[JSON Path: `volumesnapshotclass.driver`]
   2. If volumeSnapshotClass is not provided then, volumeSnapshotClass which satisfies condition `[i]` will be selected.
-  If there's are multiple volumeSnapshotClasses satisfying condition `[i]`, default volumeSnapshotClass[which has annotation `snapshot.storage.kubernetes.io/is-default-class: "true"` set]
-  will be used for further pre-flight checks.
+     If there's are multiple volumeSnapshotClasses satisfying condition `[i]`, default volumeSnapshotClass[which has annotation `snapshot.storage.kubernetes.io/is-default-class: "true"` set]
+     will be used for further pre-flight checks.
   3. Pre-flight check fails if no volumeSnapshotClass is found[after considering all above mentioned conditions].
 - Ensures at least one volumeSnapshotClass is marked as *default* in cluster if user has not provided volumeSnapshotClass as input.
 - Ensures all required features are present
@@ -49,7 +49,7 @@ The following checks are included in preflight:
   - Creates a Volume snapshot from a used PV (*snapshot-source-pvc-${RANDOM_STRING}*) from the *source-pvc-${RANDOM_STRING}*
   - Creates a volume snapshot from unused PV (delete the source pod before snapshoting)
   - Creates a restore Pod and PVC (*restored-pod-${RANDOM_STRING}* and *restored-pvc-${RANDOM_STRING}*)
-  - Creates a resotre Pod and PVC from unused pv snapshot
+  - Creates a restore Pod and PVC from unused pv snapshot
   - Ensure data in restored pod/pvc is correct
 - Cleanup of all the intermediate resources created during preflight checks' execution.
 
@@ -83,7 +83,7 @@ The following checks are included in preflight:
 ## Usage:
 
     kubectl tvk-preflight [flags]
-	
+
 - Flags:
 
 | Parameter                 | Default       | Description   |    
@@ -91,6 +91,10 @@ The following checks are included in preflight:
 | --storageclass          |             |Name of storage class being used in k8s cluster (Needed)
 | --snapshotclass          |            |Name of volume snapshot class being used in k8s cluster (Optional)
 | --kubeconfig            |   ~/.kube/config             |Kubeconfig path, if not given default is used by kubectl (Optional)
+| --local-registry        |             | Name of the local registry from where the images will be pulled (Optional)
+| --image-pull-secret     |             | Name of the secret for authentication while pulling the images from the local registry (Optional)
+| --service-account-name  |             | Name of the service account
+
 
 ## Examples
 
