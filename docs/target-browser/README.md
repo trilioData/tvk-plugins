@@ -84,7 +84,7 @@ Verify installation with `kubectl tvk-target-browser --help`
 
 ##### Windows
 
-1. Download `target-browser_${version}_windows_${ARCH}.tar.gz` from the Releases page to a directory and unzip the package.
+1. Download `target-browser_${version}_windows_${ARCH}.zip` from the Releases page to a directory and unzip the package.
 2. Launch a command prompt (target-browser.exe).
 
 

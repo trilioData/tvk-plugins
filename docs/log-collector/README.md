@@ -69,7 +69,7 @@ Verify installation with `kubectl tvk-log-collector --help`
 
 ##### Windows
 
-1. Download `log-collector_${version}_windows_${ARCH}.tar.gz` from the Releases page to a directory and unzip the package.
+1. Download `log-collector_${version}_windows_${ARCH}.zip` from the Releases page to a directory and unzip the package.
 2. Launch a command prompt (log-collector.exe).
 
 
