@@ -1,9 +1,11 @@
 {
+  "kind": "BackupPlan",
+  "apiVersion": "triliovault.trilio.io/v1",
   "metadata": {
-    "name": "bp11",
+    "name": "sample-backupPlan",
     "namespace": "default",
-    "selfLink": "/apis/triliovault.trilio.io/v1/namespaces/default/backupplans/bp11",
-    "uid": "f7f17b64-320f-43f8-8ca3-234f157df9d5",
+    "selfLink": "/apis/triliovault.trilio.io/v1/namespaces/default/backupplans/sample-backupPlan",
+    "uid": "BACKUPPLAN-UUID",
     "resourceVersion": "14515",
     "generation": 1,
     "creationTimestamp": "2021-05-10T20:03:55Z",

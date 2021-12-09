@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/yaml"
 
 	"github.com/trilioData/tvk-plugins/cmd/target-browser/cmd"
 	"github.com/trilioData/tvk-plugins/internal"
@@ -193,77 +194,77 @@ func deleteTarget(enableBrowsing bool) {
 	checkPvcDeleted(ctx, k8sClient, installNs)
 	log.Infof("Deleted target %s successfully", TargetName)
 }
+func mergeArgs(args []string) (string, []string) {
+	var opFormat string
+	for idx, val := range args {
+		if val == flagOutputFormat && len(args) > idx+1 {
+			opFormat = args[idx+1]
+			break
+		}
+	}
+	args = append(args, commonArgs...)
+	return opFormat, args
+}
 
 func runCmdBackupPlan(args []string) []targetbrowser.BackupPlan {
-	args = append(args, commonArgs...)
-	var output []byte
-	var err error
-	Eventually(func() bool {
-		command := exec.Command(targetBrowserBinaryFilePath, args...)
-		log.Info("BackupPlan command is: ", command)
-		output, err = command.CombinedOutput()
-		if err != nil {
-			log.Errorf(fmt.Sprintf("Error to execute command %s", err.Error()))
-			log.Infof("BackupPlan data is %s", output)
-		}
-		return strings.Contains(string(output), "502 Bad Gateway")
-	}, apiRetryTimeout, interval).Should(BeFalse())
+	var (
+		backupPlanList targetbrowser.BackupPlanList
+	)
+	respBytes := exeCommand(args, cmdBackupPlan)
 
-	finalOutput := string(output)
-	var backupPlanList targetbrowser.BackupPlanList
-	Eventually(func() error {
-		if len(finalOutput) == 0 {
-			return nil
-		}
-
-		jsq := gojsonq.New().FromString(finalOutput).From(internal.Results).Select(targetbrowser.BackupPlanSelector...)
-		if err = jsq.Error(); err != nil {
-			log.Warn(err.Error())
-			if strings.Contains(err.Error(), "looking for beginning of value") {
-				slicedStrings := strings.SplitAfter(finalOutput, "\n")
-				finalOutput = strings.Join(slicedStrings[1:], "\n")
-				return err
-			}
-			Fail(err.Error())
-		}
-
-		var respBytes bytes.Buffer
-		jsq.Writer(&respBytes)
-
-		err = json.Unmarshal(respBytes.Bytes(), &backupPlanList.Results)
-		if err != nil {
-			Fail(fmt.Sprintf("Failed to unmarshal backupplan command's data %s", err.Error()))
-		}
-
-		return nil
-	}, time.Second*30, interval).Should(BeNil())
-
+	err := json.Unmarshal(respBytes.Bytes(), &backupPlanList.Results)
+	if err != nil {
+		Fail(fmt.Sprintf("Failed to unmarshal backupplan command's data %s", err.Error()))
+	}
 	return backupPlanList.Results
 }
 
-func runCmdBackup(args []string) []targetbrowser.Backup {
-	var output []byte
-	var err error
-	args = append(args, commonArgs...)
+func exeCommand(args []string, cmdName string) bytes.Buffer {
+	var (
+		output   []byte
+		opFormat string
+		selector = targetbrowser.BackupPlanSelector
+		err      error
+	)
+
+	opFormat, args = mergeArgs(args)
 	Eventually(func() bool {
 		command := exec.Command(targetBrowserBinaryFilePath, args...)
-		log.Info("Backup command is: ", command)
+		log.Infof("%s command is: %s", cmdName, command)
 		output, err = command.CombinedOutput()
 		if err != nil {
-			log.Infof(fmt.Sprintf("Error to execute command %s", err.Error()))
-			log.Infof("Backup data is %s", output)
+			log.Errorf(fmt.Sprintf("Error to execute command %s", err.Error()))
+			log.Infof("%s data is %s", cmdName, output)
 		}
 		return strings.Contains(string(output), "502 Bad Gateway")
 	}, apiRetryTimeout, interval).Should(BeFalse())
 
-	finalOutput := string(output)
-	var backupList targetbrowser.BackupList
+	if cmdName == cmdBackup {
+		selector = targetbrowser.BackupSelector
+	}
+	if opFormat == internal.FormatYAML {
+		output, err = yaml.YAMLToJSON(output)
+		Expect(err).To(BeNil())
+	} else if opFormat == internal.FormatWIDE || opFormat == "" {
+		output = convertTSVToJSON(output)
+		selector = backupPlanSelector
+		if cmdName == cmdBackup {
+			selector = backupSelector
+		}
+	}
+	return formatOutput(string(output), selector)
+}
+
+func formatOutput(finalOutput string, selector []string) bytes.Buffer {
+	var (
+		err       error
+		respBytes bytes.Buffer
+	)
 	Eventually(func() error {
 		if len(finalOutput) == 0 {
 			return nil
 		}
-
-		jsq := gojsonq.New().FromString(finalOutput).From(internal.Results).Select(targetbrowser.BackupSelector...)
+		jsq := gojsonq.New().FromString(finalOutput).From(internal.Results).Select(selector...)
 		if err = jsq.Error(); err != nil {
 			log.Warn(err.Error())
 			if strings.Contains(err.Error(), "looking for beginning of value") {
@@ -274,17 +275,23 @@ func runCmdBackup(args []string) []targetbrowser.Backup {
 			Fail(err.Error())
 		}
 
-		var respBytes bytes.Buffer
 		jsq.Writer(&respBytes)
-
-		err = json.Unmarshal(respBytes.Bytes(), &backupList.Results)
-		if err != nil {
-			Fail(fmt.Sprintf("Failed to unmarshal backup command's output %s.", err.Error()))
-		}
-
 		return nil
 	}, time.Second*30, interval).Should(BeNil())
+	return respBytes
+}
 
+func runCmdBackup(args []string) []targetbrowser.Backup {
+	var (
+		err        error
+		backupList targetbrowser.BackupList
+	)
+
+	respBytes := exeCommand(args, cmdBackup)
+	err = json.Unmarshal(respBytes.Bytes(), &backupList.Results)
+	if err != nil {
+		Fail(fmt.Sprintf("Failed to unmarshal backup command's output %s.", err.Error()))
+	}
 	return backupList.Results
 }
 
@@ -355,7 +362,7 @@ func getTargetBrowserIngress() *v1beta1.Ingress {
 }
 
 func verifyBrowserCacheBPlan(noOfBackupPlan int) {
-	args := []string{cmdGet, cmdBackupPlan}
+	args := []string{cmdGet, cmdBackupPlan, flagOutputFormat, internal.FormatJSON}
 	Eventually(func() bool {
 		backupPlanData := runCmdBackupPlan(args)
 		return len(backupPlanData) == noOfBackupPlan || len(backupPlanData) == cmd.PageSizeDefault

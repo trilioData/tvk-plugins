@@ -20,14 +20,14 @@ type BackupPlanListOptions struct {
 
 // BackupPlan struct stores extracted fields from actual BackupPlan API GET response
 type BackupPlan struct {
-	Name                      string      `json:"Name"`
-	Kind                      string      `json:"Kind"`
-	UID                       string      `json:"UID"`
-	Type                      string      `json:"Type"`
-	TvkInstanceID             string      `json:"TVK Instance"`
-	SuccessfulBackup          int         `json:"Successful Backup"`
-	SuccessfulBackupTimestamp metav1.Time `json:"Successful Backup Timestamp"`
-	CreationTime              string      `json:"Creation Time"`
+	Name                      string `json:"Name"`
+	Kind                      string `json:"Kind"`
+	UID                       string `json:"UID"`
+	Type                      string `json:"Type"`
+	TvkInstanceID             string `json:"TVK Instance"`
+	SuccessfulBackup          int    `json:"Successful Backup"`
+	SuccessfulBackupTimestamp string `json:"Successful Backup Timestamp"`
+	CreationTime              string `json:"Creation Time"`
 }
 
 // BackupPlanList struct stores extracted fields from actual BackupPlan API LIST response
