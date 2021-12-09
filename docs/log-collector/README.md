@@ -50,7 +50,9 @@ tvk-log-collector collects the logs, config and events of resources. Pod Logs ca
 1. List of available releases: https://github.com/trilioData/tvk-plugins/releases
 2. Choose a version of log-collector plugin to install and check if release assets have log-collector plugin's package
    [log-collector_${version}_${OS}_${ARCH}.tar.gz] for your desired OS & Architecture.
-3. Set env variable `version=v1.x.x` [update with your desired version].
+   - To check OS & Architecture, execute command `uname -a` on linux/macOS and `systeminfo` on windows
+3. Set env variable `version=v1.x.x` [update with your desired version]. If `version` is not exported, `latest` tagged version
+   will be considered.
 
 ##### Linux/macOS
 
@@ -60,6 +62,8 @@ tvk-log-collector collects the logs, config and events of resources. Pod Logs ca
   set -ex; cd "$(mktemp -d)" &&
   OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
   ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
+  if [[ -z ${version} ]]; then version=$(curl -s https://api.github.com/repos/trilioData/tvk-plugins/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")'); fi &&
+  echo "Installing version=${version}" &&
   package_name="log-collector_${version}_${OS}_${ARCH}.tar.gz" &&
   curl -fsSLO "https://github.com/trilioData/tvk-plugins/releases/download/"${version}"/${package_name}" &&
   tar zxvf ${package_name} && sudo mv log-collector /usr/local/bin/kubectl-tvk_log_collector

@@ -92,7 +92,8 @@ After all above checks are performed, cleanup of all the intermediate resources 
 
 1. List of available releases: https://github.com/trilioData/tvk-plugins/releases
 2. Choose a version of preflight plugin to install and check if release assets have preflight plugin's package[preflight.tar.gz]
-3. Set env variable `version=v1.x.x` [update with your desired version].
+3. Set env variable `version=v1.x.x` [update with your desired version]. If `version` is not exported, `latest` tagged version
+   will be considered.
 
 ##### Linux/macOS
 
@@ -100,6 +101,8 @@ After all above checks are performed, cleanup of all the intermediate resources 
 ```bash
 (
   set -ex; cd "$(mktemp -d)" &&
+  if [[ -z ${version} ]]; then version=$(curl -s https://api.github.com/repos/trilioData/tvk-plugins/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")'); fi &&
+  echo "Installing version=${version}" &&
   curl -fsSLO "https://github.com/trilioData/tvk-plugins/releases/download/"${version}"/preflight.tar.gz" &&
   tar zxvf preflight.tar.gz && sudo mv preflight/preflight /usr/local/bin/kubectl-tvk_preflight
 )
