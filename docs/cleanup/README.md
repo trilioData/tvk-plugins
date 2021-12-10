@@ -33,6 +33,8 @@ Please note the following:
 
 ## Installation, Upgrade, Removal of Plugins :
 
+#### 1. With `krew`:
+
 - Add TVK custom plugin index of krew:
 
   ```
@@ -56,6 +58,31 @@ Please note the following:
   ```
   kubectl krew uninstall tvk-cleanup
   ```  
+
+#### 2. Without `krew`:
+
+1. List of available releases: https://github.com/trilioData/tvk-plugins/releases
+2. Choose a version of preflight plugin to install and check if release assets have preflight plugin's package[cleanup.tar.gz]
+3. Set env variable `version=v1.x.x` [update with your desired version]. If `version` is not exported, `latest` tagged version
+   will be considered.
+
+##### Linux/macOS
+
+- Bash or ZSH shells
+```bash
+(
+  set -ex; cd "$(mktemp -d)" &&
+  if [[ -z ${version} ]]; then version=$(curl -s https://api.github.com/repos/trilioData/tvk-plugins/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")'); fi &&
+  echo "Installing version=${version}" &&
+  curl -fsSLO "https://github.com/trilioData/tvk-plugins/releases/download/"${version}"/cleanup.tar.gz" &&
+  tar zxvf cleanup.tar.gz && sudo mv cleanup/cleanup /usr/local/bin/kubectl-tvk_cleanup
+)
+```
+Verify installation with `kubectl tvk-cleanup --help`
+
+##### Windows
+NOT SUPPORTED
+
 
 ## Usage:
 

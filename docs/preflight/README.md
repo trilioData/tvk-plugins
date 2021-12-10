@@ -8,9 +8,9 @@ get more information around check being performed by this plugin.
 
 ## Pre-requisites:
 
-1. krew - kubectl-plugin manager. Install from [here](https://krew.sigs.k8s.io/docs/user-guide/setup/install/)
-2. kubectl - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-3. bash(>=v3.2.x) should be present on system
+1. `krew`[optional] - kubectl-plugin manager. Install from [here](https://krew.sigs.k8s.io/docs/user-guide/setup/install/)
+2. `kubectl` - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+3. `bash`(>=v3.2.x) should be present on system
 
 **Supported OS:**
 - Linux
@@ -23,38 +23,45 @@ where current-context of kubeconfig is pointing to.
 
 The following checks are included in preflight:
 
-- Ensures *kubectl* utility is present on system
-- Ensures *kubectl* is pointed to k8s cluster (i.e can access the remote target cluster)
-- Ensures *helm*  utility is present on system and pointed to the cluster
-  - If *helmVersion=~v3*, then *tiller* is not needed on cluster
-- Ensures minimum Kubernetes version >= 1.18.x
-- Ensures RBAC is enabled in cluster
-- Ensures provided storageClass is present in cluster
-  1. Provided storageClass's `provisioner` [JSON Path: `storageclass.provisioner`] should match with provided volumeSnapshotClass's `driver`[JSON Path: `volumesnapshotclass.driver`]
-  2. If volumeSnapshotClass is not provided then, volumeSnapshotClass which satisfies condition `[i]` will be selected.
-  If there's are multiple volumeSnapshotClasses satisfying condition `[i]`, default volumeSnapshotClass[which has annotation `snapshot.storage.kubernetes.io/is-default-class: "true"` set]
-  will be used for further pre-flight checks.
-  3. Pre-flight check fails if no volumeSnapshotClass is found[after considering all above mentioned conditions].
-- Ensures at least one volumeSnapshotClass is marked as *default* in cluster if user has not provided volumeSnapshotClass as input.
-- Ensures all required features are present
-  - No Alpha features required for k8s version >= 1.17.x
-- Ensure CSI apis are present in cluster
-  - "volumesnapshotclasses.snapshot.storage.k8s.io"
-  - "volumesnapshotcontents.snapshot.storage.k8s.io"
-  - "volumesnapshots.snapshot.storage.k8s.io"
-- Ensure DNS resolution works as expected in the cluster
-  - Creates a new pod (*dnsutils-${RANDOM_STRING}*) then resolves *kubernetes.default* service from inside the pod
-- Ensure Volume Snapshot functionality works as expected for both used and unused PVs
-  - Creates a source Pod and PVC (*source-pod-${RANDOM_STRING}* and *source-pvc-${RANDOM_STRING}*)
-  - Creates a Volume snapshot from a used PV (*snapshot-source-pvc-${RANDOM_STRING}*) from the *source-pvc-${RANDOM_STRING}*
-  - Creates a volume snapshot from unused PV (delete the source pod before snapshoting)
-  - Creates a restore Pod and PVC (*restored-pod-${RANDOM_STRING}* and *restored-pvc-${RANDOM_STRING}*)
-  - Creates a resotre Pod and PVC from unused pv snapshot
-  - Ensure data in restored pod/pvc is correct
-- Cleanup of all the intermediate resources created during preflight checks' execution.
+1. `check-kubectl` - Ensures **kubectl** utility is present on system
+2. `check-kubectl-access` - Ensures **kubectl** is pointed to k8s cluster (i.e can access the remote target cluster)
+3. `check-helm-version` -
+    1. Ensures **helm**[version>=v3.x.x] utility is present on system and pointed to the cluster
+    2. Aborts successfully for Openshift cluster
+4. `check-kubernetes-version` - Ensures minimum Kubernetes version >= 1.18.x
+5. `check-kubernetes-rbac` - Ensures RBAC is enabled in cluster
+6. `check-storage-snapshot-class` -
+    1. Ensures provided storageClass is present in cluster
+        1. Provided storageClass's `provisioner` [JSON Path: `storageclass.provisioner`] should match with provided volumeSnapshotClass's `driver`[JSON Path: `volumesnapshotclass.driver`]
+        2. If volumeSnapshotClass is not provided then, volumeSnapshotClass which satisfies condition `[i]` will be selected.
+        If there's are multiple volumeSnapshotClasses satisfying condition `[i]`, default volumeSnapshotClass[which has annotation `snapshot.storage.kubernetes.io/is-default-class: "true"` set]
+        will be used for further pre-flight checks.
+        3. Pre-flight check fails if no volumeSnapshotClass is found[after considering all above mentioned conditions].
+    2. Ensures at least one volumeSnapshotClass is marked as *default* in cluster if user has not provided volumeSnapshotClass as input.
+7. `check-csi` -
+    1. Ensure following CSI apis are present in cluster -
+        - "volumesnapshotclasses.snapshot.storage.k8s.io"
+        - "volumesnapshotcontents.snapshot.storage.k8s.io"
+        - "volumesnapshots.snapshot.storage.k8s.io"
+9. `check-dns-resolution` -
+    1. Ensure DNS resolution works as expected in the cluster
+        - Creates a new pod (**dnsutils-${RANDOM_STRING}**) then resolves **kubernetes.default** service from inside the pod
+10. `check_volume_snapshot` - 
+    1. Ensure Volume Snapshot functionality works as expected for both mounted and unmounted PVCs
+        1. Creates a Pod and PVC (**source-pod-${RANDOM_STRING}** and **source-pvc-${RANDOM_STRING}**).
+        2. Creates Volume snapshot (**snapshot-source-pvc-${RANDOM_STRING}**) from the mounted PVC(**source-pvc-${RANDOM_STRING}**).
+        3. Creates volume snapshot of unmounted PVC(**source-pvc-${RANDOM_STRING}** [deletes the source pod before snapshotting].
+        4. Restores PVC(**restored-pvc-${RANDOM_STRING}**) from volume snapshot of mounted PVC and creates a Pod(**restored-pod-${RANDOM_STRING}**) and attaches to restored PVC.
+        5. Restores PVC(**unmounted-restored-pvc-${RANDOM_STRING}**) from volume snapshot from unmounted PVC and creates a Pod(**unmounted-restored-pod-${RANDOM_STRING}**) and attaches to restored PVC.
+        6. Ensure data in restored PVCs is correct[checks for a file[/demo/data/sample-file.txt] which was present at the time of snapshotting].
+    2. If `check-storage-snapshot-class` fails then, `check_volume_snapshot` check is skipped.
+
+After all above checks are performed, cleanup of all the intermediate resources created during preflight checks' execution is done.
 
 
 ## Installation, Upgrade, Removal of Plugins :
+
+#### 1. With `krew`:
 
 - Add TVK custom plugin index of krew:
 
@@ -78,7 +85,33 @@ The following checks are included in preflight:
 
   ```
   kubectl krew uninstall tvk-preflight
-  ```  
+  ```
+
+
+#### 2. Without `krew`:
+
+1. List of available releases: https://github.com/trilioData/tvk-plugins/releases
+2. Choose a version of preflight plugin to install and check if release assets have preflight plugin's package[preflight.tar.gz]
+3. Set env variable `version=v1.x.x` [update with your desired version]. If `version` is not exported, `latest` tagged version
+   will be considered.
+
+##### Linux/macOS
+
+- Bash or ZSH shells
+```bash
+(
+  set -ex; cd "$(mktemp -d)" &&
+  if [[ -z ${version} ]]; then version=$(curl -s https://api.github.com/repos/trilioData/tvk-plugins/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")'); fi &&
+  echo "Installing version=${version}" &&
+  curl -fsSLO "https://github.com/trilioData/tvk-plugins/releases/download/"${version}"/preflight.tar.gz" &&
+  tar zxvf preflight.tar.gz && sudo mv preflight/preflight /usr/local/bin/kubectl-tvk_preflight
+)
+```
+Verify installation with `kubectl tvk-preflight --help`
+
+##### Windows
+NOT SUPPORTED
+
 
 ## Usage:
 
