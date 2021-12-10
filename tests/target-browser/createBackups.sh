@@ -116,11 +116,17 @@ for ((i = 0; i < $1; i++)); do
     else
       if [ "$3" = "mutate-tvk-id" ]; then
         cp "${src_dir}"/test_files/tvk-meta.json "${src_dir}"/test_files/tvk-meta-modified.json
-        sed -i "s/TVK-UID/$4/g" "${src_dir}"/test_files/tvk-meta-modified.json
+        sed -i "s/TVK-UID/$5/g" "${src_dir}"/test_files/tvk-meta-modified.json
         mv "${src_dir}"/test_files/tvk-meta-modified.json "${backuppath}"/tvk-meta.json
       fi
-      cp "${src_dir}"/test_files/backup.json "${backuppath}"/backup.json
-      cp "${src_dir}"/test_files/backupplan.json "${backuppath}"/backupplan.json
+      cp "${src_dir}"/test_files/backup.json "${src_dir}"/test_files/backup-modified.json
+      cp "${src_dir}"/test_files/backupplan.json "${src_dir}"/test_files/backupplan-modified.json
+      sed -i "s/BACKUP-UUID/$backupuid/g" "${src_dir}"/test_files/backup-modified.json
+      sed -i "s/BACKUP-UUID/$backupuid/g" "${src_dir}"/test_files/backupplan-modified.json
+      sed -i "s/BACKUPPLAN-UUID/$bplanuid/g" "${src_dir}"/test_files/backup-modified.json
+      sed -i "s/BACKUPPLAN-UUID/$bplanuid/g" "${src_dir}"/test_files/backupplan-modified.json
+      mv "${src_dir}"/test_files/backup-modified.json "${backuppath}"/backup.json
+      mv "${src_dir}"/test_files/backupplan-modified.json "${backuppath}"/backupplan.json
     fi
   done
 done

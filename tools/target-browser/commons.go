@@ -35,7 +35,7 @@ type ListMetadata struct {
 // PrintFormattedResponse formats API response into desired 'outputFormat' for given 'apiPath'
 // currently supports 'yaml', 'json', 'wide' formats
 // default format for 'metadata' API response will be 'yaml'
-// for 'backupplan', 'backup' API responses, default format will be 'wideOutput=false' so that only few important columns are printed
+// for 'backupPlan', 'backup' API responses, default format will be 'wideOutput=false' so that only few important columns are printed
 func PrintFormattedResponse(apiPath, response, outputFormat string) error {
 	var err error
 	if outputFormat == internal.FormatWIDE {

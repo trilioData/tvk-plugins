@@ -34,9 +34,9 @@ SOURCE_PVC="source-pvc-${RANDOM_STRING}"
 RESTORE_POD="restored-pod-${RANDOM_STRING}"
 RESTORE_PVC="restored-pvc-${RANDOM_STRING}"
 VOLUME_SNAP_SRC="snapshot-source-pvc-${RANDOM_STRING}"
-UNUSED_RESTORE_POD="unused-restored-pod-${RANDOM_STRING}"
-UNUSED_RESTORE_PVC="unused-restored-pvc-${RANDOM_STRING}"
-UNUSED_VOLUME_SNAP_SRC="unused-source-pvc-${RANDOM_STRING}"
+UNMOUNTED_RESTORE_POD="unmounted-restored-pod-${RANDOM_STRING}"
+UNMOUNTED_RESTORE_PVC="unmounted-restored-pvc-${RANDOM_STRING}"
+UNMOUNTED_VOLUME_SNAP_SRC="unmounted-source-pvc-${RANDOM_STRING}"
 DNS_UTILS="dnsutils-${RANDOM_STRING}"
 LABEL_K8S_PART_OF="app.kubernetes.io/part-of"
 LABEL_K8S_PART_OF_VALUE="k8s-triliovault"
@@ -491,6 +491,22 @@ EOF
     return ${err_status}
   fi
 
+  exec_status=1
+  n=0
+  echo "Checking for file -> /demo/data/sample-file.txt in source pod ${SOURCE_POD}" >>"${LOG_FILE}" 2>&1
+  until [ "$n" -ge 3 ]; do
+    kubectl exec -it "${SOURCE_POD}" -- ls /demo/data/sample-file.txt >>"${LOG_FILE}" 2>&1
+    # shellcheck disable=SC2181
+    if [ $? -eq 0 ]; then
+      exec_status=0
+      break
+    else
+      echo "Retrying exec to check if file is created in pod ${SOURCE_POD} of source PVC" >>"${LOG_FILE}" 2>&1
+      n=$((n + 1))
+      sleep 2
+    fi
+  done
+
   api_service=$(kubectl get apiservices)
   snapshotVersion=""
   # shellcheck disable=SC2143
@@ -638,22 +654,24 @@ EOF
   fi
 
   kubectl delete --force --grace-period=0 --timeout=5s --ignore-not-found=true pod/"${SOURCE_POD}" >>"${LOG_FILE}" 2>&1
+  kubectl patch po "${SOURCE_POD}" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' >>"${LOG_FILE}" 2>&1 || true
+  kubectl get pod "${SOURCE_POD}" >>"${LOG_FILE}" 2>&1
   # shellcheck disable=SC2181
-  if [[ $? -eq 0 ]]; then
+  if [[ $? -ne 0 ]]; then
     echolog "${GREEN} ${CHECK} Deleted source pod${NC}\n"
   else
     echolog "${RED} ${CROSS} Error cleaning up source pod${NC}\n"
     exit_status=1
   fi
 
-  echolog "${BROWN} Creating volume snapshot from unused source pvc${NC}\n"
+  echolog "${BROWN} Creating volume snapshot from unmounted source pvc${NC}\n"
 
   # shellcheck disable=SC2143
   cat <<EOF | kubectl apply -f - >>"${LOG_FILE}" 2>&1
 apiVersion: snapshot.storage.k8s.io/${snapshotVersion}
 kind: VolumeSnapshot
 metadata:
-  name: ${UNUSED_VOLUME_SNAP_SRC}
+  name: ${UNMOUNTED_VOLUME_SNAP_SRC}
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
@@ -666,7 +684,7 @@ EOF
 
   # shellcheck disable=SC2181
   if [[ $? -ne 0 ]]; then
-    echolog "${RED_BOLD} ${CROSS} Error creating volume snapshot from unused source pvc${NC}\n"
+    echolog "${RED_BOLD} ${CROSS} Error creating volume snapshot from unmounted source pvc${NC}\n"
     return ${err_status}
   fi
 
@@ -676,25 +694,25 @@ EOF
       return ${err_status}
     fi
     # shellcheck disable=SC2143
-    if [[ $(kubectl get volumesnapshot "${UNUSED_VOLUME_SNAP_SRC}" -o yaml | grep 'readyToUse: true') ]]; then
-      echolog "${GREEN} ${CHECK} Created volume snapshot from unused source pvc and is readyToUse${NC}\n"
+    if [[ $(kubectl get volumesnapshot "${UNMOUNTED_VOLUME_SNAP_SRC}" -o yaml | grep 'readyToUse: true') ]]; then
+      echolog "${GREEN} ${CHECK} Created volume snapshot from unmounted source pvc and is readyToUse${NC}\n"
       break
     else
-      echo "Waiting for Volume snapshot from unused pvc be become 'readyToUse:true'" >>"${LOG_FILE}" 2>&1
+      echo "Waiting for Volume snapshot from unmounted pvc be become 'readyToUse:true'" >>"${LOG_FILE}" 2>&1
       sleep "${sleep}"
       ((retries--))
       continue
     fi
   done
 
-  echolog "${BROWN} Creating restore pod from volume snapshot of unused pv${NC}\n"
+  echolog "${BROWN} Creating restore pod from volume snapshot of unmounted pv${NC}\n"
 
   # shellcheck disable=SC2129
   cat <<EOF | kubectl apply -f - >>"${LOG_FILE}" 2>&1
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: ${UNUSED_RESTORE_PVC}
+  name: ${UNMOUNTED_RESTORE_PVC}
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
@@ -708,13 +726,13 @@ spec:
       storage: 1Gi
   dataSource:
     kind: VolumeSnapshot
-    name: ${UNUSED_VOLUME_SNAP_SRC}
+    name: ${UNMOUNTED_VOLUME_SNAP_SRC}
     apiGroup: snapshot.storage.k8s.io
 ---
 apiVersion: v1
 kind: Pod
 metadata:
-  name: ${UNUSED_RESTORE_POD}
+  name: ${UNMOUNTED_RESTORE_POD}
   labels:
     trilio: tvk-preflight
     preflight-run: ${RANDOM_STRING}
@@ -742,30 +760,30 @@ spec:
   volumes:
   - name: source-data
     persistentVolumeClaim:
-      claimName: ${UNUSED_RESTORE_PVC}
+      claimName: ${UNMOUNTED_RESTORE_PVC}
       readOnly: false
 EOF
 
-  echo "Waiting for restore pod ${UNUSED_RESTORE_POD} from volume snapshot of unused pv to become 'Ready'" >>"${LOG_FILE}" 2>&1
-  kubectl wait --for=condition=ready --timeout=3m pod/"${UNUSED_RESTORE_POD}" >>"${LOG_FILE}" 2>&1
+  echo "Waiting for restore pod ${UNMOUNTED_RESTORE_POD} from volume snapshot of unmounted pv to become 'Ready'" >>"${LOG_FILE}" 2>&1
+  kubectl wait --for=condition=ready --timeout=3m pod/"${UNMOUNTED_RESTORE_POD}" >>"${LOG_FILE}" 2>&1
   # shellcheck disable=SC2181
   if [[ $? -eq 0 ]]; then
-    echolog "${GREEN} ${CHECK} Created restore pod from volume snapshot of unused pv${NC}\n"
+    echolog "${GREEN} ${CHECK} Created restore pod from volume snapshot of unmounted pv${NC}\n"
   else
-    echolog "${RED_BOLD} ${CROSS} Error creating pod and pvc from volume snapshot of unused pv${NC}\n"
+    echolog "${RED_BOLD} ${CROSS} Error creating pod and pvc from volume snapshot of unmounted pv${NC}\n"
     return ${err_status}
   fi
 
   exec_status=1
   n=0
   until [ "$n" -ge 3 ]; do
-    kubectl exec -it "${UNUSED_RESTORE_POD}" -- ls /demo/data/sample-file.txt >>"${LOG_FILE}" 2>&1
+    kubectl exec -it "${UNMOUNTED_RESTORE_POD}" -- ls /demo/data/sample-file.txt >>"${LOG_FILE}" 2>&1
     # shellcheck disable=SC2181
     if [ $? -eq 0 ]; then
       exec_status=0
       break
     else
-      echo "Retrying exec to check data from Restored pod ${UNUSED_RESTORE_POD} from volume snapshot of unused pv" >>"${LOG_FILE}" 2>&1
+      echo "Retrying exec to check data from Restored pod ${UNMOUNTED_RESTORE_POD} from volume snapshot of unmounted pv" >>"${LOG_FILE}" 2>&1
       n=$((n + 1))
       sleep 2
     fi
@@ -773,9 +791,9 @@ EOF
 
   # shellcheck disable=SC2181
   if [[ $exec_status -eq 0 ]]; then
-    echolog "${GREEN} ${CHECK} Restored pod from volume snapshot of unused pv has expected data${NC}\n"
+    echolog "${GREEN} ${CHECK} Restored pod from volume snapshot of unmounted pv has expected data${NC}\n"
   else
-    echolog "${RED_BOLD} ${CROSS} Restored pod from volume snapshot of unused pv does not have expected data${NC}\n"
+    echolog "${RED_BOLD} ${CROSS} Restored pod from volume snapshot of unmounted pv does not have expected data${NC}\n"
     return ${err_status}
   fi
 
@@ -787,7 +805,7 @@ cleanup() {
 
   echolog "${LIGHT_BLUE} Cleaning up residual resources...${NC}\n"
 
-  declare -a pvc=("${SOURCE_PVC}" "${RESTORE_PVC}" "${UNUSED_RESTORE_PVC}")
+  declare -a pvc=("${SOURCE_PVC}" "${RESTORE_PVC}" "${UNMOUNTED_RESTORE_PVC}")
   for res in "${pvc[@]}"; do
     echo "Cleaning PVC - ${res}" >>"${LOG_FILE}" 2>&1
     kubectl delete pvc -n "${NAMESPACE}" "${res}" --force --grace-period=0 --timeout=5s >>"${LOG_FILE}" 2>&1 || true
@@ -795,7 +813,7 @@ cleanup() {
     echo >>"${LOG_FILE}" 2>&1
   done
 
-  declare -a vsnaps=("${VOLUME_SNAP_SRC}" "${UNUSED_VOLUME_SNAP_SRC}")
+  declare -a vsnaps=("${VOLUME_SNAP_SRC}" "${UNMOUNTED_VOLUME_SNAP_SRC}")
   for res in "${vsnaps[@]}"; do
     echo >>"${LOG_FILE}" 2>&1
     echo "Cleaning VolumeSnapshot - ${res}" >>"${LOG_FILE}" 2>&1
@@ -804,7 +822,7 @@ cleanup() {
     echo >>"${LOG_FILE}" 2>&1
   done
 
-  declare -a pods=("${SOURCE_POD}" "${RESTORE_POD}" "${UNUSED_RESTORE_POD}")
+  declare -a pods=("${SOURCE_POD}" "${RESTORE_POD}" "${UNMOUNTED_RESTORE_POD}")
   for res in "${pods[@]}"; do
     echo >>"${LOG_FILE}" 2>&1
     echo "Deleting pod - ${res}" >>"${LOG_FILE}" 2>&1

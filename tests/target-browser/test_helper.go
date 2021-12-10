@@ -2,8 +2,11 @@ package targetbrowsertest
 
 // nolint // ignore dot import lint errors
 import (
+	"bytes"
 	"context"
 	cryptorand "crypto/rand"
+	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math/big"
@@ -298,4 +301,101 @@ func checkPvcDeleted(ctx context.Context, k8sClient client.Client, ns string) {
 		Expect(err).To(BeNil())
 		return pvcList.Items == nil
 	}, timeout, interval).Should(BeTrue())
+}
+
+func convertTSVToJSON(tsvData []byte) []byte {
+	r := csv.NewReader(bytes.NewBuffer([]byte(formatData(tsvData))))
+	r.TrimLeadingSpace = true
+	r.Comma = ' '
+	rows, err := r.ReadAll()
+	Expect(err).To(BeNil())
+	var res interface{}
+
+	if len(rows) > 1 {
+		header := rows[0]
+		rows = rows[1:]
+		objs := make([]map[string]string, len(rows))
+		for y, row := range rows {
+			obj := map[string]string{}
+			for x, cell := range row {
+				obj[header[x]] = cell
+			}
+			objs[y] = obj
+		}
+		res = objs
+	} else {
+		res = []map[string]string{}
+	}
+
+	output, err := json.MarshalIndent(res, "  ", "  ")
+	Expect(err).To(BeNil())
+	return parseData(output)
+}
+
+func formatData(tsvData []byte) string {
+	tsvDataList := strings.Split(string(tsvData), "\n")
+	row := strings.Split(tsvDataList[0], " ")
+	i, n := 0, len(row)
+	var tmp string
+	for i < n {
+		if row[i] != "" {
+			tmp = ""
+			for i < n {
+				if row[i] != "" {
+					tmp += row[i] + " "
+					row[i] = ""
+				} else {
+					row[i] = "\"" + strings.Trim(tmp, " ") + "\""
+					break
+				}
+				i++
+			}
+		}
+		if i == n {
+			row[i-1] = "\"" + strings.Trim(tmp, " ") + "\""
+		}
+		i++
+	}
+
+	tsvDataList[0] = strings.Join(row, " ")
+
+	return strings.Join(tsvDataList, "\n")
+}
+
+var backupPlanSelector = []string{
+	"NAME as Name",
+	"KIND as Kind",
+	"UID",
+	"TYPE as Type",
+	"TVK INSTANCE as TVK Instance",
+	"SUCCESSFUL BACKUP as Successful Backup",
+	"SUCCESSFUL BACKUP TIMESTAMP as Successful Backup Timestamp",
+	"CREATION TIME as Creation Time",
+}
+
+var backupSelector = []string{
+	"NAME as Name",
+	"KIND as Kind",
+	"UID",
+	"TYPE as Type",
+	"STATUS as Status",
+	"SIZE as Size",
+	"BACKUPPLAN UID as BackupPlan UID",
+	"START TIME as Start Time",
+	"END TIME as End Time",
+	"TVK INSTANCE  as TVK Instance",
+	"EXPIRATION TIME as Expiration Time",
+}
+
+func parseData(respData []byte) []byte {
+	type result struct {
+		Result interface{} `json:"results"`
+	}
+	var r result
+	r.Result = []interface{}{respData}
+	err := json.Unmarshal(respData, &r.Result)
+	Expect(err).To(BeNil())
+	respDataByte, err := json.MarshalIndent(r, "", "  ")
+	Expect(err).To(BeNil())
+	return respDataByte
 }
