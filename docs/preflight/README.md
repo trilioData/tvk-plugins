@@ -122,11 +122,11 @@ NOT SUPPORTED
 | Parameter                 | Default       | Description   |    
 | :------------------------ |:-------------:| :-------------|  
 | --storageclass          |             |Name of storage class being used in k8s cluster (Needed)
-| --snapshotclass          |            |Name of volume snapshot class being used in k8s cluster (Optional)
+| --snapshotclass         |             |Name of volume snapshot class being used in k8s cluster (Optional)
 | --kubeconfig            |   ~/.kube/config             |Kubeconfig path, if not given default is used by kubectl (Optional)
 | --local-registry        |             | Name of the local registry from where the images will be pulled (Optional)
 | --image-pull-secret     |             | Name of the secret for authentication while pulling the images from the local registry (Optional)
-| --service-account-name  |             | Name of the service account (Optional)
+| --service-account       |             | Name of the service account (Optional)
 
 
 ## Examples

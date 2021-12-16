@@ -57,7 +57,7 @@ kubectl tvk-preflight --storageclass <storage_class_name> --snapshotclass <volum
 Params:
   --storageclass  name of storage class being used in k8s cluster
   --local-registry name of the local registry to get images from (OPTIONAL)
-  --service-account-name name of the service account (OPTIONAL)
+  --service-account name of the service account (OPTIONAL)
   --image-pull-secret name of the secret configured for authentication (OPTIONAL)
   --snapshotclass name of volume snapshot class being used in k8s cluster (OPTIONAL)
   --kubeconfig  path to kube config (OPTIONAL)
@@ -123,12 +123,12 @@ take_input() {
         exit 1
       fi
       ;;
-    --service-account-name)
+    --service-account)
       if [[ -n "$2" ]]; then
         SERVICE_ACCOUNT_NAME=$2
         shift 2
       else
-        echolog "Error: flag --service-account-name value may not be empty. Either set the value or skip this flag!"
+        echolog "Error: flag --service-account value may not be empty. Either set the value or skip this flag!"
         print_help
         exit 1
       fi
@@ -150,7 +150,7 @@ take_input() {
     exit 1
   fi
   if [[ -z "${LOCAL_REGISTRY}" && -n "${IMAGE_PULL_SECRET}" ]]; then
-    echo "Error Cannot Give Pull Secret if LOCAL_REGISTRY is not provided!"
+    echolog "Error: Cannot Give Pull Secret if local-registry is not provided!"
     exit 1
   fi
 }
