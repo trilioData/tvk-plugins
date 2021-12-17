@@ -112,6 +112,9 @@ Verify installation with `kubectl tvk-preflight --help`
 ##### Windows
 NOT SUPPORTED
 
+**Note for Dark Site Installation**
+
+- For using the `local-registry` flag, it is mandatory to have `busybox` and `dnsutils:1.3` images to be there in the private registry.
 
 ## Usage:
 
