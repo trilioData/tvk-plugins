@@ -115,7 +115,11 @@ NOT SUPPORTED
 **Note for Dark Site Installation**
 
 - For using the `local-registry` flag, it is mandatory to have `busybox` and `dnsutils:1.3` images to be there in the private registry.
-
+    > Steps for pushing images to local registry
+    - Pull the images (dnsutils:1.3 & busybox) to local machine.
+    - use the following command to push it to the local registry
+    - `docker push <local registry/image>` 
+    - Example: `docker push localhost:5000/busybox`
 ## Usage:
 
     kubectl tvk-preflight [flags]
@@ -144,4 +148,16 @@ kubectl tvk-preflight --storageclass <storageclass name> --snapshotclass <volume
 
 ```shell script
 kubectl tvk-preflight --storageclass <storageclass name>
+```
+
+- With `--local-registry` | `--service-account`  :
+
+```shell script
+kubectl tvk-preflight --storageclass <storageclass name> --local-registry <local registry file path/name> --service-account <service account name>
+```
+
+- With `--image-pull-secret`  :
+
+```shell script
+kubectl tvk-preflight --storageclass <storageclass name> --local-registry <local registry file path/name> --image-pull-secret <image pull secret name>
 ```
