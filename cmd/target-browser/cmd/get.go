@@ -60,6 +60,7 @@ gets specific resource [backup, backupPlan, metadata, resource-metadata, trilio-
 			OutputFormat:           outputFormat,
 			OperationScope:         operationScope,
 			TvkInstanceUID:         tvkInstanceUID,
+			Cli:                    true,
 		}
 		return nil
 	},

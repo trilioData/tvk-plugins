@@ -24,6 +24,7 @@ type CommonListOptions struct {
 	OutputFormat           string
 	OperationScope         string `url:"operationScope,omitempty"`
 	TvkInstanceUID         string `url:"tvkInstanceUID,omitempty"`
+	Cli                    bool   `url:"cli,omitempty"`
 }
 
 // ListMetadata for Pagination
