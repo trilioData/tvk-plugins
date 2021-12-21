@@ -114,7 +114,8 @@ NOT SUPPORTED
 
 **Note for Dark Site Installation**
 
-- For using the `local-registry` flag, it is mandatory to have `busybox` and `dnsutils:1.3` images to be there in the private registry.
+- For using the `local-registry` flag, it is mandatory to have `busybox:latest` and `dnsutils:1.3` images (with the same tags) to be there in the private registry. 
+
     > Steps for pushing images to local registry
     - Pull the images (dnsutils:1.3 & busybox) to local machine.
     - use the following command to push it to the local registry
