@@ -112,7 +112,15 @@ Verify installation with `kubectl tvk-preflight --help`
 ##### Windows
 NOT SUPPORTED
 
+**Note for Dark Site Installation**
 
+- For using the `local-registry` flag, it is mandatory to have `busybox:latest` and `dnsutils:1.3` images (with the same tags) to be there in the private registry. 
+
+    > Steps for pushing images to local registry
+    - Pull the images (dnsutils:1.3 & busybox) to local machine.
+    - use the following command to push it to the local registry
+    - `docker push <local registry/image>` 
+    - Example: `docker push localhost:5000/busybox`
 ## Usage:
 
     kubectl tvk-preflight [flags]
@@ -122,8 +130,12 @@ NOT SUPPORTED
 | Parameter                 | Default       | Description   |    
 | :------------------------ |:-------------:| :-------------|  
 | --storageclass          |             |Name of storage class being used in k8s cluster (Needed)
-| --snapshotclass          |            |Name of volume snapshot class being used in k8s cluster (Optional)
+| --snapshotclass         |             |Name of volume snapshot class being used in k8s cluster (Optional)
 | --kubeconfig            |   ~/.kube/config             |Kubeconfig path, if not given default is used by kubectl (Optional)
+| --local-registry        |             | Name of the local registry from where the images will be pulled (Optional)
+| --image-pull-secret     |             | Name of the secret for authentication while pulling the images from the local registry (Optional)
+| --service-account       |             | Name of the service account (Optional)
+
 
 ## Examples
 
@@ -137,4 +149,16 @@ kubectl tvk-preflight --storageclass <storageclass name> --snapshotclass <volume
 
 ```shell script
 kubectl tvk-preflight --storageclass <storageclass name>
+```
+
+- With `--local-registry` | `--service-account`  :
+
+```shell script
+kubectl tvk-preflight --storageclass <storageclass name> --local-registry <local registry file path/name> --service-account <service account name>
+```
+
+- With `--image-pull-secret`  :
+
+```shell script
+kubectl tvk-preflight --storageclass <storageclass name> --local-registry <local registry file path/name> --image-pull-secret <image pull secret name>
 ```
