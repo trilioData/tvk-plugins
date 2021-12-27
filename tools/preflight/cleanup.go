@@ -93,17 +93,12 @@ func (o *CleanupOptions) cleanResource(resource *unstructured.Unstructured) erro
 	var err error
 	o.Logger.Infoln(fmt.Sprintf("Cleaning %s - %s",
 		resource.GetKind(), resource.GetName()))
-	if err = removeFinalizer(o.Ctx, resource); err != nil {
-		o.Logger.Warnln(fmt.Sprintf("Error occurred while removing finalizers of %s - %s :: %s",
-			resource.GetKind(), resource.GetName(), err.Error()))
-	}
-	if err = runtimeClient.Delete(o.Ctx, resource); err != nil {
+	err = deleteK8sResourceWithForceTimeout(o.Ctx, resource, o.Logger)
+	if err != nil {
 		o.Logger.Errorln(fmt.Sprintf("%s Error cleaning %s - %s :: %s",
 			cross, resource.GetKind(), resource.GetName(), err.Error()))
-		return err
 	}
-
-	return nil
+	return err
 }
 
 func getCleanupResourceGVKList() ([]schema.GroupVersionKind, error) {

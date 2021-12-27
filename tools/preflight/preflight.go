@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	goexec "os/exec"
 	"regexp"
 	"strings"
 	"time"
@@ -181,20 +182,18 @@ func (o *Options) PerformPreflightChecks() {
 
 // checkKubectl checks whether kubectl utility is installed.
 func (o *Options) checkKubectl() error {
-	cmdOut, err := shell.ExecuteArgs([]string{}, true, "bash", "-c", "command -v \"kubectl\"")
+	path, err := goexec.LookPath("kubectl")
 	if err != nil {
-		return err
-	} else if cmdOut.ExitCode != 0 {
-		return fmt.Errorf("unable to find kubectl binary path on the system")
+		return fmt.Errorf("error finding 'kubectl' binary in $PATH of the system :: %s", err.Error())
 	}
-	o.Logger.Infoln(fmt.Sprintf("kubectl found at path - %s", cmdOut.Out))
+	o.Logger.Infoln(fmt.Sprintf("kubectl found at path - %s", path))
 
 	return nil
 }
 
 // checkClusterAccess Checks whether access to kubectl utility is present on the client machine.
 func (o *Options) checkClusterAccess() error {
-	cmdOut, err := shell.ExecuteArgs([]string{}, true, "bash", "-c", fmt.Sprintf("kubectl cluster-info --kubeconfig %s", o.Kubeconfig))
+	cmdOut, err := shell.RunCmd(fmt.Sprintf("kubectl cluster-info --kubeconfig=%s", o.Kubeconfig))
 	if err != nil {
 		return err
 	} else if cmdOut.ExitCode != 0 {
@@ -211,15 +210,15 @@ func (o *Options) checkHelmVersion() error {
 		o.Logger.Infoln(fmt.Sprintf("%s Running OCP cluster. Helm not needed for OCP clusters", check))
 		return nil
 	}
-	cmdOut, err := shell.ExecuteArgs([]string{}, true, "bash", "-c", "command -v \"helm\"")
-	if err != nil || cmdOut.ExitCode != 0 {
-		if err == nil {
-			return fmt.Errorf("unable to find helm")
-		}
-		return err
+	// check whether helm exists
+	path, err := goexec.LookPath("helm")
+	if err != nil {
+		return fmt.Errorf("error finding 'helm' binary in $PATH of the system :: %s", err.Error())
 	}
-	o.Logger.Infoln(fmt.Sprintf("Helm found at path - %s", cmdOut.Out))
-	cmdOut, err = shell.ExecuteArgs([]string{}, true, "bash", "-c", "helm version --template \"{{ .Version }}\"")
+	o.Logger.Infoln(fmt.Sprintf("helm found at path - %s", path))
+
+	// check minimum version of elm
+	cmdOut, err := shell.RunCmd("helm version --template '{{.Version}}'")
 	if err != nil {
 		return err
 	}
@@ -413,11 +412,12 @@ func (o *Options) checkDNSResolution() error {
 	o.Logger.Infoln(fmt.Sprintf("Pod %s created in cluster", pod.GetName()))
 
 	defer func() {
-		err = clientSet.CoreV1().Pods(o.Namespace).Delete(o.Context, dnsUtils+resNameSuffix, metav1.DeleteOptions{
-			GracePeriodSeconds: func(i int64) *int64 { return &i }(0),
-		})
+		o.Logger.Infoln(fmt.Sprintf("Deleting dns pod - %s", pod.GetName()))
+		err = deleteK8sResourceWithForceTimeout(o.Context, pod, o.Logger)
 		if err != nil {
-			o.Logger.Errorln(err.Error())
+			o.Logger.Errorln(fmt.Sprintf("error occurred deleting DNS pod :: %s", err.Error()))
+		} else {
+			o.Logger.Infoln("DNS pod deleted successfully")
 		}
 	}()
 
@@ -563,14 +563,10 @@ func (o *Options) checkVolumeSnapshot() error {
 	o.Logger.Infoln("restored pod has expected data")
 
 	// TODO - add timeout for delete
-	if err = removeFinalizer(o.Context, srcPod); err != nil {
-		o.Logger.Warnln("Error occurred while deleting finalizers of pod - " +
-			srcPod.GetName() + " :: " + err.Error())
-	}
-	if err = clientSet.CoreV1().Pods(o.Namespace).Delete(o.Context, srcPod.GetName(), metav1.DeleteOptions{
-		GracePeriodSeconds: func() *int64 { var i int64; return &i }(),
-	}); err != nil && !k8serrors.IsNotFound(err) {
-		o.Logger.Warnln(string(cross), "Error cleaning up source pod")
+	o.Logger.Infoln(fmt.Sprintf("Deleting source pod - %s", srcPod.GetName()))
+	err = deleteK8sResourceWithForceTimeout(o.Context, srcPod, o.Logger)
+	if err != nil {
+		o.Logger.Warnln(fmt.Sprintf("problem occurred deleting source pod - %s :: %s", srcPod.GetName(), err.Error()))
 	}
 	o.Logger.Infoln(fmt.Sprintf("%s Deleted source pod", check))
 

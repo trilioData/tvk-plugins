@@ -46,6 +46,8 @@ const (
 	labelTrilioKey                = "trilio"
 	labelTvkPreflightValue        = "tvk-preflight"
 	labelPreflightRunKey          = "preflight-run"
+	labelK8sName                  = "app.kubernetes.io/name"
+	labelK8sNameValue             = "k8s-triliovault"
 	sourcePod                     = "source-pod-"
 	sourcePvc              string = "source-pvc-"
 	volumeSnapSrc                 = "snapshot-source-pvc-"
@@ -66,6 +68,7 @@ const (
 	dnsContainerName = "dnsutils"
 	gcrRegistryPath  = "gcr.io/kubernetes-e2e-test-images"
 	dnsUtilsImage    = "dnsutils:1.3"
+	ocpAPIVersion    = "security.openshift.io/v1"
 
 	volSnapRetrySteps                  = 30
 	volSnapRetryInterval time.Duration = 2 * time.Second
@@ -74,7 +77,7 @@ const (
 	volMountName                       = "source-data"
 	volMountPath                       = "/demo/data"
 
-	execRetryCount = 3
+	execTimeoutDuration = 3 * time.Minute
 )
 
 var (
@@ -161,12 +164,14 @@ func getVersionsOfGroup(grp string) ([]string, error) {
 
 //  isOCPk8sCluster checks whether the cluster is OCP cluster.
 func isOCPk8sCluster(logger *logrus.Logger) bool {
-	_, err := discClient.ServerResourcesForGroupVersion("security.openshift.io/v1")
+	_, err := discClient.ServerResourcesForGroupVersion(ocpAPIVersion)
 	if err != nil {
-		logger.Warnln(err)
 		if k8serrors.IsNotFound(err) {
+			logger.Infoln(fmt.Sprintf("APIVersion - %s not found on cluster, not an OCP cluster", ocpAPIVersion))
 			return false
 		}
+		logger.Warnln(err)
+		return false
 	}
 	return true
 }
@@ -391,6 +396,7 @@ func getResourceRequirementsMap(memory, cpu string) map[corev1.ResourceName]reso
 
 func getPreflightResourceLabels() map[string]string {
 	return map[string]string{
+		labelK8sName:         labelK8sNameValue,
 		labelTrilioKey:       labelTvkPreflightValue,
 		labelPreflightRunKey: resNameSuffix,
 		labelK8sPartOf:       labelK8sPartOfValue,
@@ -448,29 +454,23 @@ func waitUntilVolSnapReadyToUse(volSnap *unstructured.Unstructured, snapshotVer 
 // execInPod executes exec command on a container of a pod.
 func execInPod(execOp *exec.Options, logger *logrus.Logger) error {
 	var execRes *exec.Response
-	execStatus := false
+	var execChan = make(chan *exec.Response)
+	var retErr error
 	logger.Infoln(fmt.Sprintf("Executing command 'exec %s' in container - '%s' of pod - '%s'",
 		strings.Join(execOp.Command, " "), execOp.ContainerName, execOp.PodName))
-	retryCnt := execRetryCount
-	for retryCnt > 0 {
-		execRes = execOp.ExecInContainer()
+	go execOp.ExecInContainer(execChan)
+	select {
+	case execRes = <-execChan:
 		if execRes != nil && execRes.Err != nil {
 			logger.Warnln(fmt.Sprintf("exec command failed on %s in pod %s :: %s",
 				execOp.ContainerName, execOp.PodName, execRes.Err.Error()))
-		} else {
-			execStatus = true
-			break
 		}
-		logger.Infoln(fmt.Sprintf("Retrying exec command again on pod - %s in container - %s", execOp.PodName, execOp.ContainerName))
-		time.Sleep(time.Second * 2)
-
-		retryCnt--
+		break
+	case <-time.After(execTimeoutDuration):
+		retErr = fmt.Errorf("exec operation took too long on container %s in pod %s", execOp.ContainerName, execOp.PodName)
 	}
 
-	if !execStatus {
-		return fmt.Errorf("restored pod does not have expected data")
-	}
-	return nil
+	return retErr
 }
 
 func removeFinalizer(ctx context.Context, obj interface{}) error {
@@ -526,6 +526,53 @@ func removeFinalizer(ctx context.Context, obj interface{}) error {
 	}
 
 	return nil
+}
+
+func deleteK8sResourceWithForceTimeout(ctx context.Context, obj interface{}, logger *logrus.Logger) error {
+	retErr := k8swait.ExponentialBackoff(getDefaultRetryBackoffParams(), func() (done bool, e error) {
+		var err error
+		switch objType := obj.(type) {
+		case *corev1.Pod:
+			if err = removeFinalizer(ctx, objType); err != nil {
+				logger.Warnln(fmt.Sprintf("problem occurred while removing finalizers of %s - %s :: %s",
+					objType.Kind, objType.GetName(), err.Error()))
+			}
+			if err = clientSet.CoreV1().Pods(objType.Namespace).Delete(ctx, objType.GetName(), metav1.DeleteOptions{
+				GracePeriodSeconds: func() *int64 { var i int64; return &i }(),
+			}); err != nil {
+				logger.Errorln(fmt.Sprintf("problem occurred deleting %s - %s :: %s", objType.GetName(), objType.GetNamespace(), err.Error()))
+				return false, nil
+			}
+
+		case *corev1.PersistentVolumeClaim:
+			if err = removeFinalizer(ctx, objType); err != nil {
+				logger.Warnln(fmt.Sprintf("problem occurred while removing finalizers of %s - %s :: %s",
+					objType.Kind, objType.GetName(), err.Error()))
+			}
+			if err = clientSet.CoreV1().PersistentVolumeClaims(objType.Namespace).Delete(ctx, objType.Name, metav1.DeleteOptions{
+				GracePeriodSeconds: func() *int64 { var i int64; return &i }(),
+			}); err != nil {
+				logger.Errorln(fmt.Sprintf("problem occurred deleting %s - %s :: %s", objType.GetName(), objType.GetNamespace(), err.Error()))
+				return false, nil
+			}
+
+		case *unstructured.Unstructured:
+			if err = removeFinalizer(ctx, objType); err != nil {
+				logger.Warnln(fmt.Sprintf("problem occurred while removing finalizers of %s - %s :: %s",
+					objType.GetKind(), objType.GetName(), err.Error()))
+			}
+			if err = runtimeClient.Delete(ctx, objType, client.DeleteOption(&client.DeleteOptions{
+				GracePeriodSeconds: func() *int64 { var i int64; return &i }(),
+			})); err != nil {
+				logger.Errorln(fmt.Sprintf("problem occurred deleting %s - %s :: %s", objType.GetName(), objType.GetNamespace(), err.Error()))
+				return false, nil
+			}
+		}
+
+		return true, nil
+	})
+
+	return retErr
 }
 
 func getObjNamespacedName(obj client.Object) types.NamespacedName {

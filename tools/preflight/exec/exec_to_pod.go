@@ -62,14 +62,14 @@ func (*DefaultRemoteExecutor) execute(method string, reqURL *url.URL, config *re
 }
 
 // ExecInContainer will execute given command's in specified container and return execution response in channel `resp`.
-func (op *Options) ExecInContainer() *Response {
+func (op *Options) ExecInContainer(execChan chan *Response) {
 	var cmdOut, errStr string
 	var err error
 
 	// exec module should know on which pod & container the commands needs to be executed so if
 	// any one of them is not given then exec module can't process further.
 	if op.PodName == "" || op.ContainerName == "" {
-		return &Response{
+		execChan <- &Response{
 			Stdout: "",
 			Stderr: "",
 			Err:    fmt.Errorf("pod name or container name is empty"),
@@ -96,7 +96,7 @@ func (op *Options) ExecInContainer() *Response {
 	cmdOut = stdout.String()
 	errStr = stderr.String()
 
-	return &Response{
+	execChan <- &Response{
 		Stdout: cmdOut,
 		Stderr: errStr,
 		Err:    err,
