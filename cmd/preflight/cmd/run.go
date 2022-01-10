@@ -2,73 +2,70 @@ package cmd
 
 import (
 	"context"
-	"io"
-	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-
 	"github.com/trilioData/tvk-plugins/tools/preflight"
 )
 
+// nolint:lll // ignore long line lint errors
 // runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   preflightRunCmdName,
 	Short: "Runs preflight checks on cluster",
-	Long:  `Runs all the preflight checks on cluster in a sequential manner`,
+	Long:  `Runs all the preflight checks on cluster in a sequential manner in a particular namespace. If namespace is not provided then 'default' is used.`,
 	Example: ` # run preflight checks
-  preflight run --storageclass <storage-class-name>
+  kubectl tvk-preflight run --storage-class <storage-class-name>
 
-  # run preflight in a particular namespace
-  preflight run --storageclass <storage-class-name> --namespace <namespace>
+  # run preflight checks in a particular namespace
+  kubectl tvk-preflight run --storage-class <storage-class-name> --namespace <namespace>
 
-  # run preflight in a with log level
-  preflight run --storageclass <storage-class-name> --log-level <log-level>
+  # run preflight checks with a particular log level
+  kubectl tvk-preflight run --storage-class <storage-class-name> --log-level <log-level>
 
   # cleanup the resources generated during preflight check if preflight check fails. Default is false.
   # If the preflight check is successful, then all resources are cleaned.
-  preflight run --storageclass <storage-class-name> --cleanup-on-failure 
+  kubectl tvk-preflight run --storage-class <storage-class-name> --cleanup-on-failure 
 
-  # run preflight with a particular kubeconfig
-  preflight run --storageclass <storage-class-name> --kubeconfig <kubeconfig file path>
+  # run preflight with a particular kubeconfig file
+  kubectl tvk-preflight run --storage-class <storage-class-name> --kubeconfig <kubeconfig-file-path>
 
   # run preflight with local registry and image pull secret
   To use image-pull-secret, local-registry flag must be specified. vice-versa is not true
-  preflight run --storageclass <storage-class-name> --local-registry <local registry path> --image-pull-secret <image pull secret>
+  kubectl tvk-preflight run --storage-class <storage-class-name> --local-registry <local registry path> --image-pull-secret <image pull secret>
 
-  # run preflight with serviceaccount
-  preflight run --storageclass <storage-class-name> --service-account-name <service account name>
+  # run preflight with a particular serviceaccount
+  kubectl tvk-preflight run --storage-class <storage-class-name> --service-account-name <service account name>
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		defer logFile.Close()
+		if storageClass == "" {
+			logger.Fatalf("storage-class is required, cannot be empty")
+		}
 		if imagePullSecret != "" && localRegistry == "" {
 			logger.Fatalf("Cannot give image pull secret if local registry is not provided.\nUse --local-registry flag to provide local registry")
 		}
 		op := &preflight.Options{
-			Context:              context.Background(),
+			CommonOptions: preflight.CommonOptions{
+				Kubeconfig: kubeconfig,
+				Namespace:  namespace,
+				Logger:     logger,
+			},
 			StorageClass:         storageClass,
 			SnapshotClass:        snapshotClass,
-			Kubeconfig:           kubeconfig,
-			Namespace:            namespace,
 			LocalRegistry:        localRegistry,
 			ImagePullSecret:      imagePullSecret,
 			ServiceAccountName:   serviceAccount,
 			PerformCleanupOnFail: cleanupOnFailure,
-			Logger:               logger,
 		}
-		op.PerformPreflightChecks()
+		op.PerformPreflightChecks(context.Background())
 	},
 
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		var err error
-		logFile, err = preflight.CreateLoggingFile(preflightLogFilePrefix)
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		err := setupLogger(preflightLogFilePrefix)
 		if err != nil {
-			log.Errorln("Unable to create log file. Aborting preflight checks...")
 			return err
 		}
-		logger.SetOutput(io.MultiWriter(os.Stdout, logFile))
-		logger.SetLevel(log.Level(getLogLevelFromString(logLevel)))
-
 		return preflight.InitKubeEnv(kubeconfig)
 	},
 }

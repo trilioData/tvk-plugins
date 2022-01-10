@@ -59,6 +59,9 @@ github.com/googleapis/gnostic/compiler
 github.com/googleapis/gnostic/extensions
 github.com/googleapis/gnostic/jsonschema
 github.com/googleapis/gnostic/openapiv2
+# github.com/hashicorp/go-version v1.3.0
+## explicit
+github.com/hashicorp/go-version
 # github.com/imdario/mergo v0.3.10
 github.com/imdario/mergo
 # github.com/inconshreveable/mousetrap v1.0.0
@@ -467,7 +470,6 @@ k8s.io/client-go/util/flowcontrol
 k8s.io/client-go/util/homedir
 k8s.io/client-go/util/jsonpath
 k8s.io/client-go/util/keyutil
-k8s.io/client-go/util/retry
 k8s.io/client-go/util/workqueue
 # k8s.io/component-base v0.21.2
 ## explicit

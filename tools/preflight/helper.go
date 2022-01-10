@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	gort "runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -15,46 +16,45 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	k8swait "k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/discovery"
 	goclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	utilretry "k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/sirupsen/logrus"
-
 	"github.com/trilioData/tvk-plugins/internal"
 	"github.com/trilioData/tvk-plugins/tools/preflight/exec"
 	"github.com/trilioData/tvk-plugins/tools/preflight/wait"
 )
 
 const (
-	check = "\xE2\x9C\x94"
-	cross = "\xE2\x9D\x8C"
+	windowsOSTarget    = "windows"
+	windowsCheckSymbol = "\u2713"
+	windowsCrossSymbol = "[X]"
 
 	minHelmVersion = "3.0.0"
 	minK8sVersion  = "1.18.0"
 
-	rbacAPIGroup = "rbac.authorization.k8s.io"
+	rbacAPIGroup   = "rbac.authorization.k8s.io"
+	rbacAPIVersion = "v1"
 
 	letterBytes = "abcdefghijklmnopqrstuvwxyz"
 
-	labelK8sPartOf                = "app.kubernetes.io/part-of"
-	labelK8sPartOfValue           = "k8s-triliovault"
-	labelTrilioKey                = "trilio"
-	labelTvkPreflightValue        = "tvk-preflight"
-	labelPreflightRunKey          = "preflight-run"
-	labelK8sName                  = "app.kubernetes.io/name"
-	labelK8sNameValue             = "k8s-triliovault"
-	sourcePod                     = "source-pod-"
-	sourcePvc              string = "source-pvc-"
-	volumeSnapSrc                 = "snapshot-source-pvc-"
+	labelK8sPartOf                  = "app.kubernetes.io/part-of"
+	labelK8sPartOfValue             = "k8s-triliovault"
+	labelTrilioKey                  = "trilio"
+	labelTvkPreflightValue          = "tvk-preflight"
+	labelPreflightRunKey            = "preflight-run"
+	labelK8sName                    = "app.kubernetes.io/name"
+	labelK8sNameValue               = "k8s-triliovault"
+	sourcePod                       = "source-pod-"
+	sourcePvc                string = "source-pvc-"
+	volumeSnapSrc                   = "snapshot-source-pvc-"
+	customResourceDefinition        = "CustomResourceDefinition"
 
 	apiExtenstionsGroup    = "apiextensions.k8s.io"
-	v1StorageSnapshot      = "v1.snapshot.storage.k8s.io"
-	v1beta1StorageSnapshot = "v1beta1.snapshot.storage.k8s.io"
 	storageSnapshotGroup   = "snapshot.storage.k8s.io"
 	restorePvc             = "restored-pvc-"
 	restorePod             = "restored-pod-"
@@ -77,14 +77,31 @@ const (
 	volMountName                       = "source-data"
 	volMountPath                       = "/demo/data"
 
-	execTimeoutDuration = 3 * time.Minute
+	execTimeoutDuration       = 3 * time.Minute
+	deletionGracePeriod int64 = 5
 )
 
 var (
+	check = "\xE2\x9C\x94"
+	cross = "\xE2\x9D\x8C"
+
 	csiApis = [3]string{
-		"volumesnapshotclasses.snapshot.storage.k8s.io",
-		"volumesnapshotcontents.snapshot.storage.k8s.io",
-		"volumesnapshots.snapshot.storage.k8s.io",
+		"volumesnapshotclasses." + storageSnapshotGroup,
+		"volumesnapshotcontents." + storageSnapshotGroup,
+		"volumesnapshots." + storageSnapshotGroup,
+	}
+
+	storageSnapshotPreferredVersion = []string{"v1", "v1beta1"}
+
+	resourceRequirements = corev1.ResourceRequirements{
+		Requests: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+			corev1.ResourceCPU:    resource.MustParse("250m"),
+		},
+		Limits: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+		},
 	}
 
 	storageVolSnapClass    string
@@ -92,54 +109,79 @@ var (
 	resNameSuffix          string
 	commandBinSh           = []string{"bin/sh", "-c"}
 	commandSleep3600       = []string{"sleep", "3600"}
-	argsTouchDataFileSleep = []string{"touch /demo/data/sample-file.txt && sleep 3000"}
-	clientSet              *goclient.Clientset
-	runtimeClient          client.Client
-	discClient             *discovery.DiscoveryClient
-	restConfig             *rest.Config
+	volSnapPodFilePath     = "/demo/data/sample-file.txt"
+	volSnapPodFileData     = "pod preflight data"
+	argsTouchDataFileSleep = []string{
+		fmt.Sprintf("echo '%s' > %s && sleep 3000", volSnapPodFileData, volSnapPodFilePath),
+	}
+	execRestoreDataCheckCommand = []string{
+		"/bin/sh",
+		"-c",
+		fmt.Sprintf("dat=$(cat \"%s\"); if [[ \"${dat}\" == \"%s\" ]]; then exit 0; else exit 1; fi",
+			volSnapPodFilePath, volSnapPodFileData),
+	}
+
+	clientSet     *goclient.Clientset
+	runtimeClient client.Client
+	discClient    *discovery.DiscoveryClient
+	restConfig    *rest.Config
 )
+
+type CommonOptions struct {
+	Kubeconfig string
+	Namespace  string
+	Logger     *logrus.Logger
+}
+
+func InitKubeEnv(kubeconfig string) error {
+	if gort.GOOS == windowsOSTarget {
+		check = windowsCheckSymbol
+		cross = windowsCrossSymbol
+	}
+
+	utilruntime.Must(corev1.AddToScheme(scheme))
+	kubeEnv, err := internal.NewEnv(kubeconfig, scheme)
+	if err != nil {
+		return err
+	}
+	clientSet = kubeEnv.GetClientset()
+	runtimeClient = kubeEnv.GetRuntimeClient()
+	discClient = kubeEnv.GetDiscoveryClient()
+	restConfig = kubeEnv.GetRestConfig()
+
+	return nil
+}
 
 // CreateLoggingFile creates a log file for pre flight check.
 func CreateLoggingFile(filename string) (*os.File, error) {
-	year, month, day := time.Now().Date()
-	hour, minute, sec := time.Now().Clock()
-	logFilename := filename + "-log" + strconv.Itoa(year) + "-" + strconv.Itoa(int(month)) + "-" + strconv.Itoa(day) +
-		"T" + strconv.Itoa(hour) + "-" + strconv.Itoa(minute) + "-" + strconv.Itoa(sec) + ".log"
+	logFilename := filename + "-" + GetLogFileTimestamp() + ".log"
 
 	return os.OpenFile(logFilename, os.O_CREATE|os.O_WRONLY, 0644)
 }
 
-func getStorageSnapshotVersion(runtimeClient client.Client) (string, error) {
-	ssverList := unstructured.UnstructuredList{}
-	ssverList.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "apiregistration.k8s.io",
-		Version: "v1",
-		Kind:    "APIService",
-	})
-	if err := runtimeClient.List(context.Background(), &ssverList); err != nil {
+func GetLogFileTimestamp() string {
+	year, month, day := time.Now().Date()
+	hour, minute, sec := time.Now().Clock()
+	ts := strconv.Itoa(year) + "-" + strconv.Itoa(int(month)) + "-" + strconv.Itoa(day) +
+		"T" + strconv.Itoa(hour) + "-" + strconv.Itoa(minute) + "-" + strconv.Itoa(sec)
+
+	return ts
+}
+
+func getStorageSnapshotVersion() (string, error) {
+	versions, err := getVersionsOfGroup(storageSnapshotGroup)
+	if err != nil {
 		return "", err
 	}
-	for _, apiServ := range ssverList.Items {
-		if apiServ.GetName() == v1StorageSnapshot {
-			return "v1", nil
+	for _, prefVersion := range storageSnapshotPreferredVersion {
+		for _, grpVersion := range versions {
+			if grpVersion == prefVersion {
+				return grpVersion, nil
+			}
 		}
 	}
 
-	ssverList.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "apiregistration.k8s.io",
-		Version: "v1beta1",
-		Kind:    "APIService",
-	})
-	if err := runtimeClient.List(context.Background(), &ssverList); err != nil {
-		return "", err
-	}
-	for _, apiServ := range ssverList.Items {
-		if apiServ.GetName() == v1beta1StorageSnapshot {
-			return "v1beta1", nil
-		}
-	}
-
-	return "", fmt.Errorf("no compatible volume snapshot version found in cluster")
+	return "", fmt.Errorf("no storage snapshot version found ono cluster for API group - %s", storageSnapshotGroup)
 }
 
 func getVersionsOfGroup(grp string) ([]string, error) {
@@ -153,71 +195,75 @@ func getVersionsOfGroup(grp string) ([]string, error) {
 		return nil, err
 	}
 	for _, api := range apiResList {
-		gv := strings.Split(api.GroupVersion, "/")
-		if gv[0] == grp {
-			apiVerList = append(apiVerList, gv[1])
+		gv, err := schema.ParseGroupVersion(api.GroupVersion)
+		if err != nil {
+			return nil, err
+		}
+		if gv.Group == grp {
+			apiVerList = append(apiVerList, gv.Version)
 		}
 	}
 
 	return apiVerList, nil
 }
 
-//  isOCPk8sCluster checks whether the cluster is OCP cluster.
-func isOCPk8sCluster(logger *logrus.Logger) bool {
-	_, err := discClient.ServerResourcesForGroupVersion(ocpAPIVersion)
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			logger.Infoln(fmt.Sprintf("APIVersion - %s not found on cluster, not an OCP cluster", ocpAPIVersion))
-			return false
-		}
-		logger.Warnln(err)
-		return false
-	}
-	return true
-}
-
-//  getAllVolumeSnapshotClass fetches all the VolumeSnapshots present in the cluster.
-func getAllVolumeSnapshotClass(gvk schema.GroupVersionKind) (*unstructured.UnstructuredList, error) {
-	vsscList := unstructured.UnstructuredList{}
-	vsscList.SetGroupVersionKind(gvk)
-	err := runtimeClient.List(context.Background(), &vsscList)
-
-	return &vsscList, err
-}
-
 //  clusterHasVolumeSnapshotClass checks and returns volume snapshot class if present on cluster.
-func clusterHasVolumeSnapshotClass(snapshotClass string) (*unstructured.Unstructured, error) {
-	vsscList, err := getAllVolumeSnapshotClass(schema.GroupVersionKind{
-		Group:   storageSnapshotGroup,
-		Version: "v1beta1",
-		Kind:    "VolumeSnapshotClass",
-	})
+func clusterHasVolumeSnapshotClass(ctx context.Context, snapshotClass, namespace string) (*unstructured.Unstructured, error) {
+	var verList []string
+	grps, err := discClient.ServerGroups()
 	if err != nil {
 		return nil, err
 	}
-
-	for _, vssc := range vsscList.Items {
-		if vssc.GetName() == snapshotClass {
-			return &vssc, nil
+	for i := 0; i < len(grps.Groups); i++ {
+		group := grps.Groups[i]
+		if group.Name == storageSnapshotGroup {
+			for _, gv := range group.Versions {
+				verList = append(verList, gv.Version)
+			}
 		}
 	}
 
+	for _, version := range verList {
+		u := &unstructured.Unstructured{}
+		u.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   storageSnapshotGroup,
+			Version: version,
+			Kind:    internal.VolumeSnapshotClassKind,
+		})
+		if err != nil {
+			return nil, err
+		}
+		err = runtimeClient.Get(ctx, client.ObjectKey{
+			Namespace: namespace,
+			Name:      snapshotClass,
+		}, u)
+		if err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return nil, err
+			}
+		} else {
+			return u, nil
+		}
+	}
 	return nil, fmt.Errorf("volume snapshot class %s not found", snapshotClass)
 }
 
 //  createDNSPodSpec returns a corev1.Pod instance.
-func createDNSPodSpec(imagePath string, op *Options) *corev1.Pod {
+func createDNSPodSpec(op *Options) *corev1.Pod {
+	var imagePath string
+	if op.LocalRegistry != "" {
+		imagePath = op.LocalRegistry
+	} else {
+		imagePath = gcrRegistryPath
+	}
 	pod := getPodTemplate(dnsUtils+resNameSuffix, op)
 	pod.Spec.Containers = []corev1.Container{
 		{
 			Name:            dnsContainerName,
-			Image:           imagePath + "/" + dnsUtilsImage,
+			Image:           strings.Join([]string{imagePath, "/", dnsUtilsImage}, ""),
 			Command:         commandSleep3600,
 			ImagePullPolicy: corev1.PullIfNotPresent,
-			Resources: corev1.ResourceRequirements{
-				Requests: getResourceRequirementsMap("64Mi", "250m"),
-				Limits:   getResourceRequirementsMap("128Mi", "500m"),
-			},
+			Resources:       resourceRequirements,
 		},
 	}
 
@@ -226,11 +272,7 @@ func createDNSPodSpec(imagePath string, op *Options) *corev1.Pod {
 
 func createVolumeSnapshotPVCSpec(storageClass, namespace string) *corev1.PersistentVolumeClaim {
 	pvc := &corev1.PersistentVolumeClaim{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      sourcePvc + resNameSuffix,
-			Namespace: namespace,
-			Labels:    getPreflightResourceLabels(),
-		},
+		ObjectMeta: getObjectMetaTemplate(sourcePvc+resNameSuffix, namespace),
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 			StorageClassName: &storageClass,
@@ -249,18 +291,25 @@ func createVolumeSnapshotPodSpec(pvcName string, op *Options) *corev1.Pod {
 	pod := getPodTemplate(sourcePod+resNameSuffix, op)
 	pod.Spec.Containers = []corev1.Container{
 		{
-			Name:    busyboxContainerName,
-			Image:   busyboxImageName,
-			Command: commandBinSh,
-			Args:    argsTouchDataFileSleep,
-			Resources: corev1.ResourceRequirements{
-				Requests: getResourceRequirementsMap("64Mi", "250m"),
-				Limits:   getResourceRequirementsMap("128Mi", "500m"),
-			},
+			Name:      busyboxContainerName,
+			Image:     busyboxImageName,
+			Command:   commandBinSh,
+			Args:      argsTouchDataFileSleep,
+			Resources: resourceRequirements,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      volMountName,
 					MountPath: volMountPath,
+				},
+			},
+			ReadinessProbe: &corev1.Probe{
+				InitialDelaySeconds: 30,
+				Handler: corev1.Handler{
+					Exec: &corev1.ExecAction{
+						Command: []string{
+							"ls",
+						},
+					},
 				},
 			},
 		},
@@ -294,8 +343,11 @@ func createVolumeSnapsotSpec(name, namespace, snapVer, pvcName string) *unstruct
 	}
 	volSnap.SetName(name)
 	volSnap.SetNamespace(namespace)
-	volSnap.SetKind(internal.VolumeSnapshotKind)
-	volSnap.SetAPIVersion(storageSnapshotGroup + "/" + snapVer)
+	volSnap.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   storageSnapshotGroup,
+		Version: snapVer,
+		Kind:    internal.VolumeSnapshotKind,
+	})
 	volSnap.SetLabels(getPreflightResourceLabels())
 
 	return volSnap
@@ -337,10 +389,7 @@ func createRestorePodSpec(podName, pvcName string, op *Options) *corev1.Pod {
 			Image:           busyboxImageName,
 			Command:         commandSleep3600,
 			ImagePullPolicy: corev1.PullIfNotPresent,
-			Resources: corev1.ResourceRequirements{
-				Requests: getResourceRequirementsMap("64Mi", "250m"),
-				Limits:   getResourceRequirementsMap("128Mi", "500m"),
-			},
+			Resources:       resourceRequirements,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      volMountName,
@@ -366,7 +415,7 @@ func createRestorePodSpec(podName, pvcName string, op *Options) *corev1.Pod {
 }
 
 func getPodTemplate(name string, op *Options) *corev1.Pod {
-	pod := &corev1.Pod{
+	return &corev1.Pod{
 		ObjectMeta: getObjectMetaTemplate(name, op.Namespace),
 		Spec: corev1.PodSpec{
 			ImagePullSecrets: []corev1.LocalObjectReference{
@@ -375,8 +424,6 @@ func getPodTemplate(name string, op *Options) *corev1.Pod {
 			ServiceAccountName: op.ServiceAccountName,
 		},
 	}
-
-	return pod
 }
 
 func getObjectMetaTemplate(name, namespace string) metav1.ObjectMeta {
@@ -384,13 +431,6 @@ func getObjectMetaTemplate(name, namespace string) metav1.ObjectMeta {
 		Name:      name,
 		Namespace: namespace,
 		Labels:    getPreflightResourceLabels(),
-	}
-}
-
-func getResourceRequirementsMap(memory, cpu string) map[corev1.ResourceName]resource.Quantity {
-	return map[corev1.ResourceName]resource.Quantity{
-		corev1.ResourceMemory: resource.MustParse(memory),
-		corev1.ResourceCPU:    resource.MustParse(cpu),
 	}
 }
 
@@ -455,128 +495,50 @@ func waitUntilVolSnapReadyToUse(volSnap *unstructured.Unstructured, snapshotVer 
 func execInPod(execOp *exec.Options, logger *logrus.Logger) error {
 	var execRes *exec.Response
 	var execChan = make(chan *exec.Response)
-	var retErr error
-	logger.Infoln(fmt.Sprintf("Executing command 'exec %s' in container - '%s' of pod - '%s'",
-		strings.Join(execOp.Command, " "), execOp.ContainerName, execOp.PodName))
+	logger.Infof("Executing command 'exec %s' in container - '%s' of pod - '%s'\n",
+		strings.Join(execOp.Command, " "), execOp.ContainerName, execOp.PodName)
 	go execOp.ExecInContainer(execChan)
 	select {
 	case execRes = <-execChan:
 		if execRes != nil && execRes.Err != nil {
-			logger.Warnln(fmt.Sprintf("exec command failed on %s in pod %s :: %s",
-				execOp.ContainerName, execOp.PodName, execRes.Err.Error()))
+			logger.Warnf("exec command failed on %s in pod %s :: %s\n",
+				execOp.ContainerName, execOp.PodName, execRes.Stderr)
+			return execRes.Err
 		}
-		break
+
 	case <-time.After(execTimeoutDuration):
-		retErr = fmt.Errorf("exec operation took too long on container %s in pod %s", execOp.ContainerName, execOp.PodName)
+		return fmt.Errorf("exec operation took too long on container %s in pod %s", execOp.ContainerName, execOp.PodName)
 	}
 
-	return retErr
-}
-
-func removeFinalizer(ctx context.Context, obj interface{}) error {
-	var err error
-	switch objType := obj.(type) {
-	case *corev1.Pod:
-		key := getObjNamespacedName(objType)
-		retErr := utilretry.RetryOnConflict(utilretry.DefaultRetry, func() error {
-			err = runtimeClient.Get(ctx, key, objType)
-			if err != nil {
-				return err
-			}
-			objType.ObjectMeta.Finalizers = []string{}
-			err = runtimeClient.Update(ctx, objType)
-			if err != nil {
-				return err
-			}
-			return nil
-		})
-		return retErr
-
-	case *corev1.PersistentVolumeClaim:
-		key := getObjNamespacedName(objType)
-		retErr := utilretry.RetryOnConflict(utilretry.DefaultRetry, func() error {
-			err = runtimeClient.Get(ctx, key, objType)
-			if err != nil {
-				return err
-			}
-			objType.ObjectMeta.Finalizers = []string{}
-			err = runtimeClient.Update(ctx, objType)
-			if err != nil {
-				return err
-			}
-			return nil
-		})
-		return retErr
-
-	case *unstructured.Unstructured:
-		key := getObjNamespacedName(objType)
-		retErr := utilretry.RetryOnConflict(utilretry.DefaultRetry, func() error {
-			err = runtimeClient.Get(ctx, key, objType)
-			if err != nil {
-				return err
-			}
-			objType.SetFinalizers([]string{})
-			err = runtimeClient.Update(ctx, objType)
-			if err != nil {
-				return err
-			}
-			return nil
-		})
-		return retErr
-	}
+	logger.Infof("%s Command 'exec %s' in container - '%s' of pod - '%s' executed successfully\n",
+		check, strings.Join(execOp.Command, " "), execOp.ContainerName, execOp.PodName)
 
 	return nil
 }
 
-func deleteK8sResourceWithForceTimeout(ctx context.Context, obj interface{}, logger *logrus.Logger) error {
-	retErr := k8swait.ExponentialBackoff(getDefaultRetryBackoffParams(), func() (done bool, e error) {
-		var err error
-		switch objType := obj.(type) {
-		case *corev1.Pod:
-			if err = removeFinalizer(ctx, objType); err != nil {
-				logger.Warnln(fmt.Sprintf("problem occurred while removing finalizers of %s - %s :: %s",
-					objType.Kind, objType.GetName(), err.Error()))
-			}
-			if err = clientSet.CoreV1().Pods(objType.Namespace).Delete(ctx, objType.GetName(), metav1.DeleteOptions{
-				GracePeriodSeconds: func() *int64 { var i int64; return &i }(),
-			}); err != nil {
-				logger.Errorln(fmt.Sprintf("problem occurred deleting %s - %s :: %s", objType.GetName(), objType.GetNamespace(), err.Error()))
-				return false, nil
-			}
-
-		case *corev1.PersistentVolumeClaim:
-			if err = removeFinalizer(ctx, objType); err != nil {
-				logger.Warnln(fmt.Sprintf("problem occurred while removing finalizers of %s - %s :: %s",
-					objType.Kind, objType.GetName(), err.Error()))
-			}
-			if err = clientSet.CoreV1().PersistentVolumeClaims(objType.Namespace).Delete(ctx, objType.Name, metav1.DeleteOptions{
-				GracePeriodSeconds: func() *int64 { var i int64; return &i }(),
-			}); err != nil {
-				logger.Errorln(fmt.Sprintf("problem occurred deleting %s - %s :: %s", objType.GetName(), objType.GetNamespace(), err.Error()))
-				return false, nil
-			}
-
-		case *unstructured.Unstructured:
-			if err = removeFinalizer(ctx, objType); err != nil {
-				logger.Warnln(fmt.Sprintf("problem occurred while removing finalizers of %s - %s :: %s",
-					objType.GetKind(), objType.GetName(), err.Error()))
-			}
-			if err = runtimeClient.Delete(ctx, objType, client.DeleteOption(&client.DeleteOptions{
-				GracePeriodSeconds: func() *int64 { var i int64; return &i }(),
-			})); err != nil {
-				logger.Errorln(fmt.Sprintf("problem occurred deleting %s - %s :: %s", objType.GetName(), objType.GetNamespace(), err.Error()))
-				return false, nil
-			}
-		}
-
-		return true, nil
-	})
-
-	return retErr
+func removeFinalizer(ctx context.Context, obj client.Object) error {
+	var err error
+	obj.SetFinalizers([]string{})
+	err = runtimeClient.Update(ctx, obj)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func getObjNamespacedName(obj client.Object) types.NamespacedName {
-	return types.NamespacedName{Name: obj.GetName(), Namespace: obj.GetNamespace()}
+func deleteK8sResourceWithForceTimeout(ctx context.Context, obj client.Object, logger *logrus.Logger) error {
+	var err error
+	err = removeFinalizer(ctx, obj)
+	if err != nil {
+		logger.Warnf("problem occurred while removing finalizers of %s - %s :: %s",
+			obj.GetObjectKind().GroupVersionKind().Kind, obj.GetName(), err.Error())
+	}
+	err = runtimeClient.Delete(ctx, obj, client.DeleteOption(client.GracePeriodSeconds(deletionGracePeriod)))
+	if err != nil {
+		return fmt.Errorf("problem occurred deleting %s - %s :: %s", obj.GetName(), obj.GetNamespace(), err.Error())
+	}
+
+	return nil
 }
 
 // getDefaultRetryBackoffParams returns a backoff object with timeout of approx. 5 min

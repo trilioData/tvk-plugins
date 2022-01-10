@@ -2,6 +2,7 @@ package internal
 
 import (
 	log "github.com/sirupsen/logrus"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -28,4 +29,14 @@ func CheckIfAPIVersionKindAvailable(discoveryClient *discovery.DiscoveryClient, 
 		}
 	}
 	return
+}
+
+func CheckIsOpenshift(disClient *discovery.DiscoveryClient, groupVersion string) bool {
+	_, err := disClient.ServerResourcesForGroupVersion(groupVersion)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return false
+		}
+	}
+	return true
 }

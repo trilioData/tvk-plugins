@@ -3,9 +3,7 @@ package preflight
 import (
 	"context"
 	"errors"
-	"fmt"
 
-	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,48 +12,13 @@ import (
 )
 
 type CleanupOptions struct {
-	Ctx        context.Context
-	Kubeconfig string
-	Namespace  string
-	Logger     *logrus.Logger
+	CommonOptions
 }
 
-func (o *CleanupOptions) CleanupByUID(uid string) error {
-	o.Logger.Infoln(fmt.Sprintf("Cleaning preflight resources with uid - %s", uid))
-	var err error
-	var allSuccess = true
-	gvkList, err := getCleanupResourceGVKList()
-	if err != nil {
-		return err
-	}
-	resList := unstructured.UnstructuredList{}
-
-	for _, gvk := range gvkList {
-		resList.SetGroupVersionKind(gvk)
-		if err = runtimeClient.List(o.Ctx, &resList, client.ListOption(client.InNamespace(o.Namespace))); err != nil {
-			o.Logger.Errorln(fmt.Sprintf("Error fetching %s(s)  :: %s", gvk.Kind, err.Error()))
-			continue
-		}
-		for _, res := range resList.Items {
-			res := res
-			resUID, ok := res.GetLabels()[labelPreflightRunKey]
-			if ok && resUID == uid {
-				err = o.cleanResource(&res)
-				if err != nil {
-					allSuccess = false
-				}
-			}
-		}
-	}
-	if allSuccess {
-		o.Logger.Infoln(fmt.Sprintf("preflight resources cleaned for uid - %s", uid))
-		return nil
-	}
-
-	return errors.New("deletion of some resources failed in cleanup process")
-}
-
-func (o *CleanupOptions) CleanAllPreflightResources() error {
+// CleanupPreflightResources cleans the preflight resources.
+// if uid is provided then preflight resources of particular uid are cleaned.
+// if uid is empty then all preflight resources are cleaned.
+func (o *CleanupOptions) CleanupPreflightResources(ctx context.Context, uid string) error {
 	o.Logger.Infoln("Cleaning all preflight resources")
 	var allSuccess = true
 	var err error
@@ -63,23 +26,29 @@ func (o *CleanupOptions) CleanAllPreflightResources() error {
 	if err != nil {
 		return err
 	}
-	resList := unstructured.UnstructuredList{}
+	resLabels := map[string]string{
+		labelTrilioKey: labelTvkPreflightValue,
+	}
+	if uid != "" {
+		resLabels[labelTrilioKey] = labelTvkPreflightValue
+	}
+	var resList unstructured.UnstructuredList
 	for _, gvk := range gvkList {
 		resList.SetGroupVersionKind(gvk)
-		if err = runtimeClient.List(o.Ctx, &resList, client.ListOption(client.InNamespace(o.Namespace))); err != nil {
-			o.Logger.Errorln(fmt.Sprintf("Error fetching %s(s)  :: %s", gvk.Kind, err.Error()))
+		if err = runtimeClient.List(ctx, &resList, client.MatchingLabels(resLabels)); err != nil {
+			o.Logger.Errorf("Error fetching %s(s)  :: %s\n", gvk.Kind, err.Error())
 			allSuccess = false
 			continue
 		}
 		for _, res := range resList.Items {
 			res := res
-			if _, ok := res.GetLabels()[labelPreflightRunKey]; ok {
-				err = o.cleanResource(&res)
-				if err != nil {
-					allSuccess = false
-				}
+			err = o.cleanResource(ctx, &res)
+			if err != nil {
+				allSuccess = false
+				o.Logger.Errorf("problem occurred deleting %s - %s :: %s", res.GetKind(), res.GetName(), err.Error())
 			}
 		}
+		resList = unstructured.UnstructuredList{}
 	}
 	if allSuccess {
 		o.Logger.Infoln("All preflight resources cleaned")
@@ -89,14 +58,13 @@ func (o *CleanupOptions) CleanAllPreflightResources() error {
 	return errors.New("deletion of some resources failed in cleanup process")
 }
 
-func (o *CleanupOptions) cleanResource(resource *unstructured.Unstructured) error {
+func (o *CleanupOptions) cleanResource(ctx context.Context, resource *unstructured.Unstructured) error {
 	var err error
-	o.Logger.Infoln(fmt.Sprintf("Cleaning %s - %s",
-		resource.GetKind(), resource.GetName()))
-	err = deleteK8sResourceWithForceTimeout(o.Ctx, resource, o.Logger)
+	o.Logger.Infof("Cleaning %s - %s", resource.GetKind(), resource.GetName())
+	err = deleteK8sResourceWithForceTimeout(ctx, resource, o.Logger)
 	if err != nil {
-		o.Logger.Errorln(fmt.Sprintf("%s Error cleaning %s - %s :: %s",
-			cross, resource.GetKind(), resource.GetName(), err.Error()))
+		o.Logger.Errorf("%s Error cleaning %s - %s :: %s\n",
+			cross, resource.GetKind(), resource.GetName(), err.Error())
 	}
 	return err
 }
@@ -119,7 +87,7 @@ func getCleanupResourceGVKList() ([]schema.GroupVersionKind, error) {
 	}
 	for _, ver := range snapVerList {
 		cleanupResourceList = append(cleanupResourceList, schema.GroupVersionKind{
-			Group:   "snapshot.storage.k8s.io",
+			Group:   storageSnapshotGroup,
 			Version: ver,
 			Kind:    internal.VolumeSnapshotKind,
 		})

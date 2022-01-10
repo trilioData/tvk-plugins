@@ -22,6 +22,7 @@ const (
 	ClusterServiceVersion     = "clusterserviceversions"
 	ClusterServiceVersionKind = "ClusterServiceVersion"
 	TriliovaultGroupVersion   = "triliovault.trilio.io/v1"
+	ocpAPIVersion             = "security.openshift.io/v1"
 
 	CoreGv           = "v1"
 	Events           = "events"

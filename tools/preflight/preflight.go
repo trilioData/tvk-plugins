@@ -6,176 +6,174 @@ import (
 	"fmt"
 	"math/big"
 	goexec "os/exec"
-	"regexp"
-	"strings"
 	"time"
 
+	version "github.com/hashicorp/go-version"
 	"github.com/sirupsen/logrus"
 	"github.com/trilioData/tvk-plugins/internal"
 	"github.com/trilioData/tvk-plugins/internal/utils/shell"
 	"github.com/trilioData/tvk-plugins/tools/preflight/exec"
 	"github.com/trilioData/tvk-plugins/tools/preflight/wait"
+	"k8s.io/client-go/discovery"
+
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Options input options required for running preflight.
 type Options struct {
-	Context              context.Context
+	CommonOptions
 	StorageClass         string
 	SnapshotClass        string
-	Kubeconfig           string
-	Namespace            string
 	LocalRegistry        string
 	ImagePullSecret      string
 	ServiceAccountName   string
 	PerformCleanupOnFail bool
-	Logger               *logrus.Logger
-}
-
-func InitKubeEnv(kubeconfig string) error {
-	utilruntime.Must(corev1.AddToScheme(scheme))
-	kubeEnv, err := internal.NewEnv(kubeconfig, scheme)
-	clientSet = kubeEnv.GetClientset()
-	runtimeClient = kubeEnv.GetRuntimeClient()
-	discClient = kubeEnv.GetDiscoveryClient()
-	restConfig = kubeEnv.GetRestConfig()
-	return err
 }
 
 // createResourceNameSuffix creates a unique 6-length hash for preflight check.
 // All resources name created during preflight will have hash as suffix
-func createResourceNameSuffix() string {
+func createResourceNameSuffix() (string, error) {
 	suffix := make([]byte, 6)
 	randRange := big.NewInt(int64(len(letterBytes)))
 	for i := range suffix {
-		randNum, _ := rand.Int(rand.Reader, randRange)
+		randNum, err := rand.Int(rand.Reader, randRange)
+		if err != nil {
+			return "", err
+		}
 		idx := randNum.Int64()
 		suffix[i] = letterBytes[idx]
 	}
 
-	return string(suffix)
+	return string(suffix), nil
 }
 
 // PerformPreflightChecks performs all preflight checks.
-func (o *Options) PerformPreflightChecks() {
-	preflightStatus := true
-	resNameSuffix = createResourceNameSuffix()
-	storageSnapshotSuccess := true
+func (o *Options) PerformPreflightChecks(ctx context.Context) {
 	var err error
+	preflightStatus := true
+	resNameSuffix, err = createResourceNameSuffix()
+	if err != nil {
+		o.Logger.Errorf("Error generating resource name suffix :: %s", err.Error())
+		return
+	}
+	storageSnapshotSuccess := true
 
-	o.Logger.Infoln(fmt.Sprintf("Generated UID for preflight check - %s", resNameSuffix))
+	o.Logger.Infof("Generated UID for preflight check - %s\n", resNameSuffix)
 
 	//  check kubectl
 	o.Logger.Infoln("Checking for kubectl")
 	err = o.checkKubectl()
 	if err != nil {
-		o.Logger.Errorln(fmt.Sprintf("%s Preflight check for kubectl utility failed :: %s", cross, err.Error()))
+		o.Logger.Errorf("%s Preflight check for kubectl utility failed :: %s\n", cross, err.Error())
 		preflightStatus = false
 	} else {
-		o.Logger.Infoln(fmt.Sprintf("%s Preflight check for kubectl utility is successful", check))
+		o.Logger.Infof("%s Preflight check for kubectl utility is successful\n", check)
 	}
 
-	o.Logger.Infoln("Checking access to the cluster")
-	err = o.checkClusterAccess()
+	o.Logger.Infoln("Checking access to the default namespace of cluster")
+	err = o.checkClusterAccess(ctx)
 	if err != nil {
-		o.Logger.Errorln(fmt.Sprintf("%s Preflight check for kubectl access failed :: %s", cross, err.Error()))
+		o.Logger.Errorf("%s Preflight check for cluster access failed :: %s\n", cross, err.Error())
 		preflightStatus = false
 	} else {
-		o.Logger.Infoln(fmt.Sprintf("%s Preflight check for kubectl access is successful", check))
+		o.Logger.Infof("%s Preflight check for kubectl access is successful\n", check)
 	}
 
-	o.Logger.Infoln(fmt.Sprintf("Checking for required Helm version (>= %s)", minHelmVersion))
+	o.Logger.Infof("Checking for required Helm version (>= %s)\n", minHelmVersion)
 	err = o.checkHelmVersion()
 	if err != nil {
-		o.Logger.Errorln(fmt.Sprintf("%s Preflight check for helm version failed :: %s", cross, err.Error()))
+		o.Logger.Errorf("%s Preflight check for helm version failed :: %s\n", cross, err.Error())
 		preflightStatus = false
 	} else {
-		o.Logger.Infoln(fmt.Sprintf("%s Preflight check for helm version is successful", check))
+		o.Logger.Infof("%s Preflight check for helm version is successful\n", check)
 	}
 
-	o.Logger.Infoln(fmt.Sprintf("Checking for required kubernetes server version (>=%s)", minK8sVersion))
+	o.Logger.Infof("Checking for required kubernetes server version (>=%s)\n", minK8sVersion)
 	err = o.checkKubernetesVersion()
 	if err != nil {
-		o.Logger.Errorln(fmt.Sprintf("%s Preflight check for kubernetes version failed :: %s", cross, err.Error()))
+		o.Logger.Errorf("%s Preflight check for kubernetes version failed :: %s\n", cross, err.Error())
 		preflightStatus = false
 	} else {
-		o.Logger.Infoln(fmt.Sprintf("%s Preflight check for kubernetes version is successful", check))
+		o.Logger.Infof("%s Preflight check for kubernetes version is successful\n", check)
 	}
 
 	o.Logger.Infoln("Checking Kubernetes RBAC")
 	err = o.checkKubernetesRBAC()
 	if err != nil {
-		o.Logger.Errorln(fmt.Sprintf("%s Preflight check for kubernetes RBAC failed :: %s", cross, err.Error()))
+		o.Logger.Errorf("%s Preflight check for kubernetes RBAC failed :: %s\n", cross, err.Error())
 		preflightStatus = false
 	} else {
-		o.Logger.Infoln(fmt.Sprintf("%s Preflight check for kubernetes RBAC is successful", check))
+		o.Logger.Infof("%s Preflight check for kubernetes RBAC is successful\n", check)
 	}
 
 	//  Check storage snapshot class
 	o.Logger.Infoln("Checking if a StorageClass and VolumeSnapshotClass are present")
-	err = o.checkStorageSnapshotClass()
+	err = o.checkStorageSnapshotClass(ctx)
 	if err != nil {
-		o.Logger.Errorln(fmt.Sprintf("%s Preflight check for SnapshotClass failed :: %s", cross, err.Error()))
+		o.Logger.Errorf("%s Preflight check for SnapshotClass failed :: %s\n", cross, err.Error())
 		storageSnapshotSuccess = false
 		preflightStatus = false
 	} else {
-		o.Logger.Infoln(fmt.Sprintf("%s Preflight check for SnapshotClass is successful", check))
+		o.Logger.Infof("%s Preflight check for SnapshotClass is successful\n", check)
 	}
 
 	//  Check CSI installation
 	o.Logger.Infoln("Checking if CSI APIs are installed in the cluster")
-	err = o.checkCSI()
+	err = o.checkCSI(ctx)
 	if err != nil {
-		o.Logger.Errorln(fmt.Sprintf("Preflight check for CSI failed :: %s", err.Error()))
+		o.Logger.Errorf("Preflight check for CSI failed :: %s\n", err.Error())
 		preflightStatus = false
 	} else {
-		o.Logger.Infoln(fmt.Sprintf("%s Preflight check for CSI is successful", check))
+		o.Logger.Infof("%s Preflight check for CSI is successful\n", check)
 	}
 
 	//  Check DNS resolution
 	o.Logger.Infoln("Checking if DNS resolution is working in k8s cluster")
-	err = o.checkDNSResolution()
+	err = o.checkDNSResolution(ctx)
 	if err != nil {
-		o.Logger.Errorln(fmt.Sprintf("%s Preflight check for DNS resolution failed :: %s", cross, err.Error()))
+		o.Logger.Errorf("%s Preflight check for DNS resolution failed :: %s\n", cross, err.Error())
 		preflightStatus = false
 	} else {
-		o.Logger.Infoln(fmt.Sprintf("%s Preflight check for DNS resolution is successful", check))
+		o.Logger.Infof("%s Preflight check for DNS resolution is successful\n", check)
 	}
 
 	//  Check volume snapshot and restore
 	if storageSnapshotSuccess {
 		o.Logger.Infoln("Checking if volume snapshot and restore is enabled in cluster")
-		err = o.checkVolumeSnapshot()
+		err = o.checkVolumeSnapshot(ctx)
 		if err != nil {
-			o.Logger.Errorln(fmt.Sprintf("%s Preflight check for volume snapshot and restore failed :: %s", cross, err.Error()))
+			o.Logger.Errorf("%s Preflight check for volume snapshot and restore failed :: %s\n", cross, err.Error())
 			preflightStatus = false
 		} else {
-			o.Logger.Infoln(fmt.Sprintf("%s Preflight check for volume snapshot and restore is successful", check))
+			o.Logger.Infof("%s Preflight check for volume snapshot and restore is successful\n", check)
 		}
+	} else {
+		o.Logger.Errorf("Skipping volume snapshot and restore check as preflight check for SnapshotClass failed")
 	}
 
 	co := &CleanupOptions{
-		Ctx:        o.Context,
-		Kubeconfig: o.Kubeconfig,
-		Namespace:  o.Namespace,
-		Logger:     o.Logger,
+		CommonOptions: CommonOptions{
+			Kubeconfig: o.Kubeconfig,
+			Namespace:  o.Namespace,
+			Logger:     o.Logger,
+		},
 	}
 	if !preflightStatus {
 		o.Logger.Warnln("Some preflight checks failed")
 		if o.PerformCleanupOnFail {
-			if err = co.CleanupByUID(resNameSuffix); err != nil {
-				o.Logger.Errorln(fmt.Sprintf("%s Failed to cleanup preflight resources :: %s", cross, err.Error()))
+			if err = co.CleanupPreflightResources(ctx, resNameSuffix); err != nil {
+				o.Logger.Errorf("%s Failed to cleanup preflight resources :: %s\n", cross, err.Error())
 			}
 		}
 	} else {
 		o.Logger.Infoln("All preflight checks succeeded!")
-		if err = co.CleanupByUID(resNameSuffix); err != nil {
-			o.Logger.Errorln(fmt.Sprintf("%s Failed to cleanup preflight resources :: %s", cross, err.Error()))
+		if err = co.CleanupPreflightResources(ctx, resNameSuffix); err != nil {
+			o.Logger.Errorf("%s Failed to cleanup preflight resources :: %s\n", cross, err.Error())
 		}
 	}
 }
@@ -186,47 +184,54 @@ func (o *Options) checkKubectl() error {
 	if err != nil {
 		return fmt.Errorf("error finding 'kubectl' binary in $PATH of the system :: %s", err.Error())
 	}
-	o.Logger.Infoln(fmt.Sprintf("kubectl found at path - %s", path))
+	o.Logger.Infof("kubectl found at path - %s\n", path)
 
 	return nil
 }
 
 // checkClusterAccess Checks whether access to kubectl utility is present on the client machine.
-func (o *Options) checkClusterAccess() error {
-	cmdOut, err := shell.RunCmd(fmt.Sprintf("kubectl cluster-info --kubeconfig=%s", o.Kubeconfig))
+func (o *Options) checkClusterAccess(ctx context.Context) error {
+	_, err := clientSet.CoreV1().Namespaces().Get(ctx, internal.DefaultNs, metav1.GetOptions{})
 	if err != nil {
-		return err
-	} else if cmdOut.ExitCode != 0 {
-		return fmt.Errorf("unable to access kubernetes context :: %s", err.Error())
+		return fmt.Errorf("unable to access default namespace of cluster :: %s", err.Error())
 	}
-	o.Logger.Infoln(fmt.Sprintf("%s Able to access Kubernetes cluster", check))
 
 	return nil
 }
 
 // checkHelmVersion checks whether minimum helm version is present.
 func (o *Options) checkHelmVersion() error {
-	if isOCPk8sCluster(o.Logger) {
-		o.Logger.Infoln(fmt.Sprintf("%s Running OCP cluster. Helm not needed for OCP clusters", check))
+	if internal.CheckIsOpenshift(discClient, ocpAPIVersion) {
+		o.Logger.Infof("%s Running OCP cluster. Helm not needed for OCP clusters\n", check)
 		return nil
 	}
+	o.Logger.Infof("APIVersion - %s not found on cluster, not an OCP cluster\n", ocpAPIVersion)
 	// check whether helm exists
 	path, err := goexec.LookPath("helm")
 	if err != nil {
 		return fmt.Errorf("error finding 'helm' binary in $PATH of the system :: %s", err.Error())
 	}
-	o.Logger.Infoln(fmt.Sprintf("helm found at path - %s", path))
+	o.Logger.Infof("helm found at path - %s\n", path)
 
-	// check minimum version of elm
+	// check minimum version of helm
 	cmdOut, err := shell.RunCmd("helm version --template '{{.Version}}'")
 	if err != nil {
 		return err
 	}
-	helmVersion := cmdOut.Out[1:]
-	if helmVersion < minHelmVersion {
+	helmVersion := cmdOut.Out[2 : len(cmdOut.Out)-1]
+	v1, err := version.NewVersion(minHelmVersion)
+	if err != nil {
+		return err
+	}
+	v2, err := version.NewVersion(helmVersion)
+	if err != nil {
+		return err
+	}
+	if v2.LessThan(v1) {
 		return fmt.Errorf("helm does not meet minimum version requirement.\nUpgrade helm to minimum version - %s", minHelmVersion)
 	}
-	o.Logger.Infoln(fmt.Sprintf("%s Helm version %s meets required version", check, helmVersion))
+
+	o.Logger.Infof("%s Helm version %s meets required version\n", check, helmVersion)
 
 	return nil
 }
@@ -237,16 +242,20 @@ func (o *Options) checkKubernetesVersion() error {
 	if err != nil {
 		return err
 	}
-	major, minor := serverVer.Major, serverVer.Minor
-	rgx := regexp.MustCompile(`[^0-9.]`)
-	minor = rgx.ReplaceAllString(minor, "")
-	minVer := strings.Split(minK8sVersion, ".")
-	minMajor, minMinor := minVer[0], minVer[1]
-	if (major > minMajor) || (major == minMajor && minor >= minMinor) {
-		return nil
+
+	v1, err := version.NewVersion(minK8sVersion)
+	if err != nil {
+		return err
+	}
+	v2, err := version.NewVersion(serverVer.GitVersion)
+	if err != nil {
+		return err
+	}
+	if v2.LessThan(v1) {
+		return fmt.Errorf("kubernetes server version does not meet minimum requirements")
 	}
 
-	return fmt.Errorf("kubernetes server version does not meet minimum requirements")
+	return nil
 }
 
 // checkKubernetesRBAC fetches the apiVersions present on k8s server.
@@ -255,16 +264,23 @@ func (o *Options) checkKubernetesVersion() error {
 func (o *Options) checkKubernetesRBAC() error {
 	groupList, err := discClient.ServerGroups()
 	if err != nil {
-		o.Logger.Errorln(fmt.Sprintf("Unable to fetch groups from server :: %s", err.Error()))
-		return err
+		if !discovery.IsGroupDiscoveryFailedError(err) {
+			o.Logger.Errorf("Unable to fetch groups from server :: %s\n", err.Error())
+			return err
+		}
+		o.Logger.Warnf("The Kubernetes server has an orphaned API service. Server reports: %s\n", err.Error())
+		o.Logger.Warnln("To fix this, kubectl delete api service <service-name>")
 	}
 	apiVersions := metav1.ExtractGroupVersions(groupList)
 	found := false
 	for _, apiver := range apiVersions {
-		api := strings.Split(apiver, "/")[0] // discarding version.
-		if api == rbacAPIGroup {
+		gv, err := schema.ParseGroupVersion(apiver)
+		if err != nil {
+			return nil
+		}
+		if gv.Group == rbacAPIGroup && gv.Version == rbacAPIVersion {
 			found = true
-			o.Logger.Infoln(fmt.Sprintf("%s Kubernetes RBAC is enabled", check))
+			o.Logger.Infof("%s Kubernetes RBAC is enabled\n", check)
 			break
 		}
 	}
@@ -277,33 +293,34 @@ func (o *Options) checkKubernetesRBAC() error {
 
 // checkStorageSnapshotClass checks whether storageclass is present.
 // Checks whether storageclass and volumesnapshotclass provisioner are same.
-func (o *Options) checkStorageSnapshotClass() error {
-	sc, err := clientSet.StorageV1().StorageClasses().Get(o.Context, o.StorageClass, metav1.GetOptions{})
+func (o *Options) checkStorageSnapshotClass(ctx context.Context) error {
+	sc, err := clientSet.StorageV1().StorageClasses().Get(ctx, o.StorageClass, metav1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return fmt.Errorf("not found storageclass - %s on cluster", o.StorageClass)
 		}
 		return err
 	}
-	o.Logger.Infoln(fmt.Sprintf("%s Storageclass - %s found on cluster", check, o.StorageClass))
+	o.Logger.Infof("%s Storageclass - %s found on cluster\n", check, o.StorageClass)
 	provisioner := sc.Provisioner
 	if o.SnapshotClass == "" {
-		storageVolSnapClass, err = o.checkSnapshotclassForProvisioner(provisioner)
+		storageVolSnapClass, err = o.checkSnapshotclassForProvisioner(ctx, provisioner)
 		if err != nil {
-			o.Logger.Errorln(fmt.Sprintf("%s %s", cross, err.Error()))
+			o.Logger.Errorf("%s %s\n", cross, err.Error())
 			return err
 		}
-		o.Logger.Infoln(fmt.Sprintf("%s Extracted volume snapshot class - %s found in cluster", check, storageSnapshotGroup))
-		o.Logger.Infoln(fmt.Sprintf("%s Volume snapshot class - %s driver matches with given StorageClass's provisioner=%s",
-			check, storageVolSnapClass, provisioner))
+		o.Logger.Infof("%s Extracted volume snapshot class - %s found in cluster", check, storageSnapshotGroup)
+		o.Logger.Infof("%s Volume snapshot class - %s driver matches with given StorageClass's provisioner=%s\n",
+			check, storageVolSnapClass, provisioner)
 	} else {
-		vssc, err := clusterHasVolumeSnapshotClass(o.SnapshotClass)
+		storageVolSnapClass = o.SnapshotClass
+		vssc, err := clusterHasVolumeSnapshotClass(ctx, o.SnapshotClass, o.Namespace)
 		if err != nil {
-			o.Logger.Errorln(fmt.Sprintf("%s %s", cross, err.Error()))
+			o.Logger.Errorf("%s %s\n", cross, err.Error())
 			return err
 		}
 		if vssc.Object["driver"] == provisioner {
-			o.Logger.Infoln(fmt.Sprintf("%s Volume snapshot class - %s driver matches with given StorageClass ", check, vssc.Object["driver"]))
+			o.Logger.Infof("%s Volume snapshot class - %s driver matches with given StorageClass\n", check, vssc.Object["driver"])
 		} else {
 			return fmt.Errorf("volume snapshot class - %s "+
 				"driver does not match with given StorageClass's provisioner=%s", o.SnapshotClass, provisioner)
@@ -314,112 +331,97 @@ func (o *Options) checkStorageSnapshotClass() error {
 }
 
 //  checkSnapshotclassForProvisioner checks whether snapshot-class exist for a provisioner
-func (o *Options) checkSnapshotclassForProvisioner(provisioner string) (string, error) {
-	vsscList := unstructured.UnstructuredList{}
-	vsscList.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "snapshot.storage.k8s.io",
-		Version: "v1beta1",
-		Kind:    "VolumeSnapshotClass",
-	})
-	err := runtimeClient.List(o.Context, &vsscList)
+func (o *Options) checkSnapshotclassForProvisioner(ctx context.Context, provisioner string) (string, error) {
+	snapVerList, err := getVersionsOfGroup(storageSnapshotGroup)
 	if err != nil {
 		return "", err
-	} else if len(vsscList.Items) == 0 {
-		return "", fmt.Errorf("no volume snapshot class found on cluster")
 	}
+	for i := 0; i < len(snapVerList); i++ {
+		ver := snapVerList[i]
+		vsscList := unstructured.UnstructuredList{}
+		vsscList.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   storageSnapshotGroup,
+			Version: ver,
+			Kind:    internal.VolumeSnapshotClassKind,
+		})
+		err := runtimeClient.List(ctx, &vsscList)
+		if err != nil {
+			return "", err
+		} else if len(vsscList.Items) == 0 {
+			o.Logger.Warnf("no volume snapshot class for APIVersion - %s/%s found on cluster", storageSnapshotGroup, ver)
+			continue
+		}
 
-	sscName := ""
-	for _, vssc := range vsscList.Items {
-		if vssc.Object["driver"] == provisioner {
-			if vssc.Object["snapshot.storage.kubernetes.io/is-default-class"] == "true" {
-				return vssc.GetName(), nil
+		sscName := ""
+		for _, vssc := range vsscList.Items {
+			if vssc.Object["driver"] == provisioner {
+				if vssc.Object["snapshot.storage.kubernetes.io/is-default-class"] == "true" {
+					return vssc.GetName(), nil
+				}
+				sscName = vssc.GetName()
 			}
-			sscName = vssc.GetName()
+		}
+		if sscName == "" {
+			o.Logger.Warnf("no matching volume snapshot class having driver "+
+				"same as provisioner - %s found on cluster for version - %s", provisioner, ver)
+		} else {
+			o.Logger.Infof("volume snapshot class having driver "+
+				"same as provisioner - %s found on cluster for version - %s", provisioner, ver)
+			return sscName, nil
 		}
 	}
-	if sscName == "" {
-		return "", fmt.Errorf("no matching volume snapshot class having driver "+
-			"same as provisioner - %s found on cluster", provisioner)
-	}
 
-	return sscName, nil
+	return "", fmt.Errorf("no matching volume snapshot class having driver "+
+		"same as provisioner - %s found on cluster", provisioner)
 }
 
 //  checkCSI checks whether CSI APIs are installed in the k8s cluster
-func (o *Options) checkCSI() error {
+func (o *Options) checkCSI(ctx context.Context) error {
 	apiExtVer, err := getVersionsOfGroup(apiExtenstionsGroup)
 	if err != nil {
 		return err
 	}
-	gvkList := make([]schema.GroupVersionKind, 0)
-	for _, ver := range apiExtVer {
-		gvkList = append(gvkList, schema.GroupVersionKind{
-			Group:   apiExtenstionsGroup,
-			Version: ver,
-			Kind:    "CustomResourceDefinition",
-		})
-	}
-	crdList := unstructured.UnstructuredList{}
-	resList := make([]unstructured.Unstructured, 0)
-	for _, gvk := range gvkList {
-		crdList.SetGroupVersionKind(gvk)
-		err := runtimeClient.List(o.Context, &crdList)
-		if err != nil {
-			o.Logger.Errorln(fmt.Sprintf("%s %s", cross, err.Error()))
-			return err
-		}
-		resList = append(resList, crdList.Items...)
-	}
-
-	csiAPISet := make(map[string]bool)
+	var found bool
+	var apiFoundCnt = 0
 	for _, api := range csiApis {
-		csiAPISet[api] = true
-	}
-
-	for _, crd := range resList {
-		if len(csiAPISet) == 0 {
+		found = false
+		for _, ver := range apiExtVer {
+			u := &unstructured.Unstructured{}
+			u.SetGroupVersionKind(schema.GroupVersionKind{
+				Group:   apiExtenstionsGroup,
+				Version: ver,
+				Kind:    customResourceDefinition,
+			})
+			err := runtimeClient.Get(ctx, client.ObjectKey{Name: api}, u)
+			if err != nil && !k8serrors.IsNotFound(err) {
+				return err
+			}
+			found = true
 			break
 		}
-		if _, ok := csiAPISet[crd.GetName()]; ok {
-			delete(csiAPISet, crd.GetName())
-			o.Logger.Infoln(fmt.Sprintf("Found CSI API - %s on cluster", crd.GetName()))
+		if found {
+			o.Logger.Infof("%s Found CSI API - %s on cluster\n", check, api)
+			apiFoundCnt++
+		} else {
+			o.Logger.Errorf("%s Not found CSI API - %s\n", cross, api)
 		}
 	}
-	if len(csiAPISet) == 0 {
-		return nil
-	}
 
-	for api := range csiAPISet {
-		o.Logger.Errorln(fmt.Sprintf("%s Not found CSI API - %s", cross, api))
+	if apiFoundCnt != len(csiApis) {
+		return fmt.Errorf("some CSI APIs not found in cluster. Check logs for details")
 	}
-	return fmt.Errorf("some CSI APIs not found in cluster. Check logs for details")
+	return nil
 }
 
 //  checkDNSResolution checks whether DNS resolution is working on k8s cluster
-func (o *Options) checkDNSResolution() error {
-	var imagePath string
-	if o.LocalRegistry != "" {
-		imagePath = o.LocalRegistry
-	} else {
-		imagePath = gcrRegistryPath
-	}
-	pod := createDNSPodSpec(imagePath, o)
-	_, err := clientSet.CoreV1().Pods(o.Namespace).Create(o.Context, pod, metav1.CreateOptions{})
+func (o *Options) checkDNSResolution(ctx context.Context) error {
+	pod := createDNSPodSpec(o)
+	_, err := clientSet.CoreV1().Pods(o.Namespace).Create(ctx, pod, metav1.CreateOptions{})
 	if err != nil {
-		logrus.Errorln(string(cross), err.Error())
+		logrus.Errorf("%s %s\n", cross, err.Error())
 		return err
 	}
-	o.Logger.Infoln(fmt.Sprintf("Pod %s created in cluster", pod.GetName()))
-
-	defer func() {
-		o.Logger.Infoln(fmt.Sprintf("Deleting dns pod - %s", pod.GetName()))
-		err = deleteK8sResourceWithForceTimeout(o.Context, pod, o.Logger)
-		if err != nil {
-			o.Logger.Errorln(fmt.Sprintf("error occurred deleting DNS pod :: %s", err.Error()))
-		} else {
-			o.Logger.Infoln("DNS pod deleted successfully")
-		}
-	}()
+	o.Logger.Infof("Pod %s created in cluster\n", pod.GetName())
 
 	waitOptions := &wait.PodWaitOptions{
 		Name:         pod.GetName(),
@@ -428,10 +430,10 @@ func (o *Options) checkDNSResolution() error {
 		PodCondition: corev1.PodReady,
 		ClientSet:    clientSet,
 	}
-	o.Logger.Infoln("Waiting for source pod to become ready")
-	err = waitUntilPodCondition(o.Context, waitOptions)
+	o.Logger.Infoln("Waiting for dns pod to become ready")
+	err = waitUntilPodCondition(ctx, waitOptions)
 	if err != nil {
-		o.Logger.Errorln(fmt.Sprintf("%s %s", cross, err.Error()))
+		o.Logger.Errorf("%s %s\n", cross, err.Error())
 	}
 
 	op := exec.Options{
@@ -452,7 +454,7 @@ func (o *Options) checkDNSResolution() error {
 }
 
 // checkVolumeSnapshot checks if volume snapshot and restore is enabled in the cluster
-func (o *Options) checkVolumeSnapshot() error {
+func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 	var (
 		execOp      exec.Options
 		waitOptions *wait.PodWaitOptions
@@ -460,13 +462,12 @@ func (o *Options) checkVolumeSnapshot() error {
 	)
 
 	pvc := createVolumeSnapshotPVCSpec(o.StorageClass, o.Namespace)
-	pvc, err = clientSet.CoreV1().PersistentVolumeClaims(o.Namespace).Create(o.Context, pvc, metav1.CreateOptions{})
+	pvc, err = clientSet.CoreV1().PersistentVolumeClaims(o.Namespace).Create(ctx, pvc, metav1.CreateOptions{})
 	if err != nil {
-		o.Logger.Errorln(err.Error())
 		return err
 	}
 	srcPod := createVolumeSnapshotPodSpec(pvc.GetName(), o)
-	srcPod, err = clientSet.CoreV1().Pods(o.Namespace).Create(o.Context, srcPod, metav1.CreateOptions{})
+	srcPod, err = clientSet.CoreV1().Pods(o.Namespace).Create(ctx, srcPod, metav1.CreateOptions{})
 	if err != nil {
 		o.Logger.Errorln(err.Error())
 		return err
@@ -481,7 +482,7 @@ func (o *Options) checkVolumeSnapshot() error {
 		ClientSet:    clientSet,
 	}
 	o.Logger.Infoln("Waiting for snapshot source pod to become ready")
-	err = waitUntilPodCondition(o.Context, waitOptions)
+	err = waitUntilPodCondition(ctx, waitOptions)
 	if err != nil {
 		return fmt.Errorf("pod %s hasn't reached into ready state", srcPod.GetName())
 	}
@@ -489,50 +490,49 @@ func (o *Options) checkVolumeSnapshot() error {
 
 	execOp = exec.Options{
 		Namespace:     o.Namespace,
-		Command:       []string{"ls", "/demo/data/sample-file.txt"},
+		Command:       execRestoreDataCheckCommand,
 		PodName:       srcPod.GetName(),
 		ContainerName: busyboxContainerName,
 		Executor:      &exec.DefaultRemoteExecutor{},
 		Config:        restConfig,
 		ClientSet:     clientSet,
 	}
-	o.Logger.Infoln(fmt.Sprintf("Checking for file - '/demo/data/sample-file.txt' in source pod - '%s'", srcPod.GetName()))
+	o.Logger.Infof("Checking for file - '%s' in source pod - '%s'\n", volSnapPodFilePath, srcPod.GetName())
 	err = execInPod(&execOp, o.Logger)
 	if err != nil {
 		return err
 	}
 
 	//  Create volume snapshot
-	snapshotVer, err := getStorageSnapshotVersion(runtimeClient)
+	snapshotVer, err := getStorageSnapshotVersion()
 	if err != nil {
 		o.Logger.Errorln(err.Error())
 		return err
 	}
 	volSnap := createVolumeSnapsotSpec(volumeSnapSrc+resNameSuffix, o.Namespace, snapshotVer, pvc.GetName())
-	if err = runtimeClient.Create(o.Context, volSnap); err != nil {
-		o.Logger.Errorln(err.Error())
-		o.Logger.Errorln(fmt.Sprintf("%s Error creating volume snapshot from source pvc", cross))
+	if err = runtimeClient.Create(ctx, volSnap); err != nil {
+		o.Logger.Errorf("%s Error creating volume snapshot from source pvc :: %s\n", cross, err.Error())
 		return err
 	}
 
-	o.Logger.Infoln("Waiting for Volume snapshot from source pvc to become 'readyToUse:true'")
+	o.Logger.Infoln("Waiting for volume snapshot from source pvc to become 'readyToUse:true'")
 	err = waitUntilVolSnapReadyToUse(volSnap, snapshotVer, getDefaultRetryBackoffParams())
 	if err != nil {
 		return err
 	}
-	o.Logger.Infoln(fmt.Sprintf("%s Created volume snapshot from source pvc and is ready-to-use", check))
+	o.Logger.Infof("%s Created volume snapshot from source pvc and is ready-to-use\n", check)
 
 	//  Create restore pod and pvc
 	restorePvcSpec := createRestorePVCSpec(restorePvc+resNameSuffix, volumeSnapSrc+resNameSuffix, o.StorageClass, o.Namespace)
 	restorePvcSpec, err = clientSet.CoreV1().PersistentVolumeClaims(o.Namespace).
-		Create(o.Context, restorePvcSpec, metav1.CreateOptions{})
+		Create(ctx, restorePvcSpec, metav1.CreateOptions{})
 	if err != nil {
 		o.Logger.Errorln(err.Error())
 		return err
 	}
 	restorePodSpec := createRestorePodSpec(restorePod+resNameSuffix, restorePvcSpec.GetName(), o)
 	restorePodSpec, err = clientSet.CoreV1().Pods(o.Namespace).
-		Create(o.Context, restorePodSpec, metav1.CreateOptions{})
+		Create(ctx, restorePodSpec, metav1.CreateOptions{})
 	if err != nil {
 		o.Logger.Errorln(err.Error())
 		return err
@@ -541,15 +541,15 @@ func (o *Options) checkVolumeSnapshot() error {
 	//  Wait for snapshot pod to become ready.
 	o.Logger.Infoln("Waiting for restore pod to become ready")
 	waitOptions.Name = restorePodSpec.GetName()
-	err = waitUntilPodCondition(o.Context, waitOptions)
+	err = waitUntilPodCondition(ctx, waitOptions)
 	if err != nil {
 		return err
 	}
-	o.Logger.Infoln(fmt.Sprintf("%s Created restore pod from volume snapshot", check))
+	o.Logger.Infof("%s Created restore pod from volume snapshot\n", check)
 
 	execOp = exec.Options{
 		Namespace:     o.Namespace,
-		Command:       []string{"ls", "/demo/data/sample-file.txt"},
+		Command:       execRestoreDataCheckCommand,
 		PodName:       restorePodSpec.GetName(),
 		ContainerName: busyboxContainerName,
 		Executor:      &exec.DefaultRemoteExecutor{},
@@ -562,39 +562,30 @@ func (o *Options) checkVolumeSnapshot() error {
 	}
 	o.Logger.Infoln("restored pod has expected data")
 
-	// TODO - add timeout for delete
-	o.Logger.Infoln(fmt.Sprintf("Deleting source pod - %s", srcPod.GetName()))
-	err = deleteK8sResourceWithForceTimeout(o.Context, srcPod, o.Logger)
-	if err != nil {
-		o.Logger.Warnln(fmt.Sprintf("problem occurred deleting source pod - %s :: %s", srcPod.GetName(), err.Error()))
-	}
-	o.Logger.Infoln(fmt.Sprintf("%s Deleted source pod", check))
-
 	unmountedVolSnapSrcSpec := createVolumeSnapsotSpec(unmountedVolumeSnapSrc+resNameSuffix, o.Namespace, snapshotVer, pvc.GetName())
-	if err = runtimeClient.Create(o.Context, unmountedVolSnapSrcSpec); err != nil {
-		o.Logger.Errorln(err.Error())
-		o.Logger.Errorln(fmt.Sprintf("%s error creating volume snapshot from unmounted source pvc", cross))
+	if err = runtimeClient.Create(ctx, unmountedVolSnapSrcSpec); err != nil {
+		o.Logger.Errorf("%s error creating volume snapshot from unmounted source pvc :: %s\n", cross, err.Error())
 		return err
 	}
-	o.Logger.Infoln("Waiting for Volume snapshot from source pvc to become 'readyToUse:true'")
+	o.Logger.Infoln("Waiting for volume snapshot from unmounted source pvc to become 'readyToUse:true'")
 	err = waitUntilVolSnapReadyToUse(unmountedVolSnapSrcSpec, snapshotVer, getDefaultRetryBackoffParams())
 	if err != nil {
 		return err
 	}
-	o.Logger.Infoln(fmt.Sprintf("%s Created volume snapshot from source pvc and is ready-to-use", check))
+	o.Logger.Infof("%s Created volume snapshot from unmounted source pvc and is ready-to-use\n", check)
 
 	// create unmounted restore pvc and pod
 	unmountedPvcSpec := createRestorePVCSpec(unmountedRestorePvc+resNameSuffix,
 		unmountedVolumeSnapSrc+resNameSuffix,
 		o.StorageClass, o.Namespace)
 	_, err = clientSet.CoreV1().PersistentVolumeClaims(o.Namespace).
-		Create(o.Context, unmountedPvcSpec, metav1.CreateOptions{})
+		Create(ctx, unmountedPvcSpec, metav1.CreateOptions{})
 	if err != nil {
 		o.Logger.Errorln(err.Error())
 		return err
 	}
 	unmountedPodSpec := createRestorePodSpec(unmountedRestorePod+resNameSuffix, unmountedPvcSpec.GetName(), o)
-	unmountedPodSpec, err = clientSet.CoreV1().Pods(o.Namespace).Create(o.Context, unmountedPodSpec, metav1.CreateOptions{})
+	unmountedPodSpec, err = clientSet.CoreV1().Pods(o.Namespace).Create(ctx, unmountedPodSpec, metav1.CreateOptions{})
 	if err != nil {
 		o.Logger.Errorln(err.Error())
 		return err
@@ -602,19 +593,18 @@ func (o *Options) checkVolumeSnapshot() error {
 	// wait for unmounted restore pod to become ready
 	waitOptions.Name = unmountedPodSpec.GetName()
 	o.Logger.Infoln("Waiting for unmounted restore pod to become ready")
-	err = waitUntilPodCondition(o.Context, waitOptions)
+	err = waitUntilPodCondition(ctx, waitOptions)
 	if err != nil {
 		return err
 	}
 	o.Logger.Infoln("Created restore pod from volume snapshot of unmounted pv")
 
 	execOp.PodName = unmountedPodSpec.GetName()
-	execOp.ContainerName = busyboxContainerName
 	err = execInPod(&execOp, o.Logger)
 	if err != nil {
 		return err
 	}
-	o.Logger.Infoln(fmt.Sprintf("%s restored pod from volume snapshot of unmounted pv has expected data", check))
+	o.Logger.Infof("%s restored pod from volume snapshot of unmounted pv has expected data\n", check)
 
 	return nil
 }

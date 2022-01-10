@@ -9,6 +9,7 @@ require (
 	github.com/google/go-cmp v0.5.6
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.3.0
+	github.com/hashicorp/go-version v1.3.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.16.0

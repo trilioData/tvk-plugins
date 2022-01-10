@@ -6,7 +6,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-
 	"github.com/trilioData/tvk-plugins/internal"
 )
 
@@ -34,9 +33,10 @@ func Execute() {
 
 //  initializes flags and logger for the application
 func init() {
-	rootCmd.PersistentFlags().StringVar(&kubeconfig, kubeconfigFlag, internal.KubeConfigDefault, kubeconfigUsage)
-	rootCmd.PersistentFlags().StringVar(&namespace, namespaceFlag, defaultNamespace, namespaceUsage)
-	rootCmd.PersistentFlags().StringVar(&logLevel, logLevelFlag, defaultLogLevel, logLevelUsage)
+	rootCmd.PersistentFlags().StringVarP(&kubeconfig, kubeconfigFlag, kubeconfigShorthandFlag, internal.KubeConfigDefault, kubeconfigUsage)
+	rootCmd.PersistentFlags().StringVarP(&namespace, namespaceFlag, namespaceFlagShorthand, internal.DefaultNs, namespaceUsage)
+	rootCmd.PersistentFlags().StringVarP(&logLevel, logLevelFlag, logLevelFlagShorthand, defaultLogLevel, logLevelUsage)
 
 	logger = logrus.New()
+	logger.SetFormatter(&logrus.TextFormatter{ForceColors: true})
 }

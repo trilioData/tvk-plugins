@@ -37,8 +37,10 @@ const (
 	IngressServiceLabel       = "k8s-triliovault-ingress-gateway"
 	ServiceTypeNodePort       = "NodePort"
 	VolumeSnapshotKind        = "VolumeSnapshot"
+	VolumeSnapshotClassKind   = "VolumeSnapshotClass"
 	PersistentVolumeClaimKind = "PersistentVolumeClaim"
 	PodKind                   = "Pod"
+	DefaultNs                 = "default"
 )
 
 var (
