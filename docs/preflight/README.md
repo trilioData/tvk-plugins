@@ -12,6 +12,14 @@ get more information around check being performed by this plugin.
 2. `kubectl` - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 3. `bash`(>=v3.2.x) should be present on system
 
+
+For openshift environments, if `kubectl` is not installed and `oc` binary is installed on host machine, then `oc` binary
+can be used to perform `kubectl` operation by -
+- creating alias with `alias kubectl=oc` **OR**
+- create a copy of oc binary with
+`cp oc oc-copy` and rename that copy to kubectl with `mv oc-copy kubectl`.
+
+
 **Supported OS:**
 - Linux
 - darwin

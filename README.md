@@ -8,8 +8,15 @@ kubectl-plugins for log-collector, preflight and target-browser CLI.
 
 ## Pre-requisites:
 
-1. krew - kubectl-plugin manager. Install from [here](https://krew.sigs.k8s.io/docs/user-guide/setup/install/)
-2. kubectl - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+1. krew - kubectl-plugin manager. Install from [here](https://krew.sigs.k8s.io/docs/user-guide/setup/install/).
+2. kubectl - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/).
+
+
+For openshift environments, if `kubectl` is not installed and `oc` binary is installed on host machine, then `oc` binary
+can be used to perform `kubectl` operation by -
+- creating alias with `alias kubectl=oc` **OR**
+- create a copy of oc binary with
+`cp oc oc-copy` and rename that copy to kubectl with `mv oc-copy kubectl`.
 
 
 ## Documentation:
