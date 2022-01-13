@@ -288,11 +288,17 @@ func createVolumeSnapshotPVCSpec(storageClass, namespace string) *corev1.Persist
 }
 
 func createVolumeSnapshotPodSpec(pvcName string, op *Options) *corev1.Pod {
+	var containerImage string
+	if op.LocalRegistry != "" {
+		containerImage = strings.Join([]string{op.LocalRegistry, "/", busyboxImageName}, "")
+	} else {
+		containerImage = busyboxImageName
+	}
 	pod := getPodTemplate(sourcePod+resNameSuffix, op)
 	pod.Spec.Containers = []corev1.Container{
 		{
 			Name:      busyboxContainerName,
-			Image:     busyboxImageName,
+			Image:     containerImage,
 			Command:   commandBinSh,
 			Args:      argsTouchDataFileSleep,
 			Resources: resourceRequirements,
@@ -307,7 +313,7 @@ func createVolumeSnapshotPodSpec(pvcName string, op *Options) *corev1.Pod {
 				Handler: corev1.Handler{
 					Exec: &corev1.ExecAction{
 						Command: []string{
-							"ls",
+							"cat", volSnapPodFilePath,
 						},
 					},
 				},
@@ -382,11 +388,17 @@ func createRestorePVCSpec(pvcName, dsName, storageClass, namespace string) *core
 
 // createRestorePodSpec creates a restore pod
 func createRestorePodSpec(podName, pvcName string, op *Options) *corev1.Pod {
+	var containerImage string
+	if op.LocalRegistry != "" {
+		containerImage = strings.Join([]string{op.LocalRegistry, "/", busyboxImageName}, "")
+	} else {
+		containerImage = busyboxImageName
+	}
 	pod := getPodTemplate(podName, op)
 	pod.Spec.Containers = []corev1.Container{
 		{
 			Name:            busyboxContainerName,
-			Image:           busyboxImageName,
+			Image:           containerImage,
 			Command:         commandSleep3600,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Resources:       resourceRequirements,

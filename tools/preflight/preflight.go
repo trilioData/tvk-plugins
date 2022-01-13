@@ -309,7 +309,7 @@ func (o *Options) checkStorageSnapshotClass(ctx context.Context) error {
 			o.Logger.Errorf("%s %s\n", cross, err.Error())
 			return err
 		}
-		o.Logger.Infof("%s Extracted volume snapshot class - %s found in cluster", check, storageSnapshotGroup)
+		o.Logger.Infof("%s Extracted volume snapshot class - %s found in cluster", check, storageVolSnapClass)
 		o.Logger.Infof("%s Volume snapshot class - %s driver matches with given StorageClass's provisioner=%s\n",
 			check, storageVolSnapClass, provisioner)
 	} else {
@@ -433,7 +433,8 @@ func (o *Options) checkDNSResolution(ctx context.Context) error {
 	o.Logger.Infoln("Waiting for dns pod to become ready")
 	err = waitUntilPodCondition(ctx, waitOptions)
 	if err != nil {
-		o.Logger.Errorf("%s %s\n", cross, err.Error())
+		o.Logger.Errorf("DNS pod - %s hasn't reached into ready state", pod.GetName())
+		return err
 	}
 
 	op := exec.Options{
