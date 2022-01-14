@@ -9,11 +9,16 @@ application, Helm charts, Custom reources and CRDs in a Kubernetes cluster.
 2. kubectl - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
 For openshift environments, if `kubectl` is not installed and `oc` binary is installed on host machine, then `oc` binary
-can be used to perform `kubectl` operation by -
-- creating alias with `alias kubectl=oc` **OR**
-- create a copy of oc binary with
-`cp oc oc-copy` and rename that copy to kubectl with `mv oc-copy kubectl`.
-
+can be used to perform `kubectl` operation by creating symlink with -
+```bash
+sudo ln -s /usr/local/bin/oc /usr/local/bin/kubectl
+```
+Note: 
+- `oc` binary path can found by executing `which oc`
+- To delete/remove symbolic links use either `unlink` or `rm` command -
+```bash
+unlink /usr/local/bin/kubectl
+```
 
 **Supported OS:**
 - Linux
