@@ -74,7 +74,9 @@ jobs:
 
             sharedPreflight: &sharedPreflight
               - *shared
+              - 'cmd/preflight/**'
               - 'tools/preflight/**'
+              - 'internal/**'
               - 'tests/preflight/**'
             preflight:
               - *sharedPreflight
@@ -132,8 +134,21 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Build Preflight Package
-      run: make build-preflight
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17
+
+    - name: Update '.goreleaser.yaml' for Building Preflight Packages only
+      run: |
+        echo "Updating '.goreleaser.yaml' for Building Preflight Packages only"
+        sed -i '/binary: log-collector/a \ \ skip: true' .goreleaser.yml
+
+    - name: Build Preflight Packages
+      uses: goreleaser/goreleaser-action@v2
+      with:
+        version: latest
+        args: release --snapshot --skip-publish --rm-dist
 
     - name: Set up Cloud SDK
       if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
@@ -266,7 +281,6 @@ jobs:
       - name: Upload Log-Collector binary to GCS artifact
         if: ${{ github.ref == 'refs/heads/main' }}
         run: gsutil cp dist/log-collector_linux_amd64/log-collector gs://trilio-artifacts/tvk-plugins/log-collector/main/log-collector
-
   # build_test_target-browser job builds target-browser packages, runs integration tests and tests packages for plugin creation(install, uninstall)
   build_test_target-browser:
     runs-on: ubuntu-latest
