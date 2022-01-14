@@ -2,7 +2,10 @@ package cmd
 
 import (
 	"context"
+	"io"
+	"os"
 
+	"github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/trilioData/tvk-plugins/tools/preflight"
@@ -38,7 +41,13 @@ var runCmd = &cobra.Command{
   kubectl tvk-preflight run --storage-class <storage-class-name> --service-account-name <service account name>
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		var err error
+		logFile, err = os.OpenFile(preflightLogFilename, os.O_APPEND|os.O_WRONLY, filePermission)
+		if err != nil {
+			log.Fatalf("Failed to open preflight log file :: %s", err.Error())
+		}
 		defer logFile.Close()
+		logger.SetOutput(io.MultiWriter(colorable.NewColorableStdout(), logFile))
 		if storageClass == "" {
 			logger.Fatalf("storage-class is required, cannot be empty")
 		}

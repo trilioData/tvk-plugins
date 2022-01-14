@@ -165,14 +165,12 @@ func (o *Options) PerformPreflightChecks(ctx context.Context) {
 	}
 	if !preflightStatus {
 		o.Logger.Warnln("Some preflight checks failed")
-		if o.PerformCleanupOnFail {
-			if err = co.CleanupPreflightResources(ctx, resNameSuffix); err != nil {
-				o.Logger.Errorf("%s Failed to cleanup preflight resources :: %s\n", cross, err.Error())
-			}
-		}
 	} else {
 		o.Logger.Infoln("All preflight checks succeeded!")
-		if err = co.CleanupPreflightResources(ctx, resNameSuffix); err != nil {
+	}
+	if preflightStatus || o.PerformCleanupOnFail {
+		err = co.CleanupPreflightResources(ctx, resNameSuffix)
+		if err != nil {
 			o.Logger.Errorf("%s Failed to cleanup preflight resources :: %s\n", cross, err.Error())
 		}
 	}
@@ -332,78 +330,70 @@ func (o *Options) checkStorageSnapshotClass(ctx context.Context) error {
 
 //  checkSnapshotclassForProvisioner checks whether snapshot-class exist for a provisioner
 func (o *Options) checkSnapshotclassForProvisioner(ctx context.Context, provisioner string) (string, error) {
-	snapVerList, err := getVersionsOfGroup(storageSnapshotGroup)
+	var (
+		prefVersion string
+		err         error
+	)
+	prefVersion, err = getServerPreferredVersionForGroup(storageSnapshotGroup)
 	if err != nil {
 		return "", err
 	}
-	for i := 0; i < len(snapVerList); i++ {
-		ver := snapVerList[i]
-		vsscList := unstructured.UnstructuredList{}
-		vsscList.SetGroupVersionKind(schema.GroupVersionKind{
-			Group:   storageSnapshotGroup,
-			Version: ver,
-			Kind:    internal.VolumeSnapshotClassKind,
-		})
-		err := runtimeClient.List(ctx, &vsscList)
-		if err != nil {
-			return "", err
-		} else if len(vsscList.Items) == 0 {
-			o.Logger.Warnf("no volume snapshot class for APIVersion - %s/%s found on cluster", storageSnapshotGroup, ver)
-			continue
-		}
 
-		sscName := ""
-		for _, vssc := range vsscList.Items {
-			if vssc.Object["driver"] == provisioner {
-				if vssc.Object["snapshot.storage.kubernetes.io/is-default-class"] == "true" {
-					return vssc.GetName(), nil
-				}
-				sscName = vssc.GetName()
-			}
-		}
-		if sscName == "" {
-			o.Logger.Warnf("no matching volume snapshot class having driver "+
-				"same as provisioner - %s found on cluster for version - %s", provisioner, ver)
-		} else {
-			o.Logger.Infof("volume snapshot class having driver "+
-				"same as provisioner - %s found on cluster for version - %s", provisioner, ver)
-			return sscName, nil
-		}
+	vsscList := unstructured.UnstructuredList{}
+	vsscList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   storageSnapshotGroup,
+		Version: prefVersion,
+		Kind:    internal.VolumeSnapshotClassKind,
+	})
+	err = runtimeClient.List(ctx, &vsscList)
+	if err != nil {
+		return "", err
+	} else if len(vsscList.Items) == 0 {
+		return "", fmt.Errorf("no volume snapshot class for APIVersion - %s/%s found on cluster",
+			storageSnapshotGroup, prefVersion)
 	}
 
-	return "", fmt.Errorf("no matching volume snapshot class having driver "+
-		"same as provisioner - %s found on cluster", provisioner)
+	sscName := ""
+	for _, vssc := range vsscList.Items {
+		if vssc.Object["driver"] == provisioner {
+			if vssc.Object["snapshot.storage.kubernetes.io/is-default-class"] == "true" {
+				return vssc.GetName(), nil
+			}
+			sscName = vssc.GetName()
+		}
+	}
+	if sscName == "" {
+		return "", fmt.Errorf("no matching volume snapshot class having driver "+
+			"same as provisioner - %s found on cluster", provisioner)
+	}
+
+	o.Logger.Infof("volume snapshot class having driver "+
+		"same as provisioner - %s found on cluster for version - %s", provisioner, prefVersion)
+	return sscName, nil
 }
 
 //  checkCSI checks whether CSI APIs are installed in the k8s cluster
 func (o *Options) checkCSI(ctx context.Context) error {
-	apiExtVer, err := getVersionsOfGroup(apiExtenstionsGroup)
+	prefVersion, err := getServerPreferredVersionForGroup(apiExtenstionsGroup)
 	if err != nil {
 		return err
 	}
-	var found bool
 	var apiFoundCnt = 0
+	u := &unstructured.Unstructured{}
+	u.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   apiExtenstionsGroup,
+		Version: prefVersion,
+		Kind:    customResourceDefinition,
+	})
 	for _, api := range csiApis {
-		found = false
-		for _, ver := range apiExtVer {
-			u := &unstructured.Unstructured{}
-			u.SetGroupVersionKind(schema.GroupVersionKind{
-				Group:   apiExtenstionsGroup,
-				Version: ver,
-				Kind:    customResourceDefinition,
-			})
-			err := runtimeClient.Get(ctx, client.ObjectKey{Name: api}, u)
-			if err != nil && !k8serrors.IsNotFound(err) {
-				return err
-			}
-			found = true
-			break
-		}
-		if found {
+		err := runtimeClient.Get(ctx, client.ObjectKey{Name: api}, u)
+		if err != nil && !k8serrors.IsNotFound(err) {
+			return err
+		} else if k8serrors.IsNotFound(err) {
+			o.Logger.Errorf("%s Not found CSI API - %s\n", cross, api)
+		} else {
 			o.Logger.Infof("%s Found CSI API - %s on cluster\n", check, api)
 			apiFoundCnt++
-		} else {
-			o.Logger.Errorf("%s Not found CSI API - %s\n", cross, api)
 		}
 	}
 
@@ -467,12 +457,14 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	o.Logger.Infof("Created source pvc - %s", pvc.GetName())
 	srcPod := createVolumeSnapshotPodSpec(pvc.GetName(), o)
 	srcPod, err = clientSet.CoreV1().Pods(o.Namespace).Create(ctx, srcPod, metav1.CreateOptions{})
 	if err != nil {
 		o.Logger.Errorln(err.Error())
 		return err
 	}
+	o.Logger.Infof("Created source pod - %s", srcPod.GetName())
 
 	//  Wait for snapshot pod to become ready.
 	waitOptions = &wait.PodWaitOptions{
@@ -482,12 +474,12 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 		PodCondition: corev1.PodReady,
 		ClientSet:    clientSet,
 	}
-	o.Logger.Infoln("Waiting for snapshot source pod to become ready")
+	o.Logger.Infof("Waiting for source pod - %s to become ready\n", srcPod.GetName())
 	err = waitUntilPodCondition(ctx, waitOptions)
 	if err != nil {
 		return fmt.Errorf("pod %s hasn't reached into ready state", srcPod.GetName())
 	}
-	o.Logger.Infoln("Created sources pod and pvc")
+	o.Logger.Infof("Source pod - %s has reached into ready state\n", srcPod.GetName())
 
 	execOp = exec.Options{
 		Namespace:     o.Namespace,
@@ -505,7 +497,7 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 	}
 
 	//  Create volume snapshot
-	snapshotVer, err := getStorageSnapshotVersion()
+	snapshotVer, err := getServerPreferredVersionForGroup(storageSnapshotGroup)
 	if err != nil {
 		o.Logger.Errorln(err.Error())
 		return err
@@ -515,13 +507,14 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 		o.Logger.Errorf("%s Error creating volume snapshot from source pvc :: %s\n", cross, err.Error())
 		return err
 	}
+	o.Logger.Infof("Created volume snapshot - %s from source pvc", volSnap.GetName())
 
-	o.Logger.Infoln("Waiting for volume snapshot from source pvc to become 'readyToUse:true'")
+	o.Logger.Infof("Waiting for volume snapshot - %s from source pvc to become 'readyToUse:true'", volSnap.GetName())
 	err = waitUntilVolSnapReadyToUse(volSnap, snapshotVer, getDefaultRetryBackoffParams())
 	if err != nil {
 		return err
 	}
-	o.Logger.Infof("%s Created volume snapshot from source pvc and is ready-to-use\n", check)
+	o.Logger.Infof("%s volume snapshot - %s is ready-to-use\n", check, volSnap.GetName())
 
 	//  Create restore pod and pvc
 	restorePvcSpec := createRestorePVCSpec(restorePvc+resNameSuffix, volumeSnapSrc+resNameSuffix, o.StorageClass, o.Namespace)
@@ -531,6 +524,7 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 		o.Logger.Errorln(err.Error())
 		return err
 	}
+	o.Logger.Infof("Created restore pvc - %s from volume snapshot - %s\n", restorePvcSpec.GetName(), volSnap.GetName())
 	restorePodSpec := createRestorePodSpec(restorePod+resNameSuffix, restorePvcSpec.GetName(), o)
 	restorePodSpec, err = clientSet.CoreV1().Pods(o.Namespace).
 		Create(ctx, restorePodSpec, metav1.CreateOptions{})
@@ -538,15 +532,16 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 		o.Logger.Errorln(err.Error())
 		return err
 	}
+	o.Logger.Infof("Created restore pod - %s\n", restorePodSpec.GetName())
 
 	//  Wait for snapshot pod to become ready.
-	o.Logger.Infoln("Waiting for restore pod to become ready")
+	o.Logger.Infof("Waiting for restore pod - %s to become ready\n", restorePodSpec.GetName())
 	waitOptions.Name = restorePodSpec.GetName()
 	err = waitUntilPodCondition(ctx, waitOptions)
 	if err != nil {
 		return err
 	}
-	o.Logger.Infof("%s Created restore pod from volume snapshot\n", check)
+	o.Logger.Infof("%s Restore pod - %s has reached into ready state\n", check, restorePodSpec.GetName())
 
 	execOp = exec.Options{
 		Namespace:     o.Namespace,
@@ -561,19 +556,28 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	o.Logger.Infoln("restored pod has expected data")
+	o.Logger.Infof("Restored pod - %s has expected data\n", restorePodSpec.GetName())
+
+	o.Logger.Infof("Deleting source pod - %s\n", srcPod.GetName())
+	err = deleteK8sResourceWithForceTimeout(ctx, srcPod, o.Logger)
+	if err != nil {
+		return err
+	}
 
 	unmountedVolSnapSrcSpec := createVolumeSnapsotSpec(unmountedVolumeSnapSrc+resNameSuffix, o.Namespace, snapshotVer, pvc.GetName())
 	if err = runtimeClient.Create(ctx, unmountedVolSnapSrcSpec); err != nil {
 		o.Logger.Errorf("%s error creating volume snapshot from unmounted source pvc :: %s\n", cross, err.Error())
 		return err
 	}
-	o.Logger.Infoln("Waiting for volume snapshot from unmounted source pvc to become 'readyToUse:true'")
+	o.Logger.Infof("Created volume snapshot - %s\n", unmountedVolSnapSrcSpec.GetName())
+	o.Logger.Infof("Waiting for volume snapshot - %s from unmounted source pvc to become 'readyToUse:true'\n",
+		unmountedVolSnapSrcSpec.GetName())
 	err = waitUntilVolSnapReadyToUse(unmountedVolSnapSrcSpec, snapshotVer, getDefaultRetryBackoffParams())
 	if err != nil {
 		return err
 	}
-	o.Logger.Infof("%s Created volume snapshot from unmounted source pvc and is ready-to-use\n", check)
+	o.Logger.Infof("%s Volume snapshot - %s from unmounted source pvc and is ready-to-use\n",
+		check, unmountedVolSnapSrcSpec.GetName())
 
 	// create unmounted restore pvc and pod
 	unmountedPvcSpec := createRestorePVCSpec(unmountedRestorePvc+resNameSuffix,
@@ -585,20 +589,23 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 		o.Logger.Errorln(err.Error())
 		return err
 	}
+	o.Logger.Infof("Created restore pvc - %s from unmounted volume snapshot - %s\n",
+		unmountedPvcSpec.GetName(), unmountedVolSnapSrcSpec.GetName())
 	unmountedPodSpec := createRestorePodSpec(unmountedRestorePod+resNameSuffix, unmountedPvcSpec.GetName(), o)
 	unmountedPodSpec, err = clientSet.CoreV1().Pods(o.Namespace).Create(ctx, unmountedPodSpec, metav1.CreateOptions{})
 	if err != nil {
 		o.Logger.Errorln(err.Error())
 		return err
 	}
+	o.Logger.Infof("Created restore pod - %s from volume snapshot of unmounted pv\n", unmountedPodSpec.GetName())
 	// wait for unmounted restore pod to become ready
 	waitOptions.Name = unmountedPodSpec.GetName()
-	o.Logger.Infoln("Waiting for unmounted restore pod to become ready")
+	o.Logger.Infof("Waiting for unmounted restore pod - %s to become ready\n", unmountedPodSpec.GetName())
 	err = waitUntilPodCondition(ctx, waitOptions)
 	if err != nil {
 		return err
 	}
-	o.Logger.Infoln("Created restore pod from volume snapshot of unmounted pv")
+	o.Logger.Infof("%s Restore pod - %s has reached into ready state\n", check, unmountedPodSpec.GetName())
 
 	execOp.PodName = unmountedPodSpec.GetName()
 	err = execInPod(&execOp, o.Logger)

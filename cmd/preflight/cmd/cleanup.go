@@ -2,12 +2,16 @@ package cmd
 
 import (
 	"context"
+	"io"
+	"os"
 
+	"github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable"
+
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/trilioData/tvk-plugins/tools/preflight"
 )
 
-// nolint:lll // ignore long line lint errors
 // cleanupCmd represents the cleanup command
 var cleanupCmd = &cobra.Command{
 	Use:   cleanupCmdName,
@@ -27,8 +31,13 @@ If uid flag is not specified then all preflight resources created till date are 
   kubectl tvk-preflight cleanup --uid <preflight run uid> --namespace <namespace> --kubeconfig <kubeconfig-file-path>
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		defer logFile.Close()
 		var err error
+		logFile, err = os.OpenFile(preflightLogFilename, os.O_APPEND|os.O_WRONLY, filePermission)
+		if err != nil {
+			log.Fatalf("Failed to open preflight log file :: %s", err.Error())
+		}
+		defer logFile.Close()
+		logger.SetOutput(io.MultiWriter(colorable.NewColorableStdout(), logFile))
 		co := &preflight.CleanupOptions{
 			CommonOptions: preflight.CommonOptions{
 				Kubeconfig: kubeconfig,

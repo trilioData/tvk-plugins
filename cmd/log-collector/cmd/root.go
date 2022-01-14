@@ -15,9 +15,7 @@ const (
 	binaryName     = "log-collector"
 	clusteredFlag  = "clustered"
 	namespacesFlag = "namespaces"
-	kubeConfigFlag = "kubeconfig"
 	keepSourceFlag = "keep-source-folder"
-	logLevelFlag   = "log-level"
 
 	shortUsage = "log-collector collects the information of resources such as yaml configuration and logs from k8s cluster."
 	longUsage  = "log-collector let you define what you need to log and how to log it by collecting the the logs " +
@@ -30,15 +28,9 @@ const (
 	clusteredUsage    = "specifies clustered object"
 	clusteredDefault  = false
 	clusteredShort    = "c"
-	kubeconfigUsage   = "specifies the custom path for your kubeconfig"
-	kubeconfigShort   = "k"
 	keepSourceUsage   = "Keep source directory and Zip both"
 	keepSourceDefault = false
 	keepSourceShort   = "s"
-	logLevelUsage     = "LogLevel specify the logging level the logger should log at. This is typically info " +
-		", error, fatal."
-	loglevelDefault = "INFO"
-	loglevelShort   = "l"
 )
 
 var (
@@ -66,9 +58,10 @@ func logCollectorCommand() *cobra.Command {
 
 	cmd.Flags().StringSliceVarP(&namespaces, namespacesFlag, namespacesShort, namespacesDefault, namespacesUsage)
 	cmd.Flags().BoolVarP(&clustered, clusteredFlag, clusteredShort, clusteredDefault, clusteredUsage)
-	cmd.Flags().StringVarP(&kubeConfig, kubeConfigFlag, kubeconfigShort, internal.KubeConfigDefault, kubeconfigUsage)
+	cmd.Flags().StringVarP(&kubeConfig, internal.KubeconfigFlag,
+		internal.KubeconfigShorthandFlag, internal.KubeConfigDefault, internal.KubeconfigUsage)
 	cmd.Flags().BoolVarP(&keepSource, keepSourceFlag, keepSourceShort, keepSourceDefault, keepSourceUsage)
-	cmd.Flags().StringVarP(&logLevel, logLevelFlag, loglevelShort, loglevelDefault, logLevelUsage)
+	cmd.Flags().StringVarP(&logLevel, internal.LogLevelFlag, internal.LogLevelFlagShorthand, internal.DefaultLogLevel, internal.LogLevelUsage)
 
 	return cmd
 }

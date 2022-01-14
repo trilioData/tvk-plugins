@@ -2,29 +2,43 @@ package cmd
 
 import (
 	"io"
+	"os"
+	"strconv"
+	"time"
 
 	"github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable"
 	log "github.com/sirupsen/logrus"
-	"github.com/trilioData/tvk-plugins/tools/preflight"
+	"github.com/trilioData/tvk-plugins/internal"
 )
 
-func setupLogger(logFilename string) error {
+func setupLogger(logFilePrefix string) error {
 	var err error
-	logFile, err = preflight.CreateLoggingFile(logFilename)
+	preflightLogFilename = generateLogFileName(logFilePrefix)
+	logFile, err = os.OpenFile(preflightLogFilename, os.O_CREATE|os.O_WRONLY, filePermission)
 	if err != nil {
-		log.Errorf("Unable to create log file - %s. Aborting preflight checks...",
-			logFilename+"-"+preflight.GetLogFileTimestamp()+".log")
+		log.Errorf("Unable to create log file - %s. Aborting preflight checks...", preflightLogFilename)
 		return err
 	}
+	defer logFile.Close()
+	logger.Infof("Created log file with name - %s", logFile.Name())
 	logger.SetOutput(io.MultiWriter(colorable.NewColorableStdout(), logFile))
 	lvl, err := log.ParseLevel(logLevel)
 	if err != nil {
 		logger.SetLevel(log.InfoLevel)
-		logger.Errorf("Failed to parse log-level flag. Setting log level as %s\n", defaultLogLevel)
-		return err
+		logger.Errorf("Failed to parse log-level flag. Setting log level as %s\n", internal.DefaultLogLevel)
+		return nil
 	}
 	logger.Infof("Setting log level as %s\n", logLevel)
 	logger.SetLevel(lvl)
 
 	return nil
+}
+
+func generateLogFileName(logFilePrefix string) string {
+	year, month, day := time.Now().Date()
+	hour, minute, sec := time.Now().Clock()
+	ts := strconv.Itoa(year) + "-" + strconv.Itoa(int(month)) + "-" + strconv.Itoa(day) +
+		"T" + strconv.Itoa(hour) + "-" + strconv.Itoa(minute) + "-" + strconv.Itoa(sec)
+
+	return logFilePrefix + "-" + ts + ".log"
 }

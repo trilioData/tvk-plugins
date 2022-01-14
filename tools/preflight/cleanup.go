@@ -30,10 +30,10 @@ func (o *CleanupOptions) CleanupPreflightResources(ctx context.Context, uid stri
 		labelTrilioKey: labelTvkPreflightValue,
 	}
 	if uid != "" {
-		resLabels[labelTrilioKey] = labelTvkPreflightValue
+		resLabels[labelPreflightRunKey] = uid
 	}
-	var resList unstructured.UnstructuredList
 	for _, gvk := range gvkList {
+		var resList = unstructured.UnstructuredList{}
 		resList.SetGroupVersionKind(gvk)
 		if err = runtimeClient.List(ctx, &resList, client.MatchingLabels(resLabels)); err != nil {
 			o.Logger.Errorf("Error fetching %s(s)  :: %s\n", gvk.Kind, err.Error())
@@ -48,7 +48,6 @@ func (o *CleanupOptions) CleanupPreflightResources(ctx context.Context, uid stri
 				o.Logger.Errorf("problem occurred deleting %s - %s :: %s", res.GetKind(), res.GetName(), err.Error())
 			}
 		}
-		resList = unstructured.UnstructuredList{}
 	}
 	if allSuccess {
 		o.Logger.Infoln("All preflight resources cleaned")

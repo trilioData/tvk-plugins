@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	logger  *logrus.Logger
-	logFile *os.File
+	logger               *logrus.Logger
+	logFile              *os.File
+	preflightLogFilename string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -33,9 +34,11 @@ func Execute() {
 
 //  initializes flags and logger for the application
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&kubeconfig, kubeconfigFlag, kubeconfigShorthandFlag, internal.KubeConfigDefault, kubeconfigUsage)
+	rootCmd.PersistentFlags().StringVarP(&kubeconfig, internal.KubeconfigFlag,
+		internal.KubeconfigShorthandFlag, internal.KubeConfigDefault, internal.KubeconfigUsage)
 	rootCmd.PersistentFlags().StringVarP(&namespace, namespaceFlag, namespaceFlagShorthand, internal.DefaultNs, namespaceUsage)
-	rootCmd.PersistentFlags().StringVarP(&logLevel, logLevelFlag, logLevelFlagShorthand, defaultLogLevel, logLevelUsage)
+	rootCmd.PersistentFlags().StringVarP(&logLevel, internal.LogLevelFlag,
+		internal.LogLevelFlagShorthand, internal.DefaultLogLevel, internal.LogLevelUsage)
 
 	logger = logrus.New()
 	logger.SetFormatter(&logrus.TextFormatter{ForceColors: true})

@@ -3,9 +3,7 @@ package preflight
 import (
 	"context"
 	"fmt"
-	"os"
 	gort "runtime"
-	"strconv"
 	"strings"
 	"time"
 
@@ -91,8 +89,6 @@ var (
 		"volumesnapshots." + storageSnapshotGroup,
 	}
 
-	storageSnapshotPreferredVersion = []string{"v1", "v1beta1"}
-
 	resourceRequirements = corev1.ResourceRequirements{
 		Requests: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceMemory: resource.MustParse("64Mi"),
@@ -117,7 +113,7 @@ var (
 	execRestoreDataCheckCommand = []string{
 		"/bin/sh",
 		"-c",
-		fmt.Sprintf("dat=$(cat \"%s\"); if [[ \"${dat}\" == \"%s\" ]]; then exit 0; else exit 1; fi",
+		fmt.Sprintf("dat=$(cat \"%s\"); echo \"${dat}\"; if [[ \"${dat}\" == \"%s\" ]]; then exit 0; else exit 1; fi",
 			volSnapPodFilePath, volSnapPodFileData),
 	}
 
@@ -152,55 +148,46 @@ func InitKubeEnv(kubeconfig string) error {
 	return nil
 }
 
-// CreateLoggingFile creates a log file for pre flight check.
-func CreateLoggingFile(filename string) (*os.File, error) {
-	logFilename := filename + "-" + GetLogFileTimestamp() + ".log"
-
-	return os.OpenFile(logFilename, os.O_CREATE|os.O_WRONLY, 0644)
-}
-
-func GetLogFileTimestamp() string {
-	year, month, day := time.Now().Date()
-	hour, minute, sec := time.Now().Clock()
-	ts := strconv.Itoa(year) + "-" + strconv.Itoa(int(month)) + "-" + strconv.Itoa(day) +
-		"T" + strconv.Itoa(hour) + "-" + strconv.Itoa(minute) + "-" + strconv.Itoa(sec)
-
-	return ts
-}
-
-func getStorageSnapshotVersion() (string, error) {
-	versions, err := getVersionsOfGroup(storageSnapshotGroup)
+func getServerPreferredVersionForGroup(grp string) (string, error) {
+	var (
+		apiResList  *metav1.APIGroupList
+		err         error
+		prefVersion string
+	)
+	apiResList, err = clientSet.ServerGroups()
 	if err != nil {
 		return "", err
 	}
-	for _, prefVersion := range storageSnapshotPreferredVersion {
-		for _, grpVersion := range versions {
-			if grpVersion == prefVersion {
-				return grpVersion, nil
-			}
+	for idx := range apiResList.Groups {
+		api := apiResList.Groups[idx]
+		if api.Name == grp {
+			prefVersion = api.PreferredVersion.Version
+			break
 		}
 	}
 
-	return "", fmt.Errorf("no storage snapshot version found ono cluster for API group - %s", storageSnapshotGroup)
+	if prefVersion == "" {
+		return "", fmt.Errorf("no preferred version for group - %s found on cluster", grp)
+	}
+	return prefVersion, nil
 }
 
 func getVersionsOfGroup(grp string) ([]string, error) {
 	var (
-		apiResList []*metav1.APIResourceList
+		apiResList *metav1.APIGroupList
 		err        error
 		apiVerList []string
 	)
-	apiResList, err = clientSet.ServerPreferredResources()
+	apiResList, err = clientSet.ServerGroups()
 	if err != nil {
 		return nil, err
 	}
-	for _, api := range apiResList {
-		gv, err := schema.ParseGroupVersion(api.GroupVersion)
-		if err != nil {
-			return nil, err
-		}
-		if gv.Group == grp {
-			apiVerList = append(apiVerList, gv.Version)
+	for idx := range apiResList.Groups {
+		api := apiResList.Groups[idx]
+		if api.Name == grp {
+			for _, gv := range api.Versions {
+				apiVerList = append(apiVerList, gv.Version)
+			}
 		}
 	}
 
@@ -209,43 +196,35 @@ func getVersionsOfGroup(grp string) ([]string, error) {
 
 //  clusterHasVolumeSnapshotClass checks and returns volume snapshot class if present on cluster.
 func clusterHasVolumeSnapshotClass(ctx context.Context, snapshotClass, namespace string) (*unstructured.Unstructured, error) {
-	var verList []string
-	grps, err := discClient.ServerGroups()
+	var (
+		prefVersion string
+		err         error
+	)
+	prefVersion, err = getServerPreferredVersionForGroup(storageSnapshotGroup)
 	if err != nil {
 		return nil, err
 	}
-	for i := 0; i < len(grps.Groups); i++ {
-		group := grps.Groups[i]
-		if group.Name == storageSnapshotGroup {
-			for _, gv := range group.Versions {
-				verList = append(verList, gv.Version)
-			}
+	u := &unstructured.Unstructured{}
+	u.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   storageSnapshotGroup,
+		Version: prefVersion,
+		Kind:    internal.VolumeSnapshotClassKind,
+	})
+	if err != nil {
+		return nil, err
+	}
+	err = runtimeClient.Get(ctx, client.ObjectKey{
+		Namespace: namespace,
+		Name:      snapshotClass,
+	}, u)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil, fmt.Errorf("volume snapshot class %s not found on cluster :: %s", snapshotClass, err.Error())
 		}
+		return nil, err
 	}
 
-	for _, version := range verList {
-		u := &unstructured.Unstructured{}
-		u.SetGroupVersionKind(schema.GroupVersionKind{
-			Group:   storageSnapshotGroup,
-			Version: version,
-			Kind:    internal.VolumeSnapshotClassKind,
-		})
-		if err != nil {
-			return nil, err
-		}
-		err = runtimeClient.Get(ctx, client.ObjectKey{
-			Namespace: namespace,
-			Name:      snapshotClass,
-		}, u)
-		if err != nil {
-			if !k8serrors.IsNotFound(err) {
-				return nil, err
-			}
-		} else {
-			return u, nil
-		}
-	}
-	return nil, fmt.Errorf("volume snapshot class %s not found", snapshotClass)
+	return u, nil
 }
 
 //  createDNSPodSpec returns a corev1.Pod instance.
@@ -260,7 +239,7 @@ func createDNSPodSpec(op *Options) *corev1.Pod {
 	pod.Spec.Containers = []corev1.Container{
 		{
 			Name:            dnsContainerName,
-			Image:           strings.Join([]string{imagePath, "/", dnsUtilsImage}, ""),
+			Image:           strings.Join([]string{imagePath, dnsUtilsImage}, "/"),
 			Command:         commandSleep3600,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Resources:       resourceRequirements,

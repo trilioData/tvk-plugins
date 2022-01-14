@@ -5,19 +5,9 @@ const (
 	preflightRunCmdName = "run"
 	cleanupCmdName      = "cleanup"
 
-	kubeconfigFlag          = "kubeconfig"
-	kubeconfigShorthandFlag = "k"
-	kubeconfigUsage         = "Path to kubeconfig file to use for CLI requests"
-
 	namespaceFlag          = "namespace"
 	namespaceFlagShorthand = "n"
 	namespaceUsage         = "Namespace of the cluster in which the preflight checks will be performed"
-
-	logLevelFlag          = "log-level"
-	logLevelFlagShorthand = "l"
-	logLevelUsage         = "Set the logging level for the for preflight or cleanup in the level of" +
-		" PANIC, FATAL, ERROR, WARN, INFO, DEBUG TRACE"
-	defaultLogLevel = "INFO"
 
 	storageClassFlag  = "storage-class"
 	storageClassUsage = "Name of storage class to use for preflight checks"
@@ -42,6 +32,8 @@ const (
 
 	preflightLogFilePrefix = "preflight"
 	cleanupLogFilePrefix   = "preflight_cleanup"
+
+	filePermission = 0644
 )
 
 var (
