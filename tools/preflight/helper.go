@@ -210,9 +210,6 @@ func clusterHasVolumeSnapshotClass(ctx context.Context, snapshotClass, namespace
 		Version: prefVersion,
 		Kind:    internal.VolumeSnapshotClassKind,
 	})
-	if err != nil {
-		return nil, err
-	}
 	err = runtimeClient.Get(ctx, client.ObjectKey{
 		Namespace: namespace,
 		Name:      snapshotClass,
