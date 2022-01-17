@@ -8,6 +8,18 @@ application, Helm charts, Custom reources and CRDs in a Kubernetes cluster.
 1. krew - kubectl-plugin manager. Install from [here](https://krew.sigs.k8s.io/docs/user-guide/setup/install/)
 2. kubectl - kubernetes command-line tool. Install from [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
+For openshift environments, if `kubectl` is not installed and `oc` binary is installed on host machine, then `oc` binary
+can be used to perform `kubectl` operation by creating symlink with -
+```bash
+sudo ln -s /usr/local/bin/oc /usr/local/bin/kubectl
+```
+Note: 
+- `oc` binary path can found by executing `which oc`
+- To delete/remove symbolic links use either `unlink` or `rm` command -
+```bash
+unlink /usr/local/bin/kubectl
+```
+
 **Supported OS:**
 - Linux
 - darwin
