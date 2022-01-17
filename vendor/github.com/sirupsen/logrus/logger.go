@@ -383,6 +383,7 @@ func (logger *Logger) SetFormatter(formatter Formatter) {
 
 // SetOutput sets the logger output.
 func (logger *Logger) SetOutput(output io.Writer) {
+	
 	logger.mu.Lock()
 	defer logger.mu.Unlock()
 	logger.Out = output

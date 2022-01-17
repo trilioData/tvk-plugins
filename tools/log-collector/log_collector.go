@@ -427,7 +427,7 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 			}
 			resObjects.Items = append(resObjects.Items, resObject.Items...)
 
-			if l.CheckIsOpenshift() {
+			if internal.CheckIsOpenshift(l.disClient, ocpAPIVersion) {
 				ocpObj, oErr := l.getOcpResourcesByOwnerRef(getAPIGroupVersionResourcePath(groupVersion), &resources[index])
 				if oErr != nil {
 					return oErr
@@ -530,17 +530,6 @@ func (l *LogCollector) getAPIResourceList() (map[string][]apiv1.APIResource, err
 	}
 
 	return resourceMapList, nil
-}
-
-// CheckIsOpenshift checks whether the cluster is Openshift or not
-func (l *LogCollector) CheckIsOpenshift() bool {
-	_, err := l.disClient.ServerResourcesForGroupVersion("security.openshift.io/v1")
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return false
-		}
-	}
-	return true
 }
 
 // getOcpResourcesByOwnerRef return all the objects which has ownerRef of CSV
