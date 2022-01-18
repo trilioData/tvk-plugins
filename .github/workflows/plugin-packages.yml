@@ -143,6 +143,8 @@ jobs:
       run: |
         echo "Updating '.goreleaser.yaml' for Building Preflight Packages only"
         sed -i '/binary: log-collector/a \ \ skip: true' .goreleaser.yml
+        sed -i '/binary: target-browser/a \ \ skip: true' .goreleaser.yml
+
 
     - name: Build Preflight Packages
       uses: goreleaser/goreleaser-action@v2
@@ -177,14 +179,6 @@ jobs:
     - name: Test Preflight Plugin Locally
       run: make test-preflight-plugin-locally
 
-    - name: Upload Preflight Plugin Packges to github artifact
-      uses: actions/upload-artifact@v2
-      if: startsWith(github.ref, 'refs/tags/')
-      with:
-        name: preflight
-        path: |
-          build/preflight.tar.gz
-          build/preflight-sha256.txt
 
   # build_test_cleanup job build cleanup packages, runs integration tests and tests packages for plugin creation(install, uninstall)
   # upload cleanup packages to github artifacts if tags('/ref/tags') are pushed
@@ -257,6 +251,7 @@ jobs:
         run: |
           echo "Updating '.goreleaser.yaml' for Building Log-Collector Packages only"
           sed -i '/binary: target-browser/a \ \ skip: true' .goreleaser.yml
+          sed -i '/binary: preflight/a \ \ skip: true' .goreleaser.yml
 
       - name: Build Log-Collector Packages
         uses: goreleaser/goreleaser-action@v2
@@ -301,6 +296,7 @@ jobs:
         run: |
           echo "Updating '.goreleaser.yaml' for Building Target-Browser Packages only"
           sed -i '/binary: log-collector/a \ \ skip: true' .goreleaser.yml
+          sed -i '/binary: preflight/a \ \ skip: true' .goreleaser.yml
 
       - name: Build Target-Browser Packages
         uses: goreleaser/goreleaser-action@v2
@@ -441,7 +437,7 @@ jobs:
 
       - name: Download All Plugin Packages from Artifacts
         uses: actions/download-artifact@v2
-        if: (needs.pre-release.outputs.release_preflight == 'true') || (needs.pre-release.outputs.release_cleanup == 'true') || (needs.pre-release.outputs.release_tvk_oneclick == 'true')
+        if: (needs.pre-release.outputs.release_cleanup == 'true') || (needs.pre-release.outputs.release_tvk_oneclick == 'true')
         with:
           path: build
 

@@ -34,7 +34,10 @@ install: install-required-utilities
 	curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh
 
 build-preflight:
-	./hack/build-preflight-artifacts.sh
+	find . -name .goreleaser.yml -exec sed -i '/binary: target-browser/a \ \ skip: true' {} +
+	find . -name .goreleaser.yml -exec sed -i '/binary: log-collector/a \ \ skip: true' {} +
+	goreleaser release --snapshot --skip-publish --rm-dist
+	find . -name .goreleaser.yml -exec sed -i '/skip: true/d' {} +
 
 build-cleanup:
 	./hack/build-cleanup-artifacts.sh
@@ -44,11 +47,13 @@ build-tvk-oneclick:
 
 build-log-collector:
 	find . -name .goreleaser.yml -exec sed -i '/binary: target-browser/a \ \ skip: true' {} +
+	find . -name .goreleaser.yml -exec sed -i '/binary: preflight/a \ \ skip: true' {} +
 	goreleaser release --snapshot --skip-publish --rm-dist
 	find . -name .goreleaser.yml -exec sed -i '/skip: true/d' {} +
 
 build-target-browser:
 	find . -name .goreleaser.yml -exec sed -i '/binary: log-collector/a \ \ skip: true' {} +
+	find . -name .goreleaser.yml -exec sed -i '/binary: preflight/a \ \ skip: true' {} +
 	goreleaser release --snapshot --skip-publish --rm-dist
 	find . -name .goreleaser.yml -exec sed -i '/skip: true/d' {} +
 
@@ -76,7 +81,7 @@ test-tvk-oneclick-plugin-locally:
 	./hack/test-tvk-oneclick-plugin-locally.sh
 
 test-preflight-integration:
-	./tests/preflight/preflight_test.sh
+	./hack/run-preflight-test.sh tests/preflight/...
 
 test-cleanup-integration:
 	./tests/cleanup/cleanup_test.sh
