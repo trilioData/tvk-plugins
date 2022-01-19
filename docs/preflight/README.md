@@ -3,8 +3,8 @@
 **tvk-preflight** is a kubectl plugin which checks if all the pre-requisites are met before installing Triliovault for Kubernetes
 application in a Kubernetes cluster.
 
-This plugin automatically generates log file(`preflight-log-<date-time>.log`) for each preflight run which can be used to
-get more information around check being performed by this plugin.
+This plugin automatically generates log file for each preflight run(`preflight-<date>T<time>.log`) 
+and cleanup(`preflight_cleanup-<date>T<time>.log`) which can be used to get more information around operations being performed by this plugin.
 
 ## Pre-requisites:
 
@@ -19,7 +19,12 @@ get more information around check being performed by this plugin.
 ## Checks Performed during Preflight
 
 Preflight plugin performs checks on system where this plugin is installed and few checks are performed on the K8s cluster
-where current-context of kubeconfig is pointing to.
+where current-context of kubeconfig is pointing to. 
+
+Whenever a preflight check is performed, a 6-length smallcase alphabet
+`UID` is generated for that particular preflight check. This `UID` is the value of the label `preflight-run` which is set on every
+resource created during the preflight check. Also the `UID` is the suffix of name of every resource created during preflight check.
+This `UID` is particularly useful to perform cleanup of resources created during a particular preflight check.
 
 The following checks are included in preflight:
 
@@ -45,14 +50,14 @@ The following checks are included in preflight:
         - "volumesnapshots.snapshot.storage.k8s.io"
 9. `check-dns-resolution` -
     1. Ensure DNS resolution works as expected in the cluster
-        - Creates a new pod (**dnsutils-${RANDOM_STRING}**) then resolves **kubernetes.default** service from inside the pod
+        - Creates a new pod (**dnsutils-${UID}**) then resolves **kubernetes.default** service from inside the pod
 10. `check_volume_snapshot` - 
     1. Ensure Volume Snapshot functionality works as expected for both mounted and unmounted PVCs
-        1. Creates a Pod and PVC (**source-pod-${RANDOM_STRING}** and **source-pvc-${RANDOM_STRING}**).
-        2. Creates Volume snapshot (**snapshot-source-pvc-${RANDOM_STRING}**) from the mounted PVC(**source-pvc-${RANDOM_STRING}**).
-        3. Creates volume snapshot of unmounted PVC(**source-pvc-${RANDOM_STRING}** [deletes the source pod before snapshotting].
-        4. Restores PVC(**restored-pvc-${RANDOM_STRING}**) from volume snapshot of mounted PVC and creates a Pod(**restored-pod-${RANDOM_STRING}**) and attaches to restored PVC.
-        5. Restores PVC(**unmounted-restored-pvc-${RANDOM_STRING}**) from volume snapshot from unmounted PVC and creates a Pod(**unmounted-restored-pod-${RANDOM_STRING}**) and attaches to restored PVC.
+        1. Creates a Pod and PVC (**source-pod-${UID}** and **source-pvc-${UID}**).
+        2. Creates Volume snapshot (**snapshot-source-pvc-${UID}**) from the mounted PVC(**source-pvc-${UID}**).
+        3. Creates volume snapshot of unmounted PVC(**source-pvc-${UID}** [deletes the source pod before snapshotting].
+        4. Restores PVC(**restored-pvc-${UID}**) from volume snapshot of mounted PVC and creates a Pod(**restored-pod-${UID}**) and attaches to restored PVC.
+        5. Restores PVC(**unmounted-restored-pvc-${UID}**) from volume snapshot from unmounted PVC and creates a Pod(**unmounted-restored-pod-${UID}**) and attaches to restored PVC.
         6. Ensure data in restored PVCs is correct[checks for a file[/demo/data/sample-file.txt] which was present at the time of snapshotting].
     2. If `check-storage-snapshot-class` fails then, `check_volume_snapshot` check is skipped.
 
@@ -123,42 +128,119 @@ NOT SUPPORTED
     - Example: `docker push localhost:5000/busybox`
 ## Usage:
 
-    kubectl tvk-preflight [flags]
+    kubectl tvk-preflight [sub-command] [flags]
+
+The preflight binary has three common flags to both the subcommands.
+
+#### Common Flags
+| Parameter     | Shorthand  | Default       | Description   |    
+| :-------------| :----------|:-------------:| :-------------|  
+| --namespace   | -n       | default        | Namespace of the cluster in which resources will be created, preflight checks will be performed or resources will cleaned. Default is 'default' namespace of the cluster (Optional)
+| --kubeconfig  | -k       | ~/.kube/config | kubeconfig file path (Optional)
+| --log-level   | -l       | INFO           | Logging level for the preflight check and cleanup. Logging levels are FATAL, ERROR, WARN, INFO, DEBUG (Optional)
+
+#### Examples
+
+- With `--namespace`:
+
+```shell script
+kubectl tvk-preflight [sub-command] [sub-command flags] --namespace <namespace of the cluster>
+```
+
+By using shorthand notation:
+```shell script
+kubectl tvk-preflight [sub-command] [sub-command flags] -n <namespace of the cluster>
+```
+
+- With `--kubeconfig`:
+
+```shell script
+kubectl tvk-preflight [sub-command] [sub-command flags] --kubeconfig <kubeconfig file path>
+```
+
+By using shorthand notation:
+```shell script
+kubectl tvk-preflight [sub-command] [sub-command flags] -k <kubeconfig file path>
+```
+
+- With `--log-level`:
+
+```shell script
+kubectl tvk-preflight [sub command] [sub-command flags] --log-level <logging level>
+```
+
+By using shorthand notation:
+
+```shell script
+kubectl tvk-preflight [sub command] [sub-command flags] -l <logging level>
+```
+
+There are two subcommands to the preflight binary:
+- **run**: To perform preflight checks
+- **cleanup**: To clean the resources generated during failed preflight checks
+
+### 1. run
+**run** sub-command performs the actual preflight checks on the system and on the kubernetes cluster where the system's 
+kubeconfig is pointing to in the given namespace.
 	
-- Flags:
+#### Flags:
 
 | Parameter                 | Default       | Description   |    
 | :------------------------ |:-------------:| :-------------|  
-| --storageclass          |             |Name of storage class being used in k8s cluster (Needed)
-| --snapshotclass         |             |Name of volume snapshot class being used in k8s cluster (Optional)
-| --kubeconfig            |   ~/.kube/config             |Kubeconfig path, if not given default is used by kubectl (Optional)
+| --storage-class         |             | Name of storage class being used in k8s cluster (Needed)
+| --volume-snapshot-class |             | Name of volume snapshot class being used in k8s cluster (Optional)
 | --local-registry        |             | Name of the local registry from where the images will be pulled (Optional)
 | --image-pull-secret     |             | Name of the secret for authentication while pulling the images from the local registry (Optional)
 | --service-account       |             | Name of the service account (Optional)
+| --cleanup-on-failure    |   false     | Deletes/Cleans all resources created for that particular preflight check from the cluster even if the preflight check fails. For successful execution of preflight checks, the resources are deleted from cluster by default
 
 
-## Examples
+#### Examples
 
-- With `--snapshotclass`:
+Storage-class is a required flag for **run** subcommand.
+
+- With `--volume-snapshot-class`: Performs preflight checks on the cluster with the given volumeSnapshotClass in the given namespace.
 
 ```shell script
-kubectl tvk-preflight --storageclass <storageclass name> --snapshotclass <volumeSnapshotClass name>
+kubectl tvk-preflight --storage-class <storageclass name> --volume-snapshot-class <volumeSnapshotClass name>
 ```
 
-- Without `--snapshotclass`:
+- With `--local-registry` | `--service-account`: Performs preflight checks on the cluster with the given local-registry and service-account in the given namespace.
 
 ```shell script
-kubectl tvk-preflight --storageclass <storageclass name>
+kubectl tvk-preflight run --storage-class <storageclass name> --local-registry <local registry file path/name> --service-account <service account name>
 ```
 
-- With `--local-registry` | `--service-account`  :
-
+- With `--image-pull-secret`: To use image-pull-secret, local-registry flag value must be provided. Vice-versa is not true.
 ```shell script
-kubectl tvk-preflight --storageclass <storageclass name> --local-registry <local registry file path/name> --service-account <service account name>
+kubectl tvk-preflight run --storage-class <storageclass name> --local-registry <local registry file path/name> --image-pull-secret <image pull secret name>
 ```
 
-- With `--image-pull-secret`  :
+- With `--cleanup-on-failure`: If preflight checks fail, the resources generated during preflight will be cleaned.
 
 ```shell script
-kubectl tvk-preflight --storageclass <storageclass name> --local-registry <local registry file path/name> --image-pull-secret <image pull secret name>
+kubectl tvk-preflight run --cleanup-on-failure
+```
+
+### 2. cleanup
+- **cleanup** subcommand cleans/deletes the resources created during failed preflight checks and not cleaned-up on failure.
+- The **cleanup** command will clean all the resources generated due to preflight checks in the given namespace.
+- User can clean resources of a particular preflight check by specifying the `uid` of the preflight check.
+
+#### Flags:
+| Parameter                 | Default       | Description   |    
+| :------------------------ |:-------------:| :-------------|  
+| --uid                   |             | A 6-length character string generated during preflight check
+
+#### Examples:
+
+- Without `uid`: Cleans all the preflight resources present on the cluster in the given namespace.
+
+```shell script
+kubectl tvk-preflight cleanup
+```
+
+- With `uid`: Cleans the resources of particular preflight check on the cluster in the given namespace
+```shell script
+kubectl tvk-preflight cleanup --uid <generated UID of the preflight check>
 ```

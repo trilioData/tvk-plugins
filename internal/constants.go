@@ -36,6 +36,22 @@ const (
 	IngressKind               = "Ingress"
 	IngressServiceLabel       = "k8s-triliovault-ingress-gateway"
 	ServiceTypeNodePort       = "NodePort"
+	NamespaceKind             = "Namespace"
+	VolumeSnapshotKind        = "VolumeSnapshot"
+	VolumeSnapshotClassKind   = "VolumeSnapshotClass"
+	PersistentVolumeClaimKind = "PersistentVolumeClaim"
+	PodKind                   = "Pod"
+	DefaultNs                 = "default"
+
+	KubeconfigFlag          = "kubeconfig"
+	KubeconfigShorthandFlag = "k"
+	KubeconfigUsage         = "Specifies the custom path for your kubeconfig"
+
+	LogLevelFlag          = "log-level"
+	LogLevelFlagShorthand = "l"
+	LogLevelUsage         = "Set the logging level of the application in the level of" +
+		" FATAL, ERROR, WARN, INFO, DEBUG"
+	DefaultLogLevel = "INFO"
 )
 
 var (
