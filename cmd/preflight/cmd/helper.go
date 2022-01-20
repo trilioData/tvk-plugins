@@ -20,8 +20,8 @@ func setupLogger(logFilePrefix string) error {
 		return err
 	}
 	defer logFile.Close()
-	logger.Infof("Created log file with name - %s", logFile.Name())
 	logger.SetOutput(io.MultiWriter(colorable.NewColorableStdout(), logFile))
+	logger.Infof("Created log file with name - %s", logFile.Name())
 	lvl, err := log.ParseLevel(logLevel)
 	if err != nil {
 		logger.SetLevel(log.InfoLevel)

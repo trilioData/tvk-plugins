@@ -9,7 +9,6 @@ import (
 	"time"
 
 	version "github.com/hashicorp/go-version"
-	"github.com/sirupsen/logrus"
 	"github.com/trilioData/tvk-plugins/internal"
 	"github.com/trilioData/tvk-plugins/internal/utils/shell"
 	"github.com/trilioData/tvk-plugins/tools/preflight/exec"
@@ -318,7 +317,7 @@ func (o *Options) checkStorageSnapshotClass(ctx context.Context) error {
 			return err
 		}
 		if vssc.Object["driver"] == provisioner {
-			o.Logger.Infof("%s Volume snapshot class - %s driver matches with given StorageClass\n", check, vssc.Object["driver"])
+			o.Logger.Infof("%s Volume snapshot class - %s driver matches with given storage class provisioner\n", check, o.SnapshotClass)
 		} else {
 			return fmt.Errorf("volume snapshot class - %s "+
 				"driver does not match with given StorageClass's provisioner=%s", o.SnapshotClass, provisioner)
@@ -408,7 +407,6 @@ func (o *Options) checkDNSResolution(ctx context.Context) error {
 	pod := createDNSPodSpec(o)
 	_, err := clientSet.CoreV1().Pods(o.Namespace).Create(ctx, pod, metav1.CreateOptions{})
 	if err != nil {
-		logrus.Errorf("%s %s\n", cross, err.Error())
 		return err
 	}
 	o.Logger.Infof("Pod %s created in cluster\n", pod.GetName())
@@ -481,21 +479,6 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 	}
 	o.Logger.Infof("Source pod - %s has reached into ready state\n", srcPod.GetName())
 
-	execOp = exec.Options{
-		Namespace:     o.Namespace,
-		Command:       execRestoreDataCheckCommand,
-		PodName:       srcPod.GetName(),
-		ContainerName: busyboxContainerName,
-		Executor:      &exec.DefaultRemoteExecutor{},
-		Config:        restConfig,
-		ClientSet:     clientSet,
-	}
-	o.Logger.Infof("Checking for file - '%s' in source pod - '%s'\n", volSnapPodFilePath, srcPod.GetName())
-	err = execInPod(&execOp, o.Logger)
-	if err != nil {
-		return err
-	}
-
 	//  Create volume snapshot
 	snapshotVer, err := getServerPreferredVersionForGroup(storageSnapshotGroup)
 	if err != nil {
@@ -558,11 +541,17 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 	}
 	o.Logger.Infof("Restored pod - %s has expected data\n", restorePodSpec.GetName())
 
+	srcPodName := srcPod.GetName()
+	srcPod, err = clientSet.CoreV1().Pods(o.Namespace).Get(ctx, srcPod.GetName(), metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
 	o.Logger.Infof("Deleting source pod - %s\n", srcPod.GetName())
 	err = deleteK8sResourceWithForceTimeout(ctx, srcPod, o.Logger)
 	if err != nil {
 		return err
 	}
+	o.Logger.Infof("Deleted source pod - %s\n", srcPodName)
 
 	unmountedVolSnapSrcSpec := createVolumeSnapsotSpec(unmountedVolumeSnapSrc+resNameSuffix, o.Namespace, snapshotVer, pvc.GetName())
 	if err = runtimeClient.Create(ctx, unmountedVolSnapSrcSpec); err != nil {

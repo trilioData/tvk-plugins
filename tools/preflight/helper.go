@@ -288,9 +288,7 @@ func createVolumeSnapshotPodSpec(pvcName string, op *Options) *corev1.Pod {
 				InitialDelaySeconds: 30,
 				Handler: corev1.Handler{
 					Exec: &corev1.ExecAction{
-						Command: []string{
-							"cat", volSnapPodFilePath,
-						},
+						Command: execRestoreDataCheckCommand,
 					},
 				},
 			},
