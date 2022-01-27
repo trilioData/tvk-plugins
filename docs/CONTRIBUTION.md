@@ -10,7 +10,7 @@ tvk-plugins
  |    └── workflows : github actions workflow files
  |        ├── plugin-manifests.yml : CI workflow for plugin manifest validation
  |        └── plugin-packages.yml : CI workflow for plugin packages(build, test, release)
- ├── cmd : Log-collector, Target-Browser executable packages
+ ├── cmd : Log-collector, Preflight, Target-Browser executable packages
  ├── .krew : template yamls of plugin manifests(used for update of actual krew manifest and local testing)
  ├── docs : docs of tvk-plugins, contribution and release guidelines
  ├── hack : dir contains helper files for github actions CI workflows
@@ -20,13 +20,19 @@ tvk-plugins
  ├── plugins : Krew plugin manifests
  │   ├── tvk-log-collector.yaml 
  │   └── tvk-preflight.yaml
+ │   ├── tvk-cleanup.yaml 
+ │   └── tvk-oneclick.yaml
+ │   ├── tvk-target-browser.yaml 
  ├── tests : Integration Test
  │   ├── target-browser : target-browser test suite
  │   └── preflight : preflight test files
+ │   ├── cleanup : cleanup test suite
+ │   └── tvk-oneclick : oneclick test suite
  ├── tools : business logic of plugins
  │   ├── log-collector : business logic of log-collector
- │   └── preflight : preflight executable
+ │   └── preflight : business logic of preflight
  │   └── target-browser : business logic of target-browser CLI
+ │   └── cleanup : business logic for cleanup
  ├── .goreleaser.yml : goreleaser conf file(to build & release plugin packages)   
 ```
 
