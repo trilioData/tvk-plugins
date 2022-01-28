@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -41,4 +42,9 @@ func generateLogFileName(logFilePrefix string) string {
 		"T" + strconv.Itoa(hour) + "-" + strconv.Itoa(minute) + "-" + strconv.Itoa(sec)
 
 	return logFilePrefix + "-" + ts + ".log"
+}
+
+func logRootCmdFlagsInfo() {
+	logger.Infof(fmt.Sprintf("Using '%s' namespace of the cluster", namespace))
+	logger.Infof(fmt.Sprintf("Using kubeconfig file path - %s", kubeconfig))
 }

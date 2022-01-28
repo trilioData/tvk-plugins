@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
@@ -17,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	client "k8s.io/client-go/kubernetes"
 	clientGoScheme "k8s.io/client-go/kubernetes/scheme"
@@ -54,9 +57,15 @@ const (
 	volMountPath          = "/demo/data"
 	volSnapPodFilePath    = "/demo/data/sample-file.txt"
 	volSnapPodFileData    = "pod preflight data"
+	preflightSAName       = "preflight-sa"
+	preflightKubeConf     = "preflight_test_config"
+	filePermission        = 0644
 
 	letterBytes               = "abcdefghijklmnopqrstuvwxyz"
 	deletionGracePeriod int64 = 5
+
+	timeout  = time.Minute * 1
+	interval = time.Second * 1
 )
 
 var (
@@ -70,6 +79,7 @@ var (
 	serviceAccountFlag   = "--service-account"
 	cleanupOnFailureFlag = "--cleanup-on-failure"
 	namespaceFlag        = "--namespace"
+	kubeconfigFlag       = "--kubeconfig"
 	logLevelFlag         = "--log-level"
 
 	preflightLogFilePrefix    = "preflight-"
@@ -79,6 +89,8 @@ var (
 	invalidLocalRegistryName  = "invalid-local-registry"
 	invalidServiceAccountName = "invalid-service-account"
 	invalidLogLevel           = "invalidLogLevel"
+
+	kubeConfPath = path.Join(os.Getenv("HOME"), ".kube", "config")
 
 	distDir                 = "dist"
 	preflightDir            = "preflight_linux_amd64"
@@ -115,6 +127,18 @@ var (
 		namespaceFlag:        defaultTestNs,
 		cleanupOnFailureFlag: "",
 	}
+
+	podGVK = schema.GroupVersionKind{
+		Group:   "",
+		Version: "v1",
+		Kind:    internal.PodKind,
+	}
+	pvcGVK = schema.GroupVersionKind{
+		Group:   "",
+		Version: "v1",
+		Kind:    internal.PersistentVolumeClaimKind,
+	}
+	snapshotGVK schema.GroupVersionKind
 
 	scheme        *runtime.Scheme
 	kubeAccessor  *internal.Accessor
@@ -155,13 +179,13 @@ var _ = BeforeSuite(func() {
 	discClient = kubeAccessor.GetDiscoveryClient()
 
 	createTestNamespace()
+
+	snapshotGVK = getVolSnapshotGVK()
 })
 
 var _ = AfterSuite(func() {
-	err = cleanDirForFiles(preflightLogFilePrefix)
-	Expect(err).To(BeNil())
-	err = cleanDirForFiles(cleanupLogFilePrefix)
-	Expect(err).To(BeNil())
+	cleanDirForFiles(preflightLogFilePrefix)
+	cleanDirForFiles(cleanupLogFilePrefix)
 	deleteTestNamespace()
 })
 
@@ -193,4 +217,36 @@ func deleteTestNamespace() {
 	})
 	Expect(err).To(BeNil())
 	log.Infof("Deleted preflight testing namespace - '%s' successfully\n", defaultTestNs)
+}
+
+func getServerPreferredVersionForGroup(grp string) (string, error) {
+	var (
+		apiResList  *metav1.APIGroupList
+		prefVersion string
+	)
+	apiResList, err = k8sClient.ServerGroups()
+	Expect(err).To(BeNil())
+	for idx := range apiResList.Groups {
+		api := apiResList.Groups[idx]
+		if api.Name == grp {
+			prefVersion = api.PreferredVersion.Version
+			break
+		}
+	}
+
+	if prefVersion == "" {
+		return "", fmt.Errorf("no preferred version for group - %s found on cluster", grp)
+	}
+	return prefVersion, nil
+}
+
+func getVolSnapshotGVK() schema.GroupVersionKind {
+	var prefVer string
+	prefVer, err = getServerPreferredVersionForGroup(storageSnapshotGroup)
+	Expect(err).To(BeNil())
+	return schema.GroupVersionKind{
+		Group:   storageSnapshotGroup,
+		Version: prefVer,
+		Kind:    internal.VolumeSnapshotKind,
+	}
 }
