@@ -81,7 +81,7 @@ test-tvk-oneclick-plugin-locally:
 	./hack/test-tvk-oneclick-plugin-locally.sh
 
 test-preflight-integration:
-	./hack/run-preflight-test.sh tests/preflight/...
+	./hack/run-integration-tests.sh tests/preflight/...
 
 test-cleanup-integration:
 	./tests/cleanup/cleanup_test.sh

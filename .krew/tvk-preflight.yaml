@@ -81,6 +81,9 @@ spec:
     --storageclass - Name of storage class being used in k8s cluster (Needed)
     --snapshotclass - Name of volume snapshot class being used in k8s cluster (Needed)
     --kubeconfig - Kubeconfig path, if not given default is used by kubectl (Optional)
+    --local-registry name of the local registry to get images from (for dark site installation) (Optional)
+    --service-account name of the service account (Optional)
+    --image-pull-secret name of the secret configured for authentication (Optional)
 
     > Usage :-
 

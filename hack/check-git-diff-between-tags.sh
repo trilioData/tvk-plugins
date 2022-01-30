@@ -32,8 +32,8 @@ tools_dir="tools"
 log_collector_dir="log-collector"
 internal_dir="internal"
 target_browser_dir="target-browser"
+preflight_dir="preflight"
 
-preflight_dir=$tools_dir/preflight
 tvk_oneclick_dir=$tools_dir/tvk-oneclick
 cleanup_dir=$tools_dir/cleanup
 
@@ -55,7 +55,7 @@ echo "list of modified files-"
 cat files.txt
 
 while IFS= read -r file; do
-  if [[ $preflight_changed == false && $file == $preflight_dir/* ]]; then
+  if [[ ($preflight_changed == false) && ($file == $internal_dir/* || $file == $tools_dir/$preflight_dir/* || $file == $cmd_dir/$preflight_dir/*) ]]; then
     echo "preflight related code changes have been detected"
     echo "::set-output name=release_preflight::true"
     preflight_changed=true

@@ -10,6 +10,12 @@ export APP_SCOPE="Namespaced"
 export JOB_TYPE="github-actions"
 export UPDATE_INGRESS="true"
 
+cleanup_namespace() {
+  local rc=$?
+  kubectl delete ns "${INSTALL_NAMESPACE}" --request-timeout 2m || true
+  exit ${rc}
+}
+
 cleanup() {
   local rc=$?
 
@@ -93,16 +99,22 @@ run_tests() {
   # will be required to run test-cases
   sudo apt-get install -y nfs-common
 
-  GO111MODULE=off go get -u github.com/onsi/ginkgo/ginkgo
+  GO111MODULE=on go install github.com/onsi/ginkgo/ginkgo@v1.16.4
   ginkgo -r -keepGoing "${components[@]}"
 }
 
-trap "cleanup" EXIT
+if [[ "${job_name}" == "target-browser" ]]; then
+  trap "cleanup" EXIT
+else
+  trap "cleanup_namespace" EXIT
+fi
 
 # change permission of kubeconfig file to suppress it's warning
 sudo chmod 600 "${KUBECONFIG}"
 
 prepare_namespaces
-helm_install
+if [[ "${job_name}" == "target-browser" ]]; then
+  helm_install
+fi
 
 run_tests "${COMPONENTS[@]}"
