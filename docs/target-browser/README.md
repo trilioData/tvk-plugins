@@ -18,9 +18,9 @@ target-browser's `/backupplan`, `/backup`, `/metadata`, `/resource-metadata`, an
            that target.
 4. TVK's web-backend service should be up and running.
 5. TVK's target-browser ingress path[`spec.rules[*].host`] should be accessible.
-    1. If there's no DNS record for `k8s-triliovault-ingress-gateway` service IP and ingress host path then, create one
+    1. If there's no DNS record for `k8s-triliovault-ingress-nginx-controller` service IP and ingress host path then, create one
      for it on your local system[`/etc/hosts`].
-    2. If `k8s-triliovault-ingress-gateway` service is `NodePort` type then, make sure NodePort is properly exposed from
+    2. If `k8s-triliovault-ingress-nginx-controller` service is `NodePort` type then, make sure NodePort is properly exposed from
      firewall of all cluster nodes.
 
 **Supported OS and Architectures:**
