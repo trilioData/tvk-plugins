@@ -28,8 +28,12 @@ unlink /usr/local/bin/kubectl
 
 
 **Supported OS:**
-- Linux
-- darwin
+- linux/amd64
+- linux/x86
+- linux/arm
+- linux/arm64
+- darwin/amd64
+- darwin/arm64
 
 ## Checks Performed during Preflight
 
@@ -234,7 +238,7 @@ kubectl tvk-preflight run --storage-class <storageclass name> --local-registry <
 - With `--cleanup-on-failure`: If preflight checks fail, the resources generated during preflight will be cleaned.
 
 ```shell script
-kubectl tvk-preflight run --cleanup-on-failure
+kubectl tvk-preflight run --storage-class <storageclass name> --cleanup-on-failure
 ```
 
 ### 2. cleanup
@@ -252,10 +256,11 @@ kubectl tvk-preflight run --cleanup-on-failure
 - Without `uid`: Cleans all the preflight resources present on the cluster in the given namespace.
 
 ```shell script
-kubectl tvk-preflight cleanup
+kubectl tvk-preflight cleanup --namespace <namespace of the cluster>
 ```
 
 - With `uid`: Cleans the resources of particular preflight check on the cluster in the given namespace
 ```shell script
-kubectl tvk-preflight cleanup --uid <generated UID of the preflight check>
+kubectl tvk-preflight cleanup --uid <generated UID of the preflight check> --namespace <namespace of the cluster>
 ```
+If `namespace` is not specified then, cleanup will be performed in *default* namespace of the cluster.

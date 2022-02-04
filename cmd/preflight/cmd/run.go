@@ -21,7 +21,7 @@ var runCmd = &cobra.Command{
   kubectl tvk-preflight run --storage-class <storage-class-name>
 
   # run preflight checks with a particular volume snapshot class
-  kubectl rvk-preflight run --storage-class <storage-class-name> --volume-snapshot-class <snapshot-class-name>
+  kubectl tvk-preflight run --storage-class <storage-class-name> --volume-snapshot-class <snapshot-class-name>
 
   # run preflight checks in a particular namespace
   kubectl tvk-preflight run --storage-class <storage-class-name> --namespace <namespace>

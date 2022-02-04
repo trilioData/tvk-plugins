@@ -3,11 +3,10 @@ package preflighttest
 import (
 	"crypto/rand"
 	"fmt"
-	"io"
-	"io/fs"
 	"io/ioutil"
 	"math/big"
 	"os"
+	"os/exec"
 	"path"
 	"strings"
 
@@ -15,7 +14,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/trilioData/tvk-plugins/internal"
 	"github.com/trilioData/tvk-plugins/internal/utils/shell"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,222 +29,258 @@ var _ = Describe("Preflight Tests", func() {
 		Context("Preflight run command storage class flag test cases", func() {
 
 			It("All preflight checks should pass if correct storage class flag value is provided", func() {
-				var byteData []byte
-				runPreflightChecks(flagsMap)
-				byteData, err = getLogFileData(preflightLogFilePrefix)
+				cmdOut, err = runPreflightChecks(flagsMap)
 				Expect(err).To(BeNil())
-				outputLogData := string(byteData)
 
-				assertSuccessfulPreflightChecks(flagsMap, outputLogData)
+				assertSuccessfulPreflightChecks(flagsMap, cmdOut.Out)
 			})
 
 			It("Should fail preflight checks if incorrect storage class flag value is provided", func() {
-				var byteData []byte
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
 				inputFlags[storageClassFlag] = invalidStorageClassName
-				runPreflightChecks(inputFlags)
-				byteData, err = getLogFileData(preflightLogFilePrefix)
+				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).To(BeNil())
-				outputLogData := string(byteData)
 
-				Expect(outputLogData).To(
+				Expect(cmdOut.Out).To(
 					ContainSubstring(fmt.Sprintf("Preflight check for SnapshotClass failed :: "+
 						"not found storageclass - %s on cluster", invalidStorageClassName)))
-				Expect(outputLogData).To(ContainSubstring("Skipping volume snapshot and restore check as preflight check for SnapshotClass failed"))
-				Expect(outputLogData).To(ContainSubstring("Some preflight checks failed"))
+				Expect(cmdOut.Out).To(ContainSubstring("Skipping volume snapshot and restore check as preflight check for SnapshotClass failed"))
+				Expect(cmdOut.Out).To(ContainSubstring("Some preflight checks failed"))
 			})
 
 			It("Should not preform preflight checks if storage class flag is not provided", func() {
 				cmd := fmt.Sprintf("%s run", preflightBinaryFilePath)
 				_, err = shell.RunCmd(cmd)
-				Expect(err).To(Not(BeNil()))
+				Expect(err).ToNot(BeNil())
 			})
 		})
 
 		Context("Preflight run command snapshot class flag test cases", func() {
 
-			It("Preflight checks should pass even if snapshot class flag value is not provided", func() {
-				var byteData []byte
-				runPreflightChecks(flagsMap)
-				byteData, err = getLogFileData(preflightLogFilePrefix)
-				Expect(err).To(BeNil())
-				outputLogData := string(byteData)
-
-				assertSuccessfulPreflightChecks(flagsMap, outputLogData)
-				Expect(outputLogData).
-					To(MatchRegexp("(Extracted volume snapshot class -)(.*)(found in cluster)"))
-				Expect(outputLogData).
-					To(MatchRegexp("(Volume snapshot class -)(.*)(driver matches with given StorageClass's provisioner)"))
-			})
-
 			It("Preflight checks should pass if snapshot class is present on cluster and provided as a flag value", func() {
-				var byteData []byte
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
 				inputFlags[snapshotClassFlag] = defaultTestSnapshotClass
-				runPreflightChecks(inputFlags)
-				byteData, err = getLogFileData(preflightLogFilePrefix)
+				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).To(BeNil())
-				outputLogData := string(byteData)
 
-				assertSuccessfulPreflightChecks(inputFlags, outputLogData)
-				Expect(outputLogData).To(ContainSubstring(
-					fmt.Sprintf("Volume snapshot class - %s driver matches with given storage class provisioner",
-						defaultTestSnapshotClass)))
+				assertSuccessfulPreflightChecks(inputFlags, cmdOut.Out)
 			})
 
 			It("Preflight checks should fail if snapshot class is not present on cluster", func() {
-				var byteData []byte
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
 				inputFlags[snapshotClassFlag] = invalidSnapshotClassName
-				runPreflightChecks(inputFlags)
-				byteData, err = getLogFileData(preflightLogFilePrefix)
+				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).To(BeNil())
-				outputLogData := string(byteData)
 
-				Expect(outputLogData).To(ContainSubstring(
+				Expect(cmdOut.Out).To(ContainSubstring(
 					fmt.Sprintf("volume snapshot class %s not found on cluster :: "+
 						"volumesnapshotclasses.snapshot.storage.k8s.io \"%s\" not found",
 						invalidSnapshotClassName, invalidSnapshotClassName)))
-				Expect(outputLogData).
+				Expect(cmdOut.Out).
 					To(ContainSubstring(fmt.Sprintf("Preflight check for SnapshotClass failed :: "+
 						"volume snapshot class %s not found", invalidSnapshotClassName)))
-				Expect(outputLogData).
+				Expect(cmdOut.Out).
 					To(ContainSubstring("Skipping volume snapshot and restore check as preflight check for SnapshotClass failed"))
+			})
+
+			It("Preflight checks should fail if volume snapshot class does not match with storage class provisioner", func() {
+				createVolumeSnapshotClass()
+				defer deleteVolumeSnapshotClass()
+				inputFlags := make(map[string]string)
+				copyMap(flagsMap, inputFlags)
+				inputFlags[snapshotClassFlag] = sampleVolSnapClassName
+				cmdOut, err = runPreflightChecks(inputFlags)
+				Expect(err).To(BeNil())
+
+				Expect(cmdOut.Out).To(ContainSubstring(
+					fmt.Sprintf("Preflight check for SnapshotClass failed :: volume snapshot class - %s "+
+						"driver does not match with given StorageClass's provisioner=", sampleVolSnapClassName)))
+				Expect(cmdOut.Out).To(ContainSubstring(
+					"Skipping volume snapshot and restore check as preflight check for SnapshotClass failed"))
 			})
 		})
 
 		Context("Preflight run command local registry flag test cases", func() {
 
 			It("Should fail DNS resolution and volume snapshot check if invalid local registry path is provided", func() {
-				var byteData []byte
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
 				inputFlags[localRegistryFlag] = invalidLocalRegistryName
-				runPreflightChecks(inputFlags)
-				byteData, err = getLogFileData(preflightLogFilePrefix)
+				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).To(BeNil())
-				outputLogData := string(byteData)
 
-				Expect(outputLogData).To(
+				Expect(cmdOut.Out).To(
 					MatchRegexp("(DNS pod - dnsutils-)([a-z]{6})( hasn't reached into ready state)"))
-				Expect(outputLogData).To(
+				Expect(cmdOut.Out).To(
 					ContainSubstring("Preflight check for DNS resolution failed :: timed out waiting for the condition"))
-				Expect(outputLogData).To(
+				Expect(cmdOut.Out).To(
 					MatchRegexp("(Preflight check for volume snapshot and restore failed :: pod source-pod-)" +
 						"([a-z]{6})( hasn't reached into ready state)"))
 
-				nonCRUDPreflightCheckAssertion(inputFlags, outputLogData)
+				nonCRUDPreflightCheckAssertion(inputFlags, cmdOut.Out)
 			})
 		})
 
 		Context("Preflight run command service account flag test cases", func() {
 
 			It("Should pass all preflight check if service account present on cluster is provided", func() {
-				var byteData []byte
 				createPreflightServiceAccount()
+				defer deletePreflightServiceAccount()
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
 				inputFlags[serviceAccountFlag] = preflightSAName
-				runPreflightChecks(inputFlags)
-				byteData, err = getLogFileData(preflightLogFilePrefix)
+				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).To(BeNil())
-				outputLogData := string(byteData)
-				deletePreflightServiceAccount()
 
-				assertSuccessfulPreflightChecks(inputFlags, outputLogData)
+				assertSuccessfulPreflightChecks(inputFlags, cmdOut.Out)
 			})
 
 			It("Should fail DNS resolution and volume snapshot check if invalid service account is provided", func() {
-				var byteData []byte
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
 				inputFlags[serviceAccountFlag] = invalidServiceAccountName
-				runPreflightChecks(inputFlags)
-				byteData, err = getLogFileData(preflightLogFilePrefix)
+				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).To(BeNil())
-				outputLogData := string(byteData)
 
-				Expect(outputLogData).
+				Expect(cmdOut.Out).
 					To(MatchRegexp(fmt.Sprintf("(Preflight check for DNS resolution failed :: pods \"dnsutils-)([a-z]{6}\")"+
 						"( is forbidden: error looking up service account %s/%s: serviceaccount \"%s\" not found)",
 						defaultTestNs, invalidServiceAccountName, invalidServiceAccountName)))
 
-				Expect(outputLogData).To(MatchRegexp(
+				Expect(cmdOut.Out).To(MatchRegexp(
 					fmt.Sprintf("(pods \"source-pod-)([a-z]{6})\" is forbidden: error looking up service account %s/%s: serviceaccount \"%s\" not found",
 						defaultTestNs, invalidServiceAccountName, invalidServiceAccountName)))
 
-				Expect(outputLogData).To(MatchRegexp(
+				Expect(cmdOut.Out).To(MatchRegexp(
 					fmt.Sprintf("(Preflight check for volume snapshot and restore failed)(.*)"+
 						"(error looking up service account %s/%s: serviceaccount \"%s\" not found)",
 						defaultTestNs, invalidServiceAccountName, invalidServiceAccountName)))
 
-				nonCRUDPreflightCheckAssertion(inputFlags, outputLogData)
+				nonCRUDPreflightCheckAssertion(inputFlags, cmdOut.Out)
 			})
 		})
 
 		Context("Preflight run command logging level flag test cases", func() {
 			It("Should set default logging level as INFO if incorrect logging level is provided", func() {
-				var byteData []byte
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
 				inputFlags[logLevelFlag] = invalidLogLevel
-				runPreflightChecks(inputFlags)
-				byteData, err = getLogFileData(preflightLogFilePrefix)
+				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).To(BeNil())
-				outputLogData := string(byteData)
 
-				Expect(outputLogData).To(
+				Expect(cmdOut.Out).To(
 					ContainSubstring("Failed to parse log-level flag. Setting log level as INFO"))
-				assertSuccessfulPreflightChecks(inputFlags, outputLogData)
+				assertSuccessfulPreflightChecks(inputFlags, cmdOut.Out)
+			})
+		})
+
+		Context("Preflight run command cleanup on failure flag test cases", func() {
+			It("Should not clean resources when preflight check fails and cleanup on failure flag is set to false", func() {
+				inputFlags := make(map[string]string)
+				copyMap(flagsMap, inputFlags)
+				delete(inputFlags, cleanupOnFailureFlag)
+				inputFlags[localRegistryFlag] = invalidLocalRegistryName
+				cmdOut, err = runPreflightChecks(inputFlags)
+				Expect(err).To(BeNil())
+
+				By("Preflight pods should not be removed from cluster")
+				Eventually(func() int {
+					podList := unstructured.UnstructuredList{}
+					podList.SetGroupVersionKind(podGVK)
+					err = runtimeClient.List(ctx, &podList,
+						client.MatchingLabels(preflightResourceLabelMap("")), client.InNamespace(defaultTestNs))
+					Expect(err).To(BeNil())
+					return len(podList.Items)
+				}, timeout, interval).ShouldNot(Equal(0))
+
+				By("Preflight PVCs should not be removed from cluster")
+				Eventually(func() int {
+					pvcList := unstructured.UnstructuredList{}
+					pvcList.SetGroupVersionKind(pvcGVK)
+					err = runtimeClient.List(ctx, &pvcList,
+						client.MatchingLabels(preflightResourceLabelMap("")), client.InNamespace(defaultTestNs))
+					Expect(err).To(BeNil())
+					return len(pvcList.Items)
+				}, timeout, interval).ShouldNot(Equal(0))
 			})
 		})
 
 		Context("preflight run command, namespace flag test cases", func() {
 			It("Should perform preflight checks in default namespace if namespace flag is not provided", func() {
-				var byteData []byte
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
 				delete(inputFlags, namespaceFlag)
-				runPreflightChecks(inputFlags)
-				byteData, err = getLogFileData(preflightLogFilePrefix)
+				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).To(BeNil())
-				outputLogData := string(byteData)
 
-				Expect(outputLogData).To(ContainSubstring("Using 'default' namespace of the cluster"))
+				Expect(cmdOut.Out).To(ContainSubstring("Using 'default' namespace of the cluster"))
+				assertSuccessfulPreflightChecks(inputFlags, cmdOut.Out)
+			})
+
+			It("Should perform preflight checks in namespace provided present on cluster", func() {
+				inputFlags := make(map[string]string)
+				copyMap(flagsMap, inputFlags)
+				inputFlags[namespaceFlag] = defaultTestNs
+				cmdOut, err = runPreflightChecks(inputFlags)
+				Expect(err).To(BeNil())
+
+				Expect(cmdOut.Out).To(ContainSubstring(
+					fmt.Sprintf("Using '%s' namespace of the cluster", defaultTestNs)))
+				assertSuccessfulPreflightChecks(inputFlags, cmdOut.Out)
+			})
+
+			It("Should fail preflight check if namespace flag is provided with zero value", func() {
+				var output []byte
+				args := []string{"run", storageClassFlag, defaultTestStorageClass, namespaceFlag, ""}
+				cmd := exec.Command("./tvk-preflight", args...)
+				output, err = cmd.CombinedOutput()
+				Expect(err).To(BeNil())
+
+				Expect(string(output)).To(ContainSubstring("Preflight check for DNS resolution failed :: " +
+					"an empty namespace may not be set during creation"))
+				Expect(string(output)).To(ContainSubstring("Preflight check for volume snapshot and restore failed :: " +
+					"an empty namespace may not be set during creation"))
 			})
 		})
 
 		Context("Preflight run command, kubeconfig flag test cases", func() {
 			It("Should perform preflight checks when a kubeconfig file is specified", func() {
-				var (
-					byteData         []byte
-					testKubeConfFile *os.File
-					kubeConfFile     *os.File
-				)
+				var byteData []byte
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
-				testKubeConfFile, err = os.OpenFile(preflightKubeConf, os.O_CREATE|os.O_WRONLY, filePermission)
+				_, err = os.Create(preflightKubeConf)
 				Expect(err).To(BeNil())
-				defer testKubeConfFile.Close()
-				kubeConfFile, err = os.OpenFile(kubeConfPath, os.O_RDONLY, filePermission)
+				defer func() {
+					err = os.Remove(preflightKubeConf)
+					Expect(err).To(BeNil())
+				}()
+				byteData, err = ioutil.ReadFile(kubeConfPath)
 				Expect(err).To(BeNil())
-				defer kubeConfFile.Close()
-				copyFile(kubeConfFile, testKubeConfFile)
-				inputFlags[kubeconfigFlag] = path.Join(".", testKubeConfFile.Name())
-				runPreflightChecks(inputFlags)
-				byteData, err = getLogFileData(preflightLogFilePrefix)
+				err = ioutil.WriteFile(preflightKubeConf, byteData, filePermission)
 				Expect(err).To(BeNil())
-				outputLogData := string(byteData)
 
-				Expect(outputLogData).To(ContainSubstring(
-					fmt.Sprintf("Using kubeconfig file path - %s", path.Join(".",
-						testKubeConfFile.Name()))))
-
-				err = os.Remove(testKubeConfFile.Name())
+				inputFlags[kubeconfigFlag] = path.Join(".", preflightKubeConf)
+				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).To(BeNil())
+
+				Expect(cmdOut.Out).To(ContainSubstring(
+					fmt.Sprintf("Using kubeconfig file path - %s", path.Join(".", preflightKubeConf))))
+				assertSuccessfulPreflightChecks(inputFlags, cmdOut.Out)
+			})
+
+			It("Should fail preflight execution if invalid kubeconfig file is provided", func() {
+				_, err = os.Create(invalidKubeConfFilename)
+				Expect(err).To(BeNil())
+				err = ioutil.WriteFile(invalidKubeConfFilename, []byte(invalidKubeConfFileData), filePermission)
+				Expect(err).To(BeNil())
+				inputFlags := make(map[string]string)
+				copyMap(flagsMap, inputFlags)
+				inputFlags[kubeconfigFlag] = invalidStorageClassName
+				_, err = runPreflightChecks(inputFlags)
+				Expect(err).Should(HaveOccurred())
 			})
 		})
 	})
@@ -255,25 +289,23 @@ var _ = Describe("Preflight Tests", func() {
 		Context("Cleanup all preflight resources on the cluster in a particular namespace", func() {
 
 			It("Should clean all preflight resources in a particular namespace", func() {
-				var (
-					outputLogData string
-					byteData      []byte
-				)
 				_ = createPreflightResourcesForCleanup()
 				_ = createPreflightResourcesForCleanup()
 				_ = createPreflightResourcesForCleanup()
-				runCleanupForAllPreflightResources()
-				byteData, err = getLogFileData(cleanupLogFilePrefix)
+				cmdOut, err = runCleanupForAllPreflightResources()
+				if err != nil {
+					fmt.Println("All cleanup - \ncmdOut: ", cmdOut.Out, "err: ", err)
+				}
 				Expect(err).To(BeNil())
-				outputLogData = string(byteData)
 
-				Expect(outputLogData).To(ContainSubstring("All preflight resources cleaned"))
+				Expect(cmdOut.Out).To(ContainSubstring("All preflight resources cleaned"))
 
 				By("All preflight pods should be removed from cluster")
 				Eventually(func() int {
 					podList := unstructured.UnstructuredList{}
 					podList.SetGroupVersionKind(podGVK)
-					err = runtimeClient.List(ctx, &podList, client.MatchingLabels(preflightResourceLabelMap("")))
+					err = runtimeClient.List(ctx, &podList,
+						client.MatchingLabels(preflightResourceLabelMap("")), client.InNamespace(defaultTestNs))
 					Expect(err).To(BeNil())
 					return len(podList.Items)
 				}, timeout, interval).Should(Equal(0))
@@ -282,7 +314,8 @@ var _ = Describe("Preflight Tests", func() {
 				Eventually(func() int {
 					pvcList := unstructured.UnstructuredList{}
 					pvcList.SetGroupVersionKind(pvcGVK)
-					err = runtimeClient.List(ctx, &pvcList, client.MatchingLabels(preflightResourceLabelMap("")))
+					err = runtimeClient.List(ctx, &pvcList,
+						client.MatchingLabels(preflightResourceLabelMap("")), client.InNamespace(defaultTestNs))
 					Expect(err).To(BeNil())
 					return len(pvcList.Items)
 				}, timeout, interval).Should(Equal(0))
@@ -291,7 +324,8 @@ var _ = Describe("Preflight Tests", func() {
 				Eventually(func() int {
 					snapshotList := unstructured.UnstructuredList{}
 					snapshotList.SetGroupVersionKind(snapshotGVK)
-					err = runtimeClient.List(ctx, &snapshotList, client.MatchingLabels(preflightResourceLabelMap("")))
+					err = runtimeClient.List(ctx, &snapshotList,
+						client.MatchingLabels(preflightResourceLabelMap("")), client.InNamespace(defaultTestNs))
 					Expect(err).To(BeNil())
 					return len(snapshotList.Items)
 				}, timeout, interval).Should(Equal(0))
@@ -301,41 +335,35 @@ var _ = Describe("Preflight Tests", func() {
 		Context("Cleanup resources according to preflight UID in a particular namespace", func() {
 
 			It("Should clean pods, PVCs and volume snapshots of preflight check for specific uid", func() {
-				var (
-					outputLogData string
-					uid           string
-					byteData      []byte
-				)
-				uid = createPreflightResourcesForCleanup()
-				runCleanupWithUID(uid)
-				byteData, err = getLogFileData(cleanupLogFilePrefix)
+				var uid = createPreflightResourcesForCleanup()
+				cmdOut, err = runCleanupWithUID(uid)
 				Expect(err).To(BeNil())
-				outputLogData = string(byteData)
 
 				By(fmt.Sprintf("Should clean source pod with uid=%s", uid))
 				srcPodName := strings.Join([]string{sourcePodNamePrefix, uid}, "")
-				Expect(outputLogData).To(ContainSubstring("Cleaning Pod - %s", srcPodName))
+				Expect(cmdOut.Out).To(ContainSubstring("Cleaning Pod - %s", srcPodName))
 
 				By(fmt.Sprintf("Should clean dns pod with uid=%s", uid))
 				dnsPodName := strings.Join([]string{dnsPodNamePrefix, uid}, "")
-				Expect(outputLogData).To(ContainSubstring("Cleaning Pod - %s", dnsPodName))
+				Expect(cmdOut.Out).To(ContainSubstring("Cleaning Pod - %s", dnsPodName))
 
 				By(fmt.Sprintf("Should clean source pvc with uid=%s", uid))
 				srcPvcName := strings.Join([]string{sourcePVCNamePrefix, uid}, "")
-				Expect(outputLogData).To(ContainSubstring("Cleaning PersistentVolumeClaim - %s", srcPvcName))
+				Expect(cmdOut.Out).To(ContainSubstring("Cleaning PersistentVolumeClaim - %s", srcPvcName))
 
 				By(fmt.Sprintf("Should clean source volume snapshot with uid=%s", uid))
 				srcVolSnapName := strings.Join([]string{volSnapshotNamePrefix, uid}, "")
-				Expect(outputLogData).To(ContainSubstring("Cleaning VolumeSnapshot - %s", srcVolSnapName))
+				Expect(cmdOut.Out).To(ContainSubstring("Cleaning VolumeSnapshot - %s", srcVolSnapName))
 
 				By(fmt.Sprintf("Should clean all preflight resources for uid=%s", uid))
-				Expect(outputLogData).To(ContainSubstring("All preflight resources cleaned"))
+				Expect(cmdOut.Out).To(ContainSubstring("All preflight resources cleaned"))
 
 				By(fmt.Sprintf("All preflight pods with uid=%s should be removed from cluster", uid))
 				Eventually(func() int {
 					podList := unstructured.UnstructuredList{}
 					podList.SetGroupVersionKind(podGVK)
-					err = runtimeClient.List(ctx, &podList, client.MatchingLabels(preflightResourceLabelMap(uid)))
+					err = runtimeClient.List(ctx, &podList,
+						client.MatchingLabels(preflightResourceLabelMap(uid)), client.InNamespace(defaultTestNs))
 					Expect(err).To(BeNil())
 					return len(podList.Items)
 				}, timeout, interval).Should(Equal(0))
@@ -344,7 +372,8 @@ var _ = Describe("Preflight Tests", func() {
 				Eventually(func() int {
 					pvcList := unstructured.UnstructuredList{}
 					pvcList.SetGroupVersionKind(pvcGVK)
-					err = runtimeClient.List(ctx, &pvcList, client.MatchingLabels(preflightResourceLabelMap(uid)))
+					err = runtimeClient.List(ctx, &pvcList,
+						client.MatchingLabels(preflightResourceLabelMap(uid)), client.InNamespace(defaultTestNs))
 					Expect(err).To(BeNil())
 					return len(pvcList.Items)
 				}, timeout, interval).Should(Equal(0))
@@ -353,7 +382,8 @@ var _ = Describe("Preflight Tests", func() {
 				Eventually(func() int {
 					snapshotList := unstructured.UnstructuredList{}
 					snapshotList.SetGroupVersionKind(snapshotGVK)
-					err = runtimeClient.List(ctx, &snapshotList, client.MatchingLabels(preflightResourceLabelMap(uid)))
+					err = runtimeClient.List(ctx, &snapshotList,
+						client.MatchingLabels(preflightResourceLabelMap(uid)), client.InNamespace(defaultTestNs))
 					Expect(err).To(BeNil())
 					return len(snapshotList.Items)
 				}, timeout, interval).Should(Equal(0))
@@ -362,103 +392,66 @@ var _ = Describe("Preflight Tests", func() {
 	})
 })
 
-func runPreflightChecks(flagsMap map[string]string) {
-	cleanDirForFiles(preflightLogFilePrefix)
-	Expect(err).To(BeNil())
+// Executes the preflight binary in terminal
+func runPreflightChecks(flagsMap map[string]string) (*shell.CmdOut, error) {
 	var flags string
 
 	for key, val := range flagsMap {
 		switch key {
 		case storageClassFlag:
-			flags += fmt.Sprintf("%s %s ", storageClassFlag, val)
+			flags = strings.Join([]string{flags, storageClassFlag, val}, " ")
 
 		case namespaceFlag:
-			flags += fmt.Sprintf("%s %s ", namespaceFlag, val)
+			flags = strings.Join([]string{flags, namespaceFlag, val}, " ")
 
 		case snapshotClassFlag:
-			flags += fmt.Sprintf("%s %s ", snapshotClassFlag, val)
+			flags = strings.Join([]string{flags, snapshotClassFlag, val}, " ")
 
 		case localRegistryFlag:
-			flags += fmt.Sprintf("%s %s ", localRegistryFlag, val)
+			flags = strings.Join([]string{flags, localRegistryFlag, val}, " ")
 
 		case imagePullSecFlag:
-			flags += fmt.Sprintf("%s %s ", imagePullSecFlag, val)
+			flags = strings.Join([]string{flags, imagePullSecFlag, val}, " ")
 
 		case serviceAccountFlag:
-			flags += fmt.Sprintf("%s %s ", serviceAccountFlag, val)
+			flags = strings.Join([]string{flags, serviceAccountFlag, val}, " ")
 
 		case cleanupOnFailureFlag:
-			flags += fmt.Sprintf("%s ", cleanupOnFailureFlag)
+			flags = strings.Join([]string{flags, cleanupOnFailureFlag}, " ")
 
 		case logLevelFlag:
-			flags += fmt.Sprintf("%s %s ", logLevelFlag, val)
+			flags = strings.Join([]string{flags, logLevelFlag, val}, " ")
 
 		case kubeconfigFlag:
-			flags += fmt.Sprintf("%s %s ", kubeconfigFlag, val)
+			flags = strings.Join([]string{flags, kubeconfigFlag, val}, " ")
 		}
 	}
 
 	cmd := fmt.Sprintf("%s run %s", preflightBinaryFilePath, flags)
 	log.Infof("Preflight check CMD [%s]", cmd)
-	_, err = shell.RunCmd(cmd)
-	Expect(err).To(BeNil())
+	return shell.RunCmd(cmd)
 }
 
-func runCleanupWithUID(uid string) {
-	cleanDirForFiles(cleanupLogFilePrefix)
-	Expect(err).To(BeNil())
+// Executes cleanup for a particular preflight run
+func runCleanupWithUID(uid string) (*shell.CmdOut, error) {
 	cmd := fmt.Sprintf("%s cleanup --uid %s", preflightBinaryFilePath, uid)
 	log.Infof("Preflight cleanup CMD [%s]", cmd)
-	_, err = shell.RunCmd(cmd)
-	Expect(err).To(BeNil())
+	return shell.RunCmd(cmd)
 }
 
-func runCleanupForAllPreflightResources() {
-	cleanDirForFiles(cleanupLogFilePrefix)
-	Expect(err).To(BeNil())
-	cmd := fmt.Sprintf("%s cleanup -n %s", preflightBinaryFilePath, defaultTestNs)
+// Executes cleanup for all preflight resources
+func runCleanupForAllPreflightResources() (*shell.CmdOut, error) {
+	cmd := fmt.Sprintf("./tvk-preflight cleanup -n %s", defaultTestNs)
 	log.Infof("Preflight cleanup CMD [%s]", cmd)
-	_, err = shell.RunCmd(cmd)
-	Expect(err).To(BeNil())
+	return shell.RunCmd(cmd)
 }
 
-func cleanDirForFiles(filePrefix string) {
-	var names []fs.FileInfo
-	names, err = ioutil.ReadDir(preflightBinaryDir)
-	Expect(err).To(BeNil())
-	for _, entry := range names {
-		if strings.HasPrefix(entry.Name(), filePrefix) {
-			err = os.RemoveAll(path.Join([]string{preflightBinaryDir, entry.Name()}...))
-			Expect(err).To(BeNil())
-		}
-	}
-}
-
-func getLogFileData(filePrefix string) ([]byte, error) {
-	var (
-		foundFile   = false
-		logFilename string
-		names       []fs.FileInfo
-	)
-	names, err = ioutil.ReadDir(preflightBinaryDir)
-	Expect(err).To(BeNil())
-	for _, entry := range names {
-		if strings.HasPrefix(entry.Name(), filePrefix) {
-			logFilename = entry.Name()
-			foundFile = true
-			break
-		}
-	}
-
-	if !foundFile {
-		return nil, fmt.Errorf("preflight log file not found")
-	}
-	return ioutil.ReadFile(logFilename)
-}
-
+// Individual assertions of successful preflight checks which do not involve any CRUD operations
 func nonCRUDPreflightCheckAssertion(inputFlags map[string]string, outputLog string) {
 	storageClass, ok := inputFlags[storageClassFlag]
 	Expect(ok).To(BeTrue())
+	assertPreflightLogFileCreateSuccess(outputLog)
+	assertVolSnapClassCheckSuccess(inputFlags, outputLog)
 	assertKubectlBinaryCheckSuccess(outputLog)
 	assertK8sClusterRBACCheckSuccess(outputLog)
 	assertHelmVersionCheckSuccess(outputLog)
@@ -468,10 +461,30 @@ func nonCRUDPreflightCheckAssertion(inputFlags map[string]string, outputLog stri
 	assertStorageClassCheckSuccess(storageClass, outputLog)
 }
 
+func assertPreflightLogFileCreateSuccess(outputLog string) {
+	By("Preflight log file should be created")
+	Expect(outputLog).To(ContainSubstring("Created log file with name - preflight-"))
+}
+
 func assertSuccessfulPreflightChecks(inputFlags map[string]string, outputLog string) {
 	nonCRUDPreflightCheckAssertion(inputFlags, outputLog)
 	assertDNSResolutionCheckSuccess(outputLog)
 	assertVolumeSnapshotCheckSuccess(outputLog)
+}
+
+func assertVolSnapClassCheckSuccess(inputFlags map[string]string, outputLog string) {
+	By("Check whether volume snapshot class is present on cluster")
+	snapshotClass, ok := inputFlags[snapshotClassFlag]
+	if ok {
+		Expect(outputLog).To(ContainSubstring(
+			fmt.Sprintf("Volume snapshot class - %s driver matches with given storage class provisioner",
+				snapshotClass)))
+	} else {
+		Expect(outputLog).
+			To(MatchRegexp("(Extracted volume snapshot class -)(.*)(found in cluster)"))
+		Expect(outputLog).
+			To(MatchRegexp("(Volume snapshot class -)(.*)(driver matches with given StorageClass's provisioner)"))
+	}
 }
 
 func assertKubectlBinaryCheckSuccess(outputLog string) {
@@ -533,21 +546,13 @@ func assertDNSResolutionCheckSuccess(outputLog string) {
 
 func assertVolumeSnapshotCheckSuccess(outputLog string) {
 	By("Check whether volume snapshot and restore is possible on cluster")
-	Expect(outputLog).To(MatchRegexp("(Created source pvc - source-pvc-)([a-z]{6})"))
-	Expect(outputLog).To(MatchRegexp("(Created source pod - source-pod-)([a-z]{6})"))
-	Expect(outputLog).To(MatchRegexp("(Created volume snapshot - snapshot-source-pvc-)([a-z]{6})( from source pvc)"))
-	Expect(outputLog).To(MatchRegexp("(Created restore pvc - restored-pvc-)([a-z]{6})" +
-		"( from volume snapshot - snapshot-source-pvc-)([a-z]{6})"))
 
-	Expect(outputLog).To(MatchRegexp("(Created restore pod - restored-pod-)([a-z]{6})"))
 	Expect(outputLog).
 		To(ContainSubstring("Command 'exec /bin/sh -c dat=$(cat \"/demo/data/sample-file.txt\"); " +
 			"echo \"${dat}\"; if [[ \"${dat}\" == \"pod preflight data\" ]]; then exit 0; else exit 1; fi' " +
 			"in container - 'busybox' of pod - 'restored-pod"))
 
 	Expect(outputLog).To(MatchRegexp("(Restored pod - restored-pod-)([a-z]{6})( has expected data)"))
-	Expect(outputLog).To(MatchRegexp("(Created volume snapshot - unmounted-source-pvc-)([a-z]{6})"))
-	Expect(outputLog).To(MatchRegexp("(Created restore pod - unmounted-restored-pod-)([a-z]{6})( from volume snapshot of unmounted pv)"))
 
 	Expect(outputLog).
 		To(ContainSubstring("Command 'exec /bin/sh -c dat=$(cat \"/demo/data/sample-file.txt\"); " +
@@ -555,8 +560,10 @@ func assertVolumeSnapshotCheckSuccess(outputLog string) {
 			"then exit 0; else exit 1; fi' in container - 'busybox' of pod - 'unmounted-restored-pod"))
 
 	Expect(outputLog).To(ContainSubstring("restored pod from volume snapshot of unmounted pv has expected data"))
+	Expect(outputLog).To(ContainSubstring("Preflight check for volume snapshot and restore is successful"))
 }
 
+// fetches the helm version present in the system
 func getHelmVersion() string {
 	var cmdOut *shell.CmdOut
 	cmdOut, err = shell.RunCmd("helm version --template '{{.Version}}'")
@@ -565,6 +572,7 @@ func getHelmVersion() string {
 	return helmVersion
 }
 
+// Generates a 6-length UID for preflight checks
 func generatePreflightUID() string {
 	var randNum *big.Int
 	uid := make([]byte, 6)
@@ -733,6 +741,35 @@ func createPreflightVolumeSnapshotSpec(pvcName, preflightUID string) *unstructur
 	return volSnap
 }
 
+func createVolumeSnapshotClass() {
+	vsc := &unstructured.Unstructured{}
+	vsc.Object = map[string]interface{}{
+		"metadata": map[string]interface{}{
+			"name": sampleVolSnapClassName,
+		},
+		"driver":         invalidVolSnapDriver,
+		"deletionPolicy": "Delete",
+	}
+	vsc.SetGroupVersionKind(snapshotClassGVK)
+
+	err = runtimeClient.Create(ctx, vsc)
+	Expect(err).To(BeNil())
+}
+
+func deleteVolumeSnapshotClass() {
+	vsc := &unstructured.Unstructured{}
+	vsc.Object = map[string]interface{}{
+		"metadata": map[string]interface{}{
+			"name": sampleVolSnapClassName,
+		},
+	}
+	vsc.SetGroupVersionKind(snapshotClassGVK)
+
+	err = runtimeClient.Delete(ctx, vsc)
+	Expect(err).To(BeNil())
+}
+
+// A basic pod template for any pod to be created for testing purpose
 func getPodTemplate(name, preflightUID string) *corev1.Pod {
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -743,6 +780,7 @@ func getPodTemplate(name, preflightUID string) *corev1.Pod {
 	}
 }
 
+// Labels of any preflight resource will have the below labels
 func getPreflightResourceLabels(preflightUID string) map[string]string {
 	return map[string]string{
 		labelK8sName:         labelK8sNameValue,
@@ -765,11 +803,7 @@ func preflightResourceLabelMap(uid string) map[string]string {
 	return labels
 }
 
-func copyFile(src, dest *os.File) {
-	_, err = io.Copy(dest, src)
-	Expect(err).To(BeNil())
-}
-
+// copy map 'from' to 'to' key-by-key and value-by-value
 func copyMap(from, to map[string]string) {
 	for key, value := range from {
 		to[key] = value

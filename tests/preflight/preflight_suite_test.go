@@ -3,9 +3,12 @@ package preflighttest
 import (
 	"context"
 	"fmt"
+	"io/fs"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,6 +17,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 	"github.com/trilioData/tvk-plugins/internal"
+	"github.com/trilioData/tvk-plugins/internal/utils/shell"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -29,9 +33,8 @@ import (
 )
 
 const (
-	v1APIVersion             = "v1"
+	installNamespace         = "INSTALL_NAMESPACE"
 	defaultTestStorageClass  = "csi-gce-pd"
-	defaultTestNs            = "preflight-test-ns"
 	defaultTestSnapshotClass = "default-snapshot-class"
 	storageSnapshotGroup     = "snapshot.storage.k8s.io"
 	ocpAPIVersion            = "security.openshift.io/v1"
@@ -44,25 +47,26 @@ const (
 	labelK8sPartOf         = "app.kubernetes.io/part-of"
 	labelK8sPartOfValue    = "k8s-triliovault"
 
-	gcrRegistryPath       = "gcr.io/kubernetes-e2e-test-images"
-	dnsPodNamePrefix      = "test-dns-pod-"
-	dnsContainerName      = "test-dnsutils"
-	dnsUtilsImage         = "dnsutils:1.3"
-	sourcePodNamePrefix   = "source-pod-"
-	sourcePVCNamePrefix   = "source-pvc-"
-	volSnapshotNamePrefix = "snapshot-source-pvc-"
-	busyboxContainerName  = "busybox"
-	busyboxImageName      = "busybox"
-	volMountName          = "source-data"
-	volMountPath          = "/demo/data"
-	volSnapPodFilePath    = "/demo/data/sample-file.txt"
-	volSnapPodFileData    = "pod preflight data"
-	preflightSAName       = "preflight-sa"
-	preflightKubeConf     = "preflight_test_config"
-	filePermission        = 0644
+	gcrRegistryPath        = "gcr.io/kubernetes-e2e-test-images"
+	dnsPodNamePrefix       = "test-dns-pod-"
+	dnsContainerName       = "test-dnsutils"
+	dnsUtilsImage          = "dnsutils:1.3"
+	sourcePodNamePrefix    = "source-pod-"
+	sourcePVCNamePrefix    = "source-pvc-"
+	volSnapshotNamePrefix  = "snapshot-source-pvc-"
+	busyboxContainerName   = "busybox"
+	busyboxImageName       = "busybox"
+	volMountName           = "source-data"
+	volMountPath           = "/demo/data"
+	volSnapPodFilePath     = "/demo/data/sample-file.txt"
+	volSnapPodFileData     = "pod preflight data"
+	sampleVolSnapClassName = "sample-snap-class"
+	invalidVolSnapDriver   = "invalid.csi.k8s.io"
+	preflightSAName        = "preflight-sa"
+	preflightKubeConf      = "preflight_test_config"
+	filePermission         = 0644
 
-	letterBytes               = "abcdefghijklmnopqrstuvwxyz"
-	deletionGracePeriod int64 = 5
+	letterBytes = "abcdefghijklmnopqrstuvwxyz"
 
 	timeout  = time.Minute * 1
 	interval = time.Second * 1
@@ -70,6 +74,7 @@ const (
 
 var (
 	err                  error
+	cmdOut               *shell.CmdOut
 	ctx                  = context.Background()
 	log                  *logrus.Entry
 	storageClassFlag     = "--storage-class"
@@ -89,8 +94,11 @@ var (
 	invalidLocalRegistryName  = "invalid-local-registry"
 	invalidServiceAccountName = "invalid-service-account"
 	invalidLogLevel           = "invalidLogLevel"
+	invalidKubeConfFilename   = path.Join([]string{".", "invalid_kc_file"}...)
+	invalidKubeConfFileData   = "invalid data"
+	defaultTestNs             = getInstallNamespace()
 
-	kubeConfPath = path.Join(os.Getenv("HOME"), ".kube", "config")
+	kubeConfPath = os.Getenv("KUBECONFIG")
 
 	distDir                 = "dist"
 	preflightDir            = "preflight_linux_amd64"
@@ -138,7 +146,8 @@ var (
 		Version: "v1",
 		Kind:    internal.PersistentVolumeClaimKind,
 	}
-	snapshotGVK schema.GroupVersionKind
+	snapshotGVK      schema.GroupVersionKind
+	snapshotClassGVK schema.GroupVersionKind
 
 	scheme        *runtime.Scheme
 	kubeAccessor  *internal.Accessor
@@ -166,59 +175,49 @@ var _ = BeforeSuite(func() {
 	log = logrus.WithFields(logrus.Fields{"namespace": defaultTestNs})
 
 	scheme = runtime.NewScheme()
-	_ = corev1.AddToScheme(scheme)
-	_ = appsv1.AddToScheme(scheme)
-	_ = clientGoScheme.AddToScheme(scheme)
+	Expect(corev1.AddToScheme(scheme)).ShouldNot(HaveOccurred())
+	Expect(appsv1.AddToScheme(scheme)).ShouldNot(HaveOccurred())
+	Expect(clientGoScheme.AddToScheme(scheme)).ShouldNot(HaveOccurred())
 
 	kubeconfig, err = internal.NewConfigFromCommandline("")
 	Expect(err).To(BeNil())
-	kubeAccessor, err = internal.NewEnv(kubeconfig, scheme)
-	Expect(err).To(BeNil())
+	kubeAccessor, err = internal.NewAccessor(kubeconfig, scheme)
 	k8sClient = kubeAccessor.GetClientset()
 	runtimeClient = kubeAccessor.GetRuntimeClient()
 	discClient = kubeAccessor.GetDiscoveryClient()
 
-	createTestNamespace()
-
 	snapshotGVK = getVolSnapshotGVK()
+	snapshotClassGVK = getVolSnapClassGVK()
 })
 
 var _ = AfterSuite(func() {
 	cleanDirForFiles(preflightLogFilePrefix)
 	cleanDirForFiles(cleanupLogFilePrefix)
-	deleteTestNamespace()
 })
 
-func createTestNamespace() {
-	var testNs = &corev1.Namespace{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       internal.NamespaceKind,
-			APIVersion: v1APIVersion,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: defaultTestNs,
-		},
+// Deletes all the log files generated at the end of suite
+func cleanDirForFiles(filePrefix string) {
+	var names []fs.FileInfo
+	names, err = ioutil.ReadDir(preflightBinaryDir)
+	Expect(err).To(BeNil())
+	for _, entry := range names {
+		if strings.HasPrefix(entry.Name(), filePrefix) {
+			err = os.RemoveAll(path.Join([]string{preflightBinaryDir, entry.Name()}...))
+			Expect(err).To(BeNil())
+		}
 	}
-	_, err = k8sClient.CoreV1().Namespaces().Create(ctx, testNs, metav1.CreateOptions{})
-	Expect(err).To(BeNil())
-	log.Infof("Created preflight testing namespace - '%s' successfully\n", defaultTestNs)
 }
 
-func deleteTestNamespace() {
-	err = k8sClient.CoreV1().Namespaces().Delete(ctx, defaultTestNs, metav1.DeleteOptions{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       internal.NamespaceKind,
-			APIVersion: v1APIVersion,
-		},
-		GracePeriodSeconds: func() *int64 {
-			var d = deletionGracePeriod
-			return &d
-		}(),
-	})
-	Expect(err).To(BeNil())
-	log.Infof("Deleted preflight testing namespace - '%s' successfully\n", defaultTestNs)
+// fetches value of install namespace env variable
+func getInstallNamespace() string {
+	namespace, present := os.LookupEnv(installNamespace)
+	if !present {
+		panic("Install Namespace not found in environment")
+	}
+	return namespace
 }
 
+// fetches preferred version for group on the cluster
 func getServerPreferredVersionForGroup(grp string) (string, error) {
 	var (
 		apiResList  *metav1.APIGroupList
@@ -248,5 +247,16 @@ func getVolSnapshotGVK() schema.GroupVersionKind {
 		Group:   storageSnapshotGroup,
 		Version: prefVer,
 		Kind:    internal.VolumeSnapshotKind,
+	}
+}
+
+func getVolSnapClassGVK() schema.GroupVersionKind {
+	var prefVer string
+	prefVer, err = getServerPreferredVersionForGroup(storageSnapshotGroup)
+	Expect(err).To(BeNil())
+	return schema.GroupVersionKind{
+		Group:   storageSnapshotGroup,
+		Version: prefVer,
+		Kind:    internal.VolumeSnapshotClassKind,
 	}
 }
