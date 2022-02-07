@@ -18,10 +18,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/trilioData/tvk-plugins/internal"
 	"github.com/trilioData/tvk-plugins/internal/utils/shell"
+	testutils "github.com/trilioData/tvk-plugins/tests/test_utils"
+	"github.com/trilioData/tvk-plugins/tools/preflight"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
@@ -33,40 +33,17 @@ import (
 )
 
 const (
-	installNamespace         = "INSTALL_NAMESPACE"
 	defaultTestStorageClass  = "csi-gce-pd"
 	defaultTestSnapshotClass = "default-snapshot-class"
-	storageSnapshotGroup     = "snapshot.storage.k8s.io"
-	ocpAPIVersion            = "security.openshift.io/v1"
 
-	labelK8sName           = "app.kubernetes.io/name"
-	labelK8sNameValue      = "k8s-triliovault"
-	labelTrilioKey         = "trilio"
-	labelTvkPreflightValue = "tvk-preflight"
-	labelPreflightRunKey   = "preflight-run"
-	labelK8sPartOf         = "app.kubernetes.io/part-of"
-	labelK8sPartOfValue    = "k8s-triliovault"
+	dnsPodNamePrefix = "test-dns-pod-"
+	dnsContainerName = "test-dnsutils"
 
-	gcrRegistryPath        = "gcr.io/kubernetes-e2e-test-images"
-	dnsPodNamePrefix       = "test-dns-pod-"
-	dnsContainerName       = "test-dnsutils"
-	dnsUtilsImage          = "dnsutils:1.3"
-	sourcePodNamePrefix    = "source-pod-"
-	sourcePVCNamePrefix    = "source-pvc-"
-	volSnapshotNamePrefix  = "snapshot-source-pvc-"
-	busyboxContainerName   = "busybox"
-	busyboxImageName       = "busybox"
-	volMountName           = "source-data"
-	volMountPath           = "/demo/data"
-	volSnapPodFilePath     = "/demo/data/sample-file.txt"
-	volSnapPodFileData     = "pod preflight data"
 	sampleVolSnapClassName = "sample-snap-class"
 	invalidVolSnapDriver   = "invalid.csi.k8s.io"
 	preflightSAName        = "preflight-sa"
 	preflightKubeConf      = "preflight_test_config"
 	filePermission         = 0644
-
-	letterBytes = "abcdefghijklmnopqrstuvwxyz"
 
 	timeout  = time.Minute * 1
 	interval = time.Second * 1
@@ -96,7 +73,7 @@ var (
 	invalidLogLevel           = "invalidLogLevel"
 	invalidKubeConfFilename   = path.Join([]string{".", "invalid_kc_file"}...)
 	invalidKubeConfFileData   = "invalid data"
-	defaultTestNs             = getInstallNamespace()
+	defaultTestNs             = testutils.GetInstallNamespace()
 
 	kubeConfPath = os.Getenv("KUBECONFIG")
 
@@ -107,28 +84,6 @@ var (
 	preflightBinaryDir      = filepath.Join(projectRoot, distDir, preflightDir)
 	preflightBinaryName     = "preflight"
 	preflightBinaryFilePath = filepath.Join(preflightBinaryDir, preflightBinaryName)
-
-	commandSleep3600       = []string{"sleep", "3600"}
-	commandBinSh           = []string{"bin/sh", "-c"}
-	argsTouchDataFileSleep = []string{
-		fmt.Sprintf("echo '%s' > %s && sleep 3000", volSnapPodFileData, volSnapPodFilePath),
-	}
-	resourceRequirements = corev1.ResourceRequirements{
-		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceMemory: resource.MustParse("64Mi"),
-			corev1.ResourceCPU:    resource.MustParse("250m"),
-		},
-		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
-			corev1.ResourceCPU:    resource.MustParse("500m"),
-		},
-	}
-
-	csiApis = [3]string{
-		"volumesnapshotclasses." + storageSnapshotGroup,
-		"volumesnapshotcontents." + storageSnapshotGroup,
-		"volumesnapshots." + storageSnapshotGroup,
-	}
 
 	flagsMap = map[string]string{
 		storageClassFlag:     defaultTestStorageClass,
@@ -208,43 +163,12 @@ func cleanDirForFiles(filePrefix string) {
 	}
 }
 
-// fetches value of install namespace env variable
-func getInstallNamespace() string {
-	namespace, present := os.LookupEnv(installNamespace)
-	if !present {
-		panic("Install Namespace not found in environment")
-	}
-	return namespace
-}
-
-// fetches preferred version for group on the cluster
-func getServerPreferredVersionForGroup(grp string) (string, error) {
-	var (
-		apiResList  *metav1.APIGroupList
-		prefVersion string
-	)
-	apiResList, err = k8sClient.ServerGroups()
-	Expect(err).To(BeNil())
-	for idx := range apiResList.Groups {
-		api := apiResList.Groups[idx]
-		if api.Name == grp {
-			prefVersion = api.PreferredVersion.Version
-			break
-		}
-	}
-
-	if prefVersion == "" {
-		return "", fmt.Errorf("no preferred version for group - %s found on cluster", grp)
-	}
-	return prefVersion, nil
-}
-
 func getVolSnapshotGVK() schema.GroupVersionKind {
 	var prefVer string
-	prefVer, err = getServerPreferredVersionForGroup(storageSnapshotGroup)
+	prefVer, err = preflight.GetServerPreferredVersionForGroup(preflight.StorageSnapshotGroup, k8sClient)
 	Expect(err).To(BeNil())
 	return schema.GroupVersionKind{
-		Group:   storageSnapshotGroup,
+		Group:   preflight.StorageSnapshotGroup,
 		Version: prefVer,
 		Kind:    internal.VolumeSnapshotKind,
 	}
@@ -252,10 +176,10 @@ func getVolSnapshotGVK() schema.GroupVersionKind {
 
 func getVolSnapClassGVK() schema.GroupVersionKind {
 	var prefVer string
-	prefVer, err = getServerPreferredVersionForGroup(storageSnapshotGroup)
+	prefVer, err = preflight.GetServerPreferredVersionForGroup(preflight.StorageSnapshotGroup, k8sClient)
 	Expect(err).To(BeNil())
 	return schema.GroupVersionKind{
-		Group:   storageSnapshotGroup,
+		Group:   preflight.StorageSnapshotGroup,
 		Version: prefVer,
 		Kind:    internal.VolumeSnapshotClassKind,
 	}

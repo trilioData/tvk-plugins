@@ -10,7 +10,6 @@ import (
 
 	version "github.com/hashicorp/go-version"
 	"github.com/trilioData/tvk-plugins/internal"
-	"github.com/trilioData/tvk-plugins/internal/utils/shell"
 	"github.com/trilioData/tvk-plugins/tools/preflight/exec"
 	"github.com/trilioData/tvk-plugins/tools/preflight/wait"
 	"k8s.io/client-go/discovery"
@@ -34,9 +33,9 @@ type Options struct {
 	PerformCleanupOnFail bool
 }
 
-// createResourceNameSuffix creates a unique 6-length hash for preflight check.
+// CreateResourceNameSuffix creates a unique 6-length hash for preflight check.
 // All resources name created during preflight will have hash as suffix
-func createResourceNameSuffix() (string, error) {
+func CreateResourceNameSuffix() (string, error) {
 	suffix := make([]byte, 6)
 	randRange := big.NewInt(int64(len(letterBytes)))
 	for i := range suffix {
@@ -55,7 +54,7 @@ func createResourceNameSuffix() (string, error) {
 func (o *Options) PerformPreflightChecks(ctx context.Context) {
 	var err error
 	preflightStatus := true
-	resNameSuffix, err = createResourceNameSuffix()
+	resNameSuffix, err = CreateResourceNameSuffix()
 	if err != nil {
 		o.Logger.Errorf("Error generating resource name suffix :: %s", err.Error())
 		return
@@ -198,11 +197,11 @@ func (o *Options) checkClusterAccess(ctx context.Context) error {
 
 // checkHelmVersion checks whether minimum helm version is present.
 func (o *Options) checkHelmVersion() error {
-	if internal.CheckIsOpenshift(discClient, ocpAPIVersion) {
+	if internal.CheckIsOpenshift(discClient, internal.OcpAPIVersion) {
 		o.Logger.Infof("%s Running OCP cluster. Helm not needed for OCP clusters\n", check)
 		return nil
 	}
-	o.Logger.Infof("APIVersion - %s not found on cluster, not an OCP cluster\n", ocpAPIVersion)
+	o.Logger.Infof("APIVersion - %s not found on cluster, not an OCP cluster\n", internal.OcpAPIVersion)
 	// check whether helm exists
 	path, err := goexec.LookPath("helm")
 	if err != nil {
@@ -210,12 +209,10 @@ func (o *Options) checkHelmVersion() error {
 	}
 	o.Logger.Infof("helm found at path - %s\n", path)
 
-	// check minimum version of helm
-	cmdOut, err := shell.RunCmd("helm version --template '{{.Version}}'")
+	helmVersion, err := GetHelmVersion()
 	if err != nil {
 		return err
 	}
-	helmVersion := cmdOut.Out[2 : len(cmdOut.Out)-1]
 	v1, err := version.NewVersion(minHelmVersion)
 	if err != nil {
 		return err
@@ -333,14 +330,14 @@ func (o *Options) checkSnapshotclassForProvisioner(ctx context.Context, provisio
 		prefVersion string
 		err         error
 	)
-	prefVersion, err = getServerPreferredVersionForGroup(storageSnapshotGroup)
+	prefVersion, err = GetServerPreferredVersionForGroup(StorageSnapshotGroup, clientSet)
 	if err != nil {
 		return "", err
 	}
 
 	vsscList := unstructured.UnstructuredList{}
 	vsscList.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   storageSnapshotGroup,
+		Group:   StorageSnapshotGroup,
 		Version: prefVersion,
 		Kind:    internal.VolumeSnapshotClassKind,
 	})
@@ -349,7 +346,7 @@ func (o *Options) checkSnapshotclassForProvisioner(ctx context.Context, provisio
 		return "", err
 	} else if len(vsscList.Items) == 0 {
 		return "", fmt.Errorf("no volume snapshot class for APIVersion - %s/%s found on cluster",
-			storageSnapshotGroup, prefVersion)
+			StorageSnapshotGroup, prefVersion)
 	}
 
 	sscName := ""
@@ -373,7 +370,7 @@ func (o *Options) checkSnapshotclassForProvisioner(ctx context.Context, provisio
 
 //  checkCSI checks whether CSI APIs are installed in the k8s cluster
 func (o *Options) checkCSI(ctx context.Context) error {
-	prefVersion, err := getServerPreferredVersionForGroup(apiExtenstionsGroup)
+	prefVersion, err := GetServerPreferredVersionForGroup(apiExtenstionsGroup, clientSet)
 	if err != nil {
 		return err
 	}
@@ -384,7 +381,7 @@ func (o *Options) checkCSI(ctx context.Context) error {
 		Version: prefVersion,
 		Kind:    customResourceDefinition,
 	})
-	for _, api := range csiApis {
+	for _, api := range CsiApis {
 		err := runtimeClient.Get(ctx, client.ObjectKey{Name: api}, u)
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
@@ -396,7 +393,7 @@ func (o *Options) checkCSI(ctx context.Context) error {
 		}
 	}
 
-	if apiFoundCnt != len(csiApis) {
+	if apiFoundCnt != len(CsiApis) {
 		return fmt.Errorf("some CSI APIs not found in cluster. Check logs for details")
 	}
 	return nil
@@ -480,12 +477,12 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 	o.Logger.Infof("Source pod - %s has reached into ready state\n", srcPod.GetName())
 
 	//  Create volume snapshot
-	snapshotVer, err := getServerPreferredVersionForGroup(storageSnapshotGroup)
+	snapshotVer, err := GetServerPreferredVersionForGroup(StorageSnapshotGroup, clientSet)
 	if err != nil {
 		o.Logger.Errorln(err.Error())
 		return err
 	}
-	volSnap := createVolumeSnapsotSpec(volumeSnapSrc+resNameSuffix, o.Namespace, snapshotVer, pvc.GetName())
+	volSnap := createVolumeSnapsotSpec(VolumeSnapSrcNamePrefix+resNameSuffix, o.Namespace, snapshotVer, pvc.GetName())
 	if err = runtimeClient.Create(ctx, volSnap); err != nil {
 		o.Logger.Errorf("%s Error creating volume snapshot from source pvc :: %s\n", cross, err.Error())
 		return err
@@ -500,7 +497,8 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 	o.Logger.Infof("%s volume snapshot - %s is ready-to-use\n", check, volSnap.GetName())
 
 	//  Create restore pod and pvc
-	restorePvcSpec := createRestorePVCSpec(restorePvc+resNameSuffix, volumeSnapSrc+resNameSuffix, o.StorageClass, o.Namespace)
+	restorePvcSpec := createRestorePVCSpec(
+		RestorePvcNamePrefix+resNameSuffix, VolumeSnapSrcNamePrefix+resNameSuffix, o.StorageClass, o.Namespace)
 	restorePvcSpec, err = clientSet.CoreV1().PersistentVolumeClaims(o.Namespace).
 		Create(ctx, restorePvcSpec, metav1.CreateOptions{})
 	if err != nil {
@@ -508,7 +506,7 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 		return err
 	}
 	o.Logger.Infof("Created restore pvc - %s from volume snapshot - %s\n", restorePvcSpec.GetName(), volSnap.GetName())
-	restorePodSpec := createRestorePodSpec(restorePod+resNameSuffix, restorePvcSpec.GetName(), o)
+	restorePodSpec := createRestorePodSpec(RestorePodNamePrefix+resNameSuffix, restorePvcSpec.GetName(), o)
 	restorePodSpec, err = clientSet.CoreV1().Pods(o.Namespace).
 		Create(ctx, restorePodSpec, metav1.CreateOptions{})
 	if err != nil {
@@ -530,7 +528,7 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 		Namespace:     o.Namespace,
 		Command:       execRestoreDataCheckCommand,
 		PodName:       restorePodSpec.GetName(),
-		ContainerName: busyboxContainerName,
+		ContainerName: BusyboxContainerName,
 		Executor:      &exec.DefaultRemoteExecutor{},
 		Config:        restConfig,
 		ClientSet:     clientSet,
@@ -553,7 +551,7 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 	}
 	o.Logger.Infof("Deleted source pod - %s\n", srcPodName)
 
-	unmountedVolSnapSrcSpec := createVolumeSnapsotSpec(unmountedVolumeSnapSrc+resNameSuffix, o.Namespace, snapshotVer, pvc.GetName())
+	unmountedVolSnapSrcSpec := createVolumeSnapsotSpec(UnmountedVolumeSnapSrcNamePrefix+resNameSuffix, o.Namespace, snapshotVer, pvc.GetName())
 	if err = runtimeClient.Create(ctx, unmountedVolSnapSrcSpec); err != nil {
 		o.Logger.Errorf("%s error creating volume snapshot from unmounted source pvc :: %s\n", cross, err.Error())
 		return err
@@ -569,8 +567,8 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 		check, unmountedVolSnapSrcSpec.GetName())
 
 	// create unmounted restore pvc and pod
-	unmountedPvcSpec := createRestorePVCSpec(unmountedRestorePvc+resNameSuffix,
-		unmountedVolumeSnapSrc+resNameSuffix,
+	unmountedPvcSpec := createRestorePVCSpec(UnmountedRestorePvcNamePrefix+resNameSuffix,
+		UnmountedVolumeSnapSrcNamePrefix+resNameSuffix,
 		o.StorageClass, o.Namespace)
 	_, err = clientSet.CoreV1().PersistentVolumeClaims(o.Namespace).
 		Create(ctx, unmountedPvcSpec, metav1.CreateOptions{})
@@ -580,7 +578,7 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 	}
 	o.Logger.Infof("Created restore pvc - %s from unmounted volume snapshot - %s\n",
 		unmountedPvcSpec.GetName(), unmountedVolSnapSrcSpec.GetName())
-	unmountedPodSpec := createRestorePodSpec(unmountedRestorePod+resNameSuffix, unmountedPvcSpec.GetName(), o)
+	unmountedPodSpec := createRestorePodSpec(UnmountedRestorePodNamePrefix+resNameSuffix, unmountedPvcSpec.GetName(), o)
 	unmountedPodSpec, err = clientSet.CoreV1().Pods(o.Namespace).Create(ctx, unmountedPodSpec, metav1.CreateOptions{})
 	if err != nil {
 		o.Logger.Errorln(err.Error())

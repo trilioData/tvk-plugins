@@ -43,6 +43,8 @@ const (
 	PersistentVolumeClaimKind = "PersistentVolumeClaim"
 	PodKind                   = "Pod"
 	DefaultNs                 = "default"
+	InstallNamespace          = "INSTALL_NAMESPACE"
+	OcpAPIVersion             = "security.openshift.io/v1"
 
 	KubeconfigFlag          = "kubeconfig"
 	KubeconfigShorthandFlag = "k"

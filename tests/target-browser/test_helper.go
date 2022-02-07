@@ -41,7 +41,6 @@ const (
 	NFSServerBasePath         = "NFS_SERVER_BASE_PATH"
 	ControlPlaneContainerName = "triliovault-control-plane"
 	TargetBrowserDataPath     = "/src/nfs/targetbrowsertesting"
-	InstallNamespace          = "INSTALL_NAMESPACE"
 	TargetName                = "sample-target"
 	TargetLocation            = "/triliodata"
 	TargetBrowserDir          = "target-browser_linux_amd64"
@@ -56,13 +55,6 @@ var (
 	randomDirectory string
 )
 
-func getInstallNamespace() string {
-	namespace, present := os.LookupEnv(InstallNamespace)
-	if !present {
-		panic("Install Namespace not found in environment")
-	}
-	return namespace
-}
 func getNFSIPAddr() string {
 	nfsIPAddr, isNFSIPAddrPresent := os.LookupEnv(NFSServerIP)
 	if !isNFSIPAddrPresent {

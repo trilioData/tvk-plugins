@@ -1,10 +1,8 @@
 package preflighttest
 
 import (
-	"crypto/rand"
 	"fmt"
 	"io/ioutil"
-	"math/big"
 	"os"
 	"os/exec"
 	"path"
@@ -14,6 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/trilioData/tvk-plugins/internal"
 	"github.com/trilioData/tvk-plugins/internal/utils/shell"
+	"github.com/trilioData/tvk-plugins/tools/preflight"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -191,7 +190,7 @@ var _ = Describe("Preflight Tests", func() {
 					podList := unstructured.UnstructuredList{}
 					podList.SetGroupVersionKind(podGVK)
 					err = runtimeClient.List(ctx, &podList,
-						client.MatchingLabels(preflightResourceLabelMap("")), client.InNamespace(defaultTestNs))
+						client.MatchingLabels(getPreflightResourceLabels("")), client.InNamespace(defaultTestNs))
 					Expect(err).To(BeNil())
 					return len(podList.Items)
 				}, timeout, interval).ShouldNot(Equal(0))
@@ -201,7 +200,7 @@ var _ = Describe("Preflight Tests", func() {
 					pvcList := unstructured.UnstructuredList{}
 					pvcList.SetGroupVersionKind(pvcGVK)
 					err = runtimeClient.List(ctx, &pvcList,
-						client.MatchingLabels(preflightResourceLabelMap("")), client.InNamespace(defaultTestNs))
+						client.MatchingLabels(getPreflightResourceLabels("")), client.InNamespace(defaultTestNs))
 					Expect(err).To(BeNil())
 					return len(pvcList.Items)
 				}, timeout, interval).ShouldNot(Equal(0))
@@ -305,7 +304,7 @@ var _ = Describe("Preflight Tests", func() {
 					podList := unstructured.UnstructuredList{}
 					podList.SetGroupVersionKind(podGVK)
 					err = runtimeClient.List(ctx, &podList,
-						client.MatchingLabels(preflightResourceLabelMap("")), client.InNamespace(defaultTestNs))
+						client.MatchingLabels(getPreflightResourceLabels("")), client.InNamespace(defaultTestNs))
 					Expect(err).To(BeNil())
 					return len(podList.Items)
 				}, timeout, interval).Should(Equal(0))
@@ -315,7 +314,7 @@ var _ = Describe("Preflight Tests", func() {
 					pvcList := unstructured.UnstructuredList{}
 					pvcList.SetGroupVersionKind(pvcGVK)
 					err = runtimeClient.List(ctx, &pvcList,
-						client.MatchingLabels(preflightResourceLabelMap("")), client.InNamespace(defaultTestNs))
+						client.MatchingLabels(getPreflightResourceLabels("")), client.InNamespace(defaultTestNs))
 					Expect(err).To(BeNil())
 					return len(pvcList.Items)
 				}, timeout, interval).Should(Equal(0))
@@ -325,7 +324,7 @@ var _ = Describe("Preflight Tests", func() {
 					snapshotList := unstructured.UnstructuredList{}
 					snapshotList.SetGroupVersionKind(snapshotGVK)
 					err = runtimeClient.List(ctx, &snapshotList,
-						client.MatchingLabels(preflightResourceLabelMap("")), client.InNamespace(defaultTestNs))
+						client.MatchingLabels(getPreflightResourceLabels("")), client.InNamespace(defaultTestNs))
 					Expect(err).To(BeNil())
 					return len(snapshotList.Items)
 				}, timeout, interval).Should(Equal(0))
@@ -340,7 +339,7 @@ var _ = Describe("Preflight Tests", func() {
 				Expect(err).To(BeNil())
 
 				By(fmt.Sprintf("Should clean source pod with uid=%s", uid))
-				srcPodName := strings.Join([]string{sourcePodNamePrefix, uid}, "")
+				srcPodName := strings.Join([]string{preflight.SourcePodNamePrefix, uid}, "")
 				Expect(cmdOut.Out).To(ContainSubstring("Cleaning Pod - %s", srcPodName))
 
 				By(fmt.Sprintf("Should clean dns pod with uid=%s", uid))
@@ -348,11 +347,11 @@ var _ = Describe("Preflight Tests", func() {
 				Expect(cmdOut.Out).To(ContainSubstring("Cleaning Pod - %s", dnsPodName))
 
 				By(fmt.Sprintf("Should clean source pvc with uid=%s", uid))
-				srcPvcName := strings.Join([]string{sourcePVCNamePrefix, uid}, "")
+				srcPvcName := strings.Join([]string{preflight.SourcePvcNamePrefix, uid}, "")
 				Expect(cmdOut.Out).To(ContainSubstring("Cleaning PersistentVolumeClaim - %s", srcPvcName))
 
 				By(fmt.Sprintf("Should clean source volume snapshot with uid=%s", uid))
-				srcVolSnapName := strings.Join([]string{volSnapshotNamePrefix, uid}, "")
+				srcVolSnapName := strings.Join([]string{preflight.VolumeSnapSrcNamePrefix, uid}, "")
 				Expect(cmdOut.Out).To(ContainSubstring("Cleaning VolumeSnapshot - %s", srcVolSnapName))
 
 				By(fmt.Sprintf("Should clean all preflight resources for uid=%s", uid))
@@ -363,7 +362,7 @@ var _ = Describe("Preflight Tests", func() {
 					podList := unstructured.UnstructuredList{}
 					podList.SetGroupVersionKind(podGVK)
 					err = runtimeClient.List(ctx, &podList,
-						client.MatchingLabels(preflightResourceLabelMap(uid)), client.InNamespace(defaultTestNs))
+						client.MatchingLabels(getPreflightResourceLabels(uid)), client.InNamespace(defaultTestNs))
 					Expect(err).To(BeNil())
 					return len(podList.Items)
 				}, timeout, interval).Should(Equal(0))
@@ -373,7 +372,7 @@ var _ = Describe("Preflight Tests", func() {
 					pvcList := unstructured.UnstructuredList{}
 					pvcList.SetGroupVersionKind(pvcGVK)
 					err = runtimeClient.List(ctx, &pvcList,
-						client.MatchingLabels(preflightResourceLabelMap(uid)), client.InNamespace(defaultTestNs))
+						client.MatchingLabels(getPreflightResourceLabels(uid)), client.InNamespace(defaultTestNs))
 					Expect(err).To(BeNil())
 					return len(pvcList.Items)
 				}, timeout, interval).Should(Equal(0))
@@ -383,7 +382,7 @@ var _ = Describe("Preflight Tests", func() {
 					snapshotList := unstructured.UnstructuredList{}
 					snapshotList.SetGroupVersionKind(snapshotGVK)
 					err = runtimeClient.List(ctx, &snapshotList,
-						client.MatchingLabels(preflightResourceLabelMap(uid)), client.InNamespace(defaultTestNs))
+						client.MatchingLabels(getPreflightResourceLabels(uid)), client.InNamespace(defaultTestNs))
 					Expect(err).To(BeNil())
 					return len(snapshotList.Items)
 				}, timeout, interval).Should(Equal(0))
@@ -441,7 +440,7 @@ func runCleanupWithUID(uid string) (*shell.CmdOut, error) {
 
 // Executes cleanup for all preflight resources
 func runCleanupForAllPreflightResources() (*shell.CmdOut, error) {
-	cmd := fmt.Sprintf("./tvk-preflight cleanup -n %s", defaultTestNs)
+	cmd := fmt.Sprintf("./%s cleanup -n %s", preflightBinaryFilePath, defaultTestNs)
 	log.Infof("Preflight cleanup CMD [%s]", cmd)
 	return shell.RunCmd(cmd)
 }
@@ -500,11 +499,12 @@ func assertClusterAccessCheckSuccess(outputLog string) {
 
 func assertHelmVersionCheckSuccess(outputLog string) {
 	By("Check whether helm is installed or it is an OCP cluster")
-	if discClient != nil && internal.CheckIsOpenshift(discClient, ocpAPIVersion) {
+	if discClient != nil && internal.CheckIsOpenshift(discClient, internal.OcpAPIVersion) {
 		Expect(outputLog).To(ContainSubstring("Running OCP cluster. Helm not needed for OCP clusters"))
 	} else {
 		Expect(outputLog).To(ContainSubstring("helm found at path - "))
-		var helmVersion = getHelmVersion()
+		var helmVersion string
+		helmVersion, err = preflight.GetHelmVersion()
 		Expect(err).To(BeNil())
 		Expect(outputLog).
 			To(ContainSubstring(fmt.Sprintf("Helm version %s meets required version", helmVersion)))
@@ -531,7 +531,7 @@ func assertStorageClassCheckSuccess(storageClass, outputLog string) {
 
 func assertCsiAPICheckSuccess(outputLog string) {
 	By("Check whether CSI APIs are installed on the cluster")
-	for _, api := range csiApis {
+	for _, api := range preflight.CsiApis {
 		Expect(outputLog).
 			To(ContainSubstring(fmt.Sprintf("Found CSI API - %s on cluster", api)))
 	}
@@ -563,30 +563,6 @@ func assertVolumeSnapshotCheckSuccess(outputLog string) {
 	Expect(outputLog).To(ContainSubstring("Preflight check for volume snapshot and restore is successful"))
 }
 
-// fetches the helm version present in the system
-func getHelmVersion() string {
-	var cmdOut *shell.CmdOut
-	cmdOut, err = shell.RunCmd("helm version --template '{{.Version}}'")
-	Expect(err).To(BeNil())
-	helmVersion := cmdOut.Out[2 : len(cmdOut.Out)-1]
-	return helmVersion
-}
-
-// Generates a 6-length UID for preflight checks
-func generatePreflightUID() string {
-	var randNum *big.Int
-	uid := make([]byte, 6)
-	randRange := big.NewInt(int64(len(letterBytes)))
-	for i := range uid {
-		randNum, err = rand.Int(rand.Reader, randRange)
-		Expect(err).To(BeNil())
-		idx := randNum.Int64()
-		uid[i] = letterBytes[idx]
-	}
-
-	return string(uid)
-}
-
 func createPreflightServiceAccount() {
 	sa := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
@@ -610,10 +586,11 @@ func deletePreflightServiceAccount() {
 }
 
 func createPreflightResourcesForCleanup() string {
-	var uid = generatePreflightUID()
+	var uid string
+	uid, err = preflight.CreateResourceNameSuffix()
 	Expect(err).To(BeNil())
 	createPreflightPVC(uid)
-	srcPvcName := strings.Join([]string{sourcePVCNamePrefix, uid}, "")
+	srcPvcName := strings.Join([]string{preflight.SourcePvcNamePrefix, uid}, "")
 	createPreflightVolumeSnapshot(srcPvcName, uid)
 	createPreflightPods(srcPvcName, uid)
 
@@ -636,10 +613,10 @@ func createDNSPodSpec(preflightUID string) *corev1.Pod {
 	pod.Spec.Containers = []corev1.Container{
 		{
 			Name:            dnsContainerName,
-			Image:           strings.Join([]string{gcrRegistryPath, dnsUtilsImage}, "/"),
-			Command:         commandSleep3600,
+			Image:           strings.Join([]string{preflight.GcrRegistryPath, preflight.DNSUtilsImage}, "/"),
+			Command:         preflight.CommandSleep3600,
 			ImagePullPolicy: corev1.PullIfNotPresent,
-			Resources:       resourceRequirements,
+			Resources:       preflight.ResourceRequirements,
 		},
 	}
 
@@ -653,18 +630,18 @@ func createSourcePod(pvcName, preflightUID string) {
 }
 
 func createSourcePodSpec(pvcName, preflightUID string) *corev1.Pod {
-	pod := getPodTemplate(sourcePodNamePrefix, preflightUID)
+	pod := getPodTemplate(preflight.SourcePodNamePrefix, preflightUID)
 	pod.Spec.Containers = []corev1.Container{
 		{
-			Name:      busyboxContainerName,
-			Image:     busyboxImageName,
-			Command:   commandBinSh,
-			Args:      argsTouchDataFileSleep,
-			Resources: resourceRequirements,
+			Name:      preflight.BusyboxContainerName,
+			Image:     preflight.BusyboxImageName,
+			Command:   preflight.CommandBinSh,
+			Args:      preflight.ArgsTouchDataFileSleep,
+			Resources: preflight.ResourceRequirements,
 			VolumeMounts: []corev1.VolumeMount{
 				{
-					Name:      volMountName,
-					MountPath: volMountPath,
+					Name:      preflight.VolMountName,
+					MountPath: preflight.VolMountPath,
 				},
 			},
 		},
@@ -672,7 +649,7 @@ func createSourcePodSpec(pvcName, preflightUID string) *corev1.Pod {
 
 	pod.Spec.Volumes = []corev1.Volume{
 		{
-			Name: volMountName,
+			Name: preflight.VolMountName,
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 					ClaimName: pvcName,
@@ -694,7 +671,7 @@ func createPreflightPVC(preflightUID string) {
 func createPreflightPVCSpec(preflightUID string) *corev1.PersistentVolumeClaim {
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      strings.Join([]string{sourcePVCNamePrefix, preflightUID}, ""),
+			Name:      strings.Join([]string{preflight.SourcePvcNamePrefix, preflightUID}, ""),
 			Namespace: defaultTestNs,
 			Labels:    getPreflightResourceLabels(preflightUID),
 		},
@@ -718,7 +695,7 @@ func createPreflightVolumeSnapshot(pvcName, preflightUID string) {
 
 func createPreflightVolumeSnapshotSpec(pvcName, preflightUID string) *unstructured.Unstructured {
 	var snapshotVersion string
-	snapshotVersion, err = getServerPreferredVersionForGroup(storageSnapshotGroup)
+	snapshotVersion, err = preflight.GetServerPreferredVersionForGroup(preflight.StorageSnapshotGroup, k8sClient)
 	Expect(err).To(BeNil())
 	volSnap := &unstructured.Unstructured{}
 	volSnap.Object = map[string]interface{}{
@@ -729,10 +706,10 @@ func createPreflightVolumeSnapshotSpec(pvcName, preflightUID string) *unstructur
 			},
 		},
 	}
-	volSnap.SetName(strings.Join([]string{volSnapshotNamePrefix, preflightUID}, ""))
+	volSnap.SetName(strings.Join([]string{preflight.VolumeSnapSrcNamePrefix, preflightUID}, ""))
 	volSnap.SetNamespace(defaultTestNs)
 	volSnap.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   storageSnapshotGroup,
+		Group:   preflight.StorageSnapshotGroup,
 		Version: snapshotVersion,
 		Kind:    internal.VolumeSnapshotKind,
 	})
@@ -781,23 +758,14 @@ func getPodTemplate(name, preflightUID string) *corev1.Pod {
 }
 
 // Labels of any preflight resource will have the below labels
-func getPreflightResourceLabels(preflightUID string) map[string]string {
-	return map[string]string{
-		labelK8sName:         labelK8sNameValue,
-		labelTrilioKey:       labelTvkPreflightValue,
-		labelPreflightRunKey: preflightUID,
-		labelK8sPartOf:       labelK8sPartOfValue,
-	}
-}
-
-func preflightResourceLabelMap(uid string) map[string]string {
+func getPreflightResourceLabels(uid string) map[string]string {
 	labels := map[string]string{
-		labelK8sName:   labelK8sNameValue,
-		labelTrilioKey: labelTvkPreflightValue,
-		labelK8sPartOf: labelK8sPartOfValue,
+		preflight.LabelK8sName:   preflight.LabelK8sNameValue,
+		preflight.LabelTrilioKey: preflight.LabelTvkPreflightValue,
+		preflight.LabelK8sPartOf: preflight.LabelK8sPartOfValue,
 	}
 	if uid != "" {
-		labels[labelPreflightRunKey] = uid
+		labels[preflight.LabelPreflightRunKey] = uid
 	}
 
 	return labels
