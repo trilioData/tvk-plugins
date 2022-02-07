@@ -93,16 +93,16 @@ run_tests() {
   # will be required to run test-cases
   sudo apt-get install -y nfs-common
 
-  GO111MODULE=off go get -u github.com/onsi/ginkgo/ginkgo
+  GO111MODULE=on go get github.com/onsi/ginkgo/ginkgo
   ginkgo -r -keepGoing "${components[@]}"
 }
 
 trap "cleanup" EXIT
 
-# change permission of kubeconfig file to suppress it's warning
-sudo chmod 600 "${KUBECONFIG}"
+## change permission of kubeconfig file to suppress it's warning
+#sudo chmod 600 "${KUBECONFIG}"
 
-prepare_namespaces
-helm_install
+#prepare_namespaces
+#helm_install
 
 run_tests "${COMPONENTS[@]}"

@@ -43,23 +43,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Run yamllint
-        uses: reviewdog/action-yamllint@v1
-        with:
-          fail_on_error: true
-          reporter: local
-          filter_mode: nofilter
+#      - name: Run yamllint
+#        uses: reviewdog/action-yamllint@v1
+#        with:
+#          fail_on_error: true
+#          reporter: local
+#          filter_mode: nofilter
+#
+#      - name: Run golangci-lint
+#        uses: golangci/golangci-lint-action@v2
+#        with:
+#          version: v1.42
 
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v2
-        with:
-          version: v1.42
-
-      - name: Run Shell lint
-        run: make shell-lint
-
-      - name: Verify code patterns
-        run: make verify-code-patterns
+#      - name: Run Shell lint
+#        run: make shell-lint
+#
+#      - name: Verify code patterns
+#        run: make verify-code-patterns
 
       - name: Detect File Changes
         uses: dorny/paths-filter@v2
@@ -283,36 +283,36 @@ jobs:
         with:
           go-version: 1.17
 
-      - name: Update '.goreleaser.yaml' for Building Target-Browser Packages only
-        run: |
-          echo "Updating '.goreleaser.yaml' for Building Target-Browser Packages only"
-          sed -i '/binary: log-collector/a \ \ skip: true' .goreleaser.yml
-
-      - name: Build Target-Browser Packages
-        uses: goreleaser/goreleaser-action@v2
-        with:
-          version: latest
-          args: release --snapshot --skip-publish --rm-dist
-
-      - name: Ensure Required Utilities Installed
-        run: make install-required-utilities
-
-      - name: Set up Cloud SDK
-        if: (needs.pre-build.outputs.testTargetBrowser == 'true') || startsWith(github.ref, 'refs/tags/')
-        uses: google-github-actions/setup-gcloud@master
-        with:
-          project_id: ${{ secrets.GCS_PROJECT_ID }}
-          service_account_key: ${{ secrets.GKE_SA_KEY }}
-          export_default_credentials: true
-
-      - name: Authenticate and Connect to GKE cluster
-        if: (needs.pre-build.outputs.testTargetBrowser == 'true') || startsWith(github.ref, 'refs/tags/')
-        uses: google-github-actions/get-gke-credentials@main
-        with:
-          cluster_name: ${{ env.GKE_CLUSTER }}
-          location: ${{ env.GKE_ZONE }}
-          use_auth_provider: true
-          credentials: ${{ secrets.GKE_SA_KEY }}
+#      - name: Update '.goreleaser.yaml' for Building Target-Browser Packages only
+#        run: |
+#          echo "Updating '.goreleaser.yaml' for Building Target-Browser Packages only"
+#          sed -i '/binary: log-collector/a \ \ skip: true' .goreleaser.yml
+#
+#      - name: Build Target-Browser Packages
+#        uses: goreleaser/goreleaser-action@v2
+#        with:
+#          version: latest
+#          args: release --snapshot --skip-publish --rm-dist
+#
+#      - name: Ensure Required Utilities Installed
+#        run: make install-required-utilities
+#
+#      - name: Set up Cloud SDK
+#        if: (needs.pre-build.outputs.testTargetBrowser == 'true') || startsWith(github.ref, 'refs/tags/')
+#        uses: google-github-actions/setup-gcloud@master
+#        with:
+#          project_id: ${{ secrets.GCS_PROJECT_ID }}
+#          service_account_key: ${{ secrets.GKE_SA_KEY }}
+#          export_default_credentials: true
+#
+#      - name: Authenticate and Connect to GKE cluster
+#        if: (needs.pre-build.outputs.testTargetBrowser == 'true') || startsWith(github.ref, 'refs/tags/')
+#        uses: google-github-actions/get-gke-credentials@main
+#        with:
+#          cluster_name: ${{ env.GKE_CLUSTER }}
+#          location: ${{ env.GKE_ZONE }}
+#          use_auth_provider: true
+#          credentials: ${{ secrets.GKE_SA_KEY }}
 
       - name: Run Target-Browser Tests
         if: (needs.pre-build.outputs.testTargetBrowser == 'true') || startsWith(github.ref, 'refs/tags/')
