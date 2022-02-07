@@ -91,9 +91,9 @@ run_tests() {
   components=("$@")
 
   # will be required to run test-cases
-  sudo apt-get install -y nfs-common
+#  sudo apt-get install -y nfs-common
 
-  GO111MODULE=on go get github.com/onsi/ginkgo/ginkgo
+  GO111MODULE=on go install github.com/onsi/ginkgo/ginkgo@v1.16.4
   ginkgo -r -keepGoing "${components[@]}"
 }
 
