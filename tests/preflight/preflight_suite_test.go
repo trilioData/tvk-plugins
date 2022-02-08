@@ -43,10 +43,12 @@ const (
 	invalidVolSnapDriver   = "invalid.csi.k8s.io"
 	preflightSAName        = "preflight-sa"
 	preflightKubeConf      = "preflight_test_config"
+	kubeconfigEnv          = "KUBECONFIG"
 	filePermission         = 0644
 
-	timeout  = time.Minute * 1
-	interval = time.Second * 1
+	timeout        = time.Minute * 1
+	interval       = time.Second * 1
+	spaceSeparator = " "
 )
 
 var (
@@ -71,11 +73,12 @@ var (
 	invalidLocalRegistryName  = "invalid-local-registry"
 	invalidServiceAccountName = "invalid-service-account"
 	invalidLogLevel           = "invalidLogLevel"
+	invalidNamespace          = "invalid-ns"
 	invalidKubeConfFilename   = path.Join([]string{".", "invalid_kc_file"}...)
 	invalidKubeConfFileData   = "invalid data"
 	defaultTestNs             = testutils.GetInstallNamespace()
 
-	kubeConfPath = os.Getenv("KUBECONFIG")
+	kubeConfPath = os.Getenv(kubeconfigEnv)
 
 	distDir                 = "dist"
 	preflightDir            = "preflight_linux_amd64"
