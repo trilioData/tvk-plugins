@@ -71,27 +71,27 @@ spec:
     - from: '*'
       to: .
 
-    # TODO: remove/comment following two selectors 'windows/arm64' & 'windows/arm' while adding it to 'plugins' dir, as these are not supported by krew as of now.
-    - selector:
-        matchLabels:
-          os: windows
-          arch: arm64
-      uri: https://github.com/trilioData/tvk-plugins/releases/download/PREFLIGHT_VERSION/preflight_PREFLIGHT_VERSION_windows_arm64.zip
-      sha256: PREFLIGHT_WINDOWS_ARM64_TAR_CHECKSUM
-      bin: preflight.exe
-      files:
-      - from: '*'
-        to: .
-    - selector:
-        matchLabels:
-          os: windows
-          arch: arm
-      uri: https://github.com/trilioData/tvk-plugins/releases/download/PREFLIGHT_VERSION/preflight_PREFLIGHT_VERSION_windows_arm.zip
-      sha256: PREFLIGHT_WINDOWS_ARM_TAR_CHECKSUM
-      bin: preflight.exe
-      files:
-      - from: '*'
-        to: .
+  # TODO: remove/comment following two selectors 'windows/arm64' & 'windows/arm' while adding it to 'plugins' dir, as these are not supported by krew as of now.
+  - selector:
+      matchLabels:
+        os: windows
+        arch: arm64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/PREFLIGHT_VERSION/preflight_PREFLIGHT_VERSION_windows_arm64.zip
+    sha256: PREFLIGHT_WINDOWS_ARM64_TAR_CHECKSUM
+    bin: preflight.exe
+    files:
+    - from: '*'
+      to: .
+  - selector:
+      matchLabels:
+        os: windows
+        arch: arm
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/PREFLIGHT_VERSION/preflight_PREFLIGHT_VERSION_windows_arm.zip
+    sha256: PREFLIGHT_WINDOWS_ARM_TAR_CHECKSUM
+    bin: preflight.exe
+    files:
+    - from: '*'
+      to: .
 
 
   description: |
