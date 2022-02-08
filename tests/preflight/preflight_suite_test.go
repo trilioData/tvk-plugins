@@ -2,7 +2,6 @@ package preflighttest
 
 import (
 	"context"
-	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"os"
@@ -16,10 +15,6 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
-	"github.com/trilioData/tvk-plugins/internal"
-	"github.com/trilioData/tvk-plugins/internal/utils/shell"
-	testutils "github.com/trilioData/tvk-plugins/tests/test_utils"
-	"github.com/trilioData/tvk-plugins/tools/preflight"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,6 +25,11 @@ import (
 	ctrlRuntime "sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/trilioData/tvk-plugins/internal"
+	"github.com/trilioData/tvk-plugins/internal/utils/shell"
+	testutils "github.com/trilioData/tvk-plugins/tests/test_utils"
+	"github.com/trilioData/tvk-plugins/tools/preflight"
 )
 
 const (
@@ -54,6 +54,7 @@ const (
 var (
 	err                  error
 	cmdOut               *shell.CmdOut
+	kubeconfig           string
 	ctx                  = context.Background()
 	log                  *logrus.Entry
 	storageClassFlag     = "--storage-class"
@@ -124,10 +125,6 @@ func TestPreflight(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	var (
-		kubeconfig string
-	)
-	fmt.Println("start of before suite")
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	log = logrus.WithFields(logrus.Fields{"namespace": defaultTestNs})
@@ -140,6 +137,7 @@ var _ = BeforeSuite(func() {
 	kubeconfig, err = internal.NewConfigFromCommandline("")
 	Expect(err).To(BeNil())
 	kubeAccessor, err = internal.NewAccessor(kubeconfig, scheme)
+	Expect(err).To(BeNil())
 	k8sClient = kubeAccessor.GetClientset()
 	runtimeClient = kubeAccessor.GetRuntimeClient()
 	discClient = kubeAccessor.GetDiscoveryClient()

@@ -10,12 +10,13 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/trilioData/tvk-plugins/internal/utils/shell"
-	"github.com/trilioData/tvk-plugins/tools/preflight"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/trilioData/tvk-plugins/internal/utils/shell"
+	"github.com/trilioData/tvk-plugins/tools/preflight"
 )
 
 var _ = Describe("Preflight Tests", func() {
