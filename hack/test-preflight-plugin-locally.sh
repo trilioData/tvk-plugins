@@ -10,7 +10,11 @@ set -euo pipefail
 SRC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
 cd "$SRC_ROOT"
 
-build_dir="build"
+build_dir="dist"
+
+# get current git tag
+# shellcheck disable=SC1090
+source "$SRC_ROOT"/hack/get-git-tag.sh
 
 preflight_manifest="${build_dir}/tvk-preflight.yaml"
 if [[ ! -f "${preflight_manifest}" ]]; then
@@ -18,18 +22,86 @@ if [[ ! -f "${preflight_manifest}" ]]; then
   exit 1
 fi
 
-preflight_archive="${build_dir}/preflight.tar.gz"
-if [[ ! -f "${preflight_archive}" ]]; then
-  echo >&2 "Could not find archive ${preflight_archive}."
+# shellcheck disable=SC2154
+preflight_tar_archive="preflight_${git_version}_linux_amd64.tar.gz"
+preflight_archive_path="${build_dir}/${preflight_tar_archive}"
+if [[ ! -f "${preflight_archive_path}" ]]; then
+  echo >&2 "Could not find archive ${preflight_archive_path}."
   exit 1
 fi
 
 # test for linux OS
-kubectl krew install --manifest=$preflight_manifest --archive=$preflight_archive
+kubectl krew install --manifest=$preflight_manifest --archive="$preflight_archive_path"
 kubectl krew uninstall tvk-preflight
 
-# test for darwin OS
-KREW_OS=darwin KREW_ARCH=amd64 kubectl krew install --manifest=$preflight_manifest --archive="$preflight_archive"
+preflight_tar_archive="preflight_${git_version}_linux_arm64.tar.gz"
+preflight_archive_path="${build_dir}/${preflight_tar_archive}"
+if [[ ! -f "${preflight_archive_path}" ]]; then
+  echo >&2 "Could not find archive ${preflight_archive_path}."
+  exit 1
+fi
+
+KREW_OS=linux KREW_ARCH=arm64 kubectl krew install --manifest=$preflight_manifest --archive="$preflight_archive_path"
+KREW_OS=linux KREW_ARCH=arm64 kubectl krew uninstall tvk-preflight
+
+preflight_tar_archive="preflight_${git_version}_linux_arm.tar.gz"
+preflight_archive_path="${build_dir}/${preflight_tar_archive}"
+if [[ ! -f "${preflight_archive_path}" ]]; then
+  echo >&2 "Could not find archive ${preflight_archive_path}."
+  exit 1
+fi
+
+KREW_OS=linux KREW_ARCH=arm kubectl krew install --manifest=$preflight_manifest --archive="$preflight_archive_path"
+KREW_OS=linux KREW_ARCH=arm kubectl krew uninstall tvk-preflight
+
+preflight_tar_archive="preflight_${git_version}_darwin_amd64.tar.gz"
+preflight_archive_path="${build_dir}/${preflight_tar_archive}"
+if [[ ! -f "${preflight_archive_path}" ]]; then
+  echo >&2 "Could not find archive ${preflight_archive_path}."
+  exit 1
+fi
+
+KREW_OS=darwin KREW_ARCH=amd64 kubectl krew install --manifest=$preflight_manifest --archive="$preflight_archive_path"
 KREW_OS=darwin KREW_ARCH=amd64 kubectl krew uninstall tvk-preflight
+
+preflight_tar_archive="preflight_${git_version}_darwin_arm64.tar.gz"
+preflight_archive_path="${build_dir}/${preflight_tar_archive}"
+if [[ ! -f "${preflight_archive_path}" ]]; then
+  echo >&2 "Could not find archive ${preflight_archive_path}."
+  exit 1
+fi
+
+KREW_OS=darwin KREW_ARCH=arm64 kubectl krew install --manifest=$preflight_manifest --archive="$preflight_archive_path"
+KREW_OS=darwin KREW_ARCH=arm64 kubectl krew uninstall tvk-preflight
+
+preflight_tar_archive="preflight_${git_version}_windows_amd64.zip"
+preflight_archive_path="${build_dir}/${preflight_tar_archive}"
+if [[ ! -f "${preflight_archive_path}" ]]; then
+  echo >&2 "Could not find archive ${preflight_archive_path}."
+  exit 1
+fi
+
+KREW_OS=windows KREW_ARCH=amd64 kubectl krew install --manifest=$preflight_manifest --archive="$preflight_archive_path"
+KREW_OS=windows KREW_ARCH=amd64 kubectl krew uninstall tvk-preflight
+
+preflight_tar_archive="preflight_${git_version}_windows_arm64.zip"
+preflight_archive_path="${build_dir}/${preflight_tar_archive}"
+if [[ ! -f "${preflight_archive_path}" ]]; then
+  echo >&2 "Could not find archive ${preflight_archive_path}."
+  exit 1
+fi
+
+KREW_OS=windows KREW_ARCH=arm64 kubectl krew install --manifest=$preflight_manifest --archive="$preflight_archive_path"
+KREW_OS=windows KREW_ARCH=arm64 kubectl krew uninstall tvk-preflight
+
+preflight_tar_archive="preflight_${git_version}_windows_arm.zip"
+preflight_archive_path="${build_dir}/${preflight_tar_archive}"
+if [[ ! -f "${preflight_archive_path}" ]]; then
+  echo >&2 "Could not find archive ${preflight_archive_path}."
+  exit 1
+fi
+
+KREW_OS=windows KREW_ARCH=arm kubectl krew install --manifest=$preflight_manifest --archive="$preflight_archive_path"
+KREW_OS=windows KREW_ARCH=arm kubectl krew uninstall tvk-preflight
 
 echo >&2 "Successfully tested preflight plugin locally"

@@ -10,18 +10,89 @@ spec:
     Curl and Git neeed to be installed on system for Krew index update to work properly
   platforms:
   - selector:
-      matchExpressions:
-      - key: os
-        operator: In
-        values:
-        - darwin
-        - linux
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/PREFLIGHT_VERSION/preflight.tar.gz
-    sha256: PREFLIGHT_TAR_CHECKSUM
+      matchLabels:
+        os: linux
+        arch: amd64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/PREFLIGHT_VERSION/preflight_PREFLIGHT_VERSION_linux_amd64.tar.gz
+    sha256: PREFLIGHT_LINUX_AMD64_TAR_CHECKSUM
     bin: preflight
     files:
-    - from: preflight/*
+    - from: '*'
       to: .
+  - selector:
+      matchLabels:
+        os: linux
+        arch: arm64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/PREFLIGHT_VERSION/preflight_PREFLIGHT_VERSION_linux_arm64.tar.gz
+    sha256: PREFLIGHT_LINUX_ARM64_TAR_CHECKSUM
+    bin: preflight
+    files:
+    - from: '*'
+      to: .
+  - selector:
+      matchLabels:
+        os: linux
+        arch: arm
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/PREFLIGHT_VERSION/preflight_PREFLIGHT_VERSION_linux_arm.tar.gz
+    sha256: PREFLIGHT_LINUX_ARM_TAR_CHECKSUM
+    bin: preflight
+    files:
+      - from: '*'
+        to: .
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: amd64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/PREFLIGHT_VERSION/preflight_PREFLIGHT_VERSION_darwin_amd64.tar.gz
+    sha256: PREFLIGHT_DARWIN_AMD64_TAR_CHECKSUM
+    bin: preflight
+    files:
+    - from: '*'
+      to: .
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: arm64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/PREFLIGHT_VERSION/preflight_PREFLIGHT_VERSION_darwin_arm64.tar.gz
+    sha256: PREFLIGHT_DARWIN_ARM64_TAR_CHECKSUM
+    bin: preflight
+    files:
+    - from: '*'
+      to: .
+
+  - selector:
+      matchLabels:
+        os: windows
+        arch: amd64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/PREFLIGHT_VERSION/preflight_PREFLIGHT_VERSION_windows_amd64.zip
+    sha256: PREFLIGHT_WINDOWS_AMD64_TAR_CHECKSUM
+    bin: preflight.exe
+    files:
+    - from: '*'
+      to: .
+
+  # TODO: remove/comment following two selectors 'windows/arm64' & 'windows/arm' while adding it to 'plugins' dir, as these are not supported by krew as of now.
+  - selector:
+      matchLabels:
+        os: windows
+        arch: arm64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/PREFLIGHT_VERSION/preflight_PREFLIGHT_VERSION_windows_arm64.zip
+    sha256: PREFLIGHT_WINDOWS_ARM64_TAR_CHECKSUM
+    bin: preflight.exe
+    files:
+    - from: '*'
+      to: .
+  - selector:
+      matchLabels:
+        os: windows
+        arch: arm
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/PREFLIGHT_VERSION/preflight_PREFLIGHT_VERSION_windows_arm.zip
+    sha256: PREFLIGHT_WINDOWS_ARM_TAR_CHECKSUM
+    bin: preflight.exe
+    files:
+    - from: '*'
+      to: .
+
 
   description: |
     tvk-preflight is a kubectl plugin which checks whether all the pre-requisites are met before installing Triliovault
@@ -33,6 +104,9 @@ spec:
     --storageclass - Name of storage class being used in k8s cluster (Needed)
     --snapshotclass - Name of volume snapshot class being used in k8s cluster (Needed)
     --kubeconfig - Kubeconfig path, if not given default is used by kubectl (Optional)
+    --local-registry name of the local registry to get images from (for dark site installation) (Optional)
+    --service-account name of the service account (Optional)
+    --image-pull-secret name of the secret configured for authentication (Optional)
 
     > Usage :-
 

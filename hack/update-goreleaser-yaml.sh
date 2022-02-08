@@ -16,15 +16,9 @@ echo "release tvk-oneclick package:" "$release_tvk_oneclick"
 SRC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
 goreleaser_yaml=$SRC_ROOT/.goreleaser.yml
 
-if [[ $release_preflight == true || $release_cleanup == true || $release_tvk_oneclick == true ]]; then
+if [[ $release_cleanup == true || $release_tvk_oneclick == true ]]; then
 
   echo '  extra_files:' >>"$goreleaser_yaml"
-
-  if [[ $release_preflight == true ]]; then
-    echo "adding preflight packages to goreleaser.yml"
-    echo '    - glob: build/preflight/preflight.tar.gz
-    - glob: build/preflight/preflight-sha256.txt' >>"$goreleaser_yaml"
-  fi
 
   if [[ $release_tvk_oneclick == true ]]; then
     echo "adding tvk-oneclick packages to goreleaser.yml"
@@ -38,6 +32,11 @@ if [[ $release_preflight == true || $release_cleanup == true || $release_tvk_one
     - glob: build/cleanup/cleanup-sha256.txt' >>"$goreleaser_yaml"
   fi
 
+fi
+
+if [[ $release_preflight != true ]]; then
+  echo "skip preflight packages release from goreleaser.yml"
+  sed -i '/binary: preflight/a \ \ skip: true' "$goreleaser_yaml"
 fi
 
 if [[ $release_log_collector != true ]]; then

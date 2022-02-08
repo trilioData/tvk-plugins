@@ -28,6 +28,20 @@ builds:
     - arm64
     - arm
 
+- id: preflight
+  main: ./cmd/preflight/
+  binary: preflight
+  env:
+    - CGO_ENABLED=0
+  goos:
+    - linux
+    - darwin
+    - windows
+  goarch:
+    - amd64
+    - arm64
+    - arm
+
 archives:
 - id: log-collector-archive
   name_template: |-
@@ -44,6 +58,16 @@ archives:
     target-browser_{{ .Tag }}_{{ .Os }}_{{ .Arch -}}
   builds:
     - target-browser
+  format_overrides:
+    - goos: windows
+      format: zip
+  files: ["LICENSE.md"]
+
+- id: preflight-archive
+  name_template: |-
+    preflight_{{ .Tag }}_{{ .Os }}_{{ .Arch -}}
+  builds:
+    - preflight
   format_overrides:
     - goos: windows
       format: zip
