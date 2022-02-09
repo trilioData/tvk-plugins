@@ -304,9 +304,6 @@ var _ = Describe("Preflight Tests", func() {
 				_ = createPreflightResourcesForCleanup()
 				_ = createPreflightResourcesForCleanup()
 				cmdOut, err = runCleanupForAllPreflightResources()
-				if err != nil {
-					fmt.Println("All cleanup - \ncmdOut: ", cmdOut.Out, "err: ", err)
-				}
 				Expect(err).To(BeNil())
 
 				Expect(cmdOut.Out).To(ContainSubstring("All preflight resources cleaned"))

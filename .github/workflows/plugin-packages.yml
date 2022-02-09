@@ -180,6 +180,13 @@ jobs:
     - name: Ensure Required Utilities Installed
       run: make install-required-utilities
 
+    - name: Publish Preflight Tests Report
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: preflight-junit
+        path: tests/preflight/junit-preflight.xml
+
     - name: Test Preflight Plugin Locally
       run: make test-preflight-plugin-locally
 
