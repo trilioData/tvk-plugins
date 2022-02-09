@@ -93,6 +93,7 @@ var (
 		storageClassFlag:     defaultTestStorageClass,
 		namespaceFlag:        defaultTestNs,
 		cleanupOnFailureFlag: "",
+		kubeconfigFlag:       kubeConfPath,
 	}
 
 	podGVK = schema.GroupVersionKind{

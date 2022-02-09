@@ -283,7 +283,7 @@ var _ = Describe("Preflight Tests", func() {
 			})
 
 			It(fmt.Sprintf("Should perform preflight check using kubeconfig file having path of %s "+
-				"if kubeconfig flag is provided with zero value", kubeconfigEnv), func() {
+				"if kubeconfig flag is provided with zero value", kubeConfPath), func() {
 				var output []byte
 				args := []string{"run", storageClassFlag, flagsMap[storageClassFlag],
 					namespaceFlag, flagsMap[namespaceFlag], kubeconfigFlag, "", cleanupOnFailureFlag}
@@ -401,7 +401,7 @@ var _ = Describe("Preflight Tests", func() {
 })
 
 // Executes the preflight binary in terminal
-func runPreflightChecks(flagsMap map[string]string) (*shell.CmdOut, error) {
+func runPreflightChecks(flagsMap map[string]string) (cmdOut *shell.CmdOut, err error) {
 	var flags string
 
 	for key, val := range flagsMap {
@@ -437,21 +437,28 @@ func runPreflightChecks(flagsMap map[string]string) (*shell.CmdOut, error) {
 
 	cmd := fmt.Sprintf("%s run %s", preflightBinaryFilePath, flags)
 	log.Infof("Preflight check CMD [%s]", cmd)
-	return shell.RunCmd(cmd)
+	cmdOut, err = shell.RunCmd(cmd)
+	log.Infof("Preflight binary run execution output: %s", cmdOut.Out)
+	return cmdOut, err
 }
 
 // Executes cleanup for a particular preflight run
-func runCleanupWithUID(uid string) (*shell.CmdOut, error) {
-	cmd := fmt.Sprintf("%s cleanup --uid %s", preflightBinaryFilePath, uid)
+func runCleanupWithUID(uid string) (cmdOut *shell.CmdOut, err error) {
+	cmd := fmt.Sprintf("%s cleanup --uid %s -n %s -k %s",
+		preflightBinaryFilePath, uid, defaultTestNs, kubeConfPath)
 	log.Infof("Preflight cleanup CMD [%s]", cmd)
-	return shell.RunCmd(cmd)
+	cmdOut, err = shell.RunCmd(cmd)
+	log.Infof("Preflight binary cleanup execution output: %s", cmdOut.Out)
+	return cmdOut, err
 }
 
 // Executes cleanup for all preflight resources
-func runCleanupForAllPreflightResources() (*shell.CmdOut, error) {
-	cmd := fmt.Sprintf("%s cleanup -n %s", preflightBinaryFilePath, defaultTestNs)
+func runCleanupForAllPreflightResources() (cmdOut *shell.CmdOut, err error) {
+	cmd := fmt.Sprintf("%s cleanup -n %s -k %s", preflightBinaryFilePath, defaultTestNs, kubeConfPath)
 	log.Infof("Preflight cleanup CMD [%s]", cmd)
-	return shell.RunCmd(cmd)
+	cmdOut, err = shell.RunCmd(cmd)
+	log.Infof("Preflight binary cleanup all execution output: %s", cmdOut.Out)
+	return cmdOut, err
 }
 
 func createPreflightServiceAccount() {
