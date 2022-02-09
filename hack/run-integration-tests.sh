@@ -10,6 +10,17 @@ export APP_SCOPE="Namespaced"
 export JOB_TYPE="github-actions"
 export UPDATE_INGRESS="true"
 
+# shellcheck disable=SC2018
+random_string=$(LC_ALL=C head -c 128 /dev/urandom | tr -dc 'a-z' | fold -w 6 | head -n 1)
+# shellcheck disable=SC2154
+install_ns="plugins-${build_id}-${random_string}"
+helm_release_name="triliovault-${install_ns}"
+
+export INGRESS_HOST="${install_ns}.k8s-tvk.com"
+export INSTALL_NAMESPACE="${install_ns}"
+export BACKUP_NAMESPACE="${install_ns}"
+export HELM_RELEASE_NAME="${helm_release_name}"
+
 cleanup_namespace() {
   local rc=$?
   kubectl delete ns "${INSTALL_NAMESPACE}" --request-timeout 2m || true
@@ -18,6 +29,8 @@ cleanup_namespace() {
 
 cleanup() {
   local rc=$?
+
+  kubectl delete target --all -n "${INSTALL_NAMESPACE}" || true
 
   # cleanup namespaces and helm release
   #shellcheck disable=SC2143
@@ -33,34 +46,17 @@ cleanup() {
 
   kubectl delete ns "${INSTALL_NAMESPACE}" --request-timeout 2m || true
 
-  kubectl get po,rs,deployment,pvc,svc,sts,cm,secret,sa,role,rolebinding,job,target,backup,backupplan,policy,restore,cronjob -n "${INSTALL_NAMESPACE}" || true
-
-  kubectl get validatingwebhookconfigurations,mutatingwebhookconfigurations -A | grep -E "${INSTALL_NAMESPACE}" || true
-
   exit ${rc}
 }
 
 prepare_namespaces() {
+  kubectl create namespace "${INSTALL_NAMESPACE}"
   # shellcheck disable=SC2154
-  install_ns="${JOB_TYPE}"-"${build_id}"
-  kubectl create namespace "${install_ns}"
-
-  # shellcheck disable=SC2154
-  kubectl label namespace "${install_ns}" trilio-label="${install_ns}" job-name="${job_name}" job-type=${JOB_TYPE}
-
-  helm_release_name="triliovault-${install_ns}"
-
-  export INGRESS_HOST="${install_ns}.k8s-tvk.com"
-  export INSTALL_NAMESPACE="${install_ns}"
-  export BACKUP_NAMESPACE="${install_ns}"
-  export HELM_RELEASE_NAME="${helm_release_name}"
+  kubectl label namespace "${INSTALL_NAMESPACE}" trilio-label="${INSTALL_NAMESPACE}" job-name="${job_name}" job-type=${JOB_TYPE}
 }
 
 helm_install() {
-
-  install_namespace=${INSTALL_NAMESPACE}
-
-  echo "Installing TVK application in namespace - ${install_namespace}"
+  echo "Installing TVK application in namespace - ${INSTALL_NAMESPACE}"
 
   common_args="applicationScope=Namespaced"
   resources_args="web-backend.resources.limits.memory=1024Mi,web-backend.livenessProbeEnable=false,web-backend.resources.requests.memory=10Mi,control-plane.resources.limits.memory=1024Mi"
@@ -69,13 +65,13 @@ helm_install() {
   DEV_REPO="http://charts.k8strilio.net/trilio-dev/k8s-triliovault"
   helm repo add k8s-triliovault-dev "${DEV_REPO}"
 
-  helm install --debug "${HELM_RELEASE_NAME}" --namespace "${install_namespace}" --set "${ARGS}" k8s-triliovault-dev/k8s-triliovault --wait --timeout=10m
+  helm install --debug "${HELM_RELEASE_NAME}" --namespace "${INSTALL_NAMESPACE}" --set "${ARGS}" k8s-triliovault-dev/k8s-triliovault --wait --timeout=10m
 
   if [[ -n "${UPDATE_INGRESS}" ]]; then
-    selector=$(kubectl get svc k8s-triliovault-ingress-gateway -n "${install_namespace}" -o wide | awk '{print $NF}' | tail -n +2)
-    node=$(kubectl get pods -o wide -l "$selector" -n "${install_namespace}" | awk '{print $7}' | tail -n +2)
+    selector=$(kubectl get svc k8s-triliovault-ingress-gateway -n "${INSTALL_NAMESPACE}" -o wide | awk '{print $NF}' | tail -n +2)
+    node=$(kubectl get pods -o wide -l "$selector" -n "${INSTALL_NAMESPACE}" | awk '{print $7}' | tail -n +2)
     instance_info=$(gcloud compute instances describe "$node" --zone "${GKE_ZONE}" --format=json | jq '.| "\(.tags.items[0]) \(.networkInterfaces[].network)"')
-    IFS=" " read -r -a node_port <<<"$(kubectl get svc k8s-triliovault-ingress-gateway -n "${install_namespace}" --template='{{range .spec.ports}}{{print "\n" .nodePort}}{{end}}' | tr '\n' ' ')"
+    IFS=" " read -r -a node_port <<<"$(kubectl get svc k8s-triliovault-ingress-gateway -n "${INSTALL_NAMESPACE}" --template='{{range .spec.ports}}{{print "\n" .nodePort}}{{end}}' | tr '\n' ' ')"
     node_external_ip=$(kubectl get no "$node" -o=jsonpath='{.status.addresses[?(@.type=="ExternalIP")].address}')
     port=""
     for ((c = 0; c < ${#node_port}; c++)); do
@@ -83,7 +79,7 @@ helm_install() {
         port+="tcp:${node_port[$c]},"
       fi
     done
-    gcloud compute firewall-rules create "${JOB_TYPE}"-"${install_namespace}" --allow="$port" --source-ranges="0.0.0.0/0" --target-tags="$(echo "${instance_info}" | awk '{print $1}' | sed 's/"//g')" --network="$(echo "${instance_info}" | awk '{print $2}' | sed 's/"//g' | awk -F'/' '{print $NF}')"
+    gcloud compute firewall-rules create "${JOB_TYPE}"-"${INSTALL_NAMESPACE}" --allow="$port" --source-ranges="0.0.0.0/0" --target-tags="$(echo "${instance_info}" | awk '{print $1}' | sed 's/"//g')" --network="$(echo "${instance_info}" | awk '{print $2}' | sed 's/"//g' | awk -F'/' '{print $NF}')"
     if [[ -n "${node_external_ip}" ]]; then
       sudo -- bash -c "echo \"${node_external_ip} ${INGRESS_HOST}\" >>/etc/hosts"
     else
@@ -110,11 +106,15 @@ else
 fi
 
 # change permission of kubeconfig file to suppress it's warning
-sudo chmod 600 "${KUBECONFIG}"
+sudo chmod 600 "${KUBECONFIG}" || true
 
+# creates ns to run test suite
 prepare_namespaces
+
+# install TVK helm chart for target-browser test job
 if [[ "${job_name}" == "target-browser" ]]; then
   helm_install
 fi
 
+# run test suite
 run_tests "${COMPONENTS[@]}"
