@@ -226,7 +226,7 @@ var _ = Describe("Target Browser Tests", func() {
 				command := exec.Command(targetBrowserBinaryFilePath, args...)
 				output, err := command.CombinedOutput()
 				Expect(err).Should(HaveOccurred())
-				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("either tvkHost or targetBrowserPath could not"+
+				Expect(string(output)).Should(ContainSubstring(fmt.Sprintf("targetBrowserPath could not"+
 					" retrieved for target %s namespace %s", TargetName, installNs)))
 			})
 

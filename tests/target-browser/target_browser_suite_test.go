@@ -55,7 +55,7 @@ var (
 	targetYaml                  = "target.yaml"
 	tlsKeyFile                  = "tls.key"
 	tlsCertFile                 = "tls.crt"
-	masterIngName               = "k8s-triliovault-master"
+	tvkIngName                  = "k8s-triliovault"
 	tlsSecretName               = "ssl-certs"
 	nfsIPAddr                   string
 	nfsServerPath               string
@@ -66,6 +66,8 @@ var (
 	targetBrowserBinaryFilePath = filepath.Join(targetBrowserBinaryDir, TargetBrowserBinaryName)
 	targetYamlPath              = filepath.Join(testDataDirRelPath, targetYaml)
 )
+
+const sampleTVKHost = "k8s-tvk.com"
 
 func TestTargetBrowser(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -108,6 +110,8 @@ var _ = BeforeSuite(func() {
 			NFSServerBasePath: nfsServerPath,
 		}, filepath.Join(testDataDirRelPath, targetYaml))).To(BeNil())
 
+	// Update tvk host
+	updateTvkHostIngress()
 }, 60)
 
 var _ = AfterSuite(func() {
@@ -300,7 +304,7 @@ func switchTvkHostFromHTTPToHTTPS() {
 	createTLSSecret(tlsSecretName)
 
 	//patch ingress with tls config
-	ing := GetIngress(ctx, k8sClient, masterIngName, installNs)
+	ing := GetIngress(ctx, k8sClient, tvkIngName, installNs)
 
 	tlsConfig := v1beta1.IngressTLS{SecretName: tlsSecretName, Hosts: []string{ing.Spec.Rules[0].Host}}
 	ing.Spec.TLS = append(ing.Spec.TLS, tlsConfig)
@@ -315,7 +319,7 @@ func switchTvkHostFromHTTPSToHTTP() {
 	Expect(k8sClient.Delete(ctx, secret)).To(BeNil())
 
 	//patch ingress and remove tls config
-	ing := GetIngress(ctx, k8sClient, masterIngName, installNs)
+	ing := GetIngress(ctx, k8sClient, tvkIngName, installNs)
 	ing.Spec.TLS = []v1beta1.IngressTLS{}
 	UpdateIngress(ctx, k8sClient, ing)
 	log.Info("Successfully switched TVK host from HTTPS to HTTP")
@@ -359,6 +363,12 @@ func getTargetBrowserIngress() *v1beta1.Ingress {
 	}
 
 	return nil
+}
+
+func updateTvkHostIngress() {
+	ing := GetIngress(ctx, k8sClient, tvkIngName, installNs)
+	ing.Spec.Rules[0].Host = fmt.Sprintf("%s.%s", installNs, sampleTVKHost)
+	UpdateIngress(ctx, k8sClient, ing)
 }
 
 func verifyBrowserCacheBPlan(noOfBackupPlan int) {

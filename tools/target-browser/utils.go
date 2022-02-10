@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -91,8 +92,8 @@ func getTvkHostAndTargetBrowserAPIPath(ctx context.Context, cl client.Client, ta
 					targetBrowserPath = resource.Spec.Rules[0].HTTP.Paths[0].Path
 				}
 
-				if tvkHost == "" || targetBrowserPath == "" {
-					log.Warnf("either tvkHost or targetBrowserPath could not retrieved from"+
+				if targetBrowserPath == "" {
+					log.Warnf("targetBrowserPath could not retrieved from"+
 						" target browser's ingress %s namespace %s", ing.GetName(), ing.GetNamespace())
 					continue
 				}
@@ -107,13 +108,13 @@ func getTrilioResourcesAPIPath(uid string) string {
 	return path.Join(internal.BackupAPIPath, uid, internal.TrilioResourcesAPIPath)
 }
 
-func getNodePortAndServiceType(ctx context.Context, cl client.Client,
-	target *unstructured.Unstructured) (nodePortHTTP, nodePortHTTPS, svcType string, err error) {
+func getNodePortAndServiceTypeAndTvkHostIP(ctx context.Context, cl client.Client,
+	target *unstructured.Unstructured) (nodePortHTTP, nodePortHTTPS, svcType, tvkHostIP string, err error) {
 	ingressService := &corev1.Service{}
 	err = cl.Get(ctx, types.NamespacedName{Name: internal.IngressServiceLabel, Namespace: target.GetNamespace()}, ingressService)
 	if err != nil {
 		log.Error(err, "error while getting ingress service")
-		return "", "", "", err
+		return "", "", "", "", err
 	}
 	svcType = string(ingressService.Spec.Type)
 	for index := range ingressService.Spec.Ports {
@@ -124,5 +125,50 @@ func getNodePortAndServiceType(ctx context.Context, cl client.Client,
 			nodePortHTTPS = strconv.Itoa(int(port.NodePort))
 		}
 	}
+
+	if svcType == internal.ServiceTypeLoadBalancer && ingressService.Status.LoadBalancer.Ingress != nil {
+		tvkHostIP = ingressService.Status.LoadBalancer.Ingress[0].IP
+	} else {
+		tvkHostIP, err = getNodePortIPAddress(ctx, cl, ingressService.Spec.Selector, target.GetNamespace())
+		if err != nil {
+			return "", "", "", "", err
+		}
+	}
 	return
+}
+
+func getNodePortIPAddress(ctx context.Context, cl client.Client, selector map[string]string, installNs string) (string, error) {
+	selectors, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+		MatchLabels: selector,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	podList := corev1.PodList{}
+	err = cl.List(ctx, &podList, client.MatchingLabelsSelector{Selector: selectors}, client.InNamespace(installNs))
+	if err != nil {
+		return "", err
+	}
+
+	var nodeName string
+	if podList.Items != nil {
+		nodeName = podList.Items[0].Spec.NodeName
+	} else {
+		return "", fmt.Errorf("pod not found")
+	}
+
+	node := corev1.Node{}
+	err = cl.Get(ctx, types.NamespacedName{Name: nodeName}, &node)
+	if err != nil {
+		return "", err
+	}
+
+	nodeAddress := node.Status.Addresses
+	for i := range nodeAddress {
+		if nodeAddress[i].Type == internal.ExternalIP {
+			return nodeAddress[i].Address, nil
+		}
+	}
+	return "", fmt.Errorf("nodePort external ip address not found")
 }

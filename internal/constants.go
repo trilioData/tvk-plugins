@@ -50,7 +50,9 @@ const (
 	LogLevelFlagShorthand = "l"
 	LogLevelUsage         = "Set the logging level for the for preflight or cleanup in the level of" +
 		" PANIC, FATAL, ERROR, WARN, INFO, DEBUG TRACE"
-	DefaultLogLevel = "INFO"
+	DefaultLogLevel         = "INFO"
+	ServiceTypeLoadBalancer = "LoadBalancer"
+	ExternalIP              = "ExternalIP"
 )
 
 var (

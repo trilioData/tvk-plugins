@@ -47,14 +47,17 @@ func (targetBrowserConfig *Config) Authenticate(ctx context.Context) (*AuthInfo,
 	if err != nil {
 		return nil, err
 	}
-	if tvkHost == "" || targetBrowserPath == "" {
-		return nil, fmt.Errorf("either tvkHost or targetBrowserPath could not retrieved for"+
+	if targetBrowserPath == "" {
+		return nil, fmt.Errorf("targetBrowserPath could not retrieved for"+
 			" target %s namespace %s", targetBrowserConfig.TargetName, targetBrowserConfig.TargetNamespace)
 	}
 
-	nodePortHTTP, nodePortHTTPS, svcType, err := getNodePortAndServiceType(ctx, cl, target)
+	nodePortHTTP, nodePortHTTPS, svcType, tvkHostIP, err := getNodePortAndServiceTypeAndTvkHostIP(ctx, cl, target)
 	if err != nil {
 		return nil, err
+	}
+	if tvkHost == "" {
+		tvkHost = tvkHostIP
 	}
 	tvkURL, err := url.Parse(tvkHost)
 	if err != nil {
