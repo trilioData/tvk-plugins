@@ -35,6 +35,7 @@ const (
 	ClusterBackupPlanKind     = "ClusterBackupPlan"
 	IngressKind               = "Ingress"
 	IngressServiceLabel       = "k8s-triliovault-ingress-nginx-controller"
+	OldIngressServiceLabel    = "k8s-triliovault-ingress-gateway"
 	ServiceTypeNodePort       = "NodePort"
 	VolumeSnapshotKind        = "VolumeSnapshot"
 	VolumeSnapshotClassKind   = "VolumeSnapshotClass"
