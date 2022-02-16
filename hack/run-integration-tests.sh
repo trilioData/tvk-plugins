@@ -65,7 +65,7 @@ helm_install() {
   DEV_REPO="http://charts.k8strilio.net/trilio-dev/k8s-triliovault"
   helm repo add k8s-triliovault-dev "${DEV_REPO}"
 
-  helm install --debug "${HELM_RELEASE_NAME}" --namespace "${INSTALL_NAMESPACE}" --set "${ARGS}" k8s-triliovault-dev/k8s-triliovault --wait --timeout=10m
+  helm install --debug "${HELM_RELEASE_NAME}" --namespace "${INSTALL_NAMESPACE}" --set "${ARGS}" --set tag=master k8s-triliovault-dev/k8s-triliovault --wait --timeout=10m
 
   if [[ -n "${UPDATE_INGRESS}" ]]; then
     selector=$(kubectl get svc k8s-triliovault-ingress-nginx-controller -n "${INSTALL_NAMESPACE}" -o wide | awk '{print $NF}' | tail -n +2)

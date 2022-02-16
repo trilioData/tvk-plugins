@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -305,14 +306,14 @@ var _ = Describe("Target Browser Tests", func() {
 					tvkUID = guid.New().String()
 					createBackups(noOfBackupPlansToCreate, noOfBackupsToCreatePerBackupPlan, backupUID, "mutate-tvk-id", tvkUID)
 					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
-					verifyBrowserCacheBPlan(noOfBackupPlansToCreate)
+					Expect(verifyBrowserCacheBPlan(noOfBackupPlansToCreate)).Should(BeTrue())
 				})
 			})
 
 			AfterEach(func() {
 				if isLast {
 					deleteTarget(false)
-					removeBackupPlanDir(backupPlanUIDs)
+					removeBackupPlanDir()
 				}
 			})
 			It(fmt.Sprintf("Should fail cmd BackupPlan if flag %s is given without value", cmd.OutputFormatFlag), func() {
@@ -502,7 +503,6 @@ var _ = Describe("Target Browser Tests", func() {
 		Context(fmt.Sprintf("test-cases for sorting on columns %s, %s, %s, %s",
 			backupPlanType, name, successfulBackups, backupTimestamp), func() {
 			var (
-				backupPlanUIDs                   []string
 				noOfBackupPlansToCreate          = 4
 				noOfBackupsToCreatePerBackupPlan = 1
 				once                             sync.Once
@@ -514,15 +514,15 @@ var _ = Describe("Target Browser Tests", func() {
 					backupUID = guid.New().String()
 					createTarget(true)
 					createBackups(noOfBackupPlansToCreate, noOfBackupsToCreatePerBackupPlan, backupUID, "backup")
-					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
-					verifyBrowserCacheBPlan(noOfBackupPlansToCreate)
+					_ = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
+					Expect(verifyBrowserCacheBPlan(noOfBackupPlansToCreate)).Should(BeTrue())
 				})
 			})
 
 			AfterEach(func() {
 				if isLast {
 					deleteTarget(false)
-					removeBackupPlanDir(backupPlanUIDs)
+					removeBackupPlanDir()
 				}
 			})
 
@@ -620,14 +620,14 @@ var _ = Describe("Target Browser Tests", func() {
 					createTarget(true)
 					createBackups(noOfBackupPlansToCreate, noOfBackupsToCreatePerBackupPlan, backupUID, "backup")
 					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
-					verifyBrowserCacheBPlan(noOfBackupPlansToCreate)
+					Expect(verifyBrowserCacheBPlan(noOfBackupPlansToCreate)).Should(BeTrue())
 				})
 			})
 
 			AfterEach(func() {
 				if isLast {
 					deleteTarget(false)
-					removeBackupPlanDir(backupPlanUIDs)
+					removeBackupPlanDir()
 				}
 			})
 
@@ -884,7 +884,7 @@ var _ = Describe("Target Browser Tests", func() {
 					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate+noOfClusterBackupPlansToCreate,
 						noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan+
 							noOfClusterBackupsToCreatePerClusterBackupPlan*noOfClusterBackupPlansToCreate)
-					verifyBrowserCacheBPlan(noOfBackupPlansToCreate + noOfClusterBackupPlansToCreate)
+					Expect(verifyBrowserCacheBPlan(noOfBackupPlansToCreate + noOfClusterBackupPlansToCreate)).Should(BeTrue())
 					clusterBackupPlanUIDSet = sets.NewString(clusterBackupPlanUIDs...)
 					backupPlanUIDSet = sets.NewString(backupPlanUIDs...).Difference(clusterBackupPlanUIDSet)
 				})
@@ -949,10 +949,10 @@ var _ = Describe("Target Browser Tests", func() {
 
 		Context("Filtering BackupPlans based on TVK Instance ID", func() {
 			var (
-				backupUID                           string
-				tvkInstanceIDValues, backupPlanUIDs []string
-				once                                sync.Once
-				isLast                              bool
+				backupUID           string
+				tvkInstanceIDValues []string
+				once                sync.Once
+				isLast              bool
 			)
 			BeforeEach(func() {
 				once.Do(func() {
@@ -967,14 +967,14 @@ var _ = Describe("Target Browser Tests", func() {
 					for _, tvkUID := range tvkInstanceIDValues {
 						createBackups(1, 1, backupUID, "mutate-tvk-id", tvkUID)
 					}
-					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(2, 2)
-					verifyBrowserCacheBPlan(2)
+					_ = verifyBackupPlansAndBackupsOnNFS(2, 2)
+					Expect(verifyBrowserCacheBPlan(2)).Should(BeTrue())
 				})
 			})
 			AfterEach(func() {
 				if isLast {
 					deleteTarget(false)
-					removeBackupPlanDir(backupPlanUIDs)
+					removeBackupPlanDir()
 				}
 			})
 
@@ -1034,14 +1034,14 @@ var _ = Describe("Target Browser Tests", func() {
 					createTarget(true)
 					createBackups(noOfBackupPlansToCreate, noOfBackupsToCreatePerBackupPlan, backupUID, "backup")
 					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
-					verifyBrowserCacheBPlan(noOfBackupPlansToCreate)
+					Expect(verifyBrowserCacheBPlan(noOfBackupPlansToCreate)).Should(BeTrue())
 				})
 			})
 
 			AfterEach(func() {
 				if isLast {
 					deleteTarget(false)
-					removeBackupPlanDir(backupPlanUIDs)
+					removeBackupPlanDir()
 				}
 			})
 			for _, bkpStatus := range backupStatus {
@@ -1110,14 +1110,14 @@ var _ = Describe("Target Browser Tests", func() {
 					createTarget(true)
 					createBackups(noOfBackupPlansToCreate, noOfBackupsToCreatePerBackupPlan, backupUID, "backup")
 					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
-					verifyBrowserCacheBPlan(noOfBackupPlansToCreate)
+					Expect(verifyBrowserCacheBPlan(noOfBackupPlansToCreate)).Should(BeTrue())
 				})
 			})
 
 			AfterEach(func() {
 				if isLast {
 					deleteTarget(false)
-					removeBackupPlanDir(backupPlanUIDs)
+					removeBackupPlanDir()
 				}
 			})
 
@@ -1494,10 +1494,10 @@ var _ = Describe("Target Browser Tests", func() {
 
 		Context("Filtering Backups based on TVK Instance ID", func() {
 			var (
-				backupUID                           string
-				tvkInstanceIDValues, backupPlanUIDs []string
-				once                                sync.Once
-				isLast                              bool
+				backupUID           string
+				tvkInstanceIDValues []string
+				once                sync.Once
+				isLast              bool
 			)
 			BeforeEach(func() {
 				once.Do(func() {
@@ -1513,15 +1513,15 @@ var _ = Describe("Target Browser Tests", func() {
 					for _, tvkUID := range tvkInstanceIDValues {
 						createBackups(1, 1, backupUID, "mutate-tvk-id", tvkUID)
 					}
-					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(2, 2)
-					verifyBrowserCacheBPlan(2)
+					_ = verifyBackupPlansAndBackupsOnNFS(2, 2)
+					Expect(verifyBrowserCacheBPlan(2)).Should(BeTrue())
 
 				})
 			})
 			AfterEach(func() {
 				if isLast {
 					deleteTarget(false)
-					removeBackupPlanDir(backupPlanUIDs)
+					removeBackupPlanDir()
 				}
 			})
 
@@ -1586,7 +1586,7 @@ var _ = Describe("Target Browser Tests", func() {
 						noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan+
 							noOfClusterBackupsToCreatePerClusterBackupPlan*noOfClusterBackupPlansToCreate)
 					//wait to sync data on target browser
-					verifyBrowserCacheBPlan(noOfBackupPlansToCreate + noOfClusterBackupPlansToCreate)
+					Expect(verifyBrowserCacheBPlan(noOfBackupPlansToCreate + noOfClusterBackupPlansToCreate)).Should(BeTrue())
 				})
 			})
 
@@ -1694,7 +1694,7 @@ var _ = Describe("Target Browser Tests", func() {
 					createTarget(true)
 					createBackups(noOfBackupPlansToCreate, noOfBackupsToCreatePerBackupPlan, backupUID, "all_type_backup")
 					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
-					verifyBrowserCacheBPlan(noOfBackupPlansToCreate)
+					Expect(verifyBrowserCacheBPlan(noOfBackupPlansToCreate)).Should(BeTrue())
 				})
 			})
 
@@ -1702,7 +1702,7 @@ var _ = Describe("Target Browser Tests", func() {
 				if isLast {
 					// delete target & remove all files & directories created for this Context - only once After all It in this context
 					deleteTarget(false)
-					removeBackupPlanDir(backupPlanUIDs)
+					removeBackupPlanDir()
 				}
 			})
 
@@ -1799,7 +1799,7 @@ var _ = Describe("Target Browser Tests", func() {
 					createTarget(true)
 					createBackups(noOfBackupPlansToCreate, noOfBackupsToCreatePerBackupPlan, backupUID, "backup", "helm")
 					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
-					verifyBrowserCacheBPlan(noOfBackupPlansToCreate)
+					Expect(verifyBrowserCacheBPlan(noOfBackupPlansToCreate)).Should(BeTrue())
 				})
 			})
 
@@ -1807,7 +1807,7 @@ var _ = Describe("Target Browser Tests", func() {
 				if isLast {
 					// delete target & remove all files & directories created for this Context - only once After all It in this context
 					deleteTarget(false)
-					removeBackupPlanDir(backupPlanUIDs)
+					removeBackupPlanDir()
 				}
 			})
 			It(fmt.Sprintf("Should fail cmd metadata if flag %s is given without value", cmd.OutputFormatFlag), func() {
@@ -1879,7 +1879,7 @@ var _ = Describe("Target Browser Tests", func() {
 					createTarget(true)
 					createBackups(noOfBackupPlansToCreate, noOfBackupsToCreatePerBackupPlan, backupUID, "backup", "custom")
 					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
-					verifyBrowserCacheBPlan(noOfBackupPlansToCreate)
+					Expect(verifyBrowserCacheBPlan(noOfBackupPlansToCreate)).Should(BeTrue())
 				})
 			})
 
@@ -1887,7 +1887,7 @@ var _ = Describe("Target Browser Tests", func() {
 				if isLast {
 					// delete target & remove all files & directories created for this Context - only once After all It in this context
 					deleteTarget(false)
-					removeBackupPlanDir(backupPlanUIDs)
+					removeBackupPlanDir()
 				}
 			})
 
@@ -2037,7 +2037,7 @@ var _ = Describe("Target Browser Tests", func() {
 
 					log.Info("Shell Script Output: ", string(output))
 					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
-					verifyBrowserCacheBPlan(noOfBackupPlansToCreate)
+					Expect(verifyBrowserCacheBPlan(noOfBackupPlansToCreate)).Should(BeTrue())
 				})
 			})
 
@@ -2045,7 +2045,7 @@ var _ = Describe("Target Browser Tests", func() {
 				if isLast {
 					// delete target & remove all files & directories created for this Context - only once After all It in this context
 					deleteTarget(false)
-					removeBackupPlanDir(backupPlanUIDs)
+					removeBackupPlanDir()
 				}
 			})
 
@@ -2113,7 +2113,7 @@ var _ = Describe("Target Browser Tests", func() {
 					createTarget(true)
 					createBackups(noOfBackupPlansToCreate, noOfBackupsToCreatePerBackupPlan, backupUID, "backup", "custom")
 					backupPlanUIDs = verifyBackupPlansAndBackupsOnNFS(noOfBackupPlansToCreate, noOfBackupPlansToCreate*noOfBackupsToCreatePerBackupPlan)
-					verifyBrowserCacheBPlan(noOfBackupPlansToCreate)
+					Expect(verifyBrowserCacheBPlan(noOfBackupPlansToCreate)).Should(BeTrue())
 				})
 			})
 
@@ -2121,7 +2121,7 @@ var _ = Describe("Target Browser Tests", func() {
 				if isLast {
 					// delete target & remove all files & directories created for this Context - only once After all It in this context
 					deleteTarget(false)
-					removeBackupPlanDir(backupPlanUIDs)
+					removeBackupPlanDir()
 				}
 			})
 
@@ -2144,7 +2144,7 @@ var _ = Describe("Target Browser Tests", func() {
 				log.Info(command)
 				output, err := command.CombinedOutput()
 				Expect(err).ShouldNot(HaveOccurred())
-				log.Infof("Trilio Resources are %s", output)
+				log.Debugf("Trilio Resources are %s", output)
 				validateMetadata(output, "trilio-resources-backup-backupplan.json")
 			})
 
@@ -2174,10 +2174,12 @@ func validateBackupPlanKind(backupPlanData []targetbrowser.BackupPlan, backupPla
 	}
 }
 
-func removeBackupPlanDir(backupPlanUIDs []string) {
-	for _, backupPlans := range backupPlanUIDs {
-		_, err := shell.RmRf(filepath.Join(TargetLocation, backupPlans))
-		Expect(err).To(BeNil())
+func removeBackupPlanDir() {
+	dir, err := ioutil.ReadDir(TargetLocation)
+	Expect(err).Should(BeNil())
+	for _, d := range dir {
+		err = os.RemoveAll(path.Join([]string{TargetLocation, d.Name()}...))
+		Expect(err).Should(BeNil())
 	}
 }
 

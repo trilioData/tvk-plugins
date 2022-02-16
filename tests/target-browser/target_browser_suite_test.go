@@ -367,16 +367,20 @@ func getTargetBrowserIngress() *v1beta1.Ingress {
 
 func updateTvkHostIngress() {
 	ing := GetIngress(ctx, k8sClient, tvkIngName, installNs)
+	Expect(len(ing.Spec.Rules)).Should(BeNumerically(">", 0))
 	ing.Spec.Rules[0].Host = fmt.Sprintf("%s.%s", installNs, sampleTVKHost)
 	UpdateIngress(ctx, k8sClient, ing)
 }
 
-func verifyBrowserCacheBPlan(noOfBackupPlan int) {
+func verifyBrowserCacheBPlan(noOfBackupPlan int) bool {
 	args := []string{cmdGet, cmdBackupPlan, flagOutputFormat, internal.FormatJSON}
+	var backupPlanData []targetbrowser.BackupPlan
 	Eventually(func() bool {
-		backupPlanData := runCmdBackupPlan(args)
+		backupPlanData = runCmdBackupPlan(args)
 		return len(backupPlanData) == noOfBackupPlan || len(backupPlanData) == cmd.PageSizeDefault
 	}, timeout, apiRetryTimeout).Should(BeTrue())
+
+	return len(backupPlanData) == noOfBackupPlan || len(backupPlanData) == cmd.PageSizeDefault
 }
 
 func createBackups(noOfBackupPlansToCreate, noOfBackupsToCreate int, backupUID, backupType string, extraParams ...string) {
