@@ -23,6 +23,7 @@ func (targetBrowserConfig *Config) Login(tvkHost string) (string, *http.Client, 
 	}
 
 	tvkURL.Path = path.Join(tvkURL.Path, internal.APIPath, internal.V1Version, internal.LoginPath)
+	tvkURL.RawQuery = "suppressWarnings=true"
 	kubeConfigBytes, err := ioutil.ReadFile(targetBrowserConfig.KubeConfig)
 	if err != nil {
 		return "", nil, err

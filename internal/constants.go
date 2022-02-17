@@ -34,7 +34,8 @@ const (
 	ClusterBackupKind         = "ClusterBackup"
 	ClusterBackupPlanKind     = "ClusterBackupPlan"
 	IngressKind               = "Ingress"
-	IngressServiceLabel       = "k8s-triliovault-ingress-gateway"
+	IngressServiceLabel       = "k8s-triliovault-ingress-nginx-controller"
+	OldIngressServiceLabel    = "k8s-triliovault-ingress-gateway"
 	ServiceTypeNodePort       = "NodePort"
 	VolumeSnapshotKind        = "VolumeSnapshot"
 	VolumeSnapshotClassKind   = "VolumeSnapshotClass"
@@ -50,7 +51,9 @@ const (
 	LogLevelFlagShorthand = "l"
 	LogLevelUsage         = "Set the logging level for the for preflight or cleanup in the level of" +
 		" PANIC, FATAL, ERROR, WARN, INFO, DEBUG TRACE"
-	DefaultLogLevel = "INFO"
+	DefaultLogLevel         = "INFO"
+	ServiceTypeLoadBalancer = "LoadBalancer"
+	ExternalIP              = "ExternalIP"
 )
 
 var (

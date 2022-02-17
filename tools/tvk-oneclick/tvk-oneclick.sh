@@ -4,7 +4,7 @@
 
 #This module is used to perform preflight check which checks if all the pre-requisites are satisfied before installing Triliovault for Kubernetes application in a Kubernetes cluster
 masterIngName=k8s-triliovault-master
-ingressGateway=k8s-triliovault-ingress-gateway
+ingressGateway=k8s-triliovault-ingress-nginx-controller
 
 preflight_checks() {
   ret=$(kubectl krew 2>/dev/null)

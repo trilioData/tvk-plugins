@@ -65,13 +65,13 @@ helm_install() {
   DEV_REPO="http://charts.k8strilio.net/trilio-dev/k8s-triliovault"
   helm repo add k8s-triliovault-dev "${DEV_REPO}"
 
-  helm install --debug "${HELM_RELEASE_NAME}" --namespace "${INSTALL_NAMESPACE}" --set "${ARGS}" k8s-triliovault-dev/k8s-triliovault --wait --timeout=10m
+  helm install --debug "${HELM_RELEASE_NAME}" --namespace "${INSTALL_NAMESPACE}" --set "${ARGS}" --set tag=master k8s-triliovault-dev/k8s-triliovault --wait --timeout=10m
 
   if [[ -n "${UPDATE_INGRESS}" ]]; then
-    selector=$(kubectl get svc k8s-triliovault-ingress-gateway -n "${INSTALL_NAMESPACE}" -o wide | awk '{print $NF}' | tail -n +2)
+    selector=$(kubectl get svc k8s-triliovault-ingress-nginx-controller -n "${INSTALL_NAMESPACE}" -o wide | awk '{print $NF}' | tail -n +2)
     node=$(kubectl get pods -o wide -l "$selector" -n "${INSTALL_NAMESPACE}" | awk '{print $7}' | tail -n +2)
     instance_info=$(gcloud compute instances describe "$node" --zone "${GKE_ZONE}" --format=json | jq '.| "\(.tags.items[0]) \(.networkInterfaces[].network)"')
-    IFS=" " read -r -a node_port <<<"$(kubectl get svc k8s-triliovault-ingress-gateway -n "${INSTALL_NAMESPACE}" --template='{{range .spec.ports}}{{print "\n" .nodePort}}{{end}}' | tr '\n' ' ')"
+    IFS=" " read -r -a node_port <<<"$(kubectl get svc k8s-triliovault-ingress-nginx-controller -n "${INSTALL_NAMESPACE}" --template='{{range .spec.ports}}{{print "\n" .nodePort}}{{end}}' | tr '\n' ' ')"
     node_external_ip=$(kubectl get no "$node" -o=jsonpath='{.status.addresses[?(@.type=="ExternalIP")].address}')
     port=""
     for ((c = 0; c < ${#node_port}; c++)); do
