@@ -34,7 +34,7 @@ import (
 
 const (
 	defaultTestStorageClass  = "csi-gce-pd"
-	defaultTestSnapshotClass = "default-snapshot-class"
+	defaultTestSnapshotClass = "longhorn"
 
 	dnsPodNamePrefix = "test-dns-pod-"
 	dnsContainerName = "test-dnsutils"
@@ -148,6 +148,9 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
+	cmdOut, err = runCleanupForAllPreflightResources()
+	log.Infof("Resource cleanup at the end of suitte: %s", cmdOut.Out)
+	Expect(err).To(BeNil())
 	cleanDirForFiles(preflightLogFilePrefix)
 	cleanDirForFiles(cleanupLogFilePrefix)
 })

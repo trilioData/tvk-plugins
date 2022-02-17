@@ -50,11 +50,11 @@ const (
 	KubeconfigShorthandFlag = "k"
 	KubeconfigUsage         = "Specifies the custom path for your kubeconfig"
 
-	LogLevelFlag          = "log-level"
-	LogLevelFlagShorthand = "l"
+	LogLevelFlag            = "log-level"
+	LogLevelFlagShorthand   = "l"
 	ServiceTypeLoadBalancer = "LoadBalancer"
 	ExternalIP              = "ExternalIP"
-	LogLevelUsage         = "Set the logging level of the application in the level of" +
+	LogLevelUsage           = "Set the logging level of the application in the level of" +
 		" FATAL, ERROR, WARN, INFO, DEBUG"
 	DefaultLogLevel = "INFO"
 )
