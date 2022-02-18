@@ -37,13 +37,14 @@ import (
 	"github.com/trilioData/tvk-plugins/cmd/target-browser/cmd"
 	"github.com/trilioData/tvk-plugins/internal"
 	"github.com/trilioData/tvk-plugins/internal/utils/shell"
+	testutils "github.com/trilioData/tvk-plugins/tests/test_utils"
 	targetbrowser "github.com/trilioData/tvk-plugins/tools/target-browser"
 )
 
 var (
 	k8sClient client.Client
 	ctx       = context.Background()
-	installNs = getInstallNamespace()
+	installNs = testutils.GetInstallNamespace()
 
 	controlPlaneDeploymentKey = types.NamespacedName{
 		Name:      internal.TVKControlPlaneDeployment,

@@ -99,15 +99,51 @@ spec:
     for Kubernetes(TVK) application in a Kubernetes cluster.
 
     > Check available flags for preflight plugin with :-
-    kubectl preflight --help
+    kubectl tvk-preflight --help
 
-    --storageclass - Name of storage class being used in k8s cluster (Needed)
-    --snapshotclass - Name of volume snapshot class being used in k8s cluster (Needed)
-    --kubeconfig - Kubeconfig path, if not given default is used by kubectl (Optional)
-    --local-registry name of the local registry to get images from (for dark site installation) (Optional)
-    --service-account name of the service account (Optional)
-    --image-pull-secret name of the secret configured for authentication (Optional)
+    tvk-preflight contains two subcommands:
+    1. run: performs checks on system where this plugin is installed and few checks are performed on the K8s cluster where current-context of kubeconfig is pointing to. Check available flags and options for run subcommand with:-
+    kubectl tvk-preflight run --help
+    2. cleanup: cleans/deletes the resources created during failed preflight checks and not cleaned-up on failure. Check available flags and options for cleanup subcommand with:-
+    kubectl tvk-preflight cleanup --help
 
     > Usage :-
+    1. Perform preflight checks
+    # run preflight checks
+    kubectl tvk-preflight run --storage-class <storage-class-name>
 
-    kubectl tvk-preflight --storageclass my-hostpath-sc --snapshotclass default-snapclass --kubeconfig /home/usr/kubeconfig
+    # run preflight checks with a particular volume snapshot class
+    kubectl tvk-preflight run --storage-class <storage-class-name> --volume-snapshot-class <snapshot-class-name>
+
+    # run preflight checks in a particular namespace
+    kubectl tvk-preflight run --storage-class <storage-class-name> --namespace <namespace>
+
+    # run preflight checks with a particular log level
+    kubectl tvk-preflight run --storage-class <storage-class-name> --log-level <log-level>
+
+    # cleanup the resources generated during preflight check if preflight check fails. Default is false.
+    # If the preflight check is successful, then all resources are cleaned.
+    kubectl tvk-preflight run --storage-class <storage-class-name> --cleanup-on-failure
+
+    # run preflight with a particular kubeconfig file
+    kubectl tvk-preflight run --storage-class <storage-class-name> --kubeconfig <kubeconfig-file-path>
+
+    # run preflight with local registry and image pull secret
+    To use image-pull-secret, local-registry flag must be specified. vice-versa is not true
+    kubectl tvk-preflight run --storage-class <storage-class-name> --local-registry <local registry path> --image-pull-secret <image pull secret>
+
+    # run preflight with a particular serviceaccount
+    kubectl tvk-preflight run --storage-class <storage-class-name> --service-account-name <service account name>
+
+    2. Perform cleanup of preflight resources
+    # clean preflight resources with a particular uid
+    kubectl tvk-preflight cleanup --uid <preflight run uid> --namespace <namespace>
+
+    # clean all preflight resources created till date
+    kubectl tvk-preflight cleanup --namespace <namespace>
+
+    # clean preflight resource with a specified logging level
+    kubectl tvk-preflight cleanup --uid <preflight run uid> --log-level <log-level>
+
+    # cleanup preflight resources with a particular kubeconfig file
+    kubectl tvk-preflight cleanup --uid <preflight run uid> --namespace <namespace> --kubeconfig <kubeconfig-file-path>

@@ -20,6 +20,9 @@ var runCmd = &cobra.Command{
 	Example: ` # run preflight checks
   kubectl tvk-preflight run --storage-class <storage-class-name>
 
+  # run preflight checks with a particular volume snapshot class
+  kubectl tvk-preflight run --storage-class <storage-class-name> --volume-snapshot-class <snapshot-class-name>
+
   # run preflight checks in a particular namespace
   kubectl tvk-preflight run --storage-class <storage-class-name> --namespace <namespace>
 
@@ -48,6 +51,7 @@ var runCmd = &cobra.Command{
 		}
 		defer logFile.Close()
 		logger.SetOutput(io.MultiWriter(colorable.NewColorableStdout(), logFile))
+		logRootCmdFlagsInfo()
 		if storageClass == "" {
 			logger.Fatalf("storage-class is required, cannot be empty")
 		}
@@ -75,7 +79,11 @@ var runCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return preflight.InitKubeEnv(kubeconfig)
+		err = preflight.InitKubeEnv(kubeconfig)
+		if err != nil {
+			return err
+		}
+		return nil
 	},
 }
 

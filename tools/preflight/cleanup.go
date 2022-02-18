@@ -27,10 +27,10 @@ func (o *CleanupOptions) CleanupPreflightResources(ctx context.Context, uid stri
 		return err
 	}
 	resLabels := map[string]string{
-		labelTrilioKey: labelTvkPreflightValue,
+		LabelTrilioKey: LabelTvkPreflightValue,
 	}
 	if uid != "" {
-		resLabels[labelPreflightRunKey] = uid
+		resLabels[LabelPreflightRunKey] = uid
 	}
 	for _, gvk := range gvkList {
 		var resList = unstructured.UnstructuredList{}
@@ -80,13 +80,13 @@ func getCleanupResourceGVKList() ([]schema.GroupVersionKind, error) {
 		Kind:    internal.PersistentVolumeClaimKind,
 	})
 
-	snapVerList, err := getVersionsOfGroup(storageSnapshotGroup)
+	snapVerList, err := getVersionsOfGroup(StorageSnapshotGroup)
 	if err != nil {
 		return nil, err
 	}
 	for _, ver := range snapVerList {
 		cleanupResourceList = append(cleanupResourceList, schema.GroupVersionKind{
-			Group:   storageSnapshotGroup,
+			Group:   StorageSnapshotGroup,
 			Version: ver,
 			Kind:    internal.VolumeSnapshotKind,
 		})

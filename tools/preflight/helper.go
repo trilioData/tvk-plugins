@@ -23,6 +23,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/trilioData/tvk-plugins/internal"
+	"github.com/trilioData/tvk-plugins/internal/utils/shell"
 	"github.com/trilioData/tvk-plugins/tools/preflight/exec"
 	"github.com/trilioData/tvk-plugins/tools/preflight/wait"
 )
@@ -40,40 +41,39 @@ const (
 
 	letterBytes = "abcdefghijklmnopqrstuvwxyz"
 
-	labelK8sPartOf                  = "app.kubernetes.io/part-of"
-	labelK8sPartOfValue             = "k8s-triliovault"
-	labelTrilioKey                  = "trilio"
-	labelTvkPreflightValue          = "tvk-preflight"
-	labelPreflightRunKey            = "preflight-run"
-	labelK8sName                    = "app.kubernetes.io/name"
-	labelK8sNameValue               = "k8s-triliovault"
-	sourcePod                       = "source-pod-"
-	sourcePvc                string = "source-pvc-"
-	volumeSnapSrc                   = "snapshot-source-pvc-"
+	LabelK8sPartOf                  = "app.kubernetes.io/part-of"
+	LabelK8sPartOfValue             = "k8s-triliovault"
+	LabelTrilioKey                  = "trilio"
+	LabelTvkPreflightValue          = "tvk-preflight"
+	LabelPreflightRunKey            = "preflight-run"
+	LabelK8sName                    = "app.kubernetes.io/name"
+	LabelK8sNameValue               = "k8s-triliovault"
+	SourcePodNamePrefix             = "source-pod-"
+	SourcePvcNamePrefix      string = "source-pvc-"
+	VolumeSnapSrcNamePrefix         = "snapshot-source-pvc-"
 	customResourceDefinition        = "CustomResourceDefinition"
 
-	apiExtenstionsGroup    = "apiextensions.k8s.io"
-	storageSnapshotGroup   = "snapshot.storage.k8s.io"
-	restorePvc             = "restored-pvc-"
-	restorePod             = "restored-pod-"
-	busyboxContainerName   = "busybox"
-	busyboxImageName       = "busybox"
-	unmountedRestorePod    = "unmounted-restored-pod-"
-	unmountedRestorePvc    = "unmounted-restored-pvc-"
-	unmountedVolumeSnapSrc = "unmounted-source-pvc-"
+	apiExtenstionsGroup              = "apiextensions.k8s.io"
+	StorageSnapshotGroup             = "snapshot.storage.k8s.io"
+	RestorePvcNamePrefix             = "restored-pvc-"
+	RestorePodNamePrefix             = "restored-pod-"
+	BusyboxContainerName             = "busybox"
+	BusyboxImageName                 = "busybox"
+	UnmountedRestorePodNamePrefix    = "unmounted-restored-pod-"
+	UnmountedRestorePvcNamePrefix    = "unmounted-restored-pvc-"
+	UnmountedVolumeSnapSrcNamePrefix = "unmounted-source-pvc-"
 
 	dnsUtils         = "dnsutils-"
 	dnsContainerName = "dnsutils"
-	gcrRegistryPath  = "gcr.io/kubernetes-e2e-test-images"
-	dnsUtilsImage    = "dnsutils:1.3"
-	ocpAPIVersion    = "security.openshift.io/v1"
+	GcrRegistryPath  = "gcr.io/kubernetes-e2e-test-images"
+	DNSUtilsImage    = "dnsutils:1.3"
 
 	volSnapRetrySteps                  = 30
 	volSnapRetryInterval time.Duration = 2 * time.Second
 	volSnapRetryFactor                 = 1.1
 	volSnapRetryJitter                 = 0.1
-	volMountName                       = "source-data"
-	volMountPath                       = "/demo/data"
+	VolMountName                       = "source-data"
+	VolMountPath                       = "/demo/data"
 
 	execTimeoutDuration       = 3 * time.Minute
 	deletionGracePeriod int64 = 5
@@ -83,13 +83,13 @@ var (
 	check = "\xE2\x9C\x94"
 	cross = "\xE2\x9D\x8C"
 
-	csiApis = [3]string{
-		"volumesnapshotclasses." + storageSnapshotGroup,
-		"volumesnapshotcontents." + storageSnapshotGroup,
-		"volumesnapshots." + storageSnapshotGroup,
+	CsiApis = [3]string{
+		"volumesnapshotclasses." + StorageSnapshotGroup,
+		"volumesnapshotcontents." + StorageSnapshotGroup,
+		"volumesnapshots." + StorageSnapshotGroup,
 	}
 
-	resourceRequirements = corev1.ResourceRequirements{
+	ResourceRequirements = corev1.ResourceRequirements{
 		Requests: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceMemory: resource.MustParse("64Mi"),
 			corev1.ResourceCPU:    resource.MustParse("250m"),
@@ -103,18 +103,18 @@ var (
 	storageVolSnapClass    string
 	scheme                 = runtime.NewScheme()
 	resNameSuffix          string
-	commandBinSh           = []string{"bin/sh", "-c"}
-	commandSleep3600       = []string{"sleep", "3600"}
-	volSnapPodFilePath     = "/demo/data/sample-file.txt"
-	volSnapPodFileData     = "pod preflight data"
-	argsTouchDataFileSleep = []string{
-		fmt.Sprintf("echo '%s' > %s && sleep 3000", volSnapPodFileData, volSnapPodFilePath),
+	CommandBinSh           = []string{"bin/sh", "-c"}
+	CommandSleep3600       = []string{"sleep", "3600"}
+	VolSnapPodFilePath     = "/demo/data/sample-file.txt"
+	VolSnapPodFileData     = "pod preflight data"
+	ArgsTouchDataFileSleep = []string{
+		fmt.Sprintf("echo '%s' > %s && sleep 3000", VolSnapPodFileData, VolSnapPodFilePath),
 	}
 	execRestoreDataCheckCommand = []string{
 		"/bin/sh",
 		"-c",
 		fmt.Sprintf("dat=$(cat \"%s\"); echo \"${dat}\"; if [[ \"${dat}\" == \"%s\" ]]; then exit 0; else exit 1; fi",
-			volSnapPodFilePath, volSnapPodFileData),
+			VolSnapPodFilePath, VolSnapPodFileData),
 	}
 
 	clientSet     *goclient.Clientset
@@ -148,13 +148,23 @@ func InitKubeEnv(kubeconfig string) error {
 	return nil
 }
 
-func getServerPreferredVersionForGroup(grp string) (string, error) {
+func GetHelmVersion() (string, error) {
+	cmdOut, err := shell.RunCmd("helm version --template '{{.Version}}'")
+	if err != nil {
+		return "", err
+	}
+	helmVersion := cmdOut.Out[2 : len(cmdOut.Out)-1]
+
+	return helmVersion, nil
+}
+
+func GetServerPreferredVersionForGroup(grp string, cl *goclient.Clientset) (string, error) {
 	var (
 		apiResList  *metav1.APIGroupList
 		err         error
 		prefVersion string
 	)
-	apiResList, err = clientSet.ServerGroups()
+	apiResList, err = cl.ServerGroups()
 	if err != nil {
 		return "", err
 	}
@@ -200,13 +210,13 @@ func clusterHasVolumeSnapshotClass(ctx context.Context, snapshotClass, namespace
 		prefVersion string
 		err         error
 	)
-	prefVersion, err = getServerPreferredVersionForGroup(storageSnapshotGroup)
+	prefVersion, err = GetServerPreferredVersionForGroup(StorageSnapshotGroup, clientSet)
 	if err != nil {
 		return nil, err
 	}
 	u := &unstructured.Unstructured{}
 	u.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   storageSnapshotGroup,
+		Group:   StorageSnapshotGroup,
 		Version: prefVersion,
 		Kind:    internal.VolumeSnapshotClassKind,
 	})
@@ -230,16 +240,16 @@ func createDNSPodSpec(op *Options) *corev1.Pod {
 	if op.LocalRegistry != "" {
 		imagePath = op.LocalRegistry
 	} else {
-		imagePath = gcrRegistryPath
+		imagePath = GcrRegistryPath
 	}
 	pod := getPodTemplate(dnsUtils+resNameSuffix, op)
 	pod.Spec.Containers = []corev1.Container{
 		{
 			Name:            dnsContainerName,
-			Image:           strings.Join([]string{imagePath, dnsUtilsImage}, "/"),
-			Command:         commandSleep3600,
+			Image:           strings.Join([]string{imagePath, DNSUtilsImage}, "/"),
+			Command:         CommandSleep3600,
 			ImagePullPolicy: corev1.PullIfNotPresent,
-			Resources:       resourceRequirements,
+			Resources:       ResourceRequirements,
 		},
 	}
 
@@ -248,7 +258,7 @@ func createDNSPodSpec(op *Options) *corev1.Pod {
 
 func createVolumeSnapshotPVCSpec(storageClass, namespace string) *corev1.PersistentVolumeClaim {
 	pvc := &corev1.PersistentVolumeClaim{
-		ObjectMeta: getObjectMetaTemplate(sourcePvc+resNameSuffix, namespace),
+		ObjectMeta: getObjectMetaTemplate(SourcePvcNamePrefix+resNameSuffix, namespace),
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 			StorageClassName: &storageClass,
@@ -266,31 +276,29 @@ func createVolumeSnapshotPVCSpec(storageClass, namespace string) *corev1.Persist
 func createVolumeSnapshotPodSpec(pvcName string, op *Options) *corev1.Pod {
 	var containerImage string
 	if op.LocalRegistry != "" {
-		containerImage = strings.Join([]string{op.LocalRegistry, "/", busyboxImageName}, "")
+		containerImage = strings.Join([]string{op.LocalRegistry, "/", BusyboxImageName}, "")
 	} else {
-		containerImage = busyboxImageName
+		containerImage = BusyboxImageName
 	}
-	pod := getPodTemplate(sourcePod+resNameSuffix, op)
+	pod := getPodTemplate(SourcePodNamePrefix+resNameSuffix, op)
 	pod.Spec.Containers = []corev1.Container{
 		{
-			Name:      busyboxContainerName,
+			Name:      BusyboxContainerName,
 			Image:     containerImage,
-			Command:   commandBinSh,
-			Args:      argsTouchDataFileSleep,
-			Resources: resourceRequirements,
+			Command:   CommandBinSh,
+			Args:      ArgsTouchDataFileSleep,
+			Resources: ResourceRequirements,
 			VolumeMounts: []corev1.VolumeMount{
 				{
-					Name:      volMountName,
-					MountPath: volMountPath,
+					Name:      VolMountName,
+					MountPath: VolMountPath,
 				},
 			},
 			ReadinessProbe: &corev1.Probe{
 				InitialDelaySeconds: 30,
 				Handler: corev1.Handler{
 					Exec: &corev1.ExecAction{
-						Command: []string{
-							"cat", volSnapPodFilePath,
-						},
+						Command: execRestoreDataCheckCommand,
 					},
 				},
 			},
@@ -299,7 +307,7 @@ func createVolumeSnapshotPodSpec(pvcName string, op *Options) *corev1.Pod {
 
 	pod.Spec.Volumes = []corev1.Volume{
 		{
-			Name: volMountName,
+			Name: VolMountName,
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 					ClaimName: pvcName,
@@ -326,7 +334,7 @@ func createVolumeSnapsotSpec(name, namespace, snapVer, pvcName string) *unstruct
 	volSnap.SetName(name)
 	volSnap.SetNamespace(namespace)
 	volSnap.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   storageSnapshotGroup,
+		Group:   StorageSnapshotGroup,
 		Version: snapVer,
 		Kind:    internal.VolumeSnapshotKind,
 	})
@@ -354,7 +362,7 @@ func createRestorePVCSpec(pvcName, dsName, storageClass, namespace string) *core
 			DataSource: &corev1.TypedLocalObjectReference{
 				Kind:     internal.VolumeSnapshotKind,
 				Name:     dsName,
-				APIGroup: func() *string { str := storageSnapshotGroup; return &str }(),
+				APIGroup: func() *string { str := StorageSnapshotGroup; return &str }(),
 			},
 		},
 	}
@@ -366,22 +374,22 @@ func createRestorePVCSpec(pvcName, dsName, storageClass, namespace string) *core
 func createRestorePodSpec(podName, pvcName string, op *Options) *corev1.Pod {
 	var containerImage string
 	if op.LocalRegistry != "" {
-		containerImage = strings.Join([]string{op.LocalRegistry, "/", busyboxImageName}, "")
+		containerImage = strings.Join([]string{op.LocalRegistry, "/", BusyboxImageName}, "")
 	} else {
-		containerImage = busyboxImageName
+		containerImage = BusyboxImageName
 	}
 	pod := getPodTemplate(podName, op)
 	pod.Spec.Containers = []corev1.Container{
 		{
-			Name:            busyboxContainerName,
+			Name:            BusyboxContainerName,
 			Image:           containerImage,
-			Command:         commandSleep3600,
+			Command:         CommandSleep3600,
 			ImagePullPolicy: corev1.PullIfNotPresent,
-			Resources:       resourceRequirements,
+			Resources:       ResourceRequirements,
 			VolumeMounts: []corev1.VolumeMount{
 				{
-					Name:      volMountName,
-					MountPath: volMountPath,
+					Name:      VolMountName,
+					MountPath: VolMountPath,
 				},
 			},
 		},
@@ -389,7 +397,7 @@ func createRestorePodSpec(podName, pvcName string, op *Options) *corev1.Pod {
 
 	pod.Spec.Volumes = []corev1.Volume{
 		{
-			Name: volMountName,
+			Name: VolMountName,
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 					ClaimName: pvcName,
@@ -424,10 +432,10 @@ func getObjectMetaTemplate(name, namespace string) metav1.ObjectMeta {
 
 func getPreflightResourceLabels() map[string]string {
 	return map[string]string{
-		labelK8sName:         labelK8sNameValue,
-		labelTrilioKey:       labelTvkPreflightValue,
-		labelPreflightRunKey: resNameSuffix,
-		labelK8sPartOf:       labelK8sPartOfValue,
+		LabelK8sName:         LabelK8sNameValue,
+		LabelTrilioKey:       LabelTvkPreflightValue,
+		LabelPreflightRunKey: resNameSuffix,
+		LabelK8sPartOf:       LabelK8sPartOfValue,
 	}
 }
 
@@ -448,7 +456,7 @@ func waitUntilVolSnapReadyToUse(volSnap *unstructured.Unstructured, snapshotVer 
 	retErr := k8swait.ExponentialBackoff(retryBackoff, func() (done bool, err error) {
 		volSnapSrc := &unstructured.Unstructured{}
 		volSnapSrc.SetGroupVersionKind(schema.GroupVersionKind{
-			Group:   storageSnapshotGroup,
+			Group:   StorageSnapshotGroup,
 			Version: snapshotVer,
 			Kind:    internal.VolumeSnapshotKind,
 		})

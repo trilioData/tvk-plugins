@@ -38,6 +38,7 @@ If uid flag is not specified then all preflight resources created till date are 
 		}
 		defer logFile.Close()
 		logger.SetOutput(io.MultiWriter(colorable.NewColorableStdout(), logFile))
+		logRootCmdFlagsInfo()
 		co := &preflight.CleanupOptions{
 			CommonOptions: preflight.CommonOptions{
 				Kubeconfig: kubeconfig,

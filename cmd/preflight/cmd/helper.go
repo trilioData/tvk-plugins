@@ -20,8 +20,8 @@ func setupLogger(logFilePrefix string) error {
 		return err
 	}
 	defer logFile.Close()
-	logger.Infof("Created log file with name - %s", logFile.Name())
 	logger.SetOutput(io.MultiWriter(colorable.NewColorableStdout(), logFile))
+	logger.Infof("Created log file with name - %s", logFile.Name())
 	lvl, err := log.ParseLevel(logLevel)
 	if err != nil {
 		logger.SetLevel(log.InfoLevel)
@@ -41,4 +41,9 @@ func generateLogFileName(logFilePrefix string) string {
 		"T" + strconv.Itoa(hour) + "-" + strconv.Itoa(minute) + "-" + strconv.Itoa(sec)
 
 	return logFilePrefix + "-" + ts + ".log"
+}
+
+func logRootCmdFlagsInfo() {
+	logger.Infof("Using '%s' namespace of the cluster", namespace)
+	logger.Infof("Using kubeconfig file path - %s", kubeconfig)
 }
