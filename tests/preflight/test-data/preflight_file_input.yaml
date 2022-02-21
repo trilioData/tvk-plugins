@@ -1,0 +1,15 @@
+preflightOptions:
+  storageClass: csi-gce-pd
+  cleanupOnFailure: true
+  snapshotClass: longhorn
+  podResourceRequirements:
+    requests:
+      memory: 64Mi
+      cpu: 250m
+    limits:
+      memory: 128Mi
+      cpu: 500m
+
+cleanupOptions:
+  logLevel: info
+  cleanupMode: all

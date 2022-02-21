@@ -1,0 +1,11 @@
+preflightOptions:
+  storageClass: csi-gce-pd
+  cleanupOnFailure: true
+  invalidKey: invalidValue
+  podResourceRequirements:
+    requests:
+      memory: 32Mi
+      cpu: 250m
+    limits:
+      memory: 96Mi
+      cpu: 500m

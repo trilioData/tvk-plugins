@@ -25,12 +25,13 @@ import (
 // Options input options required for running preflight.
 type Options struct {
 	CommonOptions
-	StorageClass         string
-	SnapshotClass        string
-	LocalRegistry        string
-	ImagePullSecret      string
-	ServiceAccountName   string
-	PerformCleanupOnFail bool
+	StorageClass            string               `json:"storageClass"`
+	SnapshotClass           string               `json:"snapshotClass"`
+	LocalRegistry           string               `json:"localRegistry"`
+	ImagePullSecret         string               `json:"imagePullSecret"`
+	ServiceAccountName      string               `json:"serviceAccount"`
+	PerformCleanupOnFail    bool                 `json:"cleanupOnFailure"`
+	PodResourceRequirements ResourceRequirements `json:"podResourceRequirements"`
 }
 
 // CreateResourceNameSuffix creates a unique 6-length hash for preflight check.
@@ -51,13 +52,13 @@ func CreateResourceNameSuffix() (string, error) {
 }
 
 // PerformPreflightChecks performs all preflight checks.
-func (o *Options) PerformPreflightChecks(ctx context.Context) {
+func (o *Options) PerformPreflightChecks(ctx context.Context) error {
 	var err error
 	preflightStatus := true
 	resNameSuffix, err = CreateResourceNameSuffix()
 	if err != nil {
 		o.Logger.Errorf("Error generating resource name suffix :: %s", err.Error())
-		return
+		return err
 	}
 	storageSnapshotSuccess := true
 
@@ -172,6 +173,12 @@ func (o *Options) PerformPreflightChecks(ctx context.Context) {
 			o.Logger.Errorf("%s Failed to cleanup preflight resources :: %s\n", cross, err.Error())
 		}
 	}
+
+	if !preflightStatus {
+		return fmt.Errorf("some preflight checks failed. Check logs for more details")
+	}
+
+	return nil
 }
 
 // checkKubectl checks whether kubectl utility is installed.
@@ -446,6 +453,8 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 		waitOptions *wait.PodWaitOptions
 		err         error
 	)
+	updateVolSnapPodResourceReqs(o.PodResourceRequirements)
+	logVolumeSnapshotResReqs(o.Logger)
 
 	pvc := createVolumeSnapshotPVCSpec(o.StorageClass, o.Namespace)
 	pvc, err = clientSet.CoreV1().PersistentVolumeClaims(o.Namespace).Create(ctx, pvc, metav1.CreateOptions{})

@@ -27,11 +27,35 @@ const (
 	cleanupOnFailureFlag  = "cleanup-on-failure"
 	cleanupOnFailureUsage = "Cleanup the resources on cluster if preflight checks fail. By-default it is false"
 
+	inputFileFlag      = "input-file"
+	inputFileUsage     = "Specify the name of the yaml file for inputs to the preflight run and cleanup commands"
+	inputFlagShorthand = "f"
+
+	requestMemoryFlag  = "req-memory"
+	requestMemoryUsage = "Memory request requirement of all pods for volume snapshot preflight check"
+
+	limitMemoryFlag  = "lim-memory"
+	limitMemoryUsage = "Memory limit requirement of all pods for volume snapshot preflight check"
+
+	requestCPUFlag  = "req-cpu"
+	requestCPUUsage = "CPU request requirement of all pods for volume snapshot preflight check"
+
+	limitCPUFlag  = "lim-cpu"
+	limitCPUUsage = "CPU limit requirement of all pods for volume snapshot preflight check"
+
 	uidFlag  = "uid"
 	uidUsage = "UID of the preflight check whose resources must be cleaned"
 
+	cleanupModeFlag  = "cleanup-mode"
+	cleanupModeUsage = "Specifies the mode of cleanup; " +
+		"'all' to clean all generated preflight resources till date in the give namespace" +
+		"'uid' to clean preflight resources of particular run in the given namespace"
+	defaultCleanupMode = "all"
+	uidCleanupMode     = "uid"
+
 	preflightLogFilePrefix = "preflight"
 	cleanupLogFilePrefix   = "preflight_cleanup"
+	preflightUIDLength     = 6
 
 	filePermission = 0644
 )
@@ -46,6 +70,12 @@ var (
 	imagePullSecret  string
 	serviceAccount   string
 	cleanupOnFailure bool
+	inputFileName    string
+	requestMemory    string
+	limitMemory      string
+	requestCPU       string
+	limitCPU         string
 
-	cleanupUID string
+	cleanupUID  string
+	cleanupMode string
 )

@@ -13,6 +13,8 @@ import (
 
 type CleanupOptions struct {
 	CommonOptions
+	CleanupMode string `json:"cleanupMode"`
+	UID         string `json:"uid"`
 }
 
 // CleanupPreflightResources cleans the preflight resources.
@@ -31,6 +33,9 @@ func (o *CleanupOptions) CleanupPreflightResources(ctx context.Context, uid stri
 	}
 	if uid != "" {
 		resLabels[LabelPreflightRunKey] = uid
+	}
+	if o.CleanupMode == uidCleanupMode {
+		resLabels[LabelPreflightRunKey] = o.UID
 	}
 	for _, gvk := range gvkList {
 		var resList = unstructured.UnstructuredList{}

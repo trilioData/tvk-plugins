@@ -77,6 +77,8 @@ const (
 
 	execTimeoutDuration       = 3 * time.Minute
 	deletionGracePeriod int64 = 5
+
+	uidCleanupMode = "uid"
 )
 
 var (
@@ -89,7 +91,7 @@ var (
 		"volumesnapshots." + StorageSnapshotGroup,
 	}
 
-	ResourceRequirements = corev1.ResourceRequirements{
+	ResourceReqs = corev1.ResourceRequirements{
 		Requests: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceMemory: resource.MustParse("64Mi"),
 			corev1.ResourceCPU:    resource.MustParse("250m"),
@@ -124,9 +126,14 @@ var (
 )
 
 type CommonOptions struct {
-	Kubeconfig string
-	Namespace  string
+	Kubeconfig string `yaml:"kubeconfig"`
+	Namespace  string `yaml:"namespace"`
+	LogLevel   string `yaml:"logLevel'"`
 	Logger     *logrus.Logger
+}
+
+type ResourceRequirements struct {
+	corev1.ResourceRequirements
 }
 
 func InitKubeEnv(kubeconfig string) error {
@@ -249,7 +256,7 @@ func createDNSPodSpec(op *Options) *corev1.Pod {
 			Image:           strings.Join([]string{imagePath, DNSUtilsImage}, "/"),
 			Command:         CommandSleep3600,
 			ImagePullPolicy: corev1.PullIfNotPresent,
-			Resources:       ResourceRequirements,
+			Resources:       ResourceReqs,
 		},
 	}
 
@@ -287,7 +294,7 @@ func createVolumeSnapshotPodSpec(pvcName string, op *Options) *corev1.Pod {
 			Image:     containerImage,
 			Command:   CommandBinSh,
 			Args:      ArgsTouchDataFileSleep,
-			Resources: ResourceRequirements,
+			Resources: ResourceReqs,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      VolMountName,
@@ -385,7 +392,7 @@ func createRestorePodSpec(podName, pvcName string, op *Options) *corev1.Pod {
 			Image:           containerImage,
 			Command:         CommandSleep3600,
 			ImagePullPolicy: corev1.PullIfNotPresent,
-			Resources:       ResourceRequirements,
+			Resources:       ResourceReqs,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      VolMountName,
@@ -535,6 +542,27 @@ func deleteK8sResourceWithForceTimeout(ctx context.Context, obj client.Object, l
 	}
 
 	return nil
+}
+
+// updateVolSnapPodResourceReqs, updates the resource requirements of pods for
+// volume snapshot check.
+func updateVolSnapPodResourceReqs(resReqs ResourceRequirements) {
+	if !resReqs.Requests.Memory().IsZero() {
+		ResourceReqs.Requests["memory"] = *resReqs.Requests.Memory()
+		ResourceReqs.Limits["memory"] = *resReqs.Limits.Memory()
+	}
+
+	if !resReqs.Requests.Cpu().IsZero() {
+		ResourceReqs.Requests["cpu"] = *resReqs.Requests.Cpu()
+		ResourceReqs.Limits["cpu"] = *resReqs.Limits.Cpu()
+	}
+}
+
+func logVolumeSnapshotResReqs(logger *logrus.Logger) {
+	logger.Infof("Volume snapshot pods resource requests: memory - %s, cpu - %s",
+		ResourceReqs.Requests.Memory().String(), ResourceReqs.Requests.Cpu().String())
+	logger.Infof("Volume snapshot pods resource limits: memory - %s, cpu - %s",
+		ResourceReqs.Limits.Memory().String(), ResourceReqs.Limits.Cpu().String())
 }
 
 // getDefaultRetryBackoffParams returns a backoff object with timeout of approx. 5 min

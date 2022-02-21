@@ -15,6 +15,7 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,7 +35,13 @@ import (
 
 const (
 	defaultTestStorageClass  = "csi-gce-pd"
+	longHornStorageClass     = "longhorn"
 	defaultTestSnapshotClass = "longhorn"
+	defaultPodReqMemory      = "64Mi"
+	defaultPodLimMemory      = "128Mi"
+	defaultPodReqCPU         = "250m"
+	memory256                = "256Mi"
+	cpu400                   = "400m"
 
 	dnsPodNamePrefix = "test-dns-pod-"
 	dnsContainerName = "test-dnsutils"
@@ -43,6 +50,7 @@ const (
 	invalidVolSnapDriver   = "invalid.csi.k8s.io"
 	preflightSAName        = "preflight-sa"
 	preflightKubeConf      = "preflight_test_config"
+	flagNamespace          = "preflight-flag-ns"
 	kubeconfigEnv          = "KUBECONFIG"
 	filePermission         = 0644
 
@@ -60,12 +68,16 @@ var (
 	storageClassFlag     = "--storage-class"
 	snapshotClassFlag    = "--volume-snapshot-class"
 	localRegistryFlag    = "--local-registry"
-	imagePullSecFlag     = "--image-pull-secret"
 	serviceAccountFlag   = "--service-account"
 	cleanupOnFailureFlag = "--cleanup-on-failure"
 	namespaceFlag        = "--namespace"
 	kubeconfigFlag       = "--kubeconfig"
 	logLevelFlag         = "--log-level"
+	inputFileFlag        = "--input-file"
+	limitCPUFlag         = "--lim-cpu"
+	limitMemoryFlag      = "--lim-memory"
+	reqCPUFlag           = "--req-cpu"
+	reqMemoryFlag        = "--req-memory"
 
 	preflightLogFilePrefix    = "preflight-"
 	cleanupLogFilePrefix      = "preflight_cleanup-"
@@ -77,9 +89,15 @@ var (
 	invalidNamespace          = "invalid-ns"
 	invalidKubeConfFilename   = path.Join([]string{".", "invalid_kc_file"}...)
 	invalidKubeConfFileData   = "invalid data"
+	invalidYamlFilePath       = "invalid_path.yaml"
+	invalidKeyYamlFileName    = "invalid_key_file.yaml"
 	defaultTestNs             = testutils.GetInstallNamespace()
-
-	kubeConfPath = os.Getenv(kubeconfigEnv)
+	permYamlFile              = "file_permission.yaml"
+	cleanupUIDInputYamlFile   = "cleanup_uid_input.yaml"
+	cleanupUIDFileInputData   = strings.Join([]string{"cleanupOptions:",
+		"  logLevel: info", "  cleanupMode: uid"}, "\n")
+	cleanupAllInputYamlFile = "cleanup_all_input.yaml"
+	kubeConfPath            = os.Getenv(kubeconfigEnv)
 
 	distDir                 = "dist"
 	preflightDir            = "preflight_linux_amd64"
@@ -88,6 +106,8 @@ var (
 	preflightBinaryDir      = filepath.Join(projectRoot, distDir, preflightDir)
 	preflightBinaryName     = "preflight"
 	preflightBinaryFilePath = filepath.Join(preflightBinaryDir, preflightBinaryName)
+	testDataDirRelPath      = filepath.Join(projectRoot, "tests", "preflight", "test-data")
+	testFileInputName       = "preflight_file_input.yaml"
 
 	flagsMap = map[string]string{
 		storageClassFlag:     defaultTestStorageClass,

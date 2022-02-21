@@ -157,6 +157,39 @@ The preflight binary has three common flags to both the subcommands.
 | --namespace   | -n       | default        | Namespace of the cluster in which resources will be created, preflight checks will be performed or resources will cleaned. Default is 'default' namespace of the cluster (Optional)
 | --kubeconfig  | -k       | ~/.kube/config | kubeconfig file path (Optional)
 | --log-level   | -l       | INFO           | Logging level for the preflight check and cleanup. Logging levels are FATAL, ERROR, WARN, INFO, DEBUG (Optional)
+| --input-file  | -f       |                | yaml file path to provide inputs for run and cleanup subcommand (Optional)
+
+The inputs for running preflight checks and cleanup can be provided through a single file.
+The format of data in a file should be according to the below example:
+```yaml
+preflightOptions:
+  storageClass: <storage-classs>
+  snapshotClass: <snapshot-class>
+  namespace: <perform preflight checks in the given namespace>
+  kubeconfig: <kubeconfig file path>
+  serviceAccount: <service-account>
+  localRegistry: <complete path of the registry to pull the images from>
+  imagePullSecret: <Name of the secret while pulling images from the local registry>
+  cleanupOnFailure: <Boolean. If true cleans the preflight resources after a failed preflight run>
+  podResourceRequirements:
+    requests:
+      memory: <pod memory request for snapshot check, e.g 64Mi>
+      cpu: <pod cpu request for snapshot check, e.g 250m>
+    limits:
+      memory: <pod memory limit for snapshot check, e.g 128Mi>
+      cpu: <pod cpu limit for snapshot check, e.g 500m>
+
+cleanupOptions:
+  namespace: <clean preflight in a particular namespace>
+  kubeconfig: <kubeconfig file path>
+  logLevel: <specify logging level for cleanup>
+  cleanupMode: <specify the cleanup mode as 'all' or 'uid'>
+  uid: <This field is used when the cleanup mode is 'uid'>
+```
+- The **cleanupMode** field can have two values - *all* and *uid*. *all* mode will clean all the preflight resources present in the given namespace.
+*uid* mode will clean resources of preflight with the given *uid* in the given namespace.
+- User can override the values given in file using CLI flags.
+- The input fields should be present in the correct hierarchical order. An incorrect key or input field will result in an error and preflight checks will not performed.  
 
 #### Examples
 
@@ -185,13 +218,25 @@ kubectl tvk-preflight [sub-command] [sub-command flags] -k <kubeconfig file path
 - With `--log-level`:
 
 ```shell script
-kubectl tvk-preflight [sub command] [sub-command flags] --log-level <logging level>
+kubectl tvk-preflight [sub-command] [sub-command flags] --log-level <logging level>
 ```
 
 By using shorthand notation:
 
 ```shell script
-kubectl tvk-preflight [sub command] [sub-command flags] -l <logging level>
+kubectl tvk-preflight [sub-command] [sub-command flags] -l <logging level>
+```
+
+- With `--input-file`
+
+```shell script
+kubectl tvk-preflight [sub-command] [sub-command flags] --input-file <yaml input file path>
+```
+
+By using shorthand notation:
+
+```shell script
+kubectl tvk-preflight [sub-command] [sub-command flags] -f <yaml input file path>
 ```
 
 There are two subcommands to the preflight binary:
@@ -211,8 +256,14 @@ kubeconfig is pointing to in the given namespace.
 | --local-registry        |             | Name of the local registry from where the images will be pulled (Optional)
 | --image-pull-secret     |             | Name of the secret for authentication while pulling the images from the local registry (Optional)
 | --service-account       |             | Name of the service account (Optional)
-| --cleanup-on-failure    |   false     | Deletes/Cleans all resources created for that particular preflight check from the cluster even if the preflight check fails. For successful execution of preflight checks, the resources are deleted from cluster by default
+| --cleanup-on-failure    |   false     | Deletes/Cleans all resources created for that particular preflight check from the cluster even if the preflight check fails. For successful execution of preflight checks, the resources are deleted from cluster by default (Optional)
+| --req-memory            |   64Mi      | Pod memory request for performing volume snapshot check. This flag must be specified along-with `--lim-memory` flag. Cannot specify this flag as standalone. (Optional)
+| --req-cpu               |   250m      | Pod cpu request for performing volume snapshot check. This flag must be specified along-with `--lim-cpu` flag. Cannot specify this flag as standalone. (Optional)
+| --lim-memory            |   128Mi     | Pod memory limit for performing volume snapshot check. This flag must be specified along-with `--req-memory` flag. Cannot specify this flag as standalone. (Optional)
+| --lim-cpu               |   500m      | Pod cpu limit for performing volume snapshot check. This flag must be specified along-with `--req-cpu` flag. Cannot specify this flag as standalone. (Optional)
 
+**Note:** The only request or limit flag of a resource cannot be provided because the request value cannot be greater than the limit value for a resource.
+This restriction is applied because request and limit values of the resources are cumbersome to remember and user can more often land into a failure just because of an incorrect resource requirements input.
 
 #### Examples
 
