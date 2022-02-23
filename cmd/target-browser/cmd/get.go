@@ -60,6 +60,7 @@ gets specific resource [backup, backupPlan, metadata, resource-metadata, trilio-
 			OutputFormat:           outputFormat,
 			OperationScope:         operationScope,
 			TvkInstanceUID:         tvkInstanceUID,
+			TvkInstanceName:        tvkInstanceName,
 			Cli:                    true,
 		}
 		return nil
@@ -72,6 +73,7 @@ func init() {
 	getCmd.PersistentFlags().StringVar(&orderBy, OrderByFlag, orderByDefault, orderByUsage)
 	getCmd.PersistentFlags().StringVar(&operationScope, OperationScopeFlag, "", operationScopeUsage)
 	getCmd.PersistentFlags().StringVar(&tvkInstanceUID, TvkInstanceUIDFlag, "", tvkInstanceUIDUsage)
+	getCmd.PersistentFlags().StringVar(&tvkInstanceName, TvkInstanceNameFlag, "", tvkInstanceNameUsage)
 	getCmd.PersistentFlags().StringVar(&creationStartTime, CreationStartTimeFlag, "", creationStartTimeUsage)
 	getCmd.PersistentFlags().StringVar(&creationEndTime, CreationEndTimeFlag, "", creationEndTimeUsage)
 

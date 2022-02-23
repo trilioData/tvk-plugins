@@ -24,7 +24,8 @@ type BackupPlan struct {
 	Kind                      string `json:"Kind"`
 	UID                       string `json:"UID"`
 	Type                      string `json:"Type"`
-	TvkInstanceID             string `json:"TVK Instance"`
+	TvkInstanceID             string `json:"TVK Instance UID"`
+	TvkInstanceName           string `json:"TVK Instance Name"`
 	SuccessfulBackup          int    `json:"Successful Backup"`
 	SuccessfulBackupTimestamp string `json:"Successful Backup Timestamp"`
 	CreationTime              string `json:"Creation Time"`
@@ -75,8 +76,8 @@ func normalizeBPlanDataToRowsAndColumns(response string, wideOutput bool) ([]met
 	for i := range bPlanList.Results {
 		bPlan := bPlanList.Results[i]
 		rows = append(rows, metav1.TableRow{
-			Cells: []interface{}{bPlan.Name, bPlan.Kind, bPlan.UID, bPlan.Type, bPlan.TvkInstanceID, bPlan.SuccessfulBackup,
-				bPlan.SuccessfulBackupTimestamp, bPlan.CreationTime},
+			Cells: []interface{}{bPlan.Name, bPlan.Kind, bPlan.UID, bPlan.Type, bPlan.TvkInstanceID, bPlan.TvkInstanceName,
+				bPlan.SuccessfulBackup, bPlan.SuccessfulBackupTimestamp, bPlan.CreationTime},
 		})
 	}
 

@@ -28,17 +28,18 @@ type BackupListOptions struct {
 
 // Backup struct stores extracted fields from actual Backup API GET response
 type Backup struct {
-	Name           string `json:"Name"`
-	Kind           string `json:"Kind"`
-	UID            string `json:"UID"`
-	Type           string `json:"Type"`
-	Size           string `json:"Size"`
-	Status         string `json:"Status"`
-	BackupPlanUID  string `json:"BackupPlan UID"`
-	TvkInstanceID  string `json:"TVK Instance"`
-	CreationTime   string `json:"Start Time"`
-	CompletionTime string `json:"End Time"`
-	ExpirationTime string `json:"Expiration Time"`
+	Name            string `json:"Name"`
+	Kind            string `json:"Kind"`
+	UID             string `json:"UID"`
+	Type            string `json:"Type"`
+	Size            string `json:"Size"`
+	Status          string `json:"Status"`
+	BackupPlanUID   string `json:"BackupPlan UID"`
+	TvkInstanceID   string `json:"TVK Instance UID"`
+	TvkInstanceName string `json:"TVK Instance Name"`
+	CreationTime    string `json:"Start Time"`
+	CompletionTime  string `json:"End Time"`
+	ExpirationTime  string `json:"Expiration Time"`
 }
 
 // BackupList struct stores extracted fields from actual Backup API LIST response
@@ -134,7 +135,8 @@ func normalizeBackupDataToRowsAndColumns(response string, wideOutput bool) ([]me
 		backup := backupList.Results[i]
 		rows = append(rows, metav1.TableRow{
 			Cells: []interface{}{backup.Name, backup.Kind, backup.UID, backup.Type, backup.Size, backup.Status,
-				backup.BackupPlanUID, backup.TvkInstanceID, backup.CreationTime, backup.CompletionTime, backup.ExpirationTime},
+				backup.BackupPlanUID, backup.TvkInstanceID, backup.TvkInstanceName, backup.CreationTime,
+				backup.CompletionTime, backup.ExpirationTime},
 		})
 	}
 

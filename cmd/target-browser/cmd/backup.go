@@ -48,6 +48,9 @@ for specific backupPlan using available flags and options.`,
   # List of backups: filter by [tvkInstanceUID]
   kubectl tvk-target-browser get backup --tvk-instance-uid <uid> --target-name <name> --target-namespace <namespace>
 
+ # List of backups: filter by [tvkInstanceName]
+  kubectl tvk-target-browser get backup --tvk-instance-name <name> --target-name <name> --target-namespace <namespace>
+
   # List of backups: filter by [expirationStartTime] and [expirationEndTime]
   kubectl tvk-target-browser get backup --expiration-start-time <expiration-start-time> --expiration-end-time <expiration-end-time>--target-name <name> --target-namespace <namespace>
 
