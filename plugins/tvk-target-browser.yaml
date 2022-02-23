@@ -135,3 +135,15 @@ spec:
 
     # List of backupPlans: filter by [creationStartTime] and [creationEndTime]
     kubectl tvk-target-browser get backupPlan --creation-start-time <creation-start-time> --creation-end-time <creation-end-time>--target-name <name> --target-namespace <namespace>
+
+    # List of backupPlans: filter by [tvkInstanceUID]
+    kubectl tvk-target-browser get backupPlan --tvk-instance-uid <uid> --target-name <name> --target-namespace <namespace>
+
+    # List of backupPlans: filter by [tvkInstanceName]
+    kubectl tvk-target-browser get backupPlan --tvk-instance-name <name> --target-name <name> --target-namespace <namespace>
+
+    # List of backups: filter by [tvkInstanceUID]
+    kubectl tvk-target-browser get backup --tvk-instance-uid <uid> --target-name <name> --target-namespace <namespace>
+
+    # List of backups: filter by [tvkInstanceName]
+    kubectl tvk-target-browser get backup --tvk-instance-name <name> --target-name <name> --target-namespace <namespace>

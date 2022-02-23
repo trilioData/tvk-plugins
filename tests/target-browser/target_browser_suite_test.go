@@ -385,8 +385,9 @@ func verifyBrowserCacheBPlan(noOfBackupPlan int) bool {
 }
 
 func createBackups(noOfBackupPlansToCreate, noOfBackupsToCreate int, backupUID, backupType string, extraParams ...string) {
-	output, err := exec.Command(createBackupScript, strconv.Itoa(noOfBackupPlansToCreate),
-		strconv.Itoa(noOfBackupsToCreate), backupType, backupUID, strings.Join(extraParams, ",")).Output()
+	args := []string{strconv.Itoa(noOfBackupPlansToCreate), strconv.Itoa(noOfBackupsToCreate), backupType, backupUID}
+	args = append(args, extraParams...)
+	output, err := exec.Command(createBackupScript, args...).Output()
 	Expect(err).To(BeNil())
 	log.Info("Shell Script Output: ", string(output))
 }

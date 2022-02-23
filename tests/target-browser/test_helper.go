@@ -359,7 +359,8 @@ var backupPlanSelector = []string{
 	"KIND as Kind",
 	"UID",
 	"TYPE as Type",
-	"TVK INSTANCE as TVK Instance",
+	"TVK INSTANCE UID as TVK Instance UID",
+	"TVK INSTANCE NAME as TVK Instance Name",
 	"SUCCESSFUL BACKUP as Successful Backup",
 	"SUCCESSFUL BACKUP TIMESTAMP as Successful Backup Timestamp",
 	"CREATION TIME as Creation Time",
@@ -375,7 +376,8 @@ var backupSelector = []string{
 	"BACKUPPLAN UID as BackupPlan UID",
 	"START TIME as Start Time",
 	"END TIME as End Time",
-	"TVK INSTANCE  as TVK Instance",
+	"TVK INSTANCE UID as TVK Instance UID",
+	"TVK INSTANCE NAME as TVK Instance Name",
 	"EXPIRATION TIME as Expiration Time",
 }
 

@@ -8,7 +8,7 @@
     "uid": "BACKUPPLAN-UUID",
     "resourceVersion": "14515",
     "generation": 1,
-    "creationTimestamp": "2021-05-10T20:03:55Z",
+    "creationTimestamp": "TIMESTAMP",
     "labels": {
       "app.kubernetes.io/managed-by": "k8s-triliovault-ui",
       "app.kubernetes.io/name": "k8s-triliovault",

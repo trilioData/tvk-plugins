@@ -39,6 +39,9 @@ using available flags and options.`,
   
   # List of backupPlans: filter by [tvkInstanceUID]
   kubectl tvk-target-browser get backupPlan --tvk-instance-uid <uid> --target-name <name> --target-namespace <namespace>
+
+  # List of backupPlans: filter by [tvkInstanceName]
+  kubectl tvk-target-browser get backupPlan --tvk-instance-name <name> --target-name <name> --target-namespace <namespace>
  
   # List of backupPlans in Single Namespace: filter by [operationScope]
   kubectl tvk-target-browser get backupPlan --operation-scope SingleNamespace --target-name <name> --target-namespace <namespace>

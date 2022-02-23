@@ -11,7 +11,8 @@ var BackupSelector = []string{
 	"status.startTimestamp as Start Time",
 	"status.completionTimestamp as End Time",
 	"spec.clusterBackupPlan.uid as BackupPlan UID",
-	"generatedField.tvkInstanceUID as TVK Instance",
+	"generatedField.tvkInstanceUID as TVK Instance UID",
+	"generatedField.tvkInstanceName as TVK Instance Name",
 	"status.expirationTimestamp as Expiration Time",
 }
 
@@ -20,7 +21,8 @@ var BackupPlanSelector = []string{
 	"kind as Kind",
 	"metadata.uid  as UID",
 	"generatedField.applicationType as Type",
-	"generatedField.tvkInstanceUID as TVK Instance",
+	"generatedField.tvkInstanceUID as TVK Instance UID",
+	"generatedField.tvkInstanceName as TVK Instance Name",
 	"generatedField.successfulBackupCount as Successful Backup",
 	"generatedField.lastSuccessfulBackupTimestamp as Successful Backup Timestamp",
 	"metadata.creationTimestamp as Creation Time",

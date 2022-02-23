@@ -24,6 +24,7 @@ type CommonListOptions struct {
 	OutputFormat           string
 	OperationScope         string `url:"operationScope,omitempty"`
 	TvkInstanceUID         string `url:"tvkInstanceUID,omitempty"`
+	TvkInstanceName        string `url:"searchByTVKInstance,omitempty"`
 	Cli                    bool   `url:"cli,omitempty"`
 }
 

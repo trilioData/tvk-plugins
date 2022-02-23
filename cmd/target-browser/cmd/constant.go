@@ -54,6 +54,9 @@ const (
 	TvkInstanceUIDFlag  = "tvk-instance-uid"
 	tvkInstanceUIDUsage = "TVK instance id to filter backup/backupPlan"
 
+	TvkInstanceNameFlag  = "tvk-instance-name"
+	tvkInstanceNameUsage = "TVK instance name to filter backup/backupPlan"
+
 	BackupPlanUIDFlag    = "backup-plan-uid"
 	backupPlanUIDDefault = ""
 	backupPlanUIDUsage   = "backupPlanUID to get all backup related to UID"
@@ -112,7 +115,7 @@ var (
 	kind    string
 	name    string
 
-	tvkInstanceUID                         string
+	tvkInstanceUID, tvkInstanceName        string
 	backupPlanUID                          string
 	backupStatus                           string
 	backupUID                              string

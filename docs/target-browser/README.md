@@ -210,5 +210,25 @@ kubectl tvk-target-browser get metadata --help
   kubectl tvk-target-browser get backupPlan --creation-start-time <creation-start-time> --creation-end-time <creation-end-time>--target-name <name> --target-namespace <namespace>
   ```
 
+- List of backupPlans: filter by [tvkInstanceUID]
+  ```bash
+  kubectl tvk-target-browser get backupPlan --tvk-instance-uid <uid> --target-name <name> --target-namespace <namespace>
+  ```
+
+- List of backupPlans: filter by [tvkInstanceName]
+  ```bash
+  kubectl tvk-target-browser get backupPlan --tvk-instance-name <name> --target-name <name> --target-namespace <namespace>
+  ```
+
+- List of backups: filter by [tvkInstanceUID]
+  ```bash
+    kubectl tvk-target-browser get backup --tvk-instance-uid <uid> --target-name <name> --target-namespace <namespace>
+  ```
+
+- List of backups: filter by [tvkInstanceName]
+  ```bash
+  kubectl tvk-target-browser get backup --tvk-instance-name <name> --target-name <name> --target-namespace <namespace>
+  ```
+
 Find more examples and usage of each command & flag with `--help` for each `tvk-target-browser` command. Refer, `Usage`
 section.
