@@ -22,8 +22,8 @@ import (
 )
 
 type preflightCmdOps struct {
-	PreflightOps preflight.Options        `json:"preflightOptions"`
-	CleanupOps   preflight.CleanupOptions `json:"cleanupOptions"`
+	Run     preflight.Run     `json:"run"`
+	Cleanup preflight.Cleanup `json:"cleanup"`
 }
 
 func setupLogger(logFilePrefix, logLvl string) error {
@@ -58,12 +58,7 @@ func generateLogFileName(logFilePrefix string) string {
 	return logFilePrefix + "-" + ts + ".log"
 }
 
-func logRootCmdFlagsInfo(nspace, kubeConf string) {
-	logger.Infof(fmt.Sprintf("Using '%s' namespace of the cluster", nspace))
-	logger.Infof(fmt.Sprintf("Using kubeconfig file path - %s", kubeConf))
-}
-
-// reads preflight and cleanup inputs from file
+// reads preflight and Cleanup inputs from file
 // override the flag inputs of file if given through CLI
 func readFileInputOptions(filename string) error {
 	var data []byte
@@ -80,55 +75,44 @@ func readFileInputOptions(filename string) error {
 }
 
 func managePreflightInputs(cmd *cobra.Command) (err error) {
+	setResReqDefaultValues()
 	if inputFileName != "" {
 		err = readFileInputOptions(inputFileName)
 		if err != nil {
 			return fmt.Errorf("failed to read preflight input from file :: %s", err.Error())
 		}
-		overridePreflightFileInputsFromCLI(cmd)
-	} else {
-		cmdOps.PreflightOps = preflight.Options{
-			CommonOptions: preflight.CommonOptions{
-				Kubeconfig: kubeconfig,
-				Namespace:  namespace,
-				LogLevel:   logLevel,
-			},
-			StorageClass:         storageClass,
-			SnapshotClass:        snapshotClass,
-			LocalRegistry:        localRegistry,
-			ImagePullSecret:      imagePullSecret,
-			ServiceAccountName:   serviceAccount,
-			PerformCleanupOnFail: cleanupOnFailure,
-		}
-		updateResReqFromCLI(cmd)
 	}
-
-	return nil
+	return overridePreflightFileInputsFromCLI(cmd)
 }
 
-func overridePreflightFileInputsFromCLI(cmd *cobra.Command) {
-	updateCommonInputsFromCLI(cmd, &cmdOps.PreflightOps.CommonOptions)
+func overridePreflightFileInputsFromCLI(cmd *cobra.Command) error {
+	updateCommonInputsFromCLI(cmd, &cmdOps.Run.CommonOptions)
 
 	if cmd.Flags().Changed(storageClassFlag) {
-		cmdOps.PreflightOps.StorageClass = storageClass
+		cmdOps.Run.StorageClass = storageClass
 	}
 	if cmd.Flags().Changed(snapshotClassFlag) {
-		cmdOps.PreflightOps.SnapshotClass = snapshotClass
+		cmdOps.Run.SnapshotClass = snapshotClass
 	}
 	if cmd.Flags().Changed(localRegistryFlag) {
-		cmdOps.PreflightOps.LocalRegistry = localRegistry
+		cmdOps.Run.LocalRegistry = localRegistry
 	}
 	if cmd.Flags().Changed(imagePullSecFlag) {
-		cmdOps.PreflightOps.ImagePullSecret = imagePullSecret
+		cmdOps.Run.ImagePullSecret = imagePullSecret
 	}
 	if cmd.Flags().Changed(serviceAccountFlag) {
-		cmdOps.PreflightOps.ServiceAccountName = serviceAccount
+		cmdOps.Run.ServiceAccountName = serviceAccount
 	}
 	if cmd.Flags().Changed(cleanupOnFailureFlag) {
-		cmdOps.PreflightOps.PerformCleanupOnFail = cleanupOnFailure
+		cmdOps.Run.PerformCleanupOnFail = cleanupOnFailure
+	}
+	if cmd.Flags().Changed(pvcStorageRequestFlag) {
+		cmdOps.Run.PVCStorageRequest = resource.MustParse(pvcStorageRequest)
+	} else if cmdOps.Run.PVCStorageRequest.Value() == 0 {
+		cmdOps.Run.PVCStorageRequest = resource.MustParse(defaultPVCStorage)
 	}
 
-	updateResReqFromCLI(cmd)
+	return updateResReqFromCLI()
 }
 
 func updateCommonInputsFromCLI(cmd *cobra.Command, comnOps *preflight.CommonOptions) {
@@ -143,31 +127,67 @@ func updateCommonInputsFromCLI(cmd *cobra.Command, comnOps *preflight.CommonOpti
 	}
 }
 
-func updateResReqFromCLI(cmd *cobra.Command) {
-	if cmd.Flags().Changed(requestMemoryFlag) {
-		if cmdOps.PreflightOps.PodResourceRequirements.Requests == nil {
-			cmdOps.PreflightOps.PodResourceRequirements.Requests = corev1.ResourceList{}
+// updateResReqFromCLI update the pod resource requirements from CLI
+// if pod resource requirements are not set from file or CLI then, default values are set
+func updateResReqFromCLI() error {
+	var (
+		requests corev1.ResourceList
+		limits   corev1.ResourceList
+	)
+
+	if podRequests != "" {
+		requests, err = populateResourceList(podRequests)
+		if err != nil {
+			return err
 		}
-		cmdOps.PreflightOps.PodResourceRequirements.Requests["memory"] = resource.MustParse(requestMemory)
-	}
-	if cmd.Flags().Changed(limitMemoryFlag) {
-		if cmdOps.PreflightOps.PodResourceRequirements.Limits == nil {
-			cmdOps.PreflightOps.PodResourceRequirements.Limits = corev1.ResourceList{}
+
+		if requests.Cpu().Value() != 0 {
+			cmdOps.Run.Requests["cpu"] = requests["cpu"]
 		}
-		cmdOps.PreflightOps.PodResourceRequirements.Limits["memory"] = resource.MustParse(limitMemory)
-	}
-	if cmd.Flags().Changed(requestCPUFlag) {
-		if cmdOps.PreflightOps.PodResourceRequirements.Requests == nil {
-			cmdOps.PreflightOps.PodResourceRequirements.Requests = corev1.ResourceList{}
+		if requests.Memory().Value() != 0 {
+			cmdOps.Run.Requests["memory"] = requests["memory"]
 		}
-		cmdOps.PreflightOps.PodResourceRequirements.Requests["cpu"] = resource.MustParse(requestCPU)
 	}
-	if cmd.Flags().Changed(limitCPUFlag) {
-		if cmdOps.PreflightOps.PodResourceRequirements.Limits == nil {
-			cmdOps.PreflightOps.PodResourceRequirements.Limits = corev1.ResourceList{}
+
+	if podLimits != "" {
+		limits, err = populateResourceList(podLimits)
+		if err != nil {
+			return err
 		}
-		cmdOps.PreflightOps.PodResourceRequirements.Limits["cpu"] = resource.MustParse(limitCPU)
+
+		if limits.Cpu().Value() != 0 {
+			cmdOps.Run.Limits["cpu"] = limits["cpu"]
+		}
+		if limits.Memory().Value() != 0 {
+			cmdOps.Run.Limits["memory"] = limits["memory"]
+		}
 	}
+
+	return nil
+
+}
+
+func populateResourceList(resourceStr string) (corev1.ResourceList, error) {
+	var (
+		rs            = corev1.ResourceList{}
+		resourceName  corev1.ResourceName
+		resourceValue resource.Quantity
+	)
+	resourceStatements := strings.Split(resourceStr, ",")
+	for _, resourceStatement := range resourceStatements {
+		tokens := strings.Split(resourceStatement, "=")
+		if len(tokens) != 2 {
+			return nil, fmt.Errorf("invalid argument syntax %v, expected format <resource>=<value>", resourceStatement)
+		}
+		resourceName = corev1.ResourceName(strings.Trim(tokens[0], " "))
+		resourceValue, err = resource.ParseQuantity(strings.Trim(tokens[1], " "))
+		if err != nil {
+			return nil, err
+		}
+		rs[resourceName] = resourceValue
+	}
+
+	return rs, nil
 }
 
 func manageCleanupInputs(cmd *cobra.Command) (err error) {
@@ -176,37 +196,28 @@ func manageCleanupInputs(cmd *cobra.Command) (err error) {
 		if err != nil {
 			return err
 		}
-		overrideCleanupFileInputsFromCLI(cmd)
-	} else {
-		cmdOps.CleanupOps = preflight.CleanupOptions{
-			CommonOptions: preflight.CommonOptions{
-				Kubeconfig: kubeconfig,
-				Namespace:  namespace,
-				LogLevel:   logLevel,
-			},
-		}
 	}
+	overrideCleanupFileInputsFromCLI(cmd)
 
 	return nil
 }
 
-func validateResourceRequirementsField() error {
-	reqMem := cmdOps.PreflightOps.PodResourceRequirements.Requests.Memory()
-	limitMem := cmdOps.PreflightOps.PodResourceRequirements.Limits.Memory()
-	if (reqMem.Value() == 0 && limitMem.Value() != 0) || (reqMem.Value() != 0 && limitMem.Value() == 0) {
-		return fmt.Errorf("non-zero memory requirement must be specified or skipped for both requests and limits. " +
-			"Memory requirement for only request or limit should not be specified")
+func validateRunOptions() error {
+	if cmdOps.Run.StorageClass == "" {
+		logger.Fatalf("storage-class is required, cannot be empty")
 	}
+	if cmdOps.Run.ImagePullSecret != "" && cmdOps.Run.LocalRegistry == "" {
+		logger.Fatalf("Cannot give image pull secret if local registry is not provided.\nUse --local-registry flag to provide local registry")
+	}
+
+	reqMem := cmdOps.Run.Requests.Memory()
+	limitMem := cmdOps.Run.Limits.Memory()
 	if (reqMem != nil && limitMem != nil) && (reqMem.Value() > limitMem.Value()) {
 		return fmt.Errorf("request memory cannot be greater than limit memory")
 	}
 
-	reqCPU := cmdOps.PreflightOps.PodResourceRequirements.Requests.Cpu()
-	limitCPU := cmdOps.PreflightOps.PodResourceRequirements.Limits.Cpu()
-	if (reqCPU.Value() == 0 && limitCPU.Value() != 0) || (reqCPU.Value() != 0 && limitCPU.Value() == 0) {
-		return fmt.Errorf("non-zero CPU requirement must be specified or skipped for both requests and limits. " +
-			"CPU requirement for only request or limit should not be specified")
-	}
+	reqCPU := cmdOps.Run.Requests.Cpu()
+	limitCPU := cmdOps.Run.Limits.Cpu()
 	if (reqCPU != nil && limitCPU != nil) && (reqCPU.AsApproximateFloat64() > limitCPU.AsApproximateFloat64()) {
 		return fmt.Errorf("request CPU cannot be greater than limit CPU")
 	}
@@ -215,20 +226,33 @@ func validateResourceRequirementsField() error {
 }
 
 func validateCleanupFields() error {
-	if cmdOps.CleanupOps.CleanupMode == uidCleanupMode && len(cmdOps.CleanupOps.UID) != preflightUIDLength {
-		return fmt.Errorf("valid 6-length preflight UID must be specified when cleanup mode is %s", uidCleanupMode)
+	if cmdOps.Cleanup.CleanupMode == uidCleanupMode && len(cmdOps.Cleanup.UID) != preflightUIDLength {
+		return fmt.Errorf("valid 6-length preflight UID must be specified when Cleanup mode is %s", uidCleanupMode)
 	}
 
 	return nil
 }
 
 func overrideCleanupFileInputsFromCLI(cmd *cobra.Command) {
-	updateCommonInputsFromCLI(cmd, &cmdOps.CleanupOps.CommonOptions)
+	updateCommonInputsFromCLI(cmd, &cmdOps.Cleanup.CommonOptions)
 
-	if cmd.Flags().Changed(cleanupModeFlag) || cmdOps.CleanupOps.CleanupMode == "" {
-		cmdOps.CleanupOps.CleanupMode = defaultCleanupMode
+	if cmd.Flags().Changed(uidFlag) {
+		cmdOps.Cleanup.CleanupMode = uidCleanupMode
+		cmdOps.Cleanup.UID = cleanupUID
 	}
-	if cmdOps.CleanupOps.CleanupMode == uidCleanupMode && cmd.Flags().Changed(uidFlag) {
-		cmdOps.CleanupOps.UID = cleanupUID
+	if cmdOps.Cleanup.CleanupMode == "" {
+		cmdOps.Cleanup.CleanupMode = defaultCleanupMode
+	}
+}
+
+func setResReqDefaultValues() {
+	cmdOps.Run.ResourceRequirements = corev1.ResourceRequirements{}
+	cmdOps.Run.Requests = map[corev1.ResourceName]resource.Quantity{
+		"cpu":    resource.MustParse(defaultPodRequestCPU),
+		"memory": resource.MustParse(defaultPodRequestMemory),
+	}
+	cmdOps.Run.Limits = map[corev1.ResourceName]resource.Quantity{
+		"cpu":    resource.MustParse(defaultPodLimitCPU),
+		"memory": resource.MustParse(defaultPodLimitMemory),
 	}
 }

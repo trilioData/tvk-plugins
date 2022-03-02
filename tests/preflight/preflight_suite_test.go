@@ -2,6 +2,7 @@ package preflighttest
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"os"
@@ -18,6 +19,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
@@ -35,13 +37,15 @@ import (
 
 const (
 	defaultTestStorageClass  = "csi-gce-pd"
-	longHornStorageClass     = "longhorn"
-	defaultTestSnapshotClass = "longhorn"
+	defaultTestSnapshotClass = "default-snapshot-class"
+	defaultPVCStorageRequest = "1Gi"
 	defaultPodReqMemory      = "64Mi"
 	defaultPodLimMemory      = "128Mi"
-	defaultPodReqCPU         = "250m"
+	defaultPodLimCPU         = "500m"
 	memory256                = "256Mi"
+	cpu300                   = "300m"
 	cpu400                   = "400m"
+	cpu600                   = "600m"
 
 	dnsPodNamePrefix = "test-dns-pod-"
 	dnsContainerName = "test-dnsutils"
@@ -60,24 +64,23 @@ const (
 )
 
 var (
-	err                  error
-	cmdOut               *shell.CmdOut
-	kubeconfig           string
-	ctx                  = context.Background()
-	log                  *logrus.Entry
-	storageClassFlag     = "--storage-class"
-	snapshotClassFlag    = "--volume-snapshot-class"
-	localRegistryFlag    = "--local-registry"
-	serviceAccountFlag   = "--service-account"
-	cleanupOnFailureFlag = "--cleanup-on-failure"
-	namespaceFlag        = "--namespace"
-	kubeconfigFlag       = "--kubeconfig"
-	logLevelFlag         = "--log-level"
-	inputFileFlag        = "--input-file"
-	limitCPUFlag         = "--lim-cpu"
-	limitMemoryFlag      = "--lim-memory"
-	reqCPUFlag           = "--req-cpu"
-	reqMemoryFlag        = "--req-memory"
+	err                   error
+	cmdOut                *shell.CmdOut
+	kubeconfig            string
+	ctx                   = context.Background()
+	log                   *logrus.Entry
+	storageClassFlag      = "--storage-class"
+	snapshotClassFlag     = "--volume-snapshot-class"
+	localRegistryFlag     = "--local-registry"
+	serviceAccountFlag    = "--service-account"
+	cleanupOnFailureFlag  = "--cleanup-on-failure"
+	namespaceFlag         = "--namespace"
+	kubeconfigFlag        = "--kubeconfig"
+	logLevelFlag          = "--log-level"
+	configFileFlag        = "--config-file"
+	pvcStorageRequestFlag = "--pvc-storage-request"
+	limitsFlag            = "--limits"
+	requestsFlag          = "--requests"
 
 	preflightLogFilePrefix    = "preflight-"
 	cleanupLogFilePrefix      = "preflight_cleanup-"
@@ -91,11 +94,16 @@ var (
 	invalidKubeConfFileData   = "invalid data"
 	invalidYamlFilePath       = "invalid_path.yaml"
 	invalidKeyYamlFileName    = "invalid_key_file.yaml"
+	invalidPVCStorageRequest  = "2Ga"
 	defaultTestNs             = testutils.GetInstallNamespace()
 	permYamlFile              = "file_permission.yaml"
 	cleanupUIDInputYamlFile   = "cleanup_uid_input.yaml"
-	cleanupUIDFileInputData   = strings.Join([]string{"cleanupOptions:",
+	uidCleanupFileInputData   = strings.Join([]string{"cleanup:",
+		fmt.Sprintf("  namespace: %s", defaultTestNs),
 		"  logLevel: info", "  cleanupMode: uid"}, "\n")
+	allCleanupFileInputData = strings.Join([]string{"cleanup:",
+		fmt.Sprintf("  namespace: %s", defaultTestNs),
+		"  logLevel: info", "  cleanupMode: all"}, "\n")
 	cleanupAllInputYamlFile = "cleanup_all_input.yaml"
 	kubeConfPath            = os.Getenv(kubeconfigEnv)
 
@@ -108,6 +116,17 @@ var (
 	preflightBinaryFilePath = filepath.Join(preflightBinaryDir, preflightBinaryName)
 	testDataDirRelPath      = filepath.Join(projectRoot, "tests", "preflight", "test-data")
 	testFileInputName       = "preflight_file_input.yaml"
+
+	resourceReqs = corev1.ResourceRequirements{
+		Requests: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+			corev1.ResourceCPU:    resource.MustParse("250m"),
+		},
+		Limits: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+		},
+	}
 
 	flagsMap = map[string]string{
 		storageClassFlag:     defaultTestStorageClass,

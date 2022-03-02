@@ -11,23 +11,23 @@ import (
 	"github.com/trilioData/tvk-plugins/tools/preflight"
 )
 
-// cleanupCmd represents the cleanup command
+// cleanupCmd represents the Cleanup command
 var cleanupCmd = &cobra.Command{
 	Use:   cleanupCmdName,
 	Short: "Cleans-up the preflight resources created during preflight checks.",
 	Long: `Cleans-up the resources that were created during preflight checks.
 If uid flag is not specified then all preflight resources created till date are deleted.`,
 	Example: ` # clean preflight resources with a particular uid
-  kubectl tvk-preflight cleanup --uid <preflight run uid> --namespace <namespace>
+  kubectl tvk-preflight cleanup --uid <preflight Run uid> --namespace <namespace>
 
   # clean all preflight resources created till date
   kubectl tvk-preflight cleanup --namespace <namespace>
 
   # clean preflight resource with a specified logging level
-  kubectl tvk-preflight cleanup --uid <preflight run uid> --log-level <log-level>
+  kubectl tvk-preflight cleanup --uid <preflight Run uid> --log-level <log-level>
 
-  # cleanup preflight resources with a particular kubeconfig file
-  kubectl tvk-preflight cleanup --uid <preflight run uid> --namespace <namespace> --kubeconfig <kubeconfig-file-path>
+  # Cleanup preflight resources with a particular kubeconfig file
+  kubectl tvk-preflight cleanup --uid <preflight Run uid> --namespace <namespace> --kubeconfig <kubeconfig-file-path>
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var err error
@@ -35,11 +35,11 @@ If uid flag is not specified then all preflight resources created till date are 
 		if err != nil {
 			return err
 		}
-		err = setupLogger(cleanupLogFilePrefix, cmdOps.CleanupOps.LogLevel)
+		err = setupLogger(cleanupLogFilePrefix, cmdOps.Cleanup.LogLevel)
 		if err != nil {
 			return err
 		}
-		err = preflight.InitKubeEnv(cmdOps.CleanupOps.Kubeconfig)
+		err = preflight.InitKubeEnv(cmdOps.Cleanup.Kubeconfig)
 		if err != nil {
 			return err
 		}
@@ -51,15 +51,14 @@ If uid flag is not specified then all preflight resources created till date are 
 		defer logFile.Close()
 		logger.SetOutput(io.MultiWriter(colorable.NewColorableStdout(), logFile))
 
-		cmdOps.CleanupOps.Logger = logger
-		logRootCmdFlagsInfo(cmdOps.CleanupOps.Namespace, cmdOps.CleanupOps.Kubeconfig)
+		cmdOps.Cleanup.Logger = logger
 
 		err = validateCleanupFields()
 		if err != nil {
 			return err
 		}
 
-		err = cmdOps.CleanupOps.CleanupPreflightResources(context.Background(), cleanupUID)
+		err = cmdOps.Cleanup.CleanupPreflightResources(context.Background())
 
 		return err
 	},
@@ -69,5 +68,4 @@ func init() {
 	rootCmd.AddCommand(cleanupCmd)
 
 	cleanupCmd.Flags().StringVar(&cleanupUID, uidFlag, "", uidUsage)
-	cleanupCmd.Flags().StringVar(&cleanupMode, cleanupModeFlag, defaultCleanupMode, cleanupModeUsage)
 }

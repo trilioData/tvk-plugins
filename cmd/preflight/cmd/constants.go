@@ -27,29 +27,22 @@ const (
 	cleanupOnFailureFlag  = "cleanup-on-failure"
 	cleanupOnFailureUsage = "Cleanup the resources on cluster if preflight checks fail. By-default it is false"
 
-	inputFileFlag      = "input-file"
-	inputFileUsage     = "Specify the name of the yaml file for inputs to the preflight run and cleanup commands"
-	inputFlagShorthand = "f"
+	configFileFlag      = "config-file"
+	configFileUsage     = "Specify the name of the yaml file for inputs to the preflight Run and Cleanup commands"
+	configFlagShorthand = "f"
 
-	requestMemoryFlag  = "req-memory"
-	requestMemoryUsage = "Memory request requirement of all pods for volume snapshot preflight check"
+	podLimitFlag  = "limits"
+	podLimitUsage = "Pod memory and cpu resource limits for volume snapshot preflight check"
 
-	limitMemoryFlag  = "lim-memory"
-	limitMemoryUsage = "Memory limit requirement of all pods for volume snapshot preflight check"
+	podRequestFlag  = "requests"
+	podRequestUsage = "Pod memory and cpu resource requests for volume snapshot preflight check"
 
-	requestCPUFlag  = "req-cpu"
-	requestCPUUsage = "CPU request requirement of all pods for volume snapshot preflight check"
-
-	limitCPUFlag  = "lim-cpu"
-	limitCPUUsage = "CPU limit requirement of all pods for volume snapshot preflight check"
+	pvcStorageRequestFlag  = "pvc-storage-request"
+	pvcStorageRequestUsage = "PVC storage request for volume snapshot preflight check"
 
 	uidFlag  = "uid"
 	uidUsage = "UID of the preflight check whose resources must be cleaned"
 
-	cleanupModeFlag  = "cleanup-mode"
-	cleanupModeUsage = "Specifies the mode of cleanup; " +
-		"'all' to clean all generated preflight resources till date in the give namespace" +
-		"'uid' to clean preflight resources of particular run in the given namespace"
 	defaultCleanupMode = "all"
 	uidCleanupMode     = "uid"
 
@@ -57,25 +50,28 @@ const (
 	cleanupLogFilePrefix   = "preflight_cleanup"
 	preflightUIDLength     = 6
 
+	defaultPodRequestCPU    = "250m"
+	defaultPodRequestMemory = "64Mi"
+	defaultPodLimitCPU      = "500m"
+	defaultPodLimitMemory   = "128Mi"
+	defaultPVCStorage       = "1Gi"
+
 	filePermission = 0644
 )
 
 var (
-	kubeconfig       string
-	namespace        string
-	logLevel         string
-	storageClass     string
-	snapshotClass    string
-	localRegistry    string
-	imagePullSecret  string
-	serviceAccount   string
-	cleanupOnFailure bool
-	inputFileName    string
-	requestMemory    string
-	limitMemory      string
-	requestCPU       string
-	limitCPU         string
-
-	cleanupUID  string
-	cleanupMode string
+	kubeconfig        string
+	namespace         string
+	logLevel          string
+	storageClass      string
+	snapshotClass     string
+	localRegistry     string
+	imagePullSecret   string
+	serviceAccount    string
+	cleanupOnFailure  bool
+	inputFileName     string
+	podLimits         string
+	podRequests       string
+	pvcStorageRequest string
+	cleanupUID        string
 )

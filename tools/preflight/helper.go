@@ -91,17 +91,6 @@ var (
 		"volumesnapshots." + StorageSnapshotGroup,
 	}
 
-	ResourceReqs = corev1.ResourceRequirements{
-		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceMemory: resource.MustParse("64Mi"),
-			corev1.ResourceCPU:    resource.MustParse("250m"),
-		},
-		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
-			corev1.ResourceCPU:    resource.MustParse("500m"),
-		},
-	}
-
 	storageVolSnapClass    string
 	scheme                 = runtime.NewScheme()
 	resNameSuffix          string
@@ -132,8 +121,10 @@ type CommonOptions struct {
 	Logger     *logrus.Logger
 }
 
-type ResourceRequirements struct {
-	corev1.ResourceRequirements
+func (co *CommonOptions) logCommonOptions() {
+	co.Logger.Infof("LOG-LEVEL=\"%s\"", co.LogLevel)
+	co.Logger.Infof("KUBECONFIG-PATH=\"%s\"", co.Kubeconfig)
+	co.Logger.Infof("NAMESPACE=\"%s\"", co.Namespace)
 }
 
 func InitKubeEnv(kubeconfig string) error {
@@ -242,7 +233,7 @@ func clusterHasVolumeSnapshotClass(ctx context.Context, snapshotClass, namespace
 }
 
 //  createDNSPodSpec returns a corev1.Pod instance.
-func createDNSPodSpec(op *Options) *corev1.Pod {
+func createDNSPodSpec(op *Run) *corev1.Pod {
 	var imagePath string
 	if op.LocalRegistry != "" {
 		imagePath = op.LocalRegistry
@@ -256,22 +247,22 @@ func createDNSPodSpec(op *Options) *corev1.Pod {
 			Image:           strings.Join([]string{imagePath, DNSUtilsImage}, "/"),
 			Command:         CommandSleep3600,
 			ImagePullPolicy: corev1.PullIfNotPresent,
-			Resources:       ResourceReqs,
+			Resources:       op.ResourceRequirements,
 		},
 	}
 
 	return pod
 }
 
-func createVolumeSnapshotPVCSpec(storageClass, namespace string) *corev1.PersistentVolumeClaim {
+func createVolumeSnapshotPVCSpec(o *Run) *corev1.PersistentVolumeClaim {
 	pvc := &corev1.PersistentVolumeClaim{
-		ObjectMeta: getObjectMetaTemplate(SourcePvcNamePrefix+resNameSuffix, namespace),
+		ObjectMeta: getObjectMetaTemplate(SourcePvcNamePrefix+resNameSuffix, o.Namespace),
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-			StorageClassName: &storageClass,
+			StorageClassName: &o.StorageClass,
 			Resources: corev1.ResourceRequirements{
 				Requests: map[corev1.ResourceName]resource.Quantity{
-					corev1.ResourceStorage: resource.MustParse("1Gi"),
+					corev1.ResourceStorage: o.PVCStorageRequest,
 				},
 			},
 		},
@@ -280,7 +271,7 @@ func createVolumeSnapshotPVCSpec(storageClass, namespace string) *corev1.Persist
 	return pvc
 }
 
-func createVolumeSnapshotPodSpec(pvcName string, op *Options) *corev1.Pod {
+func createVolumeSnapshotPodSpec(pvcName string, op *Run) *corev1.Pod {
 	var containerImage string
 	if op.LocalRegistry != "" {
 		containerImage = strings.Join([]string{op.LocalRegistry, "/", BusyboxImageName}, "")
@@ -294,7 +285,7 @@ func createVolumeSnapshotPodSpec(pvcName string, op *Options) *corev1.Pod {
 			Image:     containerImage,
 			Command:   CommandBinSh,
 			Args:      ArgsTouchDataFileSleep,
-			Resources: ResourceReqs,
+			Resources: op.ResourceRequirements,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      VolMountName,
@@ -351,19 +342,19 @@ func createVolumeSnapsotSpec(name, namespace, snapVer, pvcName string) *unstruct
 }
 
 // createRestorePVCSpec creates pvc for restore (unmounted pvc as well)
-func createRestorePVCSpec(pvcName, dsName, storageClass, namespace string) *corev1.PersistentVolumeClaim {
+func createRestorePVCSpec(pvcName, dsName string, o *Run) *corev1.PersistentVolumeClaim {
 	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pvcName,
-			Namespace: namespace,
+			Namespace: o.Namespace,
 			Labels:    getPreflightResourceLabels(),
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-			StorageClassName: &storageClass,
+			StorageClassName: &o.StorageClass,
 			Resources: corev1.ResourceRequirements{
 				Requests: map[corev1.ResourceName]resource.Quantity{
-					"storage": resource.MustParse("1Gi"),
+					"storage": o.PVCStorageRequest,
 				},
 			},
 			DataSource: &corev1.TypedLocalObjectReference{
@@ -378,7 +369,7 @@ func createRestorePVCSpec(pvcName, dsName, storageClass, namespace string) *core
 }
 
 // createRestorePodSpec creates a restore pod
-func createRestorePodSpec(podName, pvcName string, op *Options) *corev1.Pod {
+func createRestorePodSpec(podName, pvcName string, op *Run) *corev1.Pod {
 	var containerImage string
 	if op.LocalRegistry != "" {
 		containerImage = strings.Join([]string{op.LocalRegistry, "/", BusyboxImageName}, "")
@@ -392,7 +383,7 @@ func createRestorePodSpec(podName, pvcName string, op *Options) *corev1.Pod {
 			Image:           containerImage,
 			Command:         CommandSleep3600,
 			ImagePullPolicy: corev1.PullIfNotPresent,
-			Resources:       ResourceReqs,
+			Resources:       op.ResourceRequirements,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      VolMountName,
@@ -417,7 +408,7 @@ func createRestorePodSpec(podName, pvcName string, op *Options) *corev1.Pod {
 	return pod
 }
 
-func getPodTemplate(name string, op *Options) *corev1.Pod {
+func getPodTemplate(name string, op *Run) *corev1.Pod {
 	return &corev1.Pod{
 		ObjectMeta: getObjectMetaTemplate(name, op.Namespace),
 		Spec: corev1.PodSpec{
@@ -542,27 +533,6 @@ func deleteK8sResourceWithForceTimeout(ctx context.Context, obj client.Object, l
 	}
 
 	return nil
-}
-
-// updateVolSnapPodResourceReqs, updates the resource requirements of pods for
-// volume snapshot check.
-func updateVolSnapPodResourceReqs(resReqs ResourceRequirements) {
-	if !resReqs.Requests.Memory().IsZero() {
-		ResourceReqs.Requests["memory"] = *resReqs.Requests.Memory()
-		ResourceReqs.Limits["memory"] = *resReqs.Limits.Memory()
-	}
-
-	if !resReqs.Requests.Cpu().IsZero() {
-		ResourceReqs.Requests["cpu"] = *resReqs.Requests.Cpu()
-		ResourceReqs.Limits["cpu"] = *resReqs.Limits.Cpu()
-	}
-}
-
-func logVolumeSnapshotResReqs(logger *logrus.Logger) {
-	logger.Infof("Volume snapshot pods resource requests: memory - %s, cpu - %s",
-		ResourceReqs.Requests.Memory().String(), ResourceReqs.Requests.Cpu().String())
-	logger.Infof("Volume snapshot pods resource limits: memory - %s, cpu - %s",
-		ResourceReqs.Limits.Memory().String(), ResourceReqs.Limits.Cpu().String())
 }
 
 // getDefaultRetryBackoffParams returns a backoff object with timeout of approx. 5 min

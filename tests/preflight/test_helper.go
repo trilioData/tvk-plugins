@@ -40,9 +40,11 @@ func assertSuccessfulPreflightChecks(inputFlags map[string]string, outputLog str
 	storageClass, ok := inputFlags[storageClassFlag]
 	Expect(ok).To(BeTrue())
 	snapshotClass := inputFlags[snapshotClassFlag]
+	pvcStorageRequest := inputFlags[pvcStorageRequestFlag]
 	nonCRUDPreflightCheckAssertion(storageClass, snapshotClass, outputLog)
 	assertDNSResolutionCheckSuccess(outputLog)
 	assertVolumeSnapshotCheckSuccess(outputLog)
+	assertPVCStorageRequestCheckSuccess(outputLog, pvcStorageRequest)
 }
 
 func assertVolSnapClassCheckSuccess(snapshotClass, outputLog string) {
@@ -134,6 +136,14 @@ func assertVolumeSnapshotCheckSuccess(outputLog string) {
 
 	Expect(outputLog).To(ContainSubstring("restored pod from volume snapshot of unmounted pv has expected data"))
 	Expect(outputLog).To(ContainSubstring("Preflight check for volume snapshot and restore is successful"))
+}
+
+func assertPVCStorageRequestCheckSuccess(outputLog, pvcStorageRequest string) {
+	if pvcStorageRequest == "" {
+		Expect(outputLog).To(ContainSubstring(fmt.Sprintf("PVC STORAGE REQUEST=\"%s\"", defaultPVCStorageRequest)))
+	} else {
+		Expect(outputLog).To(ContainSubstring(fmt.Sprintf("PVC STORAGE REQUEST=\"%s\"", pvcStorageRequest)))
+	}
 }
 
 func assertSuccessCleanupUID(uid, outputLog string) {
@@ -252,7 +262,7 @@ func createDNSPodSpec(preflightUID string) *corev1.Pod {
 			Image:           strings.Join([]string{preflight.GcrRegistryPath, preflight.DNSUtilsImage}, "/"),
 			Command:         preflight.CommandSleep3600,
 			ImagePullPolicy: corev1.PullIfNotPresent,
-			Resources:       preflight.ResourceReqs,
+			Resources:       resourceReqs,
 		},
 	}
 
@@ -273,7 +283,7 @@ func createSourcePodSpec(pvcName, preflightUID string) *corev1.Pod {
 			Image:     preflight.BusyboxImageName,
 			Command:   preflight.CommandBinSh,
 			Args:      preflight.ArgsTouchDataFileSleep,
-			Resources: preflight.ResourceReqs,
+			Resources: resourceReqs,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      preflight.VolMountName,

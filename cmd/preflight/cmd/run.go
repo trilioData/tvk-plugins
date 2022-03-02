@@ -12,7 +12,7 @@ import (
 )
 
 // nolint:lll // ignore long line lint errors
-// runCmd represents the run command
+// runCmd represents the Run command
 var runCmd = &cobra.Command{
 	Use:   preflightRunCmdName,
 	Short: "Runs preflight checks on cluster",
@@ -29,9 +29,9 @@ var runCmd = &cobra.Command{
   # run preflight checks with a particular log level
   kubectl tvk-preflight run --storage-class <storage-class-name> --log-level <log-level>
 
-  # cleanup the resources generated during preflight check if preflight check fails. Default is false.
+  # Cleanup the resources generated during preflight check if preflight check fails. Default is false.
   # If the preflight check is successful, then all resources are cleaned.
-  kubectl tvk-preflight run --storage-class <storage-class-name> --cleanup-on-failure 
+  kubectl tvk-preflight run --storage-class <storage-class-name> --Cleanup-on-failure 
 
   # run preflight with a particular kubeconfig file
   kubectl tvk-preflight run --storage-class <storage-class-name> --kubeconfig <kubeconfig-file-path>
@@ -49,11 +49,11 @@ var runCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err.Error())
 		}
-		err = setupLogger(preflightLogFilePrefix, cmdOps.PreflightOps.LogLevel)
+		err = setupLogger(preflightLogFilePrefix, cmdOps.Run.LogLevel)
 		if err != nil {
 			log.Fatalf("Failed to setup a logger :: %s", err.Error())
 		}
-		err = preflight.InitKubeEnv(cmdOps.PreflightOps.Kubeconfig)
+		err = preflight.InitKubeEnv(cmdOps.Run.Kubeconfig)
 		if err != nil {
 			log.Fatalf("Error initializing kubernetes clients :: %s", err.Error())
 		}
@@ -64,21 +64,14 @@ var runCmd = &cobra.Command{
 		}
 		defer logFile.Close()
 		logger.SetOutput(io.MultiWriter(colorable.NewColorableStdout(), logFile))
-		cmdOps.PreflightOps.Logger = logger
-		logRootCmdFlagsInfo(cmdOps.PreflightOps.Namespace, cmdOps.PreflightOps.Kubeconfig)
+		cmdOps.Run.Logger = logger
 
-		err = validateResourceRequirementsField()
+		err = validateRunOptions()
 		if err != nil {
 			logger.Fatalf(err.Error())
 		}
-		if cmdOps.PreflightOps.StorageClass == "" {
-			logger.Fatalf("storage-class is required, cannot be empty")
-		}
-		if cmdOps.PreflightOps.ImagePullSecret != "" && cmdOps.PreflightOps.LocalRegistry == "" {
-			logger.Fatalf("Cannot give image pull secret if local registry is not provided.\nUse --local-registry flag to provide local registry")
-		}
 
-		return cmdOps.PreflightOps.PerformPreflightChecks(context.Background())
+		return cmdOps.Run.PerformPreflightChecks(context.Background())
 	},
 }
 
@@ -91,8 +84,7 @@ func init() {
 	runCmd.Flags().StringVar(&imagePullSecret, imagePullSecFlag, "", imagePullSecUsage)
 	runCmd.Flags().StringVar(&serviceAccount, serviceAccountFlag, "", serviceAccountUsage)
 	runCmd.Flags().BoolVar(&cleanupOnFailure, cleanupOnFailureFlag, false, cleanupOnFailureUsage)
-	runCmd.Flags().StringVar(&requestMemory, requestMemoryFlag, "", requestMemoryUsage)
-	runCmd.Flags().StringVar(&limitMemory, limitMemoryFlag, "", limitMemoryUsage)
-	runCmd.Flags().StringVar(&requestCPU, requestCPUFlag, "", requestCPUUsage)
-	runCmd.Flags().StringVar(&limitCPU, limitCPUFlag, "", limitCPUUsage)
+	runCmd.Flags().StringVar(&podLimits, podLimitFlag, "", podLimitUsage)
+	runCmd.Flags().StringVar(&podRequests, podRequestFlag, "", podRequestUsage)
+	runCmd.Flags().StringVar(&pvcStorageRequest, pvcStorageRequestFlag, "", pvcStorageRequestUsage)
 }

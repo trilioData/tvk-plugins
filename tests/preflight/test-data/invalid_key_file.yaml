@@ -1,4 +1,4 @@
-preflightOptions:
+run:
   storageClass: csi-gce-pd
   cleanupOnFailure: true
   invalidKey: invalidValue

@@ -41,7 +41,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&namespace, namespaceFlag, namespaceFlagShorthand, internal.DefaultNs, namespaceUsage)
 	rootCmd.PersistentFlags().StringVarP(&logLevel, internal.LogLevelFlag,
 		internal.LogLevelFlagShorthand, internal.DefaultLogLevel, internal.LogLevelUsage)
-	rootCmd.PersistentFlags().StringVarP(&inputFileName, inputFileFlag, inputFlagShorthand, "", inputFileUsage)
+	rootCmd.PersistentFlags().StringVarP(&inputFileName, configFileFlag, configFlagShorthand, "", configFileUsage)
 
 	logger = logrus.New()
 	logger.SetFormatter(&logrus.TextFormatter{ForceColors: true})
