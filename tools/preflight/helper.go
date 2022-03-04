@@ -108,7 +108,8 @@ var (
 	VolSnapPodFilePath     = "/demo/data/sample-file.txt"
 	VolSnapPodFileData     = "pod preflight data"
 	ArgsTouchDataFileSleep = []string{
-		fmt.Sprintf("echo '%s' > %s && sleep 3000", VolSnapPodFileData, VolSnapPodFilePath),
+		fmt.Sprintf("echo '%s' > %s && sync %s && sleep 3000",
+			VolSnapPodFileData, VolSnapPodFilePath, VolSnapPodFilePath),
 	}
 	execRestoreDataCheckCommand = []string{
 		"/bin/sh",
