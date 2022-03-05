@@ -11,6 +11,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/trilioData/tvk-plugins/cmd/preflight/cmd"
 	"github.com/trilioData/tvk-plugins/tools/preflight"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -300,13 +301,13 @@ var _ = Describe("Preflight Tests", func() {
 			It("Pods for volume snapshot check should use CPU and memory resources according to the given flag values", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
-				inputFlags[requestsFlag] = fmt.Sprintf("cpu=%s,memory=%s", cpu300, defaultPodLimMemory)
+				inputFlags[requestsFlag] = fmt.Sprintf("cpu=%s,memory=%s", cpu300, cmd.DefaultPodLimitMemory)
 				inputFlags[limitsFlag] = fmt.Sprintf("cpu=%s,memory=%s", cpu600, memory256)
 				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).To(BeNil())
 
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD CPU REQUEST=\"%s\"", cpu300)))
-				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD MEMORY REQUEST=\"%s\"", defaultPodLimMemory)))
+				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD MEMORY REQUEST=\"%s\"", cmd.DefaultPodLimitMemory)))
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD CPU LIMIT=\"%s\"", cpu600)))
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD MEMORY LIMIT=\"%s\"", memory256)))
 
@@ -316,8 +317,8 @@ var _ = Describe("Preflight Tests", func() {
 			It("Should not perform preflight checks if volume snapshot pod request memory is greater than limit memory", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
-				inputFlags[requestsFlag] = strings.Join([]string{"memory", memory256}, "=")
-				inputFlags[limitsFlag] = strings.Join([]string{"memory", defaultPodLimMemory}, "=")
+				inputFlags[requestsFlag] = strings.Join([]string{resourceMemoryToken, memory256}, "=")
+				inputFlags[limitsFlag] = strings.Join([]string{resourceMemoryToken, cmd.DefaultPodLimitMemory}, "=")
 				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).ToNot(BeNil())
 
@@ -327,8 +328,8 @@ var _ = Describe("Preflight Tests", func() {
 			It("Should not perform preflight checks if volume snapshot pod request cpu is greater than limit cpu", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
-				inputFlags[requestsFlag] = strings.Join([]string{"cpu", cpu600}, "=")
-				inputFlags[limitsFlag] = strings.Join([]string{"cpu", cpu300}, "=")
+				inputFlags[requestsFlag] = strings.Join([]string{resourceCPUToken, cpu600}, "=")
+				inputFlags[limitsFlag] = strings.Join([]string{resourceCPUToken, cpu300}, "=")
 				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).ToNot(BeNil())
 
@@ -358,14 +359,14 @@ var _ = Describe("Preflight Tests", func() {
 				inputFlags[configFileFlag] = yamlFilePath
 				inputFlags[namespaceFlag] = flagNamespace
 				inputFlags[pvcStorageRequestFlag] = "2Gi"
-				inputFlags[requestsFlag] = strings.Join([]string{"cpu", cpu400}, "=")
-				inputFlags[limitsFlag] = strings.Join([]string{"memory", memory256}, "=")
+				inputFlags[requestsFlag] = strings.Join([]string{resourceCPUToken, cpu400}, "=")
+				inputFlags[limitsFlag] = strings.Join([]string{resourceMemoryToken, memory256}, "=")
 				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).To(BeNil())
 
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD CPU REQUEST=\"%s\"", cpu400)))
-				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD MEMORY REQUEST=\"%s\"", defaultPodReqMemory)))
-				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD CPU LIMIT=\"%s\"", defaultPodLimCPU)))
+				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD MEMORY REQUEST=\"%s\"", cmd.DefaultPodRequestMemory)))
+				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD CPU LIMIT=\"%s\"", cmd.DefaultPodLimitCPU)))
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD MEMORY LIMIT=\"%s\"", memory256)))
 
 				nonCRUDPreflightCheckAssertion(defaultTestStorageClass, defaultTestSnapshotClass, cmdOut.Out)
@@ -455,7 +456,7 @@ var _ = Describe("Preflight Tests", func() {
 
 		Context("cleanup resources according to the input given in yaml file", func() {
 			It("Should cleanup resources with a particular UID when cleanup inputs are given through a file "+
-				"and cleanup mode is 'uid'", func() {
+				"and 'uid' field is specified in the file", func() {
 
 				var file *os.File
 				uid := createPreflightResourcesForCleanup()
@@ -465,8 +466,8 @@ var _ = Describe("Preflight Tests", func() {
 					err = file.Close()
 					Expect(err).To(BeNil())
 				}()
-				uidCleanupFileInputData += strings.Join([]string{"\n", fmt.Sprintf("  uid: %s", uid)}, "")
-				_, err = file.Write([]byte(uidCleanupFileInputData))
+				cleanupFileInputData += strings.Join([]string{"\n", fmt.Sprintf("  uid: %s", uid)}, "")
+				_, err = file.Write([]byte(cleanupFileInputData))
 				Expect(err).To(BeNil())
 
 				cmd := fmt.Sprintf("%s cleanup -f %s", preflightBinaryFilePath, yamlFilePath)
@@ -481,7 +482,7 @@ var _ = Describe("Preflight Tests", func() {
 			})
 
 			It("Should cleanup all preflight resources when cleanup inputs are given through  file "+
-				"and cleanup mode is 'all'", func() {
+				"and no value for uid field is specified", func() {
 				var file *os.File
 				_ = createPreflightResourcesForCleanup()
 				_ = createPreflightResourcesForCleanup()
@@ -492,7 +493,7 @@ var _ = Describe("Preflight Tests", func() {
 					file.Close()
 					Expect(err).To(BeNil())
 				}()
-				_, err = file.Write([]byte(allCleanupFileInputData))
+				_, err = file.Write([]byte(cleanupFileInputData))
 				cmd := fmt.Sprintf("%s cleanup -f %s", preflightBinaryFilePath, yamlFilePath)
 				log.Infof("Preflight cleanup CMD [%s]", cmd)
 				cmdOut, err = shell.RunCmd(cmd)

@@ -88,35 +88,35 @@ func managePreflightInputs(cmd *cobra.Command) (err error) {
 func overridePreflightFileInputsFromCLI(cmd *cobra.Command) error {
 	updateCommonInputsFromCLI(cmd, &cmdOps.Run.CommonOptions)
 
-	if cmd.Flags().Changed(storageClassFlag) {
+	if cmd.Flags().Changed(StorageClassFlag) {
 		cmdOps.Run.StorageClass = storageClass
 	}
-	if cmd.Flags().Changed(snapshotClassFlag) {
+	if cmd.Flags().Changed(SnapshotClassFlag) {
 		cmdOps.Run.SnapshotClass = snapshotClass
 	}
-	if cmd.Flags().Changed(localRegistryFlag) {
+	if cmd.Flags().Changed(LocalRegistryFlag) {
 		cmdOps.Run.LocalRegistry = localRegistry
 	}
 	if cmd.Flags().Changed(imagePullSecFlag) {
 		cmdOps.Run.ImagePullSecret = imagePullSecret
 	}
-	if cmd.Flags().Changed(serviceAccountFlag) {
+	if cmd.Flags().Changed(ServiceAccountFlag) {
 		cmdOps.Run.ServiceAccountName = serviceAccount
 	}
-	if cmd.Flags().Changed(cleanupOnFailureFlag) {
+	if cmd.Flags().Changed(CleanupOnFailureFlag) {
 		cmdOps.Run.PerformCleanupOnFail = cleanupOnFailure
 	}
-	if cmd.Flags().Changed(pvcStorageRequestFlag) {
+	if cmd.Flags().Changed(PVCStorageRequestFlag) {
 		cmdOps.Run.PVCStorageRequest = resource.MustParse(pvcStorageRequest)
 	} else if cmdOps.Run.PVCStorageRequest.Value() == 0 {
-		cmdOps.Run.PVCStorageRequest = resource.MustParse(defaultPVCStorage)
+		cmdOps.Run.PVCStorageRequest = resource.MustParse(DefaultPVCStorage)
 	}
 
 	return updateResReqFromCLI()
 }
 
 func updateCommonInputsFromCLI(cmd *cobra.Command, comnOps *preflight.CommonOptions) {
-	if cmd.Flags().Changed(namespaceFlag) || comnOps.Namespace == "" {
+	if cmd.Flags().Changed(NamespaceFlag) || comnOps.Namespace == "" {
 		comnOps.Namespace = namespace
 	}
 	if cmd.Flags().Changed(internal.KubeconfigFlag) || comnOps.Kubeconfig == "" {
@@ -142,10 +142,10 @@ func updateResReqFromCLI() error {
 		}
 
 		if requests.Cpu().Value() != 0 {
-			cmdOps.Run.Requests["cpu"] = requests["cpu"]
+			cmdOps.Run.Requests[corev1.ResourceCPU] = requests[corev1.ResourceCPU]
 		}
 		if requests.Memory().Value() != 0 {
-			cmdOps.Run.Requests["memory"] = requests["memory"]
+			cmdOps.Run.Requests[corev1.ResourceMemory] = requests[corev1.ResourceMemory]
 		}
 	}
 
@@ -156,10 +156,10 @@ func updateResReqFromCLI() error {
 		}
 
 		if limits.Cpu().Value() != 0 {
-			cmdOps.Run.Limits["cpu"] = limits["cpu"]
+			cmdOps.Run.Limits[corev1.ResourceCPU] = limits[corev1.ResourceCPU]
 		}
 		if limits.Memory().Value() != 0 {
-			cmdOps.Run.Limits["memory"] = limits["memory"]
+			cmdOps.Run.Limits[corev1.ResourceMemory] = limits[corev1.ResourceMemory]
 		}
 	}
 
@@ -226,8 +226,8 @@ func validateRunOptions() error {
 }
 
 func validateCleanupFields() error {
-	if cmdOps.Cleanup.CleanupMode == uidCleanupMode && len(cmdOps.Cleanup.UID) != preflightUIDLength {
-		return fmt.Errorf("valid 6-length preflight UID must be specified when Cleanup mode is %s", uidCleanupMode)
+	if cmdOps.Cleanup.UID != "" && len(cmdOps.Cleanup.UID) != preflightUIDLength {
+		return fmt.Errorf("valid 6-length preflight UID must be specified")
 	}
 
 	return nil
@@ -237,22 +237,18 @@ func overrideCleanupFileInputsFromCLI(cmd *cobra.Command) {
 	updateCommonInputsFromCLI(cmd, &cmdOps.Cleanup.CommonOptions)
 
 	if cmd.Flags().Changed(uidFlag) {
-		cmdOps.Cleanup.CleanupMode = uidCleanupMode
 		cmdOps.Cleanup.UID = cleanupUID
-	}
-	if cmdOps.Cleanup.CleanupMode == "" {
-		cmdOps.Cleanup.CleanupMode = defaultCleanupMode
 	}
 }
 
 func setResReqDefaultValues() {
 	cmdOps.Run.ResourceRequirements = corev1.ResourceRequirements{}
 	cmdOps.Run.Requests = map[corev1.ResourceName]resource.Quantity{
-		"cpu":    resource.MustParse(defaultPodRequestCPU),
-		"memory": resource.MustParse(defaultPodRequestMemory),
+		corev1.ResourceCPU:    resource.MustParse(DefaultPodRequestCPU),
+		corev1.ResourceMemory: resource.MustParse(DefaultPodRequestMemory),
 	}
 	cmdOps.Run.Limits = map[corev1.ResourceName]resource.Quantity{
-		"cpu":    resource.MustParse(defaultPodLimitCPU),
-		"memory": resource.MustParse(defaultPodLimitMemory),
+		corev1.ResourceCPU:    resource.MustParse(DefaultPodLimitCPU),
+		corev1.ResourceMemory: resource.MustParse(DefaultPodLimitMemory),
 	}
 }

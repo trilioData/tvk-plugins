@@ -3,16 +3,17 @@ package preflighttest
 // nolint // ignore dot import lint errors
 import (
 	"fmt"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/trilioData/tvk-plugins/cmd/preflight/cmd"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/trilioData/tvk-plugins/internal"
 	"github.com/trilioData/tvk-plugins/tools/preflight"
@@ -140,7 +141,7 @@ func assertVolumeSnapshotCheckSuccess(outputLog string) {
 
 func assertPVCStorageRequestCheckSuccess(outputLog, pvcStorageRequest string) {
 	if pvcStorageRequest == "" {
-		Expect(outputLog).To(ContainSubstring(fmt.Sprintf("PVC STORAGE REQUEST=\"%s\"", defaultPVCStorageRequest)))
+		Expect(outputLog).To(ContainSubstring(fmt.Sprintf("PVC STORAGE REQUEST=\"%s\"", cmd.DefaultPVCStorage)))
 	} else {
 		Expect(outputLog).To(ContainSubstring(fmt.Sprintf("PVC STORAGE REQUEST=\"%s\"", pvcStorageRequest)))
 	}

@@ -1,8 +1,8 @@
 run:
   namespace: default
-  storageClass: csi-gce-pd
+  storageClass: default
   cleanupOnFailure: true
-  pvcStorageRequest: 2Gi
+  pvcStorageRequest: 1Gi
   resources:
     requests:
       memory: 64Mi
@@ -14,4 +14,3 @@ run:
 cleanup:
   namespace: default
   logLevel: info
-  cleanupMode: all

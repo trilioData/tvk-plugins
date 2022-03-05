@@ -12,7 +12,7 @@ import (
 )
 
 // nolint:lll // ignore long line lint errors
-// runCmd represents the Run command
+// runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   preflightRunCmdName,
 	Short: "Runs preflight checks on cluster",
@@ -31,7 +31,7 @@ var runCmd = &cobra.Command{
 
   # Cleanup the resources generated during preflight check if preflight check fails. Default is false.
   # If the preflight check is successful, then all resources are cleaned.
-  kubectl tvk-preflight run --storage-class <storage-class-name> --Cleanup-on-failure 
+  kubectl tvk-preflight run --storage-class <storage-class-name> --cleanup-on-failure 
 
   # run preflight with a particular kubeconfig file
   kubectl tvk-preflight run --storage-class <storage-class-name> --kubeconfig <kubeconfig-file-path>
@@ -42,6 +42,12 @@ var runCmd = &cobra.Command{
 
   # run preflight with a particular serviceaccount
   kubectl tvk-preflight run --storage-class <storage-class-name> --service-account-name <service account name>
+
+  # run preflight with preflight pod resource request flag
+  kubectl tvk-preflight run --storage-class <storage-class-name> --request <resource1>=<value1>,<resource2>=<value2>
+
+  # run preflight with pvc storage request flag for volume snapshot check
+  kubectl tvk-preflight run --storage-class <storage-class-name> --pvc-storage-request <storage request value>
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var err error
@@ -78,13 +84,13 @@ var runCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(runCmd)
 
-	runCmd.Flags().StringVar(&storageClass, storageClassFlag, "", storageClassUsage)
-	runCmd.Flags().StringVar(&snapshotClass, snapshotClassFlag, "", snapshotClassUsage)
-	runCmd.Flags().StringVar(&localRegistry, localRegistryFlag, "", localRegistryUsage)
+	runCmd.Flags().StringVar(&storageClass, StorageClassFlag, "", storageClassUsage)
+	runCmd.Flags().StringVar(&snapshotClass, SnapshotClassFlag, "", snapshotClassUsage)
+	runCmd.Flags().StringVar(&localRegistry, LocalRegistryFlag, "", localRegistryUsage)
 	runCmd.Flags().StringVar(&imagePullSecret, imagePullSecFlag, "", imagePullSecUsage)
-	runCmd.Flags().StringVar(&serviceAccount, serviceAccountFlag, "", serviceAccountUsage)
-	runCmd.Flags().BoolVar(&cleanupOnFailure, cleanupOnFailureFlag, false, cleanupOnFailureUsage)
-	runCmd.Flags().StringVar(&podLimits, podLimitFlag, "", podLimitUsage)
-	runCmd.Flags().StringVar(&podRequests, podRequestFlag, "", podRequestUsage)
-	runCmd.Flags().StringVar(&pvcStorageRequest, pvcStorageRequestFlag, "", pvcStorageRequestUsage)
+	runCmd.Flags().StringVar(&serviceAccount, ServiceAccountFlag, "", serviceAccountUsage)
+	runCmd.Flags().BoolVar(&cleanupOnFailure, CleanupOnFailureFlag, false, cleanupOnFailureUsage)
+	runCmd.Flags().StringVar(&podLimits, PodLimitFlag, "", podLimitUsage)
+	runCmd.Flags().StringVar(&podRequests, PodRequestFlag, "", podRequestUsage)
+	runCmd.Flags().StringVar(&pvcStorageRequest, PVCStorageRequestFlag, "", pvcStorageRequestUsage)
 }

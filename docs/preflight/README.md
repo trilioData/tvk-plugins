@@ -270,8 +270,8 @@ kubeconfig is pointing to in the given namespace.
 | --image-pull-secret     |             | Name of the secret for authentication while pulling the images from the local registry (Optional)
 | --service-account       |             | Name of the service account (Optional)
 | --cleanup-on-failure    |   false     | Deletes/Cleans all resources created for that particular preflight check from the cluster even if the preflight check fails. For successful execution of preflight checks, the resources are deleted from cluster by default (Optional)
-| --requests              | cpu=250m,memory=64Mi | Pod cpu and memory request for performing volume snapshot check. Memory and cpu values must be specified in a comma separated format. (Optional)
-| --limits              | cpu=500m,memory=128Mi | Pod cpu and memory limit for performing volume snapshot check. Memory and cpu values must be specified in a comma separated format. (Optional)
+| --requests              | cpu=250m,memory=64Mi | Pod cpu and memory request for DNS and volume snapshot check. Memory and cpu values must be specified in a comma separated format. (Optional)
+| --limits              | cpu=500m,memory=128Mi | Pod cpu and memory limit for DNS and volume snapshot check. Memory and cpu values must be specified in a comma separated format. (Optional)
 | --pvc-storage-request   |     1Gi     | PVC storage request for performing volume snapshot check. (Optional)
 
 #### Examples

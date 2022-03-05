@@ -25,13 +25,13 @@ import (
 
 // RunOptions input options required for running preflight.
 type RunOptions struct {
-	StorageClass                string            `json:"storageClass"`
-	SnapshotClass               string            `json:"snapshotClass"`
-	LocalRegistry               string            `json:"localRegistry"`
-	ImagePullSecret             string            `json:"imagePullSecret"`
-	ServiceAccountName          string            `json:"serviceAccount"`
-	PerformCleanupOnFail        bool              `json:"cleanupOnFailure"`
-	PVCStorageRequest           resource.Quantity `json:"pvcStorageRequest"`
+	StorageClass                string            `json:"storageClass,omitempty"`
+	SnapshotClass               string            `json:"snapshotClass,omitempty"`
+	LocalRegistry               string            `json:"localRegistry,omitempty"`
+	ImagePullSecret             string            `json:"imagePullSecret,omitempty"`
+	ServiceAccountName          string            `json:"serviceAccount,omitempty"`
+	PerformCleanupOnFail        bool              `json:"cleanupOnFailure,omitempty"`
+	PVCStorageRequest           resource.Quantity `json:"pvcStorageRequest,omitempty"`
 	corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
@@ -186,8 +186,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 			Logger:     o.Logger,
 		},
 		CleanupOptions: CleanupOptions{
-			CleanupMode: uidCleanupMode,
-			UID:         resNameSuffix,
+			UID: resNameSuffix,
 		},
 	}
 	if !preflightStatus {

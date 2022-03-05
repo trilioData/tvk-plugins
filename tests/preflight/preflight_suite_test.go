@@ -16,6 +16,7 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
+	"github.com/trilioData/tvk-plugins/cmd/preflight/cmd"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,14 +39,12 @@ import (
 const (
 	defaultTestStorageClass  = "csi-gce-pd"
 	defaultTestSnapshotClass = "default-snapshot-class"
-	defaultPVCStorageRequest = "1Gi"
-	defaultPodReqMemory      = "64Mi"
-	defaultPodLimMemory      = "128Mi"
-	defaultPodLimCPU         = "500m"
 	memory256                = "256Mi"
 	cpu300                   = "300m"
 	cpu400                   = "400m"
 	cpu600                   = "600m"
+	resourceCPUToken         = "cpu"
+	resourceMemoryToken      = "memory"
 
 	dnsPodNamePrefix = "test-dns-pod-"
 	dnsContainerName = "test-dnsutils"
@@ -69,18 +68,19 @@ var (
 	kubeconfig            string
 	ctx                   = context.Background()
 	log                   *logrus.Entry
-	storageClassFlag      = "--storage-class"
-	snapshotClassFlag     = "--volume-snapshot-class"
-	localRegistryFlag     = "--local-registry"
-	serviceAccountFlag    = "--service-account"
-	cleanupOnFailureFlag  = "--cleanup-on-failure"
-	namespaceFlag         = "--namespace"
-	kubeconfigFlag        = "--kubeconfig"
-	logLevelFlag          = "--log-level"
-	configFileFlag        = "--config-file"
-	pvcStorageRequestFlag = "--pvc-storage-request"
-	limitsFlag            = "--limits"
-	requestsFlag          = "--requests"
+	flagPrefix            = "--"
+	storageClassFlag      = flagPrefix + cmd.StorageClassFlag
+	snapshotClassFlag     = flagPrefix + cmd.SnapshotClassFlag
+	localRegistryFlag     = flagPrefix + cmd.LocalRegistryFlag
+	serviceAccountFlag    = flagPrefix + cmd.ServiceAccountFlag
+	cleanupOnFailureFlag  = flagPrefix + cmd.CleanupOnFailureFlag
+	namespaceFlag         = flagPrefix + cmd.NamespaceFlag
+	kubeconfigFlag        = flagPrefix + internal.KubeconfigFlag
+	logLevelFlag          = flagPrefix + internal.LogLevelFlag
+	configFileFlag        = flagPrefix + cmd.ConfigFileFlag
+	pvcStorageRequestFlag = flagPrefix + cmd.PVCStorageRequestFlag
+	limitsFlag            = flagPrefix + cmd.PodLimitFlag
+	requestsFlag          = flagPrefix + cmd.PodRequestFlag
 
 	preflightLogFilePrefix    = "preflight-"
 	cleanupLogFilePrefix      = "preflight_cleanup-"
@@ -98,12 +98,8 @@ var (
 	defaultTestNs             = testutils.GetInstallNamespace()
 	permYamlFile              = "file_permission.yaml"
 	cleanupUIDInputYamlFile   = "cleanup_uid_input.yaml"
-	uidCleanupFileInputData   = strings.Join([]string{"cleanup:",
-		fmt.Sprintf("  namespace: %s", defaultTestNs),
-		"  logLevel: info", "  cleanupMode: uid"}, "\n")
-	allCleanupFileInputData = strings.Join([]string{"cleanup:",
-		fmt.Sprintf("  namespace: %s", defaultTestNs),
-		"  logLevel: info", "  cleanupMode: all"}, "\n")
+	cleanupFileInputData      = strings.Join([]string{"cleanup:",
+		fmt.Sprintf("  namespace: %s", defaultTestNs), "  logLevel: info"}, "\n")
 	cleanupAllInputYamlFile = "cleanup_all_input.yaml"
 	kubeConfPath            = os.Getenv(kubeconfigEnv)
 
@@ -119,12 +115,12 @@ var (
 
 	resourceReqs = corev1.ResourceRequirements{
 		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceMemory: resource.MustParse("64Mi"),
-			corev1.ResourceCPU:    resource.MustParse("250m"),
+			corev1.ResourceMemory: resource.MustParse(cmd.DefaultPodRequestMemory),
+			corev1.ResourceCPU:    resource.MustParse(cmd.DefaultPodRequestCPU),
 		},
 		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
-			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse(cmd.DefaultPodLimitMemory),
+			corev1.ResourceCPU:    resource.MustParse(cmd.DefaultPodLimitCPU),
 		},
 	}
 

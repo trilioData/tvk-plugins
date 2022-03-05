@@ -77,8 +77,6 @@ const (
 
 	execTimeoutDuration       = 3 * time.Minute
 	deletionGracePeriod int64 = 5
-
-	uidCleanupMode = "uid"
 )
 
 var (
@@ -115,9 +113,9 @@ var (
 )
 
 type CommonOptions struct {
-	Kubeconfig string `yaml:"kubeconfig"`
-	Namespace  string `yaml:"namespace"`
-	LogLevel   string `yaml:"logLevel'"`
+	Kubeconfig string `yaml:"kubeconfig,omitempty"`
+	Namespace  string `yaml:"namespace,omitempty"`
+	LogLevel   string `yaml:"logLevel,omitempty"`
 	Logger     *logrus.Logger
 }
 
@@ -527,6 +525,7 @@ func deleteK8sResourceWithForceTimeout(ctx context.Context, obj client.Object, l
 		logger.Warnf("problem occurred while removing finalizers of %s - %s :: %s",
 			obj.GetObjectKind().GroupVersionKind().Kind, obj.GetName(), err.Error())
 	}
+
 	err = runtimeClient.Delete(ctx, obj, client.DeleteOption(client.GracePeriodSeconds(deletionGracePeriod)))
 	if err != nil {
 		return fmt.Errorf("problem occurred deleting %s - %s :: %s", obj.GetName(), obj.GetNamespace(), err.Error())

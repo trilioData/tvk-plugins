@@ -12,8 +12,7 @@ import (
 )
 
 type CleanupOptions struct {
-	CleanupMode string `json:"cleanupMode"`
-	UID         string `json:"uid"`
+	UID string `json:"uid,omitempty"`
 }
 
 type Cleanup struct {
@@ -24,7 +23,6 @@ type Cleanup struct {
 func (co *Cleanup) logCleanupOptions() {
 	co.Logger.Infoln("====PREFLIGHT CLEANUP OPTIONS====")
 	co.CommonOptions.logCommonOptions()
-	co.Logger.Infof("CLEANUP-MODE=\"%s\"", co.CleanupMode)
 	co.Logger.Infof("UID=\"%s\"", co.UID)
 	co.Logger.Infoln("====PREFLIGHT CLEANUP OPTIONS END====")
 }
@@ -51,7 +49,7 @@ func (co *Cleanup) CleanupPreflightResources(ctx context.Context) error {
 		deleteNs = co.Namespace
 	}
 
-	if co.CleanupMode == uidCleanupMode {
+	if co.UID != "" {
 		resLabels[LabelPreflightRunKey] = co.UID
 	}
 	for _, gvk := range gvkList {
