@@ -16,21 +16,28 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Options input options required for running preflight.
-type Options struct {
+// RunOptions input options required for running preflight.
+type RunOptions struct {
+	StorageClass                string            `json:"storageClass,omitempty"`
+	SnapshotClass               string            `json:"snapshotClass,omitempty"`
+	LocalRegistry               string            `json:"localRegistry,omitempty"`
+	ImagePullSecret             string            `json:"imagePullSecret,omitempty"`
+	ServiceAccountName          string            `json:"serviceAccount,omitempty"`
+	PerformCleanupOnFail        bool              `json:"cleanupOnFailure,omitempty"`
+	PVCStorageRequest           resource.Quantity `json:"pvcStorageRequest,omitempty"`
+	corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
+type Run struct {
+	RunOptions
 	CommonOptions
-	StorageClass         string
-	SnapshotClass        string
-	LocalRegistry        string
-	ImagePullSecret      string
-	ServiceAccountName   string
-	PerformCleanupOnFail bool
 }
 
 // CreateResourceNameSuffix creates a unique 6-length hash for preflight check.
@@ -50,14 +57,32 @@ func CreateResourceNameSuffix() (string, error) {
 	return string(suffix), nil
 }
 
+func (o *Run) logPreflightOptions() {
+	o.Logger.Infof("====PREFLIGHT RUN OPTIONS====")
+	o.CommonOptions.logCommonOptions()
+	o.Logger.Infof("STORAGE-CLASS=\"%s\"", o.StorageClass)
+	o.Logger.Infof("VOLUME-SNAPSHOT-CLASS=\"%s\"", o.SnapshotClass)
+	o.Logger.Infof("LOCAL-REGISTRY=\"%s\"", o.LocalRegistry)
+	o.Logger.Infof("IMAGE-PULL-SECRET=\"%s\"", o.ImagePullSecret)
+	o.Logger.Infof("SERVICE-ACCOUNT=\"%s\"", o.ServiceAccountName)
+	o.Logger.Infof("CLEANUP-ON-FAILURE=\"%v\"", o.PerformCleanupOnFail)
+	o.Logger.Infof("POD CPU REQUEST=\"%s\"", o.ResourceRequirements.Requests.Cpu().String())
+	o.Logger.Infof("POD MEMORY REQUEST=\"%s\"", o.ResourceRequirements.Requests.Memory().String())
+	o.Logger.Infof("POD CPU LIMIT=\"%s\"", o.ResourceRequirements.Limits.Cpu().String())
+	o.Logger.Infof("POD MEMORY LIMIT=\"%s\"", o.ResourceRequirements.Limits.Memory().String())
+	o.Logger.Infof("PVC STORAGE REQUEST=\"%s\"", o.PVCStorageRequest.String())
+	o.Logger.Infof("====PREFLIGHT RUN OPTIONS END====")
+}
+
 // PerformPreflightChecks performs all preflight checks.
-func (o *Options) PerformPreflightChecks(ctx context.Context) {
+func (o *Run) PerformPreflightChecks(ctx context.Context) error {
+	o.logPreflightOptions()
 	var err error
 	preflightStatus := true
 	resNameSuffix, err = CreateResourceNameSuffix()
 	if err != nil {
 		o.Logger.Errorf("Error generating resource name suffix :: %s", err.Error())
-		return
+		return err
 	}
 	storageSnapshotSuccess := true
 
@@ -154,11 +179,14 @@ func (o *Options) PerformPreflightChecks(ctx context.Context) {
 		o.Logger.Errorf("Skipping volume snapshot and restore check as preflight check for SnapshotClass failed")
 	}
 
-	co := &CleanupOptions{
+	co := &Cleanup{
 		CommonOptions: CommonOptions{
 			Kubeconfig: o.Kubeconfig,
 			Namespace:  o.Namespace,
 			Logger:     o.Logger,
+		},
+		CleanupOptions: CleanupOptions{
+			UID: resNameSuffix,
 		},
 	}
 	if !preflightStatus {
@@ -167,15 +195,21 @@ func (o *Options) PerformPreflightChecks(ctx context.Context) {
 		o.Logger.Infoln("All preflight checks succeeded!")
 	}
 	if preflightStatus || o.PerformCleanupOnFail {
-		err = co.CleanupPreflightResources(ctx, resNameSuffix)
+		err = co.CleanupPreflightResources(ctx)
 		if err != nil {
 			o.Logger.Errorf("%s Failed to cleanup preflight resources :: %s\n", cross, err.Error())
 		}
 	}
+
+	if !preflightStatus {
+		return fmt.Errorf("some preflight checks failed. Check logs for more details")
+	}
+
+	return nil
 }
 
 // checkKubectl checks whether kubectl utility is installed.
-func (o *Options) checkKubectl() error {
+func (o *Run) checkKubectl() error {
 	path, err := goexec.LookPath("kubectl")
 	if err != nil {
 		return fmt.Errorf("error finding 'kubectl' binary in $PATH of the system :: %s", err.Error())
@@ -186,7 +220,7 @@ func (o *Options) checkKubectl() error {
 }
 
 // checkClusterAccess Checks whether access to kubectl utility is present on the client machine.
-func (o *Options) checkClusterAccess(ctx context.Context) error {
+func (o *Run) checkClusterAccess(ctx context.Context) error {
 	_, err := clientSet.CoreV1().Namespaces().Get(ctx, internal.DefaultNs, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("unable to access default namespace of cluster :: %s", err.Error())
@@ -196,7 +230,7 @@ func (o *Options) checkClusterAccess(ctx context.Context) error {
 }
 
 // checkHelmVersion checks whether minimum helm version is present.
-func (o *Options) checkHelmVersion() error {
+func (o *Run) checkHelmVersion() error {
 	if internal.CheckIsOpenshift(discClient, internal.OcpAPIVersion) {
 		o.Logger.Infof("%s Running OCP cluster. Helm not needed for OCP clusters\n", check)
 		return nil
@@ -231,7 +265,7 @@ func (o *Options) checkHelmVersion() error {
 }
 
 // checkKubernetesVersion checks whether minimum k8s version requirement is met
-func (o *Options) checkKubernetesVersion() error {
+func (o *Run) checkKubernetesVersion() error {
 	serverVer, err := clientSet.ServerVersion()
 	if err != nil {
 		return err
@@ -255,7 +289,7 @@ func (o *Options) checkKubernetesVersion() error {
 // checkKubernetesRBAC fetches the apiVersions present on k8s server.
 // And checks whether api-version 'rbac.authorization.k8s.io' is present.
 // 'ExtractGroupVersions' func call is taken from kubcetl mirror repo.
-func (o *Options) checkKubernetesRBAC() error {
+func (o *Run) checkKubernetesRBAC() error {
 	groupList, err := discClient.ServerGroups()
 	if err != nil {
 		if !discovery.IsGroupDiscoveryFailedError(err) {
@@ -287,7 +321,7 @@ func (o *Options) checkKubernetesRBAC() error {
 
 // checkStorageSnapshotClass checks whether storageclass is present.
 // Checks whether storageclass and volumesnapshotclass provisioner are same.
-func (o *Options) checkStorageSnapshotClass(ctx context.Context) error {
+func (o *Run) checkStorageSnapshotClass(ctx context.Context) error {
 	sc, err := clientSet.StorageV1().StorageClasses().Get(ctx, o.StorageClass, metav1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -325,7 +359,7 @@ func (o *Options) checkStorageSnapshotClass(ctx context.Context) error {
 }
 
 //  checkSnapshotclassForProvisioner checks whether snapshot-class exist for a provisioner
-func (o *Options) checkSnapshotclassForProvisioner(ctx context.Context, provisioner string) (string, error) {
+func (o *Run) checkSnapshotclassForProvisioner(ctx context.Context, provisioner string) (string, error) {
 	var (
 		prefVersion string
 		err         error
@@ -369,7 +403,7 @@ func (o *Options) checkSnapshotclassForProvisioner(ctx context.Context, provisio
 }
 
 //  checkCSI checks whether CSI APIs are installed in the k8s cluster
-func (o *Options) checkCSI(ctx context.Context) error {
+func (o *Run) checkCSI(ctx context.Context) error {
 	prefVersion, err := GetServerPreferredVersionForGroup(apiExtenstionsGroup, clientSet)
 	if err != nil {
 		return err
@@ -400,7 +434,7 @@ func (o *Options) checkCSI(ctx context.Context) error {
 }
 
 //  checkDNSResolution checks whether DNS resolution is working on k8s cluster
-func (o *Options) checkDNSResolution(ctx context.Context) error {
+func (o *Run) checkDNSResolution(ctx context.Context) error {
 	pod := createDNSPodSpec(o)
 	_, err := clientSet.CoreV1().Pods(o.Namespace).Create(ctx, pod, metav1.CreateOptions{})
 	if err != nil {
@@ -440,14 +474,14 @@ func (o *Options) checkDNSResolution(ctx context.Context) error {
 }
 
 // checkVolumeSnapshot checks if volume snapshot and restore is enabled in the cluster
-func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
+func (o *Run) checkVolumeSnapshot(ctx context.Context) error {
 	var (
 		execOp      exec.Options
 		waitOptions *wait.PodWaitOptions
 		err         error
 	)
 
-	pvc := createVolumeSnapshotPVCSpec(o.StorageClass, o.Namespace)
+	pvc := createVolumeSnapshotPVCSpec(o)
 	pvc, err = clientSet.CoreV1().PersistentVolumeClaims(o.Namespace).Create(ctx, pvc, metav1.CreateOptions{})
 	if err != nil {
 		return err
@@ -497,8 +531,8 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 	o.Logger.Infof("%s volume snapshot - %s is ready-to-use\n", check, volSnap.GetName())
 
 	//  Create restore pod and pvc
-	restorePvcSpec := createRestorePVCSpec(
-		RestorePvcNamePrefix+resNameSuffix, VolumeSnapSrcNamePrefix+resNameSuffix, o.StorageClass, o.Namespace)
+	restorePvcSpec := createRestorePVCSpec(RestorePvcNamePrefix+resNameSuffix,
+		VolumeSnapSrcNamePrefix+resNameSuffix, o)
 	restorePvcSpec, err = clientSet.CoreV1().PersistentVolumeClaims(o.Namespace).
 		Create(ctx, restorePvcSpec, metav1.CreateOptions{})
 	if err != nil {
@@ -568,8 +602,7 @@ func (o *Options) checkVolumeSnapshot(ctx context.Context) error {
 
 	// create unmounted restore pvc and pod
 	unmountedPvcSpec := createRestorePVCSpec(UnmountedRestorePvcNamePrefix+resNameSuffix,
-		UnmountedVolumeSnapSrcNamePrefix+resNameSuffix,
-		o.StorageClass, o.Namespace)
+		UnmountedVolumeSnapSrcNamePrefix+resNameSuffix, o)
 	_, err = clientSet.CoreV1().PersistentVolumeClaims(o.Namespace).
 		Create(ctx, unmountedPvcSpec, metav1.CreateOptions{})
 	if err != nil {

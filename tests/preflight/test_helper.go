@@ -7,22 +7,22 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/trilioData/tvk-plugins/cmd/preflight/cmd"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/trilioData/tvk-plugins/internal"
 	"github.com/trilioData/tvk-plugins/tools/preflight"
 )
 
 // Individual assertions of successful preflight checks which do not involve any CRUD operations
-func nonCRUDPreflightCheckAssertion(inputFlags map[string]string, outputLog string) {
-	storageClass, ok := inputFlags[storageClassFlag]
-	Expect(ok).To(BeTrue())
+func nonCRUDPreflightCheckAssertion(storageClass, snapshotClass, outputLog string) {
 	assertPreflightLogFileCreateSuccess(outputLog)
-	assertVolSnapClassCheckSuccess(inputFlags, outputLog)
+	assertVolSnapClassCheckSuccess(snapshotClass, outputLog)
 	assertKubectlBinaryCheckSuccess(outputLog)
 	assertK8sClusterRBACCheckSuccess(outputLog)
 	assertHelmVersionCheckSuccess(outputLog)
@@ -38,15 +38,19 @@ func assertPreflightLogFileCreateSuccess(outputLog string) {
 }
 
 func assertSuccessfulPreflightChecks(inputFlags map[string]string, outputLog string) {
-	nonCRUDPreflightCheckAssertion(inputFlags, outputLog)
+	storageClass, ok := inputFlags[storageClassFlag]
+	Expect(ok).To(BeTrue())
+	snapshotClass := inputFlags[snapshotClassFlag]
+	pvcStorageRequest := inputFlags[pvcStorageRequestFlag]
+	nonCRUDPreflightCheckAssertion(storageClass, snapshotClass, outputLog)
 	assertDNSResolutionCheckSuccess(outputLog)
 	assertVolumeSnapshotCheckSuccess(outputLog)
+	assertPVCStorageRequestCheckSuccess(outputLog, pvcStorageRequest)
 }
 
-func assertVolSnapClassCheckSuccess(inputFlags map[string]string, outputLog string) {
+func assertVolSnapClassCheckSuccess(snapshotClass, outputLog string) {
 	By("Check whether volume snapshot class is present on cluster")
-	snapshotClass, ok := inputFlags[snapshotClassFlag]
-	if ok {
+	if snapshotClass != "" {
 		Expect(outputLog).To(ContainSubstring(
 			fmt.Sprintf("Volume snapshot class - %s driver matches with given storage class provisioner",
 				snapshotClass)))
@@ -135,6 +139,99 @@ func assertVolumeSnapshotCheckSuccess(outputLog string) {
 	Expect(outputLog).To(ContainSubstring("Preflight check for volume snapshot and restore is successful"))
 }
 
+func assertPVCStorageRequestCheckSuccess(outputLog, pvcStorageRequest string) {
+	if pvcStorageRequest == "" {
+		Expect(outputLog).To(ContainSubstring(fmt.Sprintf("PVC STORAGE REQUEST=\"%s\"", cmd.DefaultPVCStorage)))
+	} else {
+		Expect(outputLog).To(ContainSubstring(fmt.Sprintf("PVC STORAGE REQUEST=\"%s\"", pvcStorageRequest)))
+	}
+}
+
+func assertSuccessCleanupUID(uid, outputLog string) {
+	By(fmt.Sprintf("Should clean source pod with uid=%s", uid))
+	srcPodName := strings.Join([]string{preflight.SourcePodNamePrefix, uid}, "")
+	Expect(outputLog).To(ContainSubstring("Cleaning Pod - %s", srcPodName))
+
+	By(fmt.Sprintf("Should clean dns pod with uid=%s", uid))
+	dnsPodName := strings.Join([]string{dnsPodNamePrefix, uid}, "")
+	Expect(outputLog).To(ContainSubstring("Cleaning Pod - %s", dnsPodName))
+
+	By(fmt.Sprintf("Should clean source pvc with uid=%s", uid))
+	srcPvcName := strings.Join([]string{preflight.SourcePvcNamePrefix, uid}, "")
+	Expect(outputLog).To(ContainSubstring("Cleaning PersistentVolumeClaim - %s", srcPvcName))
+
+	By(fmt.Sprintf("Should clean source volume snapshot with uid=%s", uid))
+	srcVolSnapName := strings.Join([]string{preflight.VolumeSnapSrcNamePrefix, uid}, "")
+	Expect(outputLog).To(ContainSubstring("Cleaning VolumeSnapshot - %s", srcVolSnapName))
+
+	By(fmt.Sprintf("Should clean all preflight resources for uid=%s", uid))
+	Expect(outputLog).To(ContainSubstring("All preflight resources cleaned"))
+
+	By(fmt.Sprintf("All preflight pods with uid=%s should be removed from cluster", uid))
+	Eventually(func() int {
+		podList := unstructured.UnstructuredList{}
+		podList.SetGroupVersionKind(podGVK)
+		err = runtimeClient.List(ctx, &podList,
+			client.MatchingLabels(getPreflightResourceLabels(uid)), client.InNamespace(defaultTestNs))
+		Expect(err).To(BeNil())
+		return len(podList.Items)
+	}, timeout, interval).Should(Equal(0))
+
+	By(fmt.Sprintf("All preflight PVCs with uid=%s should be removed from cluster", uid))
+	Eventually(func() int {
+		pvcList := unstructured.UnstructuredList{}
+		pvcList.SetGroupVersionKind(pvcGVK)
+		err = runtimeClient.List(ctx, &pvcList,
+			client.MatchingLabels(getPreflightResourceLabels(uid)), client.InNamespace(defaultTestNs))
+		Expect(err).To(BeNil())
+		return len(pvcList.Items)
+	}, timeout, interval).Should(Equal(0))
+
+	By(fmt.Sprintf("All preflight volume snapshots with uid=%s should be removed from the cluster", uid))
+	Eventually(func() int {
+		snapshotList := unstructured.UnstructuredList{}
+		snapshotList.SetGroupVersionKind(snapshotGVK)
+		err = runtimeClient.List(ctx, &snapshotList,
+			client.MatchingLabels(getPreflightResourceLabels(uid)), client.InNamespace(defaultTestNs))
+		Expect(err).To(BeNil())
+		return len(snapshotList.Items)
+	}, timeout, interval).Should(Equal(0))
+}
+
+func assertSuccessCleanupAll(outputLog string) {
+	Expect(outputLog).To(ContainSubstring("All preflight resources cleaned"))
+
+	By("All preflight pods should be removed from cluster")
+	Eventually(func() int {
+		podList := unstructured.UnstructuredList{}
+		podList.SetGroupVersionKind(podGVK)
+		err = runtimeClient.List(ctx, &podList,
+			client.MatchingLabels(getPreflightResourceLabels("")), client.InNamespace(defaultTestNs))
+		Expect(err).To(BeNil())
+		return len(podList.Items)
+	}, timeout, interval).Should(Equal(0))
+
+	By("All preflight PVCs should be removed from cluster")
+	Eventually(func() int {
+		pvcList := unstructured.UnstructuredList{}
+		pvcList.SetGroupVersionKind(pvcGVK)
+		err = runtimeClient.List(ctx, &pvcList,
+			client.MatchingLabels(getPreflightResourceLabels("")), client.InNamespace(defaultTestNs))
+		Expect(err).To(BeNil())
+		return len(pvcList.Items)
+	}, timeout, interval).Should(Equal(0))
+
+	By("All preflight volume snapshots should be removed from the cluster")
+	Eventually(func() int {
+		snapshotList := unstructured.UnstructuredList{}
+		snapshotList.SetGroupVersionKind(snapshotGVK)
+		err = runtimeClient.List(ctx, &snapshotList,
+			client.MatchingLabels(getPreflightResourceLabels("")), client.InNamespace(defaultTestNs))
+		Expect(err).To(BeNil())
+		return len(snapshotList.Items)
+	}, timeout, interval).Should(Equal(0))
+}
+
 func createPreflightResourcesForCleanup() string {
 	var uid string
 	uid, err = preflight.CreateResourceNameSuffix()
@@ -166,7 +263,7 @@ func createDNSPodSpec(preflightUID string) *corev1.Pod {
 			Image:           strings.Join([]string{preflight.GcrRegistryPath, preflight.DNSUtilsImage}, "/"),
 			Command:         preflight.CommandSleep3600,
 			ImagePullPolicy: corev1.PullIfNotPresent,
-			Resources:       preflight.ResourceRequirements,
+			Resources:       resourceReqs,
 		},
 	}
 
@@ -187,7 +284,7 @@ func createSourcePodSpec(pvcName, preflightUID string) *corev1.Pod {
 			Image:     preflight.BusyboxImageName,
 			Command:   preflight.CommandBinSh,
 			Args:      preflight.ArgsTouchDataFileSleep,
-			Resources: preflight.ResourceRequirements,
+			Resources: resourceReqs,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      preflight.VolMountName,
@@ -319,6 +416,21 @@ func getPreflightResourceLabels(uid string) map[string]string {
 	}
 
 	return labels
+}
+
+func createNamespace(namespace string) {
+	ns := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: namespace,
+		},
+	}
+	_, err = k8sClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
+	Expect(err).To(BeNil())
+}
+
+func deleteNamespace(namespace string) {
+	err = k8sClient.CoreV1().Namespaces().Delete(ctx, namespace, metav1.DeleteOptions{})
+	Expect(err).To(BeNil())
 }
 
 // copy map 'from' to 'to' key-by-key and value-by-value

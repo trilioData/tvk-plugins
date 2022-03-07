@@ -2,6 +2,7 @@ package preflighttest
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"os"
@@ -15,8 +16,11 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
+	"github.com/trilioData/tvk-plugins/cmd/preflight/cmd"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
@@ -34,7 +38,13 @@ import (
 
 const (
 	defaultTestStorageClass  = "csi-gce-pd"
-	defaultTestSnapshotClass = "longhorn"
+	defaultTestSnapshotClass = "default-snapshot-class"
+	memory256                = "256Mi"
+	cpu300                   = "300m"
+	cpu400                   = "400m"
+	cpu600                   = "600m"
+	resourceCPUToken         = "cpu"
+	resourceMemoryToken      = "memory"
 
 	dnsPodNamePrefix = "test-dns-pod-"
 	dnsContainerName = "test-dnsutils"
@@ -43,6 +53,7 @@ const (
 	invalidVolSnapDriver   = "invalid.csi.k8s.io"
 	preflightSAName        = "preflight-sa"
 	preflightKubeConf      = "preflight_test_config"
+	flagNamespace          = "preflight-flag-ns"
 	kubeconfigEnv          = "KUBECONFIG"
 	filePermission         = 0644
 
@@ -52,20 +63,24 @@ const (
 )
 
 var (
-	err                  error
-	cmdOut               *shell.CmdOut
-	kubeconfig           string
-	ctx                  = context.Background()
-	log                  *logrus.Entry
-	storageClassFlag     = "--storage-class"
-	snapshotClassFlag    = "--volume-snapshot-class"
-	localRegistryFlag    = "--local-registry"
-	imagePullSecFlag     = "--image-pull-secret"
-	serviceAccountFlag   = "--service-account"
-	cleanupOnFailureFlag = "--cleanup-on-failure"
-	namespaceFlag        = "--namespace"
-	kubeconfigFlag       = "--kubeconfig"
-	logLevelFlag         = "--log-level"
+	err                   error
+	cmdOut                *shell.CmdOut
+	kubeconfig            string
+	ctx                   = context.Background()
+	log                   *logrus.Entry
+	flagPrefix            = "--"
+	storageClassFlag      = flagPrefix + cmd.StorageClassFlag
+	snapshotClassFlag     = flagPrefix + cmd.SnapshotClassFlag
+	localRegistryFlag     = flagPrefix + cmd.LocalRegistryFlag
+	serviceAccountFlag    = flagPrefix + cmd.ServiceAccountFlag
+	cleanupOnFailureFlag  = flagPrefix + cmd.CleanupOnFailureFlag
+	namespaceFlag         = flagPrefix + cmd.NamespaceFlag
+	kubeconfigFlag        = flagPrefix + internal.KubeconfigFlag
+	logLevelFlag          = flagPrefix + internal.LogLevelFlag
+	configFileFlag        = flagPrefix + cmd.ConfigFileFlag
+	pvcStorageRequestFlag = flagPrefix + cmd.PVCStorageRequestFlag
+	limitsFlag            = flagPrefix + cmd.PodLimitFlag
+	requestsFlag          = flagPrefix + cmd.PodRequestFlag
 
 	preflightLogFilePrefix    = "preflight-"
 	cleanupLogFilePrefix      = "preflight_cleanup-"
@@ -77,9 +92,16 @@ var (
 	invalidNamespace          = "invalid-ns"
 	invalidKubeConfFilename   = path.Join([]string{".", "invalid_kc_file"}...)
 	invalidKubeConfFileData   = "invalid data"
+	invalidYamlFilePath       = "invalid_path.yaml"
+	invalidKeyYamlFileName    = "invalid_key_file.yaml"
+	invalidPVCStorageRequest  = "2Ga"
 	defaultTestNs             = testutils.GetInstallNamespace()
-
-	kubeConfPath = os.Getenv(kubeconfigEnv)
+	permYamlFile              = "file_permission.yaml"
+	cleanupUIDInputYamlFile   = "cleanup_uid_input.yaml"
+	cleanupFileInputData      = strings.Join([]string{"cleanup:",
+		fmt.Sprintf("  namespace: %s", defaultTestNs), "  logLevel: info"}, "\n")
+	cleanupAllInputYamlFile = "cleanup_all_input.yaml"
+	kubeConfPath            = os.Getenv(kubeconfigEnv)
 
 	distDir                 = "dist"
 	preflightDir            = "preflight_linux_amd64"
@@ -88,6 +110,19 @@ var (
 	preflightBinaryDir      = filepath.Join(projectRoot, distDir, preflightDir)
 	preflightBinaryName     = "preflight"
 	preflightBinaryFilePath = filepath.Join(preflightBinaryDir, preflightBinaryName)
+	testDataDirRelPath      = filepath.Join(projectRoot, "tests", "preflight", "test-data")
+	testFileInputName       = "preflight_file_input.yaml"
+
+	resourceReqs = corev1.ResourceRequirements{
+		Requests: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceMemory: resource.MustParse(cmd.DefaultPodRequestMemory),
+			corev1.ResourceCPU:    resource.MustParse(cmd.DefaultPodRequestCPU),
+		},
+		Limits: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceMemory: resource.MustParse(cmd.DefaultPodLimitMemory),
+			corev1.ResourceCPU:    resource.MustParse(cmd.DefaultPodLimitCPU),
+		},
+	}
 
 	flagsMap = map[string]string{
 		storageClassFlag:     defaultTestStorageClass,

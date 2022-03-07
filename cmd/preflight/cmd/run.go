@@ -29,7 +29,7 @@ var runCmd = &cobra.Command{
   # run preflight checks with a particular log level
   kubectl tvk-preflight run --storage-class <storage-class-name> --log-level <log-level>
 
-  # cleanup the resources generated during preflight check if preflight check fails. Default is false.
+  # Cleanup the resources generated during preflight check if preflight check fails. Default is false.
   # If the preflight check is successful, then all resources are cleaned.
   kubectl tvk-preflight run --storage-class <storage-class-name> --cleanup-on-failure 
 
@@ -42,63 +42,55 @@ var runCmd = &cobra.Command{
 
   # run preflight with a particular serviceaccount
   kubectl tvk-preflight run --storage-class <storage-class-name> --service-account-name <service account name>
+
+  # run preflight with preflight pod resource request flag
+  kubectl tvk-preflight run --storage-class <storage-class-name> --request <resource1>=<value1>,<resource2>=<value2>
+
+  # run preflight with pvc storage request flag for volume snapshot check
+  kubectl tvk-preflight run --storage-class <storage-class-name> --pvc-storage-request <storage request value>
 `,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		var err error
+		err = managePreflightInputs(cmd)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		err = setupLogger(preflightLogFilePrefix, cmdOps.Run.LogLevel)
+		if err != nil {
+			log.Fatalf("Failed to setup a logger :: %s", err.Error())
+		}
+		err = preflight.InitKubeEnv(cmdOps.Run.Kubeconfig)
+		if err != nil {
+			log.Fatalf("Error initializing kubernetes clients :: %s", err.Error())
+		}
+
 		logFile, err = os.OpenFile(preflightLogFilename, os.O_APPEND|os.O_WRONLY, filePermission)
 		if err != nil {
 			log.Fatalf("Failed to open preflight log file :: %s", err.Error())
 		}
 		defer logFile.Close()
 		logger.SetOutput(io.MultiWriter(colorable.NewColorableStdout(), logFile))
-		logRootCmdFlagsInfo()
-		if storageClass == "" {
-			logger.Fatalf("storage-class is required, cannot be empty")
-		}
-		if imagePullSecret != "" && localRegistry == "" {
-			logger.Fatalf("Cannot give image pull secret if local registry is not provided.\nUse --local-registry flag to provide local registry")
-		}
-		op := &preflight.Options{
-			CommonOptions: preflight.CommonOptions{
-				Kubeconfig: kubeconfig,
-				Namespace:  namespace,
-				Logger:     logger,
-			},
-			StorageClass:         storageClass,
-			SnapshotClass:        snapshotClass,
-			LocalRegistry:        localRegistry,
-			ImagePullSecret:      imagePullSecret,
-			ServiceAccountName:   serviceAccount,
-			PerformCleanupOnFail: cleanupOnFailure,
-		}
-		op.PerformPreflightChecks(context.Background())
-	},
+		cmdOps.Run.Logger = logger
 
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		err := setupLogger(preflightLogFilePrefix)
+		err = validateRunOptions()
 		if err != nil {
-			return err
+			logger.Fatalf(err.Error())
 		}
-		err = preflight.InitKubeEnv(kubeconfig)
-		if err != nil {
-			return err
-		}
-		return nil
+
+		return cmdOps.Run.PerformPreflightChecks(context.Background())
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(runCmd)
 
-	runCmd.Flags().StringVar(&storageClass, storageClassFlag, "", storageClassUsage)
-	runCmd.Flags().StringVar(&snapshotClass, snapshotClassFlag, "", snapshotClassUsage)
-	runCmd.Flags().StringVar(&localRegistry, localRegistryFlag, "", localRegistryUsage)
+	runCmd.Flags().StringVar(&storageClass, StorageClassFlag, "", storageClassUsage)
+	runCmd.Flags().StringVar(&snapshotClass, SnapshotClassFlag, "", snapshotClassUsage)
+	runCmd.Flags().StringVar(&localRegistry, LocalRegistryFlag, "", localRegistryUsage)
 	runCmd.Flags().StringVar(&imagePullSecret, imagePullSecFlag, "", imagePullSecUsage)
-	runCmd.Flags().StringVar(&serviceAccount, serviceAccountFlag, "", serviceAccountUsage)
-	runCmd.Flags().BoolVar(&cleanupOnFailure, cleanupOnFailureFlag, false, cleanupOnFailureUsage)
-
-	err := runCmd.MarkFlagRequired(storageClassFlag)
-	if err != nil {
-		log.Fatalf("Error marking %s flag as required :: %s", storageClassFlag, err.Error())
-	}
+	runCmd.Flags().StringVar(&serviceAccount, ServiceAccountFlag, "", serviceAccountUsage)
+	runCmd.Flags().BoolVar(&cleanupOnFailure, CleanupOnFailureFlag, false, cleanupOnFailureUsage)
+	runCmd.Flags().StringVar(&podLimits, PodLimitFlag, "", podLimitUsage)
+	runCmd.Flags().StringVar(&podRequests, PodRequestFlag, "", podRequestUsage)
+	runCmd.Flags().StringVar(&pvcStorageRequest, PVCStorageRequestFlag, "", pvcStorageRequestUsage)
 }
