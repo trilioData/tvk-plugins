@@ -6,21 +6,23 @@ import (
 	"fmt"
 	"math/big"
 	goexec "os/exec"
+	"path/filepath"
 	"time"
 
 	version "github.com/hashicorp/go-version"
-	"github.com/trilioData/tvk-plugins/internal"
-	"github.com/trilioData/tvk-plugins/tools/preflight/exec"
-	"github.com/trilioData/tvk-plugins/tools/preflight/wait"
-	"k8s.io/client-go/discovery"
-
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/trilioData/tvk-plugins/internal"
+	"github.com/trilioData/tvk-plugins/tools/preflight/exec"
+	"github.com/trilioData/tvk-plugins/tools/preflight/wait"
 )
 
 // RunOptions input options required for running preflight.
@@ -146,14 +148,14 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		o.Logger.Infof("%s Preflight check for SnapshotClass is successful\n", check)
 	}
 
-	//  Check CSI installation
-	o.Logger.Infoln("Checking if CSI APIs are installed in the cluster")
-	err = o.checkCSI(ctx)
+	//  Check VolumeSnapshot CRDs installation
+	o.Logger.Infoln("Checking if VolumeSnapshot CRDs are installed in the cluster or else create")
+	err = o.checkAndCreateVolumeSnapshotCRDs(ctx)
 	if err != nil {
-		o.Logger.Errorf("Preflight check for CSI failed :: %s\n", err.Error())
+		o.Logger.Errorf("Preflight check for VolumeSnapshot CRDs failed :: %s\n", err.Error())
 		preflightStatus = false
 	} else {
-		o.Logger.Infof("%s Preflight check for CSI is successful\n", check)
+		o.Logger.Infof("%s Preflight check for VolumeSnapshot CRDs is successful\n", check)
 	}
 
 	//  Check DNS resolution
@@ -403,34 +405,50 @@ func (o *Run) checkSnapshotclassForProvisioner(ctx context.Context, provisioner 
 	return sscName, nil
 }
 
-//  checkCSI checks whether CSI APIs are installed in the k8s cluster
-func (o *Run) checkCSI(ctx context.Context) error {
-	prefVersion, err := GetServerPreferredVersionForGroup(apiExtenstionsGroup, clientSet)
-	if err != nil {
-		return err
+//  checkAndCreateVolumeSnapshotCRDs checks and creates volumesnapshot and related CRDs if not present on cluster.
+func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context) error {
+	var err error
+
+	serverVersion, sErr := discClient.ServerVersion()
+	if sErr != nil {
+		return sErr
 	}
-	var apiFoundCnt = 0
-	u := &unstructured.Unstructured{}
-	u.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   apiExtenstionsGroup,
-		Version: prefVersion,
-		Kind:    customResourceDefinition,
-	})
-	for _, api := range CsiApis {
-		err := runtimeClient.Get(ctx, client.ObjectKey{Name: api}, u)
-		if err != nil && !k8serrors.IsNotFound(err) {
-			return err
-		} else if k8serrors.IsNotFound(err) {
-			o.Logger.Errorf("%s Not found CSI API - %s\n", cross, api)
+
+	crdObj, prefCRDVersion, gErr := getPrefVersionCRDObj(serverVersion.String())
+	if gErr != nil {
+		return gErr
+	}
+
+	for _, crd := range VolumeSnapshotCRDs {
+		if err = runtimeClient.Get(ctx, client.ObjectKey{Name: crd}, crdObj); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return fmt.Errorf("error getting volume snapshot class CRD :: %s", err.Error())
+			}
+			o.Logger.Infof("Volume snapshot CRD: %s not found on cluster. Attempting installation...", crd)
+
+			fileBytes, rErr := crdYamlFiles.ReadFile(filepath.Join(volumeSnapshotCRDYamlDir, prefCRDVersion, crd+".yaml"))
+			if rErr != nil {
+				return rErr
+			}
+
+			unmarshalCRDObj, _, gErr := getPrefVersionCRDObj(serverVersion.String())
+			if gErr != nil {
+				return gErr
+			}
+			if uErr := yaml.Unmarshal(fileBytes, unmarshalCRDObj); uErr != nil {
+				return uErr
+			}
+
+			if cErr := runtimeClient.Create(ctx, unmarshalCRDObj); cErr != nil {
+				return cErr
+			}
+
+			o.Logger.Infof("%s Volume snapshot CRD: %s successfully created", check, crd)
 		} else {
-			o.Logger.Infof("%s Found CSI API - %s on cluster\n", check, api)
-			apiFoundCnt++
+			o.Logger.Infof("%s Volume snapshot CRD: %s already exists, skipping installation", check, crd)
 		}
 	}
 
-	if apiFoundCnt != len(CsiApis) {
-		return fmt.Errorf("some CSI APIs not found in cluster. Check logs for details")
-	}
 	return nil
 }
 

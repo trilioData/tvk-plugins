@@ -2,12 +2,17 @@ package preflight
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	gort "runtime"
 	"strings"
 	"time"
 
+	semVersion "github.com/hashicorp/go-version"
+	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,7 +26,6 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/sirupsen/logrus"
 	"github.com/trilioData/tvk-plugins/internal"
 	"github.com/trilioData/tvk-plugins/internal/utils/shell"
 	"github.com/trilioData/tvk-plugins/tools/preflight/exec"
@@ -41,19 +45,17 @@ const (
 
 	letterBytes = "abcdefghijklmnopqrstuvwxyz"
 
-	LabelK8sPartOf                  = "app.kubernetes.io/part-of"
-	LabelK8sPartOfValue             = "k8s-triliovault"
-	LabelTrilioKey                  = "trilio"
-	LabelTvkPreflightValue          = "tvk-preflight"
-	LabelPreflightRunKey            = "preflight-run"
-	LabelK8sName                    = "app.kubernetes.io/name"
-	LabelK8sNameValue               = "k8s-triliovault"
-	SourcePodNamePrefix             = "source-pod-"
-	SourcePvcNamePrefix      string = "source-pvc-"
-	VolumeSnapSrcNamePrefix         = "snapshot-source-pvc-"
-	customResourceDefinition        = "CustomResourceDefinition"
+	LabelK8sPartOf                 = "app.kubernetes.io/part-of"
+	LabelK8sPartOfValue            = "k8s-triliovault"
+	LabelTrilioKey                 = "trilio"
+	LabelTvkPreflightValue         = "tvk-preflight"
+	LabelPreflightRunKey           = "preflight-run"
+	LabelK8sName                   = "app.kubernetes.io/name"
+	LabelK8sNameValue              = "k8s-triliovault"
+	SourcePodNamePrefix            = "source-pod-"
+	SourcePvcNamePrefix     string = "source-pvc-"
+	VolumeSnapSrcNamePrefix        = "snapshot-source-pvc-"
 
-	apiExtenstionsGroup              = "apiextensions.k8s.io"
 	StorageSnapshotGroup             = "snapshot.storage.k8s.io"
 	RestorePvcNamePrefix             = "restored-pvc-"
 	RestorePodNamePrefix             = "restored-pod-"
@@ -77,13 +79,18 @@ const (
 
 	execTimeoutDuration       = 3 * time.Minute
 	deletionGracePeriod int64 = 5
+
+	volumeSnapshotCRDYamlDir    = "volumesnapshotcrdyamls"
+	snapshotClassVersionV1      = "v1"
+	snapshotClassVersionV1Beta1 = "v1beta1"
+	minServerVerForV1CrdVersion = "v1.20.0"
 )
 
 var (
 	check = "\xE2\x9C\x94"
 	cross = "\xE2\x9D\x8C"
 
-	CsiApis = [3]string{
+	VolumeSnapshotCRDs = [3]string{
 		"volumesnapshotclasses." + StorageSnapshotGroup,
 		"volumesnapshotcontents." + StorageSnapshotGroup,
 		"volumesnapshots." + StorageSnapshotGroup,
@@ -111,6 +118,9 @@ var (
 	runtimeClient client.Client
 	discClient    *discovery.DiscoveryClient
 	restConfig    *rest.Config
+
+	//go:embed volumesnapshotcrdyamls/*
+	crdYamlFiles embed.FS
 )
 
 type CommonOptions struct {
@@ -139,6 +149,8 @@ func InitKubeEnv(kubeconfig string) error {
 	}
 
 	utilruntime.Must(corev1.AddToScheme(scheme))
+	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
+	utilruntime.Must(apiextensionsv1beta1.AddToScheme(scheme))
 	kubeEnv, err := internal.NewEnv(kubeconfig, scheme)
 	if err != nil {
 		return err
@@ -205,6 +217,40 @@ func getVersionsOfGroup(grp string) ([]string, error) {
 	}
 
 	return apiVerList, nil
+}
+
+func getPrefVersionCRDObj(serverVersion string) (crdObj client.Object, prefVersion string, err error) {
+	currentVersion, err := getSemverVersion(serverVersion)
+	if err != nil {
+		return nil, "", err
+	}
+
+	minV1SupportedVersion, err := getSemverVersion(minServerVerForV1CrdVersion)
+	if err != nil {
+		return nil, "", err
+	}
+
+	crdObj = &apiextensionsv1.CustomResourceDefinition{}
+	prefCRDVersion := snapshotClassVersionV1
+	if currentVersion.LessThan(minV1SupportedVersion) {
+		crdObj = &apiextensionsv1beta1.CustomResourceDefinition{}
+		prefCRDVersion = snapshotClassVersionV1Beta1
+	}
+
+	return crdObj, prefCRDVersion, nil
+}
+
+func getSemverVersion(ver string) (*semVersion.Version, error) {
+	semVer, err := semVersion.NewSemver(ver)
+
+	if err != nil {
+		return semVer, err
+	}
+
+	if semVer == nil {
+		return nil, fmt.Errorf("invalid semver version: [%s]", ver)
+	}
+	return semVer, err
 }
 
 //  clusterHasVolumeSnapshotClass checks and returns volume snapshot class if present on cluster.

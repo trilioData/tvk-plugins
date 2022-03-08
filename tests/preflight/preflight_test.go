@@ -13,13 +13,13 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tLog "github.com/sirupsen/logrus"
-	"github.com/trilioData/tvk-plugins/cmd/preflight/cmd"
-	"github.com/trilioData/tvk-plugins/tools/preflight"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/trilioData/tvk-plugins/cmd/preflight/cmd"
+	"github.com/trilioData/tvk-plugins/tools/preflight"
 	"github.com/trilioData/tvk-plugins/internal/utils/shell"
 )
 
@@ -55,6 +55,17 @@ var _ = Describe("Preflight Tests", func() {
 				_, err = shell.RunCmd(cmd)
 				Expect(err).ToNot(BeNil())
 			})
+		})
+
+		Context("Preflight run command volume snapshot CRD test cases", func() {
+
+			It("All preflight checks should pass if all volume snapshot CRDs are present", func() {
+				cmdOut, err = runPreflightChecks(flagsMap)
+				Expect(err).To(BeNil())
+
+				assertVolumeSnapshotCRDCheckSuccess(cmdOut.Out)
+			})
+
 		})
 
 		Context("Preflight run command snapshot class flag test cases", func() {
@@ -832,6 +843,7 @@ var _ = Describe("Preflight Tests", func() {
 	})
 
 	Context("Preflight cleanup command test-cases", func() {
+
 		Context("cleanup all preflight resources on the cluster in a particular namespace", func() {
 
 			It("Should clean all preflight resources in a particular namespace", func() {
@@ -977,5 +989,6 @@ var _ = Describe("Preflight Tests", func() {
 				}, timeout, interval).Should(Equal(0))
 			})
 		})
+
 	})
 })
