@@ -150,7 +150,11 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 
 	//  Check VolumeSnapshot CRDs installation
 	o.Logger.Infoln("Checking if VolumeSnapshot CRDs are installed in the cluster or else create")
-	err = o.checkAndCreateVolumeSnapshotCRDs(ctx)
+	serverVersion, sErr := discClient.ServerVersion()
+	if sErr != nil {
+		return sErr
+	}
+	err = o.checkAndCreateVolumeSnapshotCRDs(ctx, serverVersion.String())
 	if err != nil {
 		o.Logger.Errorf("Preflight check for VolumeSnapshot CRDs failed :: %s\n", err.Error())
 		preflightStatus = false
@@ -335,7 +339,7 @@ func (o *Run) checkStorageSnapshotClass(ctx context.Context) error {
 	o.Logger.Infof("%s Storageclass - %s found on cluster\n", check, o.StorageClass)
 	provisioner := sc.Provisioner
 	if o.SnapshotClass == "" {
-		storageVolSnapClass, err = o.checkSnapshotclassForProvisioner(ctx, provisioner)
+		storageVolSnapClass, err = o.checkSnapshotClassForProvisioner(ctx, provisioner)
 		if err != nil {
 			o.Logger.Errorf("%s %s\n", cross, err.Error())
 			return err
@@ -361,8 +365,8 @@ func (o *Run) checkStorageSnapshotClass(ctx context.Context) error {
 	return nil
 }
 
-//  checkSnapshotclassForProvisioner checks whether snapshot-class exist for a provisioner
-func (o *Run) checkSnapshotclassForProvisioner(ctx context.Context, provisioner string) (string, error) {
+//  checkSnapshotClassForProvisioner checks whether snapshot-class exist for a provisioner
+func (o *Run) checkSnapshotClassForProvisioner(ctx context.Context, provisioner string) (string, error) {
 	var (
 		prefVersion string
 		err         error
@@ -406,15 +410,10 @@ func (o *Run) checkSnapshotclassForProvisioner(ctx context.Context, provisioner 
 }
 
 //  checkAndCreateVolumeSnapshotCRDs checks and creates volumesnapshot and related CRDs if not present on cluster.
-func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context) error {
+func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context, serverVersion string) error {
 	var err error
 
-	serverVersion, sErr := discClient.ServerVersion()
-	if sErr != nil {
-		return sErr
-	}
-
-	crdObj, prefCRDVersion, gErr := getPrefVersionCRDObj(serverVersion.String())
+	crdObj, prefCRDVersion, gErr := getPrefVersionCRDObj(serverVersion)
 	if gErr != nil {
 		return gErr
 	}
@@ -431,7 +430,7 @@ func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context) error {
 				return rErr
 			}
 
-			unmarshalCRDObj, _, gErr := getPrefVersionCRDObj(serverVersion.String())
+			unmarshalCRDObj, _, gErr := getPrefVersionCRDObj(serverVersion)
 			if gErr != nil {
 				return gErr
 			}
