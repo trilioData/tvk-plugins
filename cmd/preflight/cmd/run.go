@@ -12,7 +12,7 @@ import (
 )
 
 // nolint:lll // ignore long line lint errors
-// runCmd represents the run command
+// runCmd represents the Run command
 var runCmd = &cobra.Command{
 	Use:   preflightRunCmdName,
 	Short: "Runs preflight checks on cluster",
@@ -31,7 +31,7 @@ var runCmd = &cobra.Command{
 
   # Cleanup the resources generated during preflight check if preflight check fails. Default is false.
   # If the preflight check is successful, then all resources are cleaned.
-  kubectl tvk-preflight run --storage-class <storage-class-name> --cleanup-on-failure 
+  kubectl tvk-preflight run --storage-class <storage-class-name> --Cleanup-on-failure 
 
   # run preflight with a particular kubeconfig file
   kubectl tvk-preflight run --storage-class <storage-class-name> --kubeconfig <kubeconfig-file-path>
@@ -93,4 +93,5 @@ func init() {
 	runCmd.Flags().StringVar(&podLimits, PodLimitFlag, "", podLimitUsage)
 	runCmd.Flags().StringVar(&podRequests, PodRequestFlag, "", podRequestUsage)
 	runCmd.Flags().StringVar(&pvcStorageRequest, PVCStorageRequestFlag, "", pvcStorageRequestUsage)
+	runCmd.Flags().StringVar(&nodeSelector, NodeSelectorFlag, "", nodeSelectorUsage)
 }

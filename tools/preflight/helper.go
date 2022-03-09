@@ -126,6 +126,12 @@ func (co *CommonOptions) logCommonOptions() {
 	co.Logger.Infof("NAMESPACE=\"%s\"", co.Namespace)
 }
 
+type podSchedulingOptions struct {
+	NodeSelector map[string]string   `json:"nodeSelector,omitempty"`
+	Affinity     *corev1.Affinity    `json:"affinity,omitempty"`
+	Tolerations  []corev1.Toleration `json:"tolerations,omitempty"`
+}
+
 func InitKubeEnv(kubeconfig string) error {
 	if gort.GOOS == windowsOSTarget {
 		check = windowsCheckSymbol
@@ -408,15 +414,30 @@ func createRestorePodSpec(podName, pvcName string, op *Run) *corev1.Pod {
 }
 
 func getPodTemplate(name string, op *Run) *corev1.Pod {
-	return &corev1.Pod{
+	pod := &corev1.Pod{
 		ObjectMeta: getObjectMetaTemplate(name, op.Namespace),
 		Spec: corev1.PodSpec{
 			ImagePullSecrets: []corev1.LocalObjectReference{
 				{Name: op.ImagePullSecret},
 			},
 			ServiceAccountName: op.ServiceAccountName,
+			NodeSelector:       op.PodSchedOps.NodeSelector,
+			Affinity:           op.PodSchedOps.Affinity,
+			Tolerations:        op.PodSchedOps.Tolerations,
 		},
 	}
+
+	if op.PodSchedOps.NodeSelector != nil {
+		pod.Spec.NodeSelector = op.PodSchedOps.NodeSelector
+	}
+	if op.PodSchedOps.Affinity != nil {
+		pod.Spec.Affinity = op.PodSchedOps.Affinity
+	}
+	if op.PodSchedOps.Tolerations != nil {
+		pod.Spec.Tolerations = op.PodSchedOps.Tolerations
+	}
+
+	return pod
 }
 
 func getObjectMetaTemplate(name, namespace string) metav1.ObjectMeta {
@@ -519,17 +540,50 @@ func removeFinalizer(ctx context.Context, obj client.Object) error {
 	return nil
 }
 
-func deleteK8sResourceWithForceTimeout(ctx context.Context, obj client.Object, logger *logrus.Logger) error {
+func deleteK8sResourceWithForceTimeout(ctx context.Context, res *unstructured.Unstructured, logger *logrus.Logger) error {
 	var err error
-	err = removeFinalizer(ctx, obj)
+	err = removeFinalizer(ctx, res)
 	if err != nil {
 		logger.Warnf("problem occurred while removing finalizers of %s - %s :: %s",
-			obj.GetObjectKind().GroupVersionKind().Kind, obj.GetName(), err.Error())
+			res.GetObjectKind().GroupVersionKind().Kind, res.GetName(), err.Error())
 	}
 
-	err = runtimeClient.Delete(ctx, obj, client.DeleteOption(client.GracePeriodSeconds(deletionGracePeriod)))
+	updatedRes := &unstructured.Unstructured{}
+	updatedRes.SetGroupVersionKind(res.GroupVersionKind())
+	err = runtimeClient.Get(ctx, client.ObjectKey{
+		Name:      res.GetName(),
+		Namespace: res.GetNamespace(),
+	}, updatedRes)
 	if err != nil {
-		return fmt.Errorf("problem occurred deleting %s - %s :: %s", obj.GetName(), obj.GetNamespace(), err.Error())
+		return err
+	}
+
+	err = runtimeClient.Delete(ctx, updatedRes, client.DeleteOption(client.GracePeriodSeconds(deletionGracePeriod)))
+	if err != nil {
+		return fmt.Errorf("problem occurred deleting %s - %s :: %s", updatedRes.GetName(), updatedRes.GetNamespace(), err.Error())
+	}
+
+	return nil
+}
+
+func deletePod(ctx context.Context, name, ns string, logger *logrus.Logger) error {
+	upod := &unstructured.Unstructured{}
+	upod.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "",
+		Version: "v1",
+		Kind:    internal.PodKind,
+	})
+
+	err := runtimeClient.Get(ctx, client.ObjectKey{
+		Name:      name,
+		Namespace: ns,
+	}, upod)
+	if err != nil {
+		return err
+	}
+	err = deleteK8sResourceWithForceTimeout(ctx, upod, logger)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -541,4 +595,8 @@ func getDefaultRetryBackoffParams() k8swait.Backoff {
 		Steps: volSnapRetrySteps, Duration: volSnapRetryInterval,
 		Factor: volSnapRetryFactor, Jitter: volSnapRetryJitter,
 	}
+}
+
+func logPodScheduleStmt(pod *corev1.Pod, logger *logrus.Logger) {
+	logger.Debugf("Pod - '%s' scheduled on node - '%s'", pod.GetName(), pod.Spec.NodeName)
 }

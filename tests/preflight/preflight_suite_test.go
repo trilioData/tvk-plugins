@@ -60,6 +60,18 @@ const (
 	timeout        = time.Minute * 1
 	interval       = time.Second * 1
 	spaceSeparator = " "
+
+	preflightNodeLabelKey    = "preflight-topology"
+	preflightNodeLabelValue  = "preflight-node"
+	preflightNodeAffinityKey = "pref-node-affinity"
+	preflightPodAffinityKey  = "pref-pod-affinity"
+	highAffinity             = "high"
+	mediumAffinity           = "medium"
+	lowAffinity              = "low"
+	debugLog                 = "debug"
+	preflightTaintKey        = "pref-node-taint"
+	preflightTaintValue      = "pref-node-toleration"
+	preflightTaintInvValue   = "pref-invalid-toleration"
 )
 
 var (
@@ -81,6 +93,7 @@ var (
 	pvcStorageRequestFlag = flagPrefix + cmd.PVCStorageRequestFlag
 	limitsFlag            = flagPrefix + cmd.PodLimitFlag
 	requestsFlag          = flagPrefix + cmd.PodRequestFlag
+	nodeSelectorFlag      = flagPrefix + cmd.NodeSelectorFlag
 
 	preflightLogFilePrefix    = "preflight-"
 	cleanupLogFilePrefix      = "preflight_cleanup-"
@@ -100,8 +113,13 @@ var (
 	cleanupUIDInputYamlFile   = "cleanup_uid_input.yaml"
 	cleanupFileInputData      = strings.Join([]string{"cleanup:",
 		fmt.Sprintf("  namespace: %s", defaultTestNs), "  logLevel: info"}, "\n")
-	cleanupAllInputYamlFile = "cleanup_all_input.yaml"
-	kubeConfPath            = os.Getenv(kubeconfigEnv)
+	cleanupAllInputYamlFile  = "cleanup_all_input.yaml"
+	invalidNodeSelectorKey   = "node-sel-key"
+	invalidNodeSelectorValue = "node-sel-value"
+	nodeAffinityInputFile    = "node_affinity_preflight.yaml"
+	podAffinityInputFile     = "pod_affinity_preflight.yaml"
+	taintsFileInputFile      = "taints_tolerations_preflight.yaml"
+	kubeConfPath             = os.Getenv(kubeconfigEnv)
 
 	distDir                 = "dist"
 	preflightDir            = "preflight_linux_amd64"
@@ -123,6 +141,7 @@ var (
 			corev1.ResourceCPU:    resource.MustParse(cmd.DefaultPodLimitCPU),
 		},
 	}
+	preflightBusyboxPod = "preflight-busybox"
 
 	flagsMap = map[string]string{
 		storageClassFlag:     defaultTestStorageClass,
@@ -184,7 +203,6 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	cmdOut, err = runCleanupForAllPreflightResources()
-	log.Infof("Resource cleanup at the end of suitte: %s", cmdOut.Out)
 	Expect(err).To(BeNil())
 	cleanDirForFiles(preflightLogFilePrefix)
 	cleanDirForFiles(cleanupLogFilePrefix)

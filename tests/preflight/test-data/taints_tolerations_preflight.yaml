@@ -1,0 +1,12 @@
+run:
+  namespace: tvk-prasad
+  storageClass: csi-gce-pd
+  cleanupOnFailure: false
+  podSchedulingOptions:
+    nodeSelector:
+      preflight-topology: preflight-node
+    tolerations:
+      - key: pref-node-taint
+        operator: Equal
+        value: pref-node-toleration
+        effect: NoSchedule

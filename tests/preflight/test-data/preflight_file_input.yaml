@@ -13,4 +13,3 @@ run:
 
 cleanup:
   logLevel: info
-  cleanupMode: all

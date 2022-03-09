@@ -40,6 +40,9 @@ const (
 	PVCStorageRequestFlag  = "pvc-storage-request"
 	pvcStorageRequestUsage = "PVC storage request for volume snapshot preflight check"
 
+	NodeSelectorFlag  = "node-selector"
+	nodeSelectorUsage = "Node selector labels for pods to schedule on a specific nodes of cluster"
+
 	uidFlag  = "uid"
 	uidUsage = "UID of the preflight check whose resources must be cleaned"
 
@@ -70,5 +73,6 @@ var (
 	podLimits         string
 	podRequests       string
 	pvcStorageRequest string
+	nodeSelector      string
 	cleanupUID        string
 )

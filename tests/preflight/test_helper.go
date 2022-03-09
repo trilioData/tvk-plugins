@@ -7,7 +7,9 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/trilioData/tvk-plugins/cmd/preflight/cmd"
+	tLog "github.com/sirupsen/logrus"
+	preflightCmd "github.com/trilioData/tvk-plugins/cmd/preflight/cmd"
+	"github.com/trilioData/tvk-plugins/internal/utils/shell"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,8 +59,7 @@ func assertVolSnapClassCheckSuccess(snapshotClass, outputLog string) {
 	} else {
 		Expect(outputLog).
 			To(MatchRegexp("(Extracted volume snapshot class -)(.*)(found in cluster)"))
-		Expect(outputLog).
-			To(MatchRegexp("(Volume snapshot class -)(.*)(driver matches with given StorageClass's provisioner)"))
+		Expect(outputLog).To(MatchRegexp("(Volume snapshot class -)(.*)(driver matches with given StorageClass's provisioner=)"))
 	}
 }
 
@@ -141,7 +142,7 @@ func assertVolumeSnapshotCheckSuccess(outputLog string) {
 
 func assertPVCStorageRequestCheckSuccess(outputLog, pvcStorageRequest string) {
 	if pvcStorageRequest == "" {
-		Expect(outputLog).To(ContainSubstring(fmt.Sprintf("PVC STORAGE REQUEST=\"%s\"", cmd.DefaultPVCStorage)))
+		Expect(outputLog).To(ContainSubstring(fmt.Sprintf("PVC STORAGE REQUEST=\"%s\"", preflightCmd.DefaultPVCStorage)))
 	} else {
 		Expect(outputLog).To(ContainSubstring(fmt.Sprintf("PVC STORAGE REQUEST=\"%s\"", pvcStorageRequest)))
 	}
@@ -230,6 +231,17 @@ func assertSuccessCleanupAll(outputLog string) {
 		Expect(err).To(BeNil())
 		return len(snapshotList.Items)
 	}, timeout, interval).Should(Equal(0))
+}
+
+func assertPodScheduleSuccess(outputLog, nodeName string) {
+	Expect(outputLog).To(MatchRegexp(
+		fmt.Sprintf("Pod - 'dnsutils-[a-z]{6}' scheduled on node - '%s'", nodeName)))
+	Expect(outputLog).To(MatchRegexp(
+		fmt.Sprintf("Pod - 'source-pod-[a-z]{6}' scheduled on node - '%s'", nodeName)))
+	Expect(outputLog).To(MatchRegexp(
+		fmt.Sprintf("Pod - 'restored-pod-[a-z]{6}' scheduled on node - '%s'", nodeName)))
+	Expect(outputLog).To(MatchRegexp(
+		fmt.Sprintf("Pod - 'unmounted-restored-pod-[a-z]{6}' scheduled on node - '%s'", nodeName)))
 }
 
 func createPreflightResourcesForCleanup() string {
@@ -438,4 +450,101 @@ func copyMap(from, to map[string]string) {
 	for key, value := range from {
 		to[key] = value
 	}
+}
+
+// Executes the preflight binary in terminal
+func runPreflightChecks(flagsMap map[string]string) (cmdOut *shell.CmdOut, err error) {
+	var flags string
+
+	for key, val := range flagsMap {
+		if key == cleanupOnFailureFlag {
+			flags = strings.Join([]string{flags, cleanupOnFailureFlag}, spaceSeparator)
+		} else {
+			flags = strings.Join([]string{flags, key, val}, spaceSeparator)
+		}
+	}
+
+	cmd := fmt.Sprintf("%s run %s", preflightBinaryFilePath, flags)
+	tLog.Infof("Preflight check CMD [%s]", cmd)
+	cmdOut, err = shell.RunCmd(cmd)
+	tLog.Infof("Preflight binary run execution output: %s", cmdOut.Out)
+	return cmdOut, err
+}
+
+// Executes cleanup for a particular preflight run
+func runCleanupWithUID(uid string) (cmdOut *shell.CmdOut, err error) {
+	cmd := fmt.Sprintf("%s cleanup --uid %s -n %s -k %s",
+		preflightBinaryFilePath, uid, defaultTestNs, kubeConfPath)
+	tLog.Infof("Preflight cleanup CMD [%s]", cmd)
+	cmdOut, err = shell.RunCmd(cmd)
+	tLog.Infof("Preflight binary cleanup execution output: %s", cmdOut.Out)
+	return cmdOut, err
+}
+
+// Executes cleanup for all preflight resources
+func runCleanupForAllPreflightResources() (cmdOut *shell.CmdOut, err error) {
+	cmd := fmt.Sprintf("%s cleanup -n %s -k %s", preflightBinaryFilePath, defaultTestNs, kubeConfPath)
+	tLog.Infof("Preflight cleanup CMD [%s]", cmd)
+	cmdOut, err = shell.RunCmd(cmd)
+	tLog.Infof("Preflight binary cleanup all execution output: %s", cmdOut.Out)
+	return cmdOut, err
+}
+
+func createPreflightServiceAccount() {
+	sa := &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      preflightSAName,
+			Namespace: defaultTestNs,
+		},
+	}
+	err = runtimeClient.Create(ctx, sa)
+	Expect(err).To(BeNil())
+}
+
+func deletePreflightServiceAccount() {
+	sa := &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      preflightSAName,
+			Namespace: defaultTestNs,
+		},
+	}
+	err = runtimeClient.Delete(ctx, sa)
+	Expect(err).To(BeNil())
+}
+
+func createAffineBusyboxPod(podName, affinity, namespace string) {
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      podName,
+			Namespace: namespace,
+			Labels: map[string]string{
+				preflightPodAffinityKey: affinity,
+			},
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:    preflight.BusyboxContainerName,
+					Image:   preflight.BusyboxImageName,
+					Command: preflight.CommandBinSh,
+				},
+			},
+			NodeSelector: map[string]string{
+				preflightNodeLabelKey: preflightNodeLabelValue,
+			},
+		},
+	}
+
+	_, err = k8sClient.CoreV1().Pods(namespace).Create(ctx, pod, metav1.CreateOptions{})
+	Expect(err).To(BeNil())
+}
+
+func deleteAffineBusyboxPod(podName, namespace string) {
+	err = k8sClient.CoreV1().Pods(namespace).Delete(ctx, podName, metav1.DeleteOptions{})
+	Expect(err).To(BeNil())
+
+	Eventually(func() error {
+		_, err = k8sClient.CoreV1().Pods(defaultTestNs).Get(ctx, podName, metav1.GetOptions{})
+		return err
+	}, timeout, interval).ShouldNot(BeNil())
 }
