@@ -11,6 +11,7 @@ import (
 
 	version "github.com/hashicorp/go-version"
 	corev1 "k8s.io/api/core/v1"
+	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -137,6 +138,21 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		o.Logger.Infof("%s Preflight check for kubernetes RBAC is successful\n", check)
 	}
 
+	//  Check VolumeSnapshot CRDs installation
+	o.Logger.Infoln("Checking if VolumeSnapshot CRDs are installed in the cluster or else create")
+	serverVersion, sErr := discClient.ServerVersion()
+	if sErr != nil {
+		o.Logger.Errorf("Error getting server version :: %s\n", err.Error())
+		return fmt.Errorf("error getting server version: %s", sErr.Error())
+	}
+	err = o.checkAndCreateVolumeSnapshotCRDs(ctx, serverVersion.String())
+	if err != nil {
+		o.Logger.Errorf("Preflight check for VolumeSnapshot CRDs failed :: %s\n", err.Error())
+		preflightStatus = false
+	} else {
+		o.Logger.Infof("%s Preflight check for VolumeSnapshot CRDs is successful\n", check)
+	}
+
 	//  Check storage snapshot class
 	o.Logger.Infoln("Checking if a StorageClass and VolumeSnapshotClass are present")
 	err = o.checkStorageSnapshotClass(ctx)
@@ -146,20 +162,6 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		preflightStatus = false
 	} else {
 		o.Logger.Infof("%s Preflight check for SnapshotClass is successful\n", check)
-	}
-
-	//  Check VolumeSnapshot CRDs installation
-	o.Logger.Infoln("Checking if VolumeSnapshot CRDs are installed in the cluster or else create")
-	serverVersion, sErr := discClient.ServerVersion()
-	if sErr != nil {
-		return sErr
-	}
-	err = o.checkAndCreateVolumeSnapshotCRDs(ctx, serverVersion.String())
-	if err != nil {
-		o.Logger.Errorf("Preflight check for VolumeSnapshot CRDs failed :: %s\n", err.Error())
-		preflightStatus = false
-	} else {
-		o.Logger.Infof("%s Preflight check for VolumeSnapshot CRDs is successful\n", check)
 	}
 
 	//  Check DNS resolution
@@ -413,12 +415,13 @@ func (o *Run) checkSnapshotClassForProvisioner(ctx context.Context, provisioner 
 func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context, serverVersion string) error {
 	var err error
 
-	crdObj, prefCRDVersion, gErr := getPrefVersionCRDObj(serverVersion)
+	prefCRDVersion, gErr := getPrefVersionCRDObj(serverVersion)
 	if gErr != nil {
 		return gErr
 	}
 
 	for _, crd := range VolumeSnapshotCRDs {
+		var crdObj = &apiextensions.CustomResourceDefinition{}
 		if err = runtimeClient.Get(ctx, client.ObjectKey{Name: crd}, crdObj); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return fmt.Errorf("error getting volume snapshot class CRD :: %s", err.Error())
@@ -430,10 +433,7 @@ func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context, serverVersio
 				return rErr
 			}
 
-			unmarshalCRDObj, _, gErr := getPrefVersionCRDObj(serverVersion)
-			if gErr != nil {
-				return gErr
-			}
+			unmarshalCRDObj := &apiextensions.CustomResourceDefinition{}
 			if uErr := yaml.Unmarshal(fileBytes, unmarshalCRDObj); uErr != nil {
 				return uErr
 			}

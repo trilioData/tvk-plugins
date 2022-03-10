@@ -11,8 +11,7 @@ import (
 	semVersion "github.com/hashicorp/go-version"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -149,8 +148,7 @@ func InitKubeEnv(kubeconfig string) error {
 	}
 
 	utilruntime.Must(corev1.AddToScheme(scheme))
-	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
-	utilruntime.Must(apiextensionsv1beta1.AddToScheme(scheme))
+	utilruntime.Must(apiextensions.AddToScheme(scheme))
 	kubeEnv, err := internal.NewEnv(kubeconfig, scheme)
 	if err != nil {
 		return err
@@ -219,25 +217,23 @@ func getVersionsOfGroup(grp string) ([]string, error) {
 	return apiVerList, nil
 }
 
-func getPrefVersionCRDObj(serverVersion string) (crdObj client.Object, prefVersion string, err error) {
+func getPrefVersionCRDObj(serverVersion string) (prefVersion string, err error) {
 	currentVersion, err := getSemverVersion(serverVersion)
 	if err != nil {
-		return nil, "", err
+		return "", err
 	}
 
 	minV1SupportedVersion, err := getSemverVersion(minServerVerForV1CrdVersion)
 	if err != nil {
-		return nil, "", err
+		return "", err
 	}
 
-	crdObj = &apiextensionsv1.CustomResourceDefinition{}
 	prefCRDVersion := snapshotClassVersionV1
 	if currentVersion.LessThan(minV1SupportedVersion) {
-		crdObj = &apiextensionsv1beta1.CustomResourceDefinition{}
 		prefCRDVersion = snapshotClassVersionV1Beta1
 	}
 
-	return crdObj, prefCRDVersion, nil
+	return prefCRDVersion, nil
 }
 
 func getSemverVersion(ver string) (*semVersion.Version, error) {

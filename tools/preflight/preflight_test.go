@@ -8,11 +8,9 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -28,7 +26,7 @@ func preflightTestCases(serverVersion string) {
 	Describe("Preflight unit test cases", func() {
 
 		AfterEach(func() {
-			deleteAllVolumeSnapshotCRD(serverVersion)
+			deleteAllVolumeSnapshotCRD()
 		})
 
 		Context("Preflight run command volume snapshot CRD test cases", func() {
@@ -36,7 +34,7 @@ func preflightTestCases(serverVersion string) {
 			It("Should skip installation if all volume snapshot CRDs are present", func() {
 				installVolumeSnapshotCRD(serverVersion, [3]bool{true, true, true})
 				Expect(run.checkAndCreateVolumeSnapshotCRDs(ctx, serverVersion)).To(BeNil())
-				checkVolumeSnapshotCRDExists(serverVersion)
+				checkVolumeSnapshotCRDExists()
 			})
 
 			for i, crd := range VolumeSnapshotCRDs {
@@ -45,14 +43,14 @@ func preflightTestCases(serverVersion string) {
 					volumeSnapshotCRDsToInstall[i] = false
 					installVolumeSnapshotCRD(serverVersion, volumeSnapshotCRDsToInstall)
 					Expect(run.checkAndCreateVolumeSnapshotCRDs(ctx, serverVersion)).To(BeNil())
-					checkVolumeSnapshotCRDExists(serverVersion)
+					checkVolumeSnapshotCRDExists()
 				})
 			}
 
 			It("Should install all volume snapshot CRDs when none of them are present", func() {
-				deleteAllVolumeSnapshotCRD(serverVersion)
+				deleteAllVolumeSnapshotCRD()
 				Expect(run.checkAndCreateVolumeSnapshotCRDs(ctx, serverVersion)).To(BeNil())
-				checkVolumeSnapshotCRDExists(serverVersion)
+				checkVolumeSnapshotCRDExists()
 			})
 
 		})
@@ -67,13 +65,11 @@ var _ = Context("Preflight Unit Tests", func() {
 })
 
 func installVolumeSnapshotCRD(version string, volumeSnapshotCRDToInstall [3]bool) {
-	var crdObj client.Object
 
 	for i, toBeInstalled := range volumeSnapshotCRDToInstall {
-		crdObj = &apiextensionsv1.CustomResourceDefinition{}
+		crdObj := &apiextensions.CustomResourceDefinition{}
 		dirVersion := snapshotClassVersionV1
 		if version == v1beta1K8sVersion {
-			crdObj = &apiextensionsv1beta1.CustomResourceDefinition{}
 			dirVersion = snapshotClassVersionV1Beta1
 		}
 
@@ -85,43 +81,27 @@ func installVolumeSnapshotCRD(version string, volumeSnapshotCRDToInstall [3]bool
 		if toBeInstalled {
 			Expect(k8sClient.Create(ctx, crdObj)).To(BeNil())
 			Eventually(func() error {
-				var volSnapCRDObj client.Object
-				volSnapCRDObj = &apiextensionsv1.CustomResourceDefinition{}
-				if version == v1beta1K8sVersion {
-					volSnapCRDObj = &apiextensionsv1beta1.CustomResourceDefinition{}
-				}
+				volSnapCRDObj := &apiextensions.CustomResourceDefinition{}
 				return k8sClient.Get(ctx, types.NamespacedName{Name: VolumeSnapshotCRDs[i]}, volSnapCRDObj)
 			}, timeout, interval).ShouldNot(HaveOccurred())
 		}
 	}
 }
 
-func checkVolumeSnapshotCRDExists(version string) {
-	var crdObj client.Object
+func checkVolumeSnapshotCRDExists() {
 	for _, crd := range VolumeSnapshotCRDs {
-		crdObj = &apiextensionsv1.CustomResourceDefinition{}
-		if version == v1beta1K8sVersion {
-			crdObj = &apiextensionsv1beta1.CustomResourceDefinition{}
-		}
-
+		crdObj := &apiextensions.CustomResourceDefinition{}
 		crdObj.SetName(crd)
-
 		Eventually(func() error {
 			return k8sClient.Get(ctx, types.NamespacedName{Name: crd}, crdObj)
 		}, timeout, interval).ShouldNot(HaveOccurred())
 	}
 }
 
-func deleteAllVolumeSnapshotCRD(version string) {
-	var crdObj client.Object
+func deleteAllVolumeSnapshotCRD() {
 	for _, crd := range VolumeSnapshotCRDs {
-		crdObj = &apiextensionsv1.CustomResourceDefinition{}
-		if version == v1beta1K8sVersion {
-			crdObj = &apiextensionsv1beta1.CustomResourceDefinition{}
-		}
-
+		crdObj := &apiextensions.CustomResourceDefinition{}
 		crdObj.SetName(crd)
-
 		Eventually(func() bool {
 			err := k8sClient.Get(ctx, types.NamespacedName{Name: crd}, crdObj)
 			if k8serrors.IsNotFound(err) {
