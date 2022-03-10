@@ -204,18 +204,6 @@ By `curl`
 curl https://github.com/trilioData/tvk-plugins/tree/main/docs/preflight/sample_input.yaml
 ```
 
-Run a preflight check with predefined values using a sample file. Download the file using below commands:
-
-By `wget`
-```shell script
-wget https://github.com/trilioData/tvk-plugins/tree/main/docs/preflight/sample_input.yaml
-```
-
-By `curl`
-```shell script
-curl https://github.com/trilioData/tvk-plugins/tree/main/docs/preflight/sample_input.yaml
-```
-
 #### Examples
 
 - With `--namespace`:

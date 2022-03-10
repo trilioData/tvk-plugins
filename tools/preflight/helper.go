@@ -427,16 +427,6 @@ func getPodTemplate(name string, op *Run) *corev1.Pod {
 		},
 	}
 
-	if op.PodSchedOps.NodeSelector != nil {
-		pod.Spec.NodeSelector = op.PodSchedOps.NodeSelector
-	}
-	if op.PodSchedOps.Affinity != nil {
-		pod.Spec.Affinity = op.PodSchedOps.Affinity
-	}
-	if op.PodSchedOps.Tolerations != nil {
-		pod.Spec.Tolerations = op.PodSchedOps.Tolerations
-	}
-
 	return pod
 }
 
@@ -540,50 +530,17 @@ func removeFinalizer(ctx context.Context, obj client.Object) error {
 	return nil
 }
 
-func deleteK8sResourceWithForceTimeout(ctx context.Context, res *unstructured.Unstructured, logger *logrus.Logger) error {
+func deleteK8sResourceWithForceTimeout(ctx context.Context, obj client.Object, logger *logrus.Logger) error {
 	var err error
-	err = removeFinalizer(ctx, res)
+	err = removeFinalizer(ctx, obj)
 	if err != nil {
 		logger.Warnf("problem occurred while removing finalizers of %s - %s :: %s",
-			res.GetObjectKind().GroupVersionKind().Kind, res.GetName(), err.Error())
+			obj.GetObjectKind().GroupVersionKind().Kind, obj.GetName(), err.Error())
 	}
 
-	updatedRes := &unstructured.Unstructured{}
-	updatedRes.SetGroupVersionKind(res.GroupVersionKind())
-	err = runtimeClient.Get(ctx, client.ObjectKey{
-		Name:      res.GetName(),
-		Namespace: res.GetNamespace(),
-	}, updatedRes)
+	err = runtimeClient.Delete(ctx, obj, client.DeleteOption(client.GracePeriodSeconds(deletionGracePeriod)))
 	if err != nil {
-		return err
-	}
-
-	err = runtimeClient.Delete(ctx, updatedRes, client.DeleteOption(client.GracePeriodSeconds(deletionGracePeriod)))
-	if err != nil {
-		return fmt.Errorf("problem occurred deleting %s - %s :: %s", updatedRes.GetName(), updatedRes.GetNamespace(), err.Error())
-	}
-
-	return nil
-}
-
-func deletePod(ctx context.Context, name, ns string, logger *logrus.Logger) error {
-	upod := &unstructured.Unstructured{}
-	upod.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "",
-		Version: "v1",
-		Kind:    internal.PodKind,
-	})
-
-	err := runtimeClient.Get(ctx, client.ObjectKey{
-		Name:      name,
-		Namespace: ns,
-	}, upod)
-	if err != nil {
-		return err
-	}
-	err = deleteK8sResourceWithForceTimeout(ctx, upod, logger)
-	if err != nil {
-		return err
+		return fmt.Errorf("problem occurred deleting %s - %s :: %s", obj.GetName(), obj.GetNamespace(), err.Error())
 	}
 
 	return nil

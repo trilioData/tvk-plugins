@@ -31,7 +31,7 @@ var runCmd = &cobra.Command{
 
   # Cleanup the resources generated during preflight check if preflight check fails. Default is false.
   # If the preflight check is successful, then all resources are cleaned.
-  kubectl tvk-preflight run --storage-class <storage-class-name> --Cleanup-on-failure 
+  kubectl tvk-preflight run --storage-class <storage-class-name> --cleanup-on-failure 
 
   # run preflight with a particular kubeconfig file
   kubectl tvk-preflight run --storage-class <storage-class-name> --kubeconfig <kubeconfig-file-path>

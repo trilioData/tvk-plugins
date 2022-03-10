@@ -1,6 +1,5 @@
 run:
-  namespace: tvk-prasad
-  storageClass: csi-gce-pd
+  storageClass: STORAGE_CLASS
   cleanupOnFailure: false
   podSchedulingOptions:
     nodeSelector:

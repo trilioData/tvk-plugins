@@ -1,5 +1,5 @@
 run:
-  storageClass: csi-gce-pd
+  storageClass: STORAGE_CLASS
   cleanupOnFailure: true
   logLevel: debug
   podSchedulingOptions:

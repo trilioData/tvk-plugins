@@ -18,7 +18,7 @@ var cleanupCmd = &cobra.Command{
 	Long: `Cleans-up the resources that were created during preflight checks.
 If uid flag is not specified then all preflight resources created till date are deleted.`,
 	Example: ` # clean preflight resources with a particular uid
-  kubectl tvk-preflight cleanup --uid <preflight Run uid> --namespace <namespace>
+  kubectl tvk-preflight cleanup --uid <preflight run uid> --namespace <namespace>
 
   # clean all preflight resources created till date
   kubectl tvk-preflight cleanup --namespace <namespace>

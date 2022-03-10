@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,8 +19,7 @@ type CleanupOptions struct {
 type Cleanup struct {
 	CleanupOptions
 	CommonOptions
-	CleanupMode string `json:"cleanupMode"`
-	UID         string `json:"uid"`
+	UID string `json:"uid"`
 }
 
 func (co *Cleanup) logCleanupOptions() {
@@ -106,15 +106,9 @@ func getCleanupResourceGVKList() ([]schema.GroupVersionKind, error) {
 		})
 	}
 
-	cleanupResourceList = append(cleanupResourceList, schema.GroupVersionKind{
-		Group:   "",
-		Version: "v1",
-		Kind:    internal.PersistentVolumeClaimKind,
-	}, schema.GroupVersionKind{
-		Group:   "",
-		Version: "v1",
-		Kind:    internal.PodKind,
-	})
+	cleanupResourceList = append(cleanupResourceList,
+		corev1.SchemeGroupVersion.WithKind(internal.PersistentVolumeClaimKind),
+		corev1.SchemeGroupVersion.WithKind(internal.PodKind))
 
 	return cleanupResourceList, nil
 }

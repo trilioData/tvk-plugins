@@ -25,7 +25,7 @@ import (
 
 // RunOptions input options required for running preflight.
 type RunOptions struct {
-	StorageClass                string            `json:"storageClass,omitempty"`
+	StorageClass                string            `json:"storageClass"`
 	SnapshotClass               string            `json:"snapshotClass,omitempty"`
 	LocalRegistry               string            `json:"localRegistry,omitempty"`
 	ImagePullSecret             string            `json:"imagePullSecret,omitempty"`
@@ -477,6 +477,14 @@ func (o *Run) checkDNSResolution(ctx context.Context) error {
 		return fmt.Errorf("not able to resolve DNS 'kubernetes.default' service inside pods")
 	}
 
+	// Delete DNS pod when resolution is successful
+	err = deleteK8sResourceWithForceTimeout(ctx, pod, o.Logger)
+	if err != nil {
+		o.Logger.Warnf("Problem occurred deleting DNS pod - '%s' :: %s", pod.GetName(), err.Error())
+	} else {
+		o.Logger.Infof("Deleted DNS pod - '%s' successfully", pod.GetName())
+	}
+
 	return nil
 }
 
@@ -598,7 +606,7 @@ func (o *Run) checkVolumeSnapshot(ctx context.Context) error {
 		return err
 	}
 	o.Logger.Infof("Deleting source pod - %s\n", srcPod.GetName())
-	err = deletePod(ctx, srcPod.GetName(), srcPod.GetNamespace(), o.Logger)
+	err = deleteK8sResourceWithForceTimeout(ctx, srcPod, o.Logger)
 	if err != nil {
 		return err
 	}

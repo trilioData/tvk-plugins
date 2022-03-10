@@ -313,7 +313,6 @@ var _ = Describe("Preflight Tests", func() {
 				Expect(err).To(BeNil())
 
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD CPU REQUEST=\"%s\"", cpu300)))
-				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD CPU REQUEST=\"%s\"", cpu300)))
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD MEMORY REQUEST=\"%s\"", cmd.DefaultPodLimitMemory)))
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD CPU LIMIT=\"%s\"", cpu600)))
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD MEMORY LIMIT=\"%s\"", memory256)))
@@ -450,6 +449,7 @@ var _ = Describe("Preflight Tests", func() {
 					beforeOnce.Do(func() {
 						nodeList, err = k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 						Expect(err).To(BeNil())
+						Expect(len(nodeList.Items)).ToNot(Equal(0))
 						node := nodeList.Items[0]
 						testNodeName = node.GetName()
 						nodeLabels := node.GetLabels()
@@ -513,6 +513,7 @@ var _ = Describe("Preflight Tests", func() {
 				BeforeEach(func() {
 					nodeList, err = k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 					Expect(err).To(BeNil())
+					Expect(len(nodeList.Items)).ToNot(Equal(0))
 					node = &nodeList.Items[0]
 					highAffineTestNode = node.GetName()
 					nodeLabels := node.GetLabels()
@@ -622,6 +623,7 @@ var _ = Describe("Preflight Tests", func() {
 				BeforeEach(func() {
 					nodeList, err = k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 					Expect(err).To(BeNil())
+					Expect(len(nodeList.Items)).ToNot(Equal(0))
 					node = &nodeList.Items[0]
 					testNodeName = node.GetName()
 					nodeLabels := node.GetLabels()
@@ -667,6 +669,7 @@ var _ = Describe("Preflight Tests", func() {
 				BeforeEach(func() {
 					nodeList, err = k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 					Expect(err).To(BeNil())
+					Expect(len(nodeList.Items)).ToNot(Equal(0))
 					node = &nodeList.Items[0]
 					testNodeName = node.GetName()
 					nodeLabels := node.GetLabels()
@@ -704,125 +707,127 @@ var _ = Describe("Preflight Tests", func() {
 				})
 			})
 
-			Context("Preflight run command, taints and tolerations test cases with pods able to schedule on node of a cluster", func() {
-				var (
-					nodeList      *corev1.NodeList
-					taintNodeName string
-					node          *corev1.Node
-				)
-
-				BeforeEach(func() {
-					nodeList, err = k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-					Expect(err).To(BeNil())
-					node = &nodeList.Items[0]
-					taintNodeName = node.GetName()
-					nodeLabels := node.GetLabels()
-					nodeLabels[preflightNodeLabelKey] = preflightNodeLabelValue
-					node.SetLabels(nodeLabels)
-					nodeTaints := node.Spec.Taints
-					nodeTaints = append(nodeTaints, corev1.Taint{
-						Key:    preflightTaintKey,
-						Value:  preflightTaintValue,
-						Effect: corev1.TaintEffectNoSchedule,
-					})
-					node.Spec.Taints = nodeTaints
-					_, err = k8sClient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
-				})
-
-				It("Should schedule preflight pods on a node of a cluster and perform preflight checks with tolerations applied on pods", func() {
-					inputFlags := make(map[string]string)
-					yamlFilePath := filepath.Join(testDataDirRelPath, taintsFileInputFile)
-					copyMap(flagsMap, inputFlags)
-					inputFlags[configFileFlag] = yamlFilePath
-					inputFlags[logLevelFlag] = debugLog
-					cmdOut, err = runPreflightChecks(inputFlags)
-					Expect(err).To(BeNil())
-
-					assertPodScheduleSuccess(cmdOut.Out, taintNodeName)
-					nonCRUDPreflightCheckAssertion(defaultTestStorageClass, "", cmdOut.Out)
-					assertDNSResolutionCheckSuccess(cmdOut.Out)
-					assertVolumeSnapshotCheckSuccess(cmdOut.Out)
-				})
-
-				AfterEach(func() {
-					taintPos := -1
-					node, err = k8sClient.CoreV1().Nodes().Get(ctx, taintNodeName, metav1.GetOptions{})
-					nodeLabels := node.GetLabels()
-					delete(nodeLabels, preflightNodeLabelKey)
-					node.SetLabels(nodeLabels)
-					nodeTaints := node.Spec.Taints
-					for i := 0; i < len(nodeTaints); i++ {
-						if nodeTaints[i].Key == preflightTaintKey {
-							taintPos = i
-							break
-						}
-					}
-					Expect(taintPos).ToNot(Equal(-1))
-					node.Spec.Taints = append(nodeTaints[:taintPos], nodeTaints[taintPos+1:]...)
-					_, err = k8sClient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
-				})
-			})
-
-			Context("Preflight run command, taints and tolerations test cases with pods not able to schedule on node of a cluster", func() {
-				var (
-					nodeList      *corev1.NodeList
-					taintNodeName string
-					node          *corev1.Node
-				)
-
-				BeforeEach(func() {
-					nodeList, err = k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-					Expect(err).To(BeNil())
-					node = &nodeList.Items[0]
-					taintNodeName = node.GetName()
-					nodeLabels := node.GetLabels()
-					nodeLabels[preflightNodeLabelKey] = preflightNodeLabelValue
-					node.SetLabels(nodeLabels)
-					nodeTaints := node.Spec.Taints
-					nodeTaints = append(nodeTaints, corev1.Taint{
-						Key:    preflightTaintKey,
-						Value:  preflightTaintInvValue,
-						Effect: corev1.TaintEffectNoSchedule,
-					})
-					node.Spec.Taints = nodeTaints
-					_, err = k8sClient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
-				})
-
-				It("Should not be able to schedule DNS and source pod on any nodes of cluster with incorrect toleration applied", func() {
-					inputFlags := make(map[string]string)
-					yamlFilePath := filepath.Join(testDataDirRelPath, taintsFileInputFile)
-					inputFlags[configFileFlag] = yamlFilePath
-					inputFlags[logLevelFlag] = debugLog
-					inputFlags[kubeconfigFlag] = kubeConfPath
-					cmdOut, err = runPreflightChecks(inputFlags)
-					Expect(err).ToNot(BeNil())
-
-					Expect(cmdOut.Out).To(MatchRegexp("DNS pod - dnsutils-[a-z]{6} hasn't reached into ready state"))
-					Expect(cmdOut.Out).To(ContainSubstring(
-						"Preflight check for DNS resolution failed :: timed out waiting for the condition"))
-
-					Expect(cmdOut.Out).To(MatchRegexp(
-						"Preflight check for volume snapshot and restore failed :: pod source-pod-[a-z]{6} hasn't reached into ready state"))
-				})
-
-				AfterEach(func() {
-					taintPos := -1
-					node, err = k8sClient.CoreV1().Nodes().Get(ctx, taintNodeName, metav1.GetOptions{})
-					nodeLabels := node.GetLabels()
-					delete(nodeLabels, preflightNodeLabelKey)
-					node.SetLabels(nodeLabels)
-					nodeTaints := node.Spec.Taints
-					for i := 0; i < len(nodeTaints); i++ {
-						if nodeTaints[i].Key == preflightTaintKey {
-							taintPos = i
-							break
-						}
-					}
-					Expect(taintPos).ToNot(Equal(-1))
-					node.Spec.Taints = append(nodeTaints[:taintPos], nodeTaints[taintPos+1:]...)
-					_, err = k8sClient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
-				})
-			})
+			//Context("Preflight run command, taints and tolerations test cases with pods able to schedule on node of a cluster", func() {
+			//	var (
+			//		nodeList      *corev1.NodeList
+			//		taintNodeName string
+			//		node          *corev1.Node
+			//	)
+			//
+			//	BeforeEach(func() {
+			//		nodeList, err = k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+			//		Expect(err).To(BeNil())
+			//		Expect(len(nodeList.Items)).ToNot(Equal(0))
+			//		node = &nodeList.Items[0]
+			//		taintNodeName = node.GetName()
+			//		nodeLabels := node.GetLabels()
+			//		nodeLabels[preflightNodeLabelKey] = preflightNodeLabelValue
+			//		node.SetLabels(nodeLabels)
+			//		nodeTaints := node.Spec.Taints
+			//		nodeTaints = append(nodeTaints, corev1.Taint{
+			//			Key:    preflightTaintKey,
+			//			Value:  preflightTaintValue,
+			//			Effect: corev1.TaintEffectNoSchedule,
+			//		})
+			//		node.Spec.Taints = nodeTaints
+			//		_, err = k8sClient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
+			//	})
+			//
+			//	It("Should schedule preflight pods on a node of a cluster and perform preflight checks with tolerations applied on pods", func() {
+			//		inputFlags := make(map[string]string)
+			//		yamlFilePath := filepath.Join(testDataDirRelPath, taintsFileInputFile)
+			//		copyMap(flagsMap, inputFlags)
+			//		inputFlags[configFileFlag] = yamlFilePath
+			//		inputFlags[logLevelFlag] = debugLog
+			//		cmdOut, err = runPreflightChecks(inputFlags)
+			//		Expect(err).To(BeNil())
+			//
+			//		assertPodScheduleSuccess(cmdOut.Out, taintNodeName)
+			//		nonCRUDPreflightCheckAssertion(defaultTestStorageClass, "", cmdOut.Out)
+			//		assertDNSResolutionCheckSuccess(cmdOut.Out)
+			//		assertVolumeSnapshotCheckSuccess(cmdOut.Out)
+			//	})
+			//
+			//	AfterEach(func() {
+			//		taintPos := -1
+			//		node, err = k8sClient.CoreV1().Nodes().Get(ctx, taintNodeName, metav1.GetOptions{})
+			//		nodeLabels := node.GetLabels()
+			//		delete(nodeLabels, preflightNodeLabelKey)
+			//		node.SetLabels(nodeLabels)
+			//		nodeTaints := node.Spec.Taints
+			//		for i := 0; i < len(nodeTaints); i++ {
+			//			if nodeTaints[i].Key == preflightTaintKey {
+			//				taintPos = i
+			//				break
+			//			}
+			//		}
+			//		Expect(taintPos).ToNot(Equal(-1))
+			//		node.Spec.Taints = append(nodeTaints[:taintPos], nodeTaints[taintPos+1:]...)
+			//		_, err = k8sClient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
+			//	})
+			//})
+			//
+			//Context("Preflight run command, taints and tolerations test cases with pods not able to schedule on node of a cluster", func() {
+			//	var (
+			//		nodeList      *corev1.NodeList
+			//		taintNodeName string
+			//		node          *corev1.Node
+			//	)
+			//
+			//	BeforeEach(func() {
+			//		nodeList, err = k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+			//		Expect(err).To(BeNil())
+			//		Expect(len(nodeList.Items)).ToNot(Equal(0))
+			//		node = &nodeList.Items[0]
+			//		taintNodeName = node.GetName()
+			//		nodeLabels := node.GetLabels()
+			//		nodeLabels[preflightNodeLabelKey] = preflightNodeLabelValue
+			//		node.SetLabels(nodeLabels)
+			//		nodeTaints := node.Spec.Taints
+			//		nodeTaints = append(nodeTaints, corev1.Taint{
+			//			Key:    preflightTaintKey,
+			//			Value:  preflightTaintInvValue,
+			//			Effect: corev1.TaintEffectNoSchedule,
+			//		})
+			//		node.Spec.Taints = nodeTaints
+			//		_, err = k8sClient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
+			//	})
+			//
+			//	It("Should not be able to schedule DNS and source pod on any nodes of cluster with incorrect toleration applied", func() {
+			//		inputFlags := make(map[string]string)
+			//		yamlFilePath := filepath.Join(testDataDirRelPath, taintsFileInputFile)
+			//		inputFlags[configFileFlag] = yamlFilePath
+			//		inputFlags[logLevelFlag] = debugLog
+			//		inputFlags[kubeconfigFlag] = kubeConfPath
+			//		cmdOut, err = runPreflightChecks(inputFlags)
+			//		Expect(err).ToNot(BeNil())
+			//
+			//		Expect(cmdOut.Out).To(MatchRegexp("DNS pod - dnsutils-[a-z]{6} hasn't reached into ready state"))
+			//		Expect(cmdOut.Out).To(ContainSubstring(
+			//			"Preflight check for DNS resolution failed :: timed out waiting for the condition"))
+			//
+			//		Expect(cmdOut.Out).To(MatchRegexp(
+			//			"Preflight check for volume snapshot and restore failed :: pod source-pod-[a-z]{6} hasn't reached into ready state"))
+			//	})
+			//
+			//	AfterEach(func() {
+			//		taintPos := -1
+			//		node, err = k8sClient.CoreV1().Nodes().Get(ctx, taintNodeName, metav1.GetOptions{})
+			//		nodeLabels := node.GetLabels()
+			//		delete(nodeLabels, preflightNodeLabelKey)
+			//		node.SetLabels(nodeLabels)
+			//		nodeTaints := node.Spec.Taints
+			//		for i := 0; i < len(nodeTaints); i++ {
+			//			if nodeTaints[i].Key == preflightTaintKey {
+			//				taintPos = i
+			//				break
+			//			}
+			//		}
+			//		Expect(taintPos).ToNot(Equal(-1))
+			//		node.Spec.Taints = append(nodeTaints[:taintPos], nodeTaints[taintPos+1:]...)
+			//		_, err = k8sClient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
+			//	})
+			//})
 		})
 	})
 

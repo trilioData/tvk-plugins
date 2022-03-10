@@ -513,25 +513,22 @@ func deletePreflightServiceAccount() {
 }
 
 func createAffineBusyboxPod(podName, affinity, namespace string) {
-	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      podName,
-			Namespace: namespace,
-			Labels: map[string]string{
-				preflightPodAffinityKey: affinity,
+	var uid string
+	uid, err = preflight.CreateResourceNameSuffix()
+	Expect(err).To(BeNil())
+	pod := getPodTemplate(podName, uid)
+	podLabels := pod.GetLabels()
+	podLabels[preflightPodAffinityKey] = affinity
+	pod.Spec = corev1.PodSpec{
+		Containers: []corev1.Container{
+			{
+				Name:    preflight.BusyboxContainerName,
+				Image:   preflight.BusyboxImageName,
+				Command: preflight.CommandBinSh,
 			},
 		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    preflight.BusyboxContainerName,
-					Image:   preflight.BusyboxImageName,
-					Command: preflight.CommandBinSh,
-				},
-			},
-			NodeSelector: map[string]string{
-				preflightNodeLabelKey: preflightNodeLabelValue,
-			},
+		NodeSelector: map[string]string{
+			preflightNodeLabelKey: preflightNodeLabelValue,
 		},
 	}
 

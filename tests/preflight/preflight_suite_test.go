@@ -45,6 +45,7 @@ const (
 	cpu600                   = "600m"
 	resourceCPUToken         = "cpu"
 	resourceMemoryToken      = "memory"
+	storageClassPlaceholder  = "STORAGE_CLASS"
 
 	dnsPodNamePrefix = "test-dns-pod-"
 	dnsContainerName = "test-dnsutils"
@@ -69,9 +70,9 @@ const (
 	mediumAffinity           = "medium"
 	lowAffinity              = "low"
 	debugLog                 = "debug"
-	preflightTaintKey        = "pref-node-taint"
-	preflightTaintValue      = "pref-node-toleration"
-	preflightTaintInvValue   = "pref-invalid-toleration"
+	//preflightTaintKey        = "pref-node-taint"
+	//preflightTaintValue      = "pref-node-toleration"
+	//preflightTaintInvValue   = "pref-invalid-toleration"
 )
 
 var (
@@ -199,11 +200,14 @@ var _ = BeforeSuite(func() {
 
 	snapshotGVK = getVolSnapshotGVK()
 	snapshotClassGVK = getVolSnapClassGVK()
+
+	assignPlaceholderValues()
 })
 
 var _ = AfterSuite(func() {
 	cmdOut, err = runCleanupForAllPreflightResources()
 	Expect(err).To(BeNil())
+	revertPlaceholderValues()
 	cleanDirForFiles(preflightLogFilePrefix)
 	cleanDirForFiles(cleanupLogFilePrefix)
 })
@@ -241,4 +245,28 @@ func getVolSnapClassGVK() schema.GroupVersionKind {
 		Version: prefVer,
 		Kind:    internal.VolumeSnapshotClassKind,
 	}
+}
+
+func assignPlaceholderValues() {
+	kv := map[string]string{
+		storageClassPlaceholder: defaultTestStorageClass,
+	}
+
+	Expect(testutils.UpdateYAMLs(kv, filepath.Join(testDataDirRelPath, podAffinityInputFile))).To(BeNil())
+	Expect(testutils.UpdateYAMLs(kv, filepath.Join(testDataDirRelPath, testFileInputName))).To(BeNil())
+	Expect(testutils.UpdateYAMLs(kv, filepath.Join(testDataDirRelPath, nodeAffinityInputFile))).To(BeNil())
+	Expect(testutils.UpdateYAMLs(kv, filepath.Join(testDataDirRelPath, invalidKeyYamlFileName))).To(BeNil())
+	Expect(testutils.UpdateYAMLs(kv, filepath.Join(testDataDirRelPath, taintsFileInputFile))).To(BeNil())
+}
+
+func revertPlaceholderValues() {
+	kv := map[string]string{
+		defaultTestStorageClass: storageClassPlaceholder,
+	}
+
+	Expect(testutils.UpdateYAMLs(kv, filepath.Join(testDataDirRelPath, testFileInputName))).To(BeNil())
+	Expect(testutils.UpdateYAMLs(kv, filepath.Join(testDataDirRelPath, podAffinityInputFile))).To(BeNil())
+	Expect(testutils.UpdateYAMLs(kv, filepath.Join(testDataDirRelPath, nodeAffinityInputFile))).To(BeNil())
+	Expect(testutils.UpdateYAMLs(kv, filepath.Join(testDataDirRelPath, invalidKeyYamlFileName))).To(BeNil())
+	Expect(testutils.UpdateYAMLs(kv, filepath.Join(testDataDirRelPath, taintsFileInputFile))).To(BeNil())
 }
