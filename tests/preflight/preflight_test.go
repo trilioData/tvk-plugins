@@ -19,8 +19,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/trilioData/tvk-plugins/cmd/preflight/cmd"
-	"github.com/trilioData/tvk-plugins/tools/preflight"
 	"github.com/trilioData/tvk-plugins/internal/utils/shell"
+	"github.com/trilioData/tvk-plugins/tools/preflight"
 )
 
 var _ = Describe("Preflight Tests", func() {

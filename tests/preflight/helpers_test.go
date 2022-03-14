@@ -16,8 +16,8 @@ import (
 
 	tLog "github.com/sirupsen/logrus"
 	preflightCmd "github.com/trilioData/tvk-plugins/cmd/preflight/cmd"
-	"github.com/trilioData/tvk-plugins/internal/utils/shell"
 	"github.com/trilioData/tvk-plugins/internal"
+	"github.com/trilioData/tvk-plugins/internal/utils/shell"
 	"github.com/trilioData/tvk-plugins/tools/preflight"
 )
 
