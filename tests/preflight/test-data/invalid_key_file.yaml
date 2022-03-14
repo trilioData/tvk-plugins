@@ -1,8 +1,8 @@
 run:
-  storageClass: csi-gce-pd
+  storageClass: STORAGE_CLASS
   cleanupOnFailure: true
   invalidKey: invalidValue
-  podResourceRequirements:
+  resources:
     requests:
       memory: 32Mi
       cpu: 250m

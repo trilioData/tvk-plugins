@@ -25,7 +25,7 @@ import (
 
 // RunOptions input options required for running preflight.
 type RunOptions struct {
-	StorageClass                string            `json:"storageClass,omitempty"`
+	StorageClass                string            `json:"storageClass"`
 	SnapshotClass               string            `json:"snapshotClass,omitempty"`
 	LocalRegistry               string            `json:"localRegistry,omitempty"`
 	ImagePullSecret             string            `json:"imagePullSecret,omitempty"`
@@ -33,6 +33,7 @@ type RunOptions struct {
 	PerformCleanupOnFail        bool              `json:"cleanupOnFailure,omitempty"`
 	PVCStorageRequest           resource.Quantity `json:"pvcStorageRequest,omitempty"`
 	corev1.ResourceRequirements `json:"resources,omitempty"`
+	PodSchedOps                 podSchedulingOptions `json:"podSchedulingOptions"`
 }
 
 type Run struct {
@@ -456,6 +457,12 @@ func (o *Run) checkDNSResolution(ctx context.Context) error {
 		return err
 	}
 
+	pod, err = clientSet.CoreV1().Pods(o.Namespace).Get(ctx, pod.GetName(), metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	logPodScheduleStmt(pod, o.Logger)
+
 	op := exec.Options{
 		Namespace:     o.Namespace,
 		Command:       []string{"nslookup", "kubernetes.default"},
@@ -468,6 +475,14 @@ func (o *Run) checkDNSResolution(ctx context.Context) error {
 	err = execInPod(&op, o.Logger)
 	if err != nil {
 		return fmt.Errorf("not able to resolve DNS 'kubernetes.default' service inside pods")
+	}
+
+	// Delete DNS pod when resolution is successful
+	err = deleteK8sResourceWithForceTimeout(ctx, pod, o.Logger)
+	if err != nil {
+		o.Logger.Warnf("Problem occurred deleting DNS pod - '%s' :: %s", pod.GetName(), err.Error())
+	} else {
+		o.Logger.Infof("Deleted DNS pod - '%s' successfully", pod.GetName())
 	}
 
 	return nil
@@ -509,6 +524,12 @@ func (o *Run) checkVolumeSnapshot(ctx context.Context) error {
 		return fmt.Errorf("pod %s hasn't reached into ready state", srcPod.GetName())
 	}
 	o.Logger.Infof("Source pod - %s has reached into ready state\n", srcPod.GetName())
+
+	srcPod, err = clientSet.CoreV1().Pods(o.Namespace).Get(ctx, srcPod.GetName(), metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	logPodScheduleStmt(srcPod, o.Logger)
 
 	//  Create volume snapshot
 	snapshotVer, err := GetServerPreferredVersionForGroup(StorageSnapshotGroup, clientSet)
@@ -557,6 +578,12 @@ func (o *Run) checkVolumeSnapshot(ctx context.Context) error {
 		return err
 	}
 	o.Logger.Infof("%s Restore pod - %s has reached into ready state\n", check, restorePodSpec.GetName())
+
+	restorePodSpec, err = clientSet.CoreV1().Pods(o.Namespace).Get(ctx, restorePodSpec.GetName(), metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	logPodScheduleStmt(restorePodSpec, o.Logger)
 
 	execOp = exec.Options{
 		Namespace:     o.Namespace,
@@ -626,6 +653,12 @@ func (o *Run) checkVolumeSnapshot(ctx context.Context) error {
 		return err
 	}
 	o.Logger.Infof("%s Restore pod - %s has reached into ready state\n", check, unmountedPodSpec.GetName())
+
+	unmountedPodSpec, err = clientSet.CoreV1().Pods(o.Namespace).Get(ctx, unmountedPodSpec.GetName(), metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	logPodScheduleStmt(unmountedPodSpec, o.Logger)
 
 	execOp.PodName = unmountedPodSpec.GetName()
 	err = execInPod(&execOp, o.Logger)

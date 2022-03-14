@@ -1,5 +1,5 @@
 run:
-  storageClass: csi-gce-pd
+  storageClass: STORAGE_CLASS
   cleanupOnFailure: true
   snapshotClass: default-snapshot-class
   pvcStorageRequest: 1Gi
@@ -13,4 +13,3 @@ run:
 
 cleanup:
   logLevel: info
-  cleanupMode: all

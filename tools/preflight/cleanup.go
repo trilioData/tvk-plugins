@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,6 +19,7 @@ type CleanupOptions struct {
 type Cleanup struct {
 	CleanupOptions
 	CommonOptions
+	UID string `json:"uid"`
 }
 
 func (co *Cleanup) logCleanupOptions() {
@@ -52,6 +54,7 @@ func (co *Cleanup) CleanupPreflightResources(ctx context.Context) error {
 	if co.UID != "" {
 		resLabels[LabelPreflightRunKey] = co.UID
 	}
+
 	for _, gvk := range gvkList {
 		var resList = unstructured.UnstructuredList{}
 		resList.SetGroupVersionKind(gvk)
@@ -90,15 +93,6 @@ func (co *Cleanup) cleanResource(ctx context.Context, resource *unstructured.Uns
 
 func getCleanupResourceGVKList() ([]schema.GroupVersionKind, error) {
 	cleanupResourceList := make([]schema.GroupVersionKind, 0)
-	cleanupResourceList = append(cleanupResourceList, schema.GroupVersionKind{
-		Group:   "",
-		Version: "v1",
-		Kind:    internal.PodKind,
-	}, schema.GroupVersionKind{
-		Group:   "",
-		Version: "v1",
-		Kind:    internal.PersistentVolumeClaimKind,
-	})
 
 	snapVerList, err := getVersionsOfGroup(StorageSnapshotGroup)
 	if err != nil {
@@ -111,6 +105,10 @@ func getCleanupResourceGVKList() ([]schema.GroupVersionKind, error) {
 			Kind:    internal.VolumeSnapshotKind,
 		})
 	}
+
+	cleanupResourceList = append(cleanupResourceList,
+		corev1.SchemeGroupVersion.WithKind(internal.PersistentVolumeClaimKind),
+		corev1.SchemeGroupVersion.WithKind(internal.PodKind))
 
 	return cleanupResourceList, nil
 }

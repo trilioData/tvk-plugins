@@ -1,0 +1,26 @@
+run:
+  storageClass: STORAGE_CLASS
+  cleanupOnFailure: true
+  logLevel: debug
+  podSchedulingOptions:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: pref-node-affinity
+                  operator: In
+                  values:
+                    - high
+                - key: pref-node-affinity
+                  operator: NotIn
+                  values:
+                    - low
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: pref-node-affinity
+                  operator: NotIn
+                  values:
+                    - medium

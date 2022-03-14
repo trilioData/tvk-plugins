@@ -126,6 +126,12 @@ func (co *CommonOptions) logCommonOptions() {
 	co.Logger.Infof("NAMESPACE=\"%s\"", co.Namespace)
 }
 
+type podSchedulingOptions struct {
+	NodeSelector map[string]string   `json:"nodeSelector,omitempty"`
+	Affinity     *corev1.Affinity    `json:"affinity,omitempty"`
+	Tolerations  []corev1.Toleration `json:"tolerations,omitempty"`
+}
+
 func InitKubeEnv(kubeconfig string) error {
 	if gort.GOOS == windowsOSTarget {
 		check = windowsCheckSymbol
@@ -408,15 +414,20 @@ func createRestorePodSpec(podName, pvcName string, op *Run) *corev1.Pod {
 }
 
 func getPodTemplate(name string, op *Run) *corev1.Pod {
-	return &corev1.Pod{
+	pod := &corev1.Pod{
 		ObjectMeta: getObjectMetaTemplate(name, op.Namespace),
 		Spec: corev1.PodSpec{
 			ImagePullSecrets: []corev1.LocalObjectReference{
 				{Name: op.ImagePullSecret},
 			},
 			ServiceAccountName: op.ServiceAccountName,
+			NodeSelector:       op.PodSchedOps.NodeSelector,
+			Affinity:           op.PodSchedOps.Affinity,
+			Tolerations:        op.PodSchedOps.Tolerations,
 		},
 	}
+
+	return pod
 }
 
 func getObjectMetaTemplate(name, namespace string) metav1.ObjectMeta {
@@ -541,4 +552,8 @@ func getDefaultRetryBackoffParams() k8swait.Backoff {
 		Steps: volSnapRetrySteps, Duration: volSnapRetryInterval,
 		Factor: volSnapRetryFactor, Jitter: volSnapRetryJitter,
 	}
+}
+
+func logPodScheduleStmt(pod *corev1.Pod, logger *logrus.Logger) {
+	logger.Debugf("Pod - '%s' scheduled on node - '%s'", pod.GetName(), pod.Spec.NodeName)
 }

@@ -12,7 +12,7 @@ import (
 )
 
 // nolint:lll // ignore long line lint errors
-// runCmd represents the run command
+// runCmd represents the Run command
 var runCmd = &cobra.Command{
 	Use:   preflightRunCmdName,
 	Short: "Runs preflight checks on cluster",
@@ -93,4 +93,5 @@ func init() {
 	runCmd.Flags().StringVar(&podLimits, PodLimitFlag, "", podLimitUsage)
 	runCmd.Flags().StringVar(&podRequests, PodRequestFlag, "", podRequestUsage)
 	runCmd.Flags().StringVar(&pvcStorageRequest, PVCStorageRequestFlag, "", pvcStorageRequestUsage)
+	runCmd.Flags().StringVar(&nodeSelector, NodeSelectorFlag, "", nodeSelectorUsage)
 }

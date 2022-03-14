@@ -58,7 +58,7 @@ func generateLogFileName(logFilePrefix string) string {
 	return logFilePrefix + "-" + ts + ".log"
 }
 
-// reads preflight and Cleanup inputs from file
+// reads preflight and cleanup inputs from file
 // override the flag inputs of file if given through CLI
 func readFileInputOptions(filename string) error {
 	var data []byte
@@ -112,6 +112,10 @@ func overridePreflightFileInputsFromCLI(cmd *cobra.Command) error {
 		cmdOps.Run.PVCStorageRequest = resource.MustParse(DefaultPVCStorage)
 	}
 
+	err = updateNodeSelectorLabelsFromCLI(cmd)
+	if err != nil {
+		log.Fatalf("problem updating node selector labels :: %s", err.Error())
+	}
 	return updateResReqFromCLI()
 }
 
@@ -188,6 +192,34 @@ func populateResourceList(resourceStr string) (corev1.ResourceList, error) {
 	}
 
 	return rs, nil
+}
+
+func updateNodeSelectorLabelsFromCLI(cmd *cobra.Command) error {
+	if !cmd.Flags().Changed(NodeSelectorFlag) {
+		return nil
+	}
+	var nodeSelLabels map[string]string
+	nodeSelLabels, err = parseNodeSelectorLabels(nodeSelector)
+	if err != nil {
+		return err
+	}
+	cmdOps.Run.PodSchedOps.NodeSelector = nodeSelLabels
+
+	return nil
+}
+
+func parseNodeSelectorLabels(labels string) (map[string]string, error) {
+	selectorMap := make(map[string]string)
+	kvPairs := strings.Split(labels, ",")
+	for _, kv := range kvPairs {
+		tokens := strings.Split(kv, "=")
+		if len(tokens) != 2 {
+			return nil, fmt.Errorf("invalid argument syntax %v, expected format <key>=<value>", kv)
+		}
+		selectorMap[tokens[0]] = tokens[1]
+	}
+
+	return selectorMap, nil
 }
 
 func manageCleanupInputs(cmd *cobra.Command) (err error) {

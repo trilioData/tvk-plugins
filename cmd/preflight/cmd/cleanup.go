@@ -24,7 +24,7 @@ If uid flag is not specified then all preflight resources created till date are 
   kubectl tvk-preflight cleanup --namespace <namespace>
 
   # clean preflight resource with a specified logging level
-  kubectl tvk-preflight cleanup --uid <preflight run uid> --log-level <log-level>
+  kubectl tvk-preflight cleanup --uid <preflight Run uid> --log-level <log-level>
 
   # Cleanup preflight resources with a particular kubeconfig file
   kubectl tvk-preflight cleanup --uid <preflight run uid> --namespace <namespace> --kubeconfig <kubeconfig-file-path>

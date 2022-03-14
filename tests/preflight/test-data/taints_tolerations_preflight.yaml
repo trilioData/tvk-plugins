@@ -1,0 +1,11 @@
+run:
+  storageClass: STORAGE_CLASS
+  cleanupOnFailure: false
+  podSchedulingOptions:
+    nodeSelector:
+      preflight-topology: preflight-node
+    tolerations:
+      - key: pref-node-taint
+        operator: Equal
+        value: pref-node-toleration
+        effect: NoSchedule

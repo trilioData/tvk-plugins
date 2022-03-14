@@ -1,0 +1,30 @@
+run:
+  storageClass: STORAGE_CLASS
+  cleanupOnFailure: true
+  logLevel: debug
+  podSchedulingOptions:
+    affinity:
+      podAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: pref-pod-affinity
+                  operator: In
+                  values:
+                    - medium
+                - key: pref-node-affinity
+                  operator: NotIn
+                  values:
+                    - high
+            topologyKey: preflight-topology
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: pref-pod-affinity
+                    operator: In
+                    values:
+                      - low
+              topologyKey: preflight-topology

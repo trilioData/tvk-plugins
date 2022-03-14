@@ -172,7 +172,7 @@ run:
   imagePullSecret: <Name of the secret while pulling images from the local registry>
   cleanupOnFailure: <Boolean. If true cleans the preflight resources after a failed preflight run>
   pvcStorageRequest: <Storage request value of PVC for volume snapshot check>
-  podResourceRequirements:
+  resources:
     requests:
       memory: <pod memory request for snapshot check, e.g 64Mi>
       cpu: <pod cpu request for snapshot check, e.g 250m>
@@ -190,7 +190,7 @@ cleanup:
 - The **cleanupMode** field can have two values - *all* and *uid*. *all* mode will clean all the preflight resources present in the given namespace.
 *uid* mode will clean resources of preflight with the given *uid* in the given namespace.
 - User can override the values given in file using CLI flags.
-- The input fields should be present in the correct hierarchical order. An incorrect key or input field will result in an error and preflight checks will not performed.  
+- The input fields should be present in the correct hierarchical order. An incorrect key or input field will result in an error and preflight checks will not performed.
 
 Run a preflight check with predefined values using a sample file. Download the file using below commands:
 
@@ -273,6 +273,7 @@ kubeconfig is pointing to in the given namespace.
 | --requests              | cpu=250m,memory=64Mi | Pod cpu and memory request for DNS and volume snapshot check. Memory and cpu values must be specified in a comma separated format. (Optional)
 | --limits              | cpu=500m,memory=128Mi | Pod cpu and memory limit for DNS and volume snapshot check. Memory and cpu values must be specified in a comma separated format. (Optional)
 | --pvc-storage-request   |     1Gi     | PVC storage request for performing volume snapshot check. (Optional)
+| --node-selector         |             | Node selector labels for scheduling pods on a set of particular nodes of a cluster (Optional)
 
 #### Examples
 
@@ -312,6 +313,107 @@ kubectl tvk-preflight run --storage-class <storageclass name> --requests cpu=200
 ```shell script
 kubectl tvk-preflight run --storage-class <storageclass name> --limits cpu=400m,memory=128Mi
 ```
+
+- With `--node-selector`: Multiple labels for node selection can be specified in a comma separated format. Where each label can be specified in a format `<label-key>=<label-value>`.
+
+```shell script
+kubectl tvk-preflight run --storage-class <storageclass name> --node-selector <label-key1>=<label-value1>,<label-key2>=<label-value2>
+```
+
+#### Pod Scheduling
+The pods of preflight run can be made to schedule on a particular set of nodes of cluster by specifying the labels for node selection, node affinity, pod affinity/anti-affinity and taints and toleration.
+
+**Note:** The labels except node-selector can only be specified through a config file of preflight run. Currently, it is not possible to specify pod and node affinity and tolerations through CLI flags.
+
+Please refer below examples for specifying labels onto the pods of preflight run.
+
+- Examples
+
+**Node selection**
+```yaml
+run:
+  ...
+  podSchedulingOptions:
+    nodeSelector:
+      node-sel-key: node-sel-value
+  ...
+```
+
+**Node-affinity**
+```yaml
+run:
+  ...
+  podSchedulingOptions:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+              - matchExpressions:
+                - key: pref-node-affinity
+                  operator: In
+                  values:
+                    - high
+                - key: pref-node-affinity
+                  operator: NotIn
+                  values:
+                    - low
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: pref-node-affinity
+                  operator: NotIn
+                  values:
+                    - medium
+  ...
+```
+
+**Pod-affinity/anti-affinity**
+```yaml
+run:
+  ...
+  podSchedulingOptions:
+    affinity:
+      podAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+              matchExpressions:
+                - key: pref-pod-affinity
+                  operator: In
+                  values:
+                    - medium
+                - key: pref-node-affinity
+                  operator: NotIn
+                  values:
+                    - high
+              topologyKey: preflight-topology
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: pref-pod-affinity
+                    operator: In
+                    values:
+                      - low
+              topologyKey: preflight-topology
+  ...
+```
+
+**Taints & Toleration**
+```yaml
+run:
+  ...
+  podSchedulingOptions:
+    tolerations:
+    - key: pref-node-taint
+      operator: Equal
+      value: pref-node-toleration
+      effect: NoSchedule
+  ...
+```
+
 
 ### 2. cleanup
 - **cleanup** subcommand cleans/deletes the resources created during failed preflight checks and not cleaned-up on failure.
