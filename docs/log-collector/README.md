@@ -90,6 +90,9 @@ Verify installation with `kubectl tvk-log-collector --help`
 | --kubeconfig            |   ~/.kube/config             |path to the kubernetes config
 | --keep-source-folder            | false            | Keep source directory and Zip both
 | --log-level                | INFO             | log level for debugging ( INFO ERROR DEBUG WARNING DEBUG )
+| --config-file |  | path to config file for log collector inputs
+| --gvk | | json string to give list of GVKs that want be collected other than log collector handles
+| --label-selector | | json string to give list of all label selector for resources to be collected other than log collector collects
 
 ## Examples
 
@@ -105,6 +108,34 @@ Verify installation with `kubectl tvk-log-collector --help`
 
         kubectl tvk-log-collector --clustered --keep-source-folder --log-level error
 
+- To collect logs by providing config file :
+
+        kubectl tvk-log-collector --config-file <path/to/config/file.yaml>
+
+The format of data in a file should be according to the below example:
+
+```yaml
+keep-source-folder: <true/false>
+clustered: <true/false>
+namespaces:
+  - <ns1>
+  - <ns2>
+logLevel: <LOG-LEVEL>
+kubeConfig: <path/to/config> 
+labelSelector:
+  - matchLabels:
+      "key": "value"
+      "key2": "value2"
+  - matchLabels:
+      "key3": "value3"
+groupVersionKind:
+  - group: <group>
+    version: <version>
+    kind: <kind>
+  - group: <group2>
+    version: <version2>
+    kind: <kind2>
+```
 
 ## Output
 This command will create `triliovault-<date-time>.zip` zip file containing cluster debugging information.
@@ -135,7 +166,16 @@ Role
 RoleBinding
 Namespaces
 Nodes
-```  
+```
+when clustered flag enabled
+```
+ClusterRole
+ClusterRoleBinding
+MutatingWebhookConfiguration
+ValidatingWebhookConfiguration
+PersistentVolume
+IngressClass
+```
 and ```TrilioVault Resources```
 
 ## OCP Specific Resources Considered for Log Collection:

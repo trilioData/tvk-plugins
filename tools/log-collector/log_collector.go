@@ -15,6 +15,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apiv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -30,16 +32,33 @@ import (
 	"github.com/trilioData/tvk-plugins/internal"
 )
 
+type GroupVersionKind struct {
+	Group   string `json:"group"`
+	Version string `json:"version"`
+	Kind    string `json:"kind"`
+}
+
+var (
+	matchExpressionOperator = map[apiv1.LabelSelectorOperator]selection.Operator{
+		apiv1.LabelSelectorOpIn:           selection.In,
+		apiv1.LabelSelectorOpNotIn:        selection.NotIn,
+		apiv1.LabelSelectorOpExists:       selection.Exists,
+		apiv1.LabelSelectorOpDoesNotExist: selection.DoesNotExist,
+	}
+)
+
 type LogCollector struct {
-	OutputDir    string
-	CleanOutput  bool
-	Clustered    bool
-	Namespaces   []string
-	Loglevel     string
-	k8sClient    client.Client
-	disClient    *discovery.DiscoveryClient
-	k8sClientSet *kubernetes.Clientset
-	KubeConfig   string
+	OutputDir        string   `json:"outputDirectory"`
+	CleanOutput      bool     `json:"keep-source-folder"`
+	Clustered        bool     `json:"clustered"`
+	Namespaces       []string `json:"namespaces"`
+	Loglevel         string   `json:"logLevel"`
+	k8sClient        client.Client
+	disClient        *discovery.DiscoveryClient
+	k8sClientSet     *kubernetes.Clientset
+	KubeConfig       string                `json:"kubeConfig"`
+	LabelSelector    []apiv1.LabelSelector `json:"labelSelector,omitempty"`
+	GroupVersionKind []GroupVersionKind    `json:"groupVersionKind"`
 }
 
 // initializeKubeClients initialize clients for kubernetes environment
@@ -358,31 +377,37 @@ func (l *LogCollector) zipDir() error {
 func (l *LogCollector) filterResourceObjects(resourcePath string,
 	resource *apiv1.APIResource) (allObjects unstructured.UnstructuredList, err error) {
 
+	if l.checkIfMatchesInputGVKs(resource) {
+		log.Infof("Fetching '%s' Resource", resource.Kind)
+		return l.getResourceObjects(resourcePath, resource), nil
+	}
+
 	if (!resource.Namespaced && clusteredResources.Has(resource.Kind)) ||
 		(resource.Namespaced && !excludeResources.Has(resource.Kind)) {
 
-		log.Infof("Fetching '%s' Resource", resource.Kind)
-		allObjects = l.getResourceObjects(resourcePath, resource)
-
 		if resource.Name == CRD {
-			allObjects, err = filterTvkSnapshotAndCSICRD(allObjects)
+			log.Infof("Fetching '%s' Resource", resource.Kind)
+			allObjects, err = filterTvkSnapshotAndCSICRD(l.getResourceObjects(resourcePath, resource))
 			if err != nil {
 				return allObjects, err
 			}
 		}
 
 		if resource.Name == Namespaces && !l.Clustered {
-			allObjects = filterInputNS(allObjects, l.Namespaces)
+			log.Infof("Fetching '%s' Resource", resource.Kind)
+			allObjects = filterInputNS(l.getResourceObjects(resourcePath, resource), l.Namespaces)
 		}
 
 		if resource.Name == ClusterServiceVersion {
-			allObjects = filterTvkCSV(allObjects)
+			log.Infof("Fetching '%s' Resource", resource.Kind)
+			allObjects = filterTvkCSV(l.getResourceObjects(resourcePath, resource))
 		}
 	}
-
-	if !nonLabeledResources.Has(resource.Kind) &&
-		!clusteredResources.Has(resource.Kind) {
-		filterTvkResourcesByLabel(&allObjects)
+	if (!nonLabeledResources.Has(resource.Kind) &&
+		!clusteredResources.Has(resource.Kind)) || (l.Clustered && !resource.Namespaced) {
+		log.Infof("Fetching '%s' Resource", resource.Kind)
+		allObjects = l.getResourceObjects(resourcePath, resource)
+		l.filterTvkResourcesByLabel(&allObjects)
 	}
 	return allObjects, nil
 }
@@ -501,6 +526,17 @@ func (l *LogCollector) getTrilioGroupResources(trilioGVResources []apiv1.APIReso
 		}
 	}
 	return nil
+}
+
+func (l *LogCollector) checkIfMatchesInputGVKs(resource *apiv1.APIResource) bool {
+	for idx := range l.GroupVersionKind {
+		if l.GroupVersionKind[idx].Group == resource.Group &&
+			l.GroupVersionKind[idx].Version == resource.Version &&
+			l.GroupVersionKind[idx].Kind == resource.Kind {
+			return true
+		}
+	}
+	return false
 }
 
 // getAPIResourceList returns the list of all API Groups of the supported resources for all groups and versions.
@@ -622,4 +658,46 @@ func (l *LogCollector) getResourceEvents(eventResource *apiv1.APIResource, resou
 		return eErr
 	}
 	return nil
+}
+
+func MatchLabelSelectors(objLabels map[string]string, labelSelector []apiv1.LabelSelector) bool {
+	if len(labelSelector) == 0 {
+		return true
+	}
+
+	for i := range labelSelector {
+		ls := labelSelector[i]
+		if MatchLabels(objLabels, ls.MatchLabels) && MatchExpressions(objLabels, ls.MatchExpressions) {
+			return true
+		}
+	}
+	return false
+}
+
+func MatchLabels(podLabels, matchLabels map[string]string) bool {
+	for k, v := range matchLabels {
+		value, ok := podLabels[k]
+		if !ok {
+			return false
+		}
+		if value != v {
+			return false
+		}
+	}
+	return true
+}
+
+func MatchExpressions(podLabels map[string]string, matchExpr []apiv1.LabelSelectorRequirement) bool {
+
+	for i := range matchExpr {
+		expr := matchExpr[i]
+		matchReq, err := labels.NewRequirement(expr.Key, matchExpressionOperator[expr.Operator], expr.Values)
+		if err != nil {
+			log.Errorf("failed to create requirement")
+		}
+		if !matchReq.Matches(labels.Set(podLabels)) {
+			return false
+		}
+	}
+	return true
 }

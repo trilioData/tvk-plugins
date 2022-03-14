@@ -35,15 +35,17 @@ const (
 	LicenseKind = "License"
 	Verblist    = "list"
 
-	TrilioPrefix = "k8s-triliovault"
+	TrilioPrefix   = "k8s-triliovault"
+	TrilioOpPrefix = "k8s-triliovault-operator"
 )
 
 var (
 	scheme = runtime.NewScheme()
 
-	K8STrilioVaultLabel = map[string]string{"app.kubernetes.io/part-of": TrilioPrefix}
-	nonLabeledResources = sets.NewString("ResourceQuota", "LimitRange", "VolumeSnapshot", "ClusterServiceVersion")
-	clusteredResources  = sets.NewString("Node", "Namespace", "CustomResourceDefinition", "StorageClass",
+	K8STrilioVaultLabel   = map[string]string{"app.kubernetes.io/part-of": TrilioPrefix}
+	K8STrilioVaultOpLabel = map[string]string{"app.kubernetes.io/part-of": TrilioOpPrefix}
+	nonLabeledResources   = sets.NewString("ResourceQuota", "LimitRange", "VolumeSnapshot", "ClusterServiceVersion")
+	clusteredResources    = sets.NewString("Node", "Namespace", "CustomResourceDefinition", "StorageClass",
 		"VolumeSnapshotClass")
 	excludeResources = sets.NewString("Secret", "PackageManifest")
 )
@@ -242,13 +244,17 @@ func checkLabelExist(givenLabel, toCheckInLabel map[string]string) (exist bool) 
 }
 
 // filterTvkResourcesByLabel filter objects on the basis of Labels
-func filterTvkResourcesByLabel(allObjects *unstructured.UnstructuredList) {
+func (l *LogCollector) filterTvkResourcesByLabel(allObjects *unstructured.UnstructuredList) {
 	var objects unstructured.UnstructuredList
 
 	for _, object := range allObjects.Items {
 		objectLabel := object.GetLabels()
-		if len(objectLabel) != 0 && checkLabelExist(objectLabel, K8STrilioVaultLabel) {
-			objects.Items = append(objects.Items, object)
+		if len(objectLabel) != 0 {
+			if checkLabelExist(objectLabel, K8STrilioVaultLabel) ||
+				checkLabelExist(objectLabel, K8STrilioVaultOpLabel) ||
+				MatchLabelSelectors(objectLabel, l.LabelSelector) {
+				objects.Items = append(objects.Items, object)
+			}
 		}
 	}
 	allObjects.Items = objects.Items
