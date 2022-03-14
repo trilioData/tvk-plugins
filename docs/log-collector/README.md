@@ -108,6 +108,14 @@ Verify installation with `kubectl tvk-log-collector --help`
 
         kubectl tvk-log-collector --clustered --keep-source-folder --log-level error
 
+- To collect logs by providing gvk :
+
+        kubectl tvk-log-collector --clustered --gvk '[{"group": "<group>", "version": "<version>", "kind": "<kind>"}, {...}]'
+
+- To collect logs by providing label-selector :
+        
+        kubectl tvk-log-collector --clustered  --label-selector '[{"matchLabels":{"key":"value","key2":"value2"}}]'
+
 - To collect logs by providing config file :
 
         kubectl tvk-log-collector --config-file <path/to/config/file.yaml>

@@ -125,7 +125,6 @@ func preRun(*cobra.Command, []string) error {
 		log.Fatalf("Unable to Parse Log Level : %s", lErr.Error())
 	}
 	log.SetLevel(level)
-	log.SetFormatter(&log.TextFormatter{ForceColors: true})
 
 	if len(logCollector.Namespaces) != 0 && logCollector.Clustered {
 		log.Fatalf("Cannot use flag %s and %s scope at the same time", namespacesFlag, clusteredFlag)
@@ -167,7 +166,7 @@ func overrideFileInputsFromCLI() {
 		logCollector.Clustered = clustered
 	}
 	if cmd.Flags().Changed(namespacesFlag) {
-		logCollector.Namespaces = namespacesDefault
+		logCollector.Namespaces = namespaces
 	}
 	if cmd.Flags().Changed(keepSourceFlag) {
 		logCollector.CleanOutput = keepSource
