@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -142,7 +143,6 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 	o.Logger.Infoln("Checking if VolumeSnapshot CRDs are installed in the cluster or else create")
 	serverVersion, sErr := discClient.ServerVersion()
 	if sErr != nil {
-		o.Logger.Errorf("Error getting server version :: %s\n", err.Error())
 		return fmt.Errorf("error getting server version: %s", sErr.Error())
 	}
 	err = o.checkAndCreateVolumeSnapshotCRDs(ctx, serverVersion.String())
@@ -413,16 +413,16 @@ func (o *Run) checkSnapshotClassForProvisioner(ctx context.Context, provisioner 
 
 //  checkAndCreateVolumeSnapshotCRDs checks and creates volumesnapshot and related CRDs if not present on cluster.
 func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context, serverVersion string) error {
-	var err error
 
 	prefCRDVersion, gErr := getPrefVersionCRDObj(serverVersion)
 	if gErr != nil {
 		return gErr
 	}
 
+	var errs []error
 	for _, crd := range VolumeSnapshotCRDs {
 		var crdObj = &apiextensions.CustomResourceDefinition{}
-		if err = runtimeClient.Get(ctx, client.ObjectKey{Name: crd}, crdObj); err != nil {
+		if err := runtimeClient.Get(ctx, client.ObjectKey{Name: crd}, crdObj); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return fmt.Errorf("error getting volume snapshot class CRD :: %s", err.Error())
 			}
@@ -430,22 +430,29 @@ func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context, serverVersio
 
 			fileBytes, rErr := crdYamlFiles.ReadFile(filepath.Join(volumeSnapshotCRDYamlDir, prefCRDVersion, crd+".yaml"))
 			if rErr != nil {
-				return rErr
+				errs = append(errs, rErr)
+				continue
 			}
 
 			unmarshalCRDObj := &apiextensions.CustomResourceDefinition{}
 			if uErr := yaml.Unmarshal(fileBytes, unmarshalCRDObj); uErr != nil {
-				return uErr
+				errs = append(errs, uErr)
+				continue
 			}
 
 			if cErr := runtimeClient.Create(ctx, unmarshalCRDObj); cErr != nil {
-				return cErr
+				errs = append(errs, cErr)
+				continue
 			}
 
 			o.Logger.Infof("%s Volume snapshot CRD: %s successfully created", check, crd)
 		} else {
 			o.Logger.Infof("%s Volume snapshot CRD: %s already exists, skipping installation", check, crd)
 		}
+	}
+
+	if len(errs) != 0 {
+		return kerrors.NewAggregate(errs)
 	}
 
 	return nil

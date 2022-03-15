@@ -57,17 +57,6 @@ var _ = Describe("Preflight Tests", func() {
 			})
 		})
 
-		Context("Preflight run command volume snapshot CRD test cases", func() {
-
-			It("All preflight checks should pass if all volume snapshot CRDs are present", func() {
-				cmdOut, err = runPreflightChecks(flagsMap)
-				Expect(err).To(BeNil())
-
-				assertVolumeSnapshotCRDCheckSuccess(cmdOut.Out)
-			})
-
-		})
-
 		Context("Preflight run command snapshot class flag test cases", func() {
 
 			It("Preflight checks should pass if snapshot class is present on cluster and provided as a flag value", func() {

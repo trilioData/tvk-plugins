@@ -19,6 +19,9 @@ const (
 	v1K8sVersion      = "v1.20.0"
 	timeout           = time.Second * 60
 	interval          = time.Second * 1
+	vsClassCRD        = "volumesnapshotclasses." + StorageSnapshotGroup
+	vsContentCRD      = "volumesnapshotcontents." + StorageSnapshotGroup
+	vsCRD             = "volumesnapshots." + StorageSnapshotGroup
 )
 
 func preflightTestCases(serverVersion string) {
@@ -32,16 +35,17 @@ func preflightTestCases(serverVersion string) {
 		Context("Preflight run command volume snapshot CRD test cases", func() {
 
 			It("Should skip installation if all volume snapshot CRDs are present", func() {
-				installVolumeSnapshotCRD(serverVersion, [3]bool{true, true, true})
+				vsCRDsMap := map[string]bool{vsClassCRD: true, vsContentCRD: true, vsCRD: true}
+				installVolumeSnapshotCRD(serverVersion, vsCRDsMap)
 				Expect(run.checkAndCreateVolumeSnapshotCRDs(ctx, serverVersion)).To(BeNil())
 				checkVolumeSnapshotCRDExists()
 			})
 
 			for i, crd := range VolumeSnapshotCRDs {
+				vsCRDsMap := map[string]bool{vsClassCRD: true, vsContentCRD: true, vsCRD: true}
 				It(fmt.Sprintf("Should install missing volume snapshot CRD %s when it is not present", crd), func() {
-					var volumeSnapshotCRDsToInstall = [3]bool{true, true, true}
-					volumeSnapshotCRDsToInstall[i] = false
-					installVolumeSnapshotCRD(serverVersion, volumeSnapshotCRDsToInstall)
+					vsCRDsMap[VolumeSnapshotCRDs[i]] = false
+					installVolumeSnapshotCRD(serverVersion, vsCRDsMap)
 					Expect(run.checkAndCreateVolumeSnapshotCRDs(ctx, serverVersion)).To(BeNil())
 					checkVolumeSnapshotCRDExists()
 				})
@@ -64,21 +68,19 @@ var _ = Context("Preflight Unit Tests", func() {
 	preflightTestCases(v1K8sVersion)
 })
 
-func installVolumeSnapshotCRD(version string, volumeSnapshotCRDToInstall [3]bool) {
+func installVolumeSnapshotCRD(version string, volumeSnapshotCRDToInstall map[string]bool) {
 
-	for i, toBeInstalled := range volumeSnapshotCRDToInstall {
-		crdObj := &apiextensions.CustomResourceDefinition{}
-		dirVersion := snapshotClassVersionV1
-		if version == v1beta1K8sVersion {
-			dirVersion = snapshotClassVersionV1Beta1
-		}
+	for i := range VolumeSnapshotCRDs {
+		if volumeSnapshotCRDToInstall[VolumeSnapshotCRDs[i]] {
+			crdObj := &apiextensions.CustomResourceDefinition{}
+			dirVersion, err := getPrefVersionCRDObj(version)
+			Expect(err).To(BeNil())
 
-		fileBytes, readErr := ioutil.ReadFile(filepath.Join(volumeSnapshotCRDYamlDir, dirVersion, VolumeSnapshotCRDs[i]+".yaml"))
-		Expect(readErr).To(BeNil())
+			fileBytes, readErr := ioutil.ReadFile(filepath.Join(volumeSnapshotCRDYamlDir, dirVersion, VolumeSnapshotCRDs[i]+".yaml"))
+			Expect(readErr).To(BeNil())
 
-		Expect(yaml.Unmarshal(fileBytes, crdObj)).To(BeNil())
+			Expect(yaml.Unmarshal(fileBytes, crdObj)).To(BeNil())
 
-		if toBeInstalled {
 			Expect(k8sClient.Create(ctx, crdObj)).To(BeNil())
 			Eventually(func() error {
 				volSnapCRDObj := &apiextensions.CustomResourceDefinition{}

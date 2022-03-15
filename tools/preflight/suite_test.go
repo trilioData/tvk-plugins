@@ -2,9 +2,6 @@ package preflight
 
 import (
 	"context"
-	"fmt"
-	"os"
-	goruntime "runtime"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -33,19 +30,11 @@ func TestPreflight(t *testing.T) {
 	RegisterFailHandler(Fail)
 	junitReporter := reporters.NewJUnitReporter("junit-preflight-unit-test.xml")
 	RunSpecsWithDefaultAndCustomReporters(t,
-		"webhook-server",
+		"preflight unit tests",
 		[]Reporter{printer.NewlineReporter{}, junitReporter})
 }
 
 var _ = BeforeSuite(func() {
-	goos := goruntime.GOOS
-	goarch := goruntime.GOARCH
-	kubeBuilderPath := fmt.Sprintf("/tmp/kubebuilder_2.3.2_%s_%s/bin", goos, goarch)
-
-	Expect(os.Setenv("TEST_ASSET_KUBE_APISERVER", kubeBuilderPath+"/kube-apiserver")).To(Succeed())
-	Expect(os.Setenv("TEST_ASSET_ETCD", kubeBuilderPath+"/etcd")).To(Succeed())
-	Expect(os.Setenv("TEST_ASSET_KUBECTL", kubeBuilderPath+"/kubectl")).To(Succeed())
-
 	By("Bootstrapping test environment")
 	envTestScheme = runtime.NewScheme()
 	Expect(apiextensionsv1.AddToScheme(envTestScheme)).To(BeNil())
