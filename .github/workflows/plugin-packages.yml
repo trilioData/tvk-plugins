@@ -26,7 +26,8 @@ env:
 
 jobs:
   # pre-build job runs yaml lint, shell lint, golangci-lint and detects file changes to sets job variables which will be used to
-  # decide whether to run subsequent jobs(build_test_preflight, build_test_cleanup, build_test_log-collector and build_test_target-browser)
+  # decide whether to run subsequent jobs(build_test_preflight, build_push_preflight_image, build_test_cleanup,
+  # build_test_log-collector and build_test_target-browser)
   pre-build:
     runs-on: ubuntu-latest
     outputs:
@@ -81,6 +82,7 @@ jobs:
             preflight:
               - *sharedPreflight
               - '.krew/tvk-preflight.yaml'
+              - 'docker-images/preflight/Dockerfile'
             testPreflight:
               - *sharedPreflight
 
@@ -145,7 +147,6 @@ jobs:
         sed -i '/binary: log-collector/a \ \ skip: true' .goreleaser.yml
         sed -i '/binary: target-browser/a \ \ skip: true' .goreleaser.yml
 
-
     - name: Build Preflight Packages
       uses: goreleaser/goreleaser-action@v2
       with:
@@ -183,7 +184,6 @@ jobs:
         job_name: preflight
         build_id: pf-${{ github.run_id }}
 
-
     - name: Ensure Required Utilities Installed
       run: make install-required-utilities
 
@@ -199,6 +199,66 @@ jobs:
     - name: Test Preflight Plugin Locally
       run: make test-preflight-plugin-locally
 
+  # build_push_preflight_image job builds preflight docker image, and pushes it to public docker registry,
+  # if changes for tags('/ref/tags') are pushed or otherwise pushes to private docker registry
+  build_push_preflight_image:
+    runs-on: ubuntu-latest
+    needs: [pre-build, build_test_preflight]
+    # for tags('ref/tags/'), 'needs.pre-build.outputs.preflight' will be 'false' so to run 'build_test_preflight' job on tags as well,
+    # added condition 'startsWith(github.ref, 'refs/tags/')'
+    if: (needs.pre-build.outputs.preflight == 'true') || startsWith(github.ref, 'refs/tags/')
+    env:
+      GCR_PRIVATE_DOCKER_REGISTRY: "gcr.io"
+      GCR_PUBLIC_DOCKER_REGISTRY: "eu.gcr.io"
+      GCR_PROJECT: ${{ secrets.GCS_PROJECT_ID }}
+      IMAGE_NAME: "preflight"
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # Setup gcloud CLI
+      - uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.GCS_PROJECT_ID }}
+          service_account_key: ${{ secrets.GKE_SA_KEY }}
+          export_default_credentials: true
+
+      # Configure docker to use the gcloud command-line tool as a credential helper
+      - name: Set up docker auth
+        run: |
+          gcloud auth configure-docker
+
+      # This step is run when push is not for a tag
+      - name: Sets image tag env to private registry for internal build
+        if: (needs.pre-build.outputs.preflight == 'true') && !startsWith(github.ref, 'refs/tags/')
+        run: echo "DOCKER_REGISTRY=$GCR_PRIVATE_DOCKER_REGISTRY" >> $GITHUB_ENV
+
+      # This step is run when push is for a tag
+      - name: Sets image tag env to public registry for release
+        if: (needs.pre-build.outputs.preflight == 'true') && startsWith(github.ref, 'refs/tags/')
+        run: echo "DOCKER_REGISTRY=$GCR_PUBLIC_DOCKER_REGISTRY" >> $GITHUB_ENV
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{env.DOCKER_REGISTRY}}/${{env.GCR_PROJECT}}/${{env.IMAGE_NAME}}
+          tags: |
+            type=sha,prefix=,format=short,event=pr
+            type=ref,event=branch
+            type=sha,prefix=,format=short,event=branch
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=ref,event=tag
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: docker-images/preflight/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
   # build_test_cleanup job build cleanup packages, runs integration tests and tests packages for plugin creation(install, uninstall)
   # upload cleanup packages to github artifacts if tags('/ref/tags') are pushed
@@ -427,7 +487,7 @@ jobs:
   # what packages(preflight, cleanup, log-collector, target-browser) should be included in release
   pre-release:
     runs-on: ubuntu-latest
-    needs: [build_test_preflight, build_test_log-collector, build_test_target-browser, build_test_cleanup, build_test_tvk_oneclick]
+    needs: [build_test_preflight, build_push_preflight_image, build_test_log-collector, build_test_target-browser, build_test_cleanup, build_test_tvk_oneclick]
     if: startsWith(github.ref, 'refs/tags/')
     outputs:
       create_release: ${{ steps.detect_changes.outputs.create_release }}
