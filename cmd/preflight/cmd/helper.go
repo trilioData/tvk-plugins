@@ -66,7 +66,7 @@ func readFileInputOptions(filename string) error {
 	if err != nil {
 		return err
 	}
-	err = yaml.UnmarshalStrict(data, &cmdOps)
+	err = yaml.UnmarshalStrict(data, cmdOps)
 	if err != nil {
 		return err
 	}
@@ -81,6 +81,10 @@ func managePreflightInputs(cmd *cobra.Command) (err error) {
 		if err != nil {
 			return fmt.Errorf("failed to read preflight input from file :: %s", err.Error())
 		}
+	}
+	err = updateNodeSelectorLabelsFromCLI(cmd)
+	if err != nil {
+		return err
 	}
 	return overridePreflightFileInputsFromCLI(cmd)
 }
@@ -236,10 +240,10 @@ func manageCleanupInputs(cmd *cobra.Command) (err error) {
 
 func validateRunOptions() error {
 	if cmdOps.Run.StorageClass == "" {
-		logger.Fatalf("storage-class is required, cannot be empty")
+		return fmt.Errorf("storage-class is required, cannot be empty")
 	}
 	if cmdOps.Run.ImagePullSecret != "" && cmdOps.Run.LocalRegistry == "" {
-		logger.Fatalf("Cannot give image pull secret if local registry is not provided.\nUse --local-registry flag to provide local registry")
+		return fmt.Errorf("cannot give image pull secret if local registry is not provided.\nUse --local-registry flag to provide local registry")
 	}
 
 	reqMem := cmdOps.Run.Requests.Memory()

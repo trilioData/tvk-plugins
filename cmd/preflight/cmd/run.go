@@ -12,7 +12,7 @@ import (
 )
 
 // nolint:lll // ignore long line lint errors
-// runCmd represents the Run command
+// runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   preflightRunCmdName,
 	Short: "Runs preflight checks on cluster",
@@ -29,7 +29,7 @@ var runCmd = &cobra.Command{
   # run preflight checks with a particular log level
   kubectl tvk-preflight run --storage-class <storage-class-name> --log-level <log-level>
 
-  # Cleanup the resources generated during preflight check if preflight check fails. Default is false.
+  # cleanup the resources generated during preflight check if preflight check fails. Default is false.
   # If the preflight check is successful, then all resources are cleaned.
   kubectl tvk-preflight run --storage-class <storage-class-name> --cleanup-on-failure 
 
@@ -50,7 +50,6 @@ var runCmd = &cobra.Command{
   kubectl tvk-preflight run --storage-class <storage-class-name> --pvc-storage-request <storage request value>
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var err error
 		err = managePreflightInputs(cmd)
 		if err != nil {
 			log.Fatal(err.Error())

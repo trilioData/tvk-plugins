@@ -13,7 +13,7 @@ var (
 	logger               *logrus.Logger
 	logFile              *os.File
 	preflightLogFilename string
-	cmdOps               preflightCmdOps
+	cmdOps               *preflightCmdOps
 	err                  error
 )
 
@@ -29,7 +29,7 @@ application in a Kubernetes cluster.
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
+	if err = rootCmd.Execute(); err != nil {
 		log.Fatalln("preflight command execution failed -", err.Error())
 	}
 }
@@ -45,4 +45,6 @@ func init() {
 
 	logger = logrus.New()
 	logger.SetFormatter(&logrus.TextFormatter{ForceColors: true})
+
+	cmdOps = &preflightCmdOps{}
 }

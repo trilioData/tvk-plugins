@@ -33,11 +33,11 @@ const (
 	windowsCheckSymbol = "\u2713"
 	windowsCrossSymbol = "[X]"
 
-	minHelmVersion = "3.0.0"
-	minK8sVersion  = "1.18.0"
+	MinHelmVersion = "3.0.0"
+	MinK8sVersion  = "1.18.0"
 
-	rbacAPIGroup   = "rbac.authorization.k8s.io"
-	rbacAPIVersion = "v1"
+	RBACAPIGroup   = "rbac.authorization.k8s.io"
+	RBACAPIVersion = "v1"
 
 	letterBytes = "abcdefghijklmnopqrstuvwxyz"
 
@@ -107,6 +107,11 @@ var (
 			VolSnapPodFilePath, VolSnapPodFileData),
 	}
 
+	execDNSResolutionCmd = []string{"nslookup", "kubernetes.default"}
+
+	kubectlBinaryName = "kubectl"
+	HelmBinaryName    = "helm"
+
 	clientSet     *goclient.Clientset
 	runtimeClient client.Client
 	discClient    *discovery.DiscoveryClient
@@ -151,8 +156,9 @@ func InitKubeEnv(kubeconfig string) error {
 	return nil
 }
 
-func GetHelmVersion() (string, error) {
-	cmdOut, err := shell.RunCmd("helm version --template '{{.Version}}'")
+func GetHelmVersion(binaryName string) (string, error) {
+	cmdOut, err := shell.RunCmd(fmt.Sprintf("%s ver"+
+		"sion --template '{{.Version}}'", binaryName))
 	if err != nil {
 		return "", err
 	}
@@ -162,6 +168,9 @@ func GetHelmVersion() (string, error) {
 }
 
 func GetServerPreferredVersionForGroup(grp string, cl *goclient.Clientset) (string, error) {
+	if cl == nil {
+		return "", fmt.Errorf("client object is nil, cannot fetch versions of group - %s", grp)
+	}
 	var (
 		apiResList  *metav1.APIGroupList
 		err         error
@@ -185,13 +194,16 @@ func GetServerPreferredVersionForGroup(grp string, cl *goclient.Clientset) (stri
 	return prefVersion, nil
 }
 
-func getVersionsOfGroup(grp string) ([]string, error) {
+func getVersionsOfGroup(grp string, cl *goclient.Clientset) ([]string, error) {
+	if cl == nil {
+		return nil, fmt.Errorf("client object is nil, cannot fetch versions of group - %s", grp)
+	}
 	var (
 		apiResList *metav1.APIGroupList
 		err        error
 		apiVerList []string
 	)
-	apiResList, err = clientSet.ServerGroups()
+	apiResList, err = cl.ServerGroups()
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +220,10 @@ func getVersionsOfGroup(grp string) ([]string, error) {
 }
 
 //  clusterHasVolumeSnapshotClass checks and returns volume snapshot class if present on cluster.
-func clusterHasVolumeSnapshotClass(ctx context.Context, snapshotClass, namespace string) (*unstructured.Unstructured, error) {
+func clusterHasVolumeSnapshotClass(ctx context.Context, snapshotClass string, cl client.Client) (*unstructured.Unstructured, error) {
+	if cl == nil {
+		return nil, fmt.Errorf("runtime client object is nil, cannot fetch snapshot class from server")
+	}
 	var (
 		prefVersion string
 		err         error
@@ -223,9 +238,8 @@ func clusterHasVolumeSnapshotClass(ctx context.Context, snapshotClass, namespace
 		Version: prefVersion,
 		Kind:    internal.VolumeSnapshotClassKind,
 	})
-	err = runtimeClient.Get(ctx, client.ObjectKey{
-		Namespace: namespace,
-		Name:      snapshotClass,
+	err = cl.Get(ctx, client.ObjectKey{
+		Name: snapshotClass,
 	}, u)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -238,14 +252,14 @@ func clusterHasVolumeSnapshotClass(ctx context.Context, snapshotClass, namespace
 }
 
 //  createDNSPodSpec returns a corev1.Pod instance.
-func createDNSPodSpec(op *Run) *corev1.Pod {
+func createDNSPodSpec(op *Run, podNameSuffix string) *corev1.Pod {
 	var imagePath string
 	if op.LocalRegistry != "" {
 		imagePath = op.LocalRegistry
 	} else {
 		imagePath = GcrRegistryPath
 	}
-	pod := getPodTemplate(dnsUtils+resNameSuffix, op)
+	pod := getPodTemplate(dnsUtils+podNameSuffix, podNameSuffix, op)
 	pod.Spec.Containers = []corev1.Container{
 		{
 			Name:            dnsContainerName,
@@ -259,9 +273,9 @@ func createDNSPodSpec(op *Run) *corev1.Pod {
 	return pod
 }
 
-func createVolumeSnapshotPVCSpec(o *Run) *corev1.PersistentVolumeClaim {
+func createVolumeSnapshotPVCSpec(o *Run, pvcName, uid string) *corev1.PersistentVolumeClaim {
 	pvc := &corev1.PersistentVolumeClaim{
-		ObjectMeta: getObjectMetaTemplate(SourcePvcNamePrefix+resNameSuffix, o.Namespace),
+		ObjectMeta: getObjectMetaTemplate(pvcName, o.Namespace, uid),
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 			StorageClassName: &o.StorageClass,
@@ -276,14 +290,14 @@ func createVolumeSnapshotPVCSpec(o *Run) *corev1.PersistentVolumeClaim {
 	return pvc
 }
 
-func createVolumeSnapshotPodSpec(pvcName string, op *Run) *corev1.Pod {
+func createVolumeSnapshotPodSpec(pvcName string, op *Run, nameSuffix string) *corev1.Pod {
 	var containerImage string
 	if op.LocalRegistry != "" {
 		containerImage = strings.Join([]string{op.LocalRegistry, "/", BusyboxImageName}, "")
 	} else {
 		containerImage = BusyboxImageName
 	}
-	pod := getPodTemplate(SourcePodNamePrefix+resNameSuffix, op)
+	pod := getPodTemplate(SourcePodNamePrefix+nameSuffix, nameSuffix, op)
 	pod.Spec.Containers = []corev1.Container{
 		{
 			Name:      BusyboxContainerName,
@@ -324,11 +338,11 @@ func createVolumeSnapshotPodSpec(pvcName string, op *Run) *corev1.Pod {
 }
 
 // createVolumeSnapsotSpec creates pvc for volume snapshot
-func createVolumeSnapsotSpec(name, namespace, snapVer, pvcName string) *unstructured.Unstructured {
+func createVolumeSnapsotSpec(name, snapshotClass, namespace, snapVer, pvcName, uid string) *unstructured.Unstructured {
 	volSnap := &unstructured.Unstructured{}
 	volSnap.Object = map[string]interface{}{
 		"spec": map[string]interface{}{
-			"volumeSnapshotClassName": storageVolSnapClass,
+			"volumeSnapshotClassName": snapshotClass,
 			"source": map[string]string{
 				"persistentVolumeClaimName": pvcName,
 			},
@@ -341,18 +355,18 @@ func createVolumeSnapsotSpec(name, namespace, snapVer, pvcName string) *unstruct
 		Version: snapVer,
 		Kind:    internal.VolumeSnapshotKind,
 	})
-	volSnap.SetLabels(getPreflightResourceLabels())
+	volSnap.SetLabels(getPreflightResourceLabels(uid))
 
 	return volSnap
 }
 
 // createRestorePVCSpec creates pvc for restore (unmounted pvc as well)
-func createRestorePVCSpec(pvcName, dsName string, o *Run) *corev1.PersistentVolumeClaim {
+func createRestorePVCSpec(pvcName, dsName, uid string, o *Run) *corev1.PersistentVolumeClaim {
 	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pvcName,
 			Namespace: o.Namespace,
-			Labels:    getPreflightResourceLabels(),
+			Labels:    getPreflightResourceLabels(uid),
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -374,14 +388,14 @@ func createRestorePVCSpec(pvcName, dsName string, o *Run) *corev1.PersistentVolu
 }
 
 // createRestorePodSpec creates a restore pod
-func createRestorePodSpec(podName, pvcName string, op *Run) *corev1.Pod {
+func createRestorePodSpec(podName, pvcName, uid string, op *Run) *corev1.Pod {
 	var containerImage string
 	if op.LocalRegistry != "" {
 		containerImage = strings.Join([]string{op.LocalRegistry, "/", BusyboxImageName}, "")
 	} else {
 		containerImage = BusyboxImageName
 	}
-	pod := getPodTemplate(podName, op)
+	pod := getPodTemplate(podName, uid, op)
 	pod.Spec.Containers = []corev1.Container{
 		{
 			Name:            BusyboxContainerName,
@@ -413,9 +427,9 @@ func createRestorePodSpec(podName, pvcName string, op *Run) *corev1.Pod {
 	return pod
 }
 
-func getPodTemplate(name string, op *Run) *corev1.Pod {
+func getPodTemplate(name, uid string, op *Run) *corev1.Pod {
 	pod := &corev1.Pod{
-		ObjectMeta: getObjectMetaTemplate(name, op.Namespace),
+		ObjectMeta: getObjectMetaTemplate(name, op.Namespace, uid),
 		Spec: corev1.PodSpec{
 			ImagePullSecrets: []corev1.LocalObjectReference{
 				{Name: op.ImagePullSecret},
@@ -430,26 +444,26 @@ func getPodTemplate(name string, op *Run) *corev1.Pod {
 	return pod
 }
 
-func getObjectMetaTemplate(name, namespace string) metav1.ObjectMeta {
+func getObjectMetaTemplate(name, namespace, uid string) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:      name,
 		Namespace: namespace,
-		Labels:    getPreflightResourceLabels(),
+		Labels:    getPreflightResourceLabels(uid),
 	}
 }
 
-func getPreflightResourceLabels() map[string]string {
+func getPreflightResourceLabels(uid string) map[string]string {
 	return map[string]string{
 		LabelK8sName:         LabelK8sNameValue,
 		LabelTrilioKey:       LabelTvkPreflightValue,
-		LabelPreflightRunKey: resNameSuffix,
+		LabelPreflightRunKey: uid,
 		LabelK8sPartOf:       LabelK8sPartOfValue,
 	}
 }
 
 // waitUntilPodCondition waits until pod reaches the given condition or timeouts.
 func waitUntilPodCondition(ctx context.Context, wop *wait.PodWaitOptions) error {
-	res := wop.WaitOnPod(ctx, getDefaultRetryBackoffParams())
+	res := wop.WaitOnPod(ctx)
 	if res.Err != nil {
 		return res.Err
 	} else if !res.ReachedCondn {
@@ -487,7 +501,8 @@ func waitUntilVolSnapReadyToUse(volSnap *unstructured.Unstructured, snapshotVer 
 	})
 	if retErr != nil {
 		if retErr == k8swait.ErrWaitTimeout {
-			return fmt.Errorf("volume snapshot from source pvc not readyToUse (waited 300 sec) :: %s", retErr.Error())
+			return fmt.Errorf("volume snapshot - '%s' not readyToUse (waited 300 sec) :: %s",
+				volSnap.GetName(), retErr.Error())
 		}
 		return retErr
 	}
@@ -530,20 +545,51 @@ func removeFinalizer(ctx context.Context, obj client.Object) error {
 	return nil
 }
 
-func deleteK8sResourceWithForceTimeout(ctx context.Context, obj client.Object, logger *logrus.Logger) error {
+func deleteK8sResource(ctx context.Context, obj client.Object) error {
 	var err error
-	err = removeFinalizer(ctx, obj)
-	if err != nil {
-		logger.Warnf("problem occurred while removing finalizers of %s - %s :: %s",
-			obj.GetObjectKind().GroupVersionKind().Kind, obj.GetName(), err.Error())
-	}
 
 	err = runtimeClient.Delete(ctx, obj, client.DeleteOption(client.GracePeriodSeconds(deletionGracePeriod)))
 	if err != nil {
 		return fmt.Errorf("problem occurred deleting %s - %s :: %s", obj.GetName(), obj.GetNamespace(), err.Error())
 	}
 
+	gvk := obj.GetObjectKind().GroupVersionKind()
+	if gvk.Empty() {
+		gvk = GetObjGVKFromStructuredType(obj)
+	}
+	updatedRes := &unstructured.Unstructured{}
+	updatedRes.SetGroupVersionKind(gvk)
+	err = runtimeClient.Get(ctx, client.ObjectKey{
+		Name:      obj.GetName(),
+		Namespace: obj.GetNamespace(),
+	}, updatedRes)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	err = removeFinalizer(ctx, updatedRes)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// GetObjGVKFromStructuredType returns gvk for structured object kind
+func GetObjGVKFromStructuredType(obj client.Object) schema.GroupVersionKind {
+
+	switch obj.(type) {
+	case *corev1.Pod:
+		return corev1.SchemeGroupVersion.WithKind(internal.PodKind)
+
+	case *corev1.PersistentVolumeClaim:
+		return corev1.SchemeGroupVersion.WithKind(internal.PersistentVolumeClaimKind)
+	}
+
+	return schema.GroupVersionKind{}
 }
 
 // getDefaultRetryBackoffParams returns a backoff object with timeout of approx. 5 min

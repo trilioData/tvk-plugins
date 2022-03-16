@@ -80,6 +80,10 @@ test-tvk-oneclick-plugin-locally:
 	./hack/generate-test-tvk-oneclick-plugin-manifest.sh
 	./hack/test-tvk-oneclick-plugin-locally.sh
 
+test-preflight-unit:
+	./hack/run-unit-tests.sh tools/preflight/...
+	./hack/run-unit-tests.sh cmd/preflight/cmd/...
+
 test-preflight-integration:
 	./hack/run-integration-tests.sh tests/preflight/...
 

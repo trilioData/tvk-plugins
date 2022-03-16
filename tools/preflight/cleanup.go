@@ -19,7 +19,6 @@ type CleanupOptions struct {
 type Cleanup struct {
 	CleanupOptions
 	CommonOptions
-	UID string `json:"uid"`
 }
 
 func (co *Cleanup) logCleanupOptions() {
@@ -83,7 +82,7 @@ func (co *Cleanup) CleanupPreflightResources(ctx context.Context) error {
 func (co *Cleanup) cleanResource(ctx context.Context, resource *unstructured.Unstructured) error {
 	var err error
 	co.Logger.Infof("Cleaning %s - %s", resource.GetKind(), resource.GetName())
-	err = deleteK8sResourceWithForceTimeout(ctx, resource, co.Logger)
+	err = deleteK8sResource(ctx, resource)
 	if err != nil {
 		co.Logger.Errorf("%s Error cleaning %s - %s :: %s\n",
 			cross, resource.GetKind(), resource.GetName(), err.Error())
@@ -94,7 +93,7 @@ func (co *Cleanup) cleanResource(ctx context.Context, resource *unstructured.Uns
 func getCleanupResourceGVKList() ([]schema.GroupVersionKind, error) {
 	cleanupResourceList := make([]schema.GroupVersionKind, 0)
 
-	snapVerList, err := getVersionsOfGroup(StorageSnapshotGroup)
+	snapVerList, err := getVersionsOfGroup(StorageSnapshotGroup, clientSet)
 	if err != nil {
 		return nil, err
 	}

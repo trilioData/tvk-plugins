@@ -14,6 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 	tLog "github.com/sirupsen/logrus"
 	"github.com/trilioData/tvk-plugins/cmd/preflight/cmd"
+	"github.com/trilioData/tvk-plugins/internal"
 	"github.com/trilioData/tvk-plugins/tools/preflight"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,13 +40,13 @@ var _ = Describe("Preflight Tests", func() {
 			It("Should fail preflight checks if incorrect storage class flag value is provided", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
-				inputFlags[storageClassFlag] = invalidStorageClassName
+				inputFlags[storageClassFlag] = internal.InvalidStorageClassName
 				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).ToNot(BeNil())
 
 				Expect(cmdOut.Out).To(
 					ContainSubstring(fmt.Sprintf("Preflight check for SnapshotClass failed :: "+
-						"not found storageclass - %s on cluster", invalidStorageClassName)))
+						"not found storageclass - %s on cluster", internal.InvalidStorageClassName)))
 				Expect(cmdOut.Out).To(ContainSubstring("Skipping volume snapshot and restore check as preflight check for SnapshotClass failed"))
 				Expect(cmdOut.Out).To(ContainSubstring("Some preflight checks failed"))
 			})
@@ -62,7 +63,7 @@ var _ = Describe("Preflight Tests", func() {
 			It("Preflight checks should pass if snapshot class is present on cluster and provided as a flag value", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
-				inputFlags[snapshotClassFlag] = defaultTestSnapshotClass
+				inputFlags[snapshotClassFlag] = internal.DefaultTestSnapshotClass
 				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).To(BeNil())
 
@@ -72,17 +73,17 @@ var _ = Describe("Preflight Tests", func() {
 			It("Preflight checks should fail if snapshot class is not present on cluster", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
-				inputFlags[snapshotClassFlag] = invalidSnapshotClassName
+				inputFlags[snapshotClassFlag] = internal.InvalidSnapshotClassName
 				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).ToNot(BeNil())
 
 				Expect(cmdOut.Out).To(ContainSubstring(
 					fmt.Sprintf("volume snapshot class %s not found on cluster :: "+
 						"volumesnapshotclasses.snapshot.storage.k8s.io \"%s\" not found",
-						invalidSnapshotClassName, invalidSnapshotClassName)))
+						internal.InvalidSnapshotClassName, internal.InvalidSnapshotClassName)))
 				Expect(cmdOut.Out).
 					To(ContainSubstring(fmt.Sprintf("Preflight check for SnapshotClass failed :: "+
-						"volume snapshot class %s not found", invalidSnapshotClassName)))
+						"volume snapshot class %s not found", internal.InvalidSnapshotClassName)))
 				Expect(cmdOut.Out).
 					To(ContainSubstring("Skipping volume snapshot and restore check as preflight check for SnapshotClass failed"))
 			})
@@ -109,7 +110,7 @@ var _ = Describe("Preflight Tests", func() {
 			It("Should fail DNS resolution and volume snapshot check if invalid local registry path is provided", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
-				inputFlags[localRegistryFlag] = invalidLocalRegistryName
+				inputFlags[localRegistryFlag] = internal.InvalidLocalRegistryName
 				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).ToNot(BeNil())
 
@@ -142,23 +143,23 @@ var _ = Describe("Preflight Tests", func() {
 			It("Should fail DNS resolution and volume snapshot check if invalid service account is provided", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
-				inputFlags[serviceAccountFlag] = invalidServiceAccountName
+				inputFlags[serviceAccountFlag] = internal.InvalidServiceAccountName
 				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).ToNot(BeNil())
 
 				Expect(cmdOut.Out).
 					To(MatchRegexp(fmt.Sprintf("(Preflight check for DNS resolution failed :: pods \"dnsutils-)([a-z]{6}\")"+
 						"( is forbidden: error looking up service account %s/%s: serviceaccount \"%s\" not found)",
-						defaultTestNs, invalidServiceAccountName, invalidServiceAccountName)))
+						defaultTestNs, internal.InvalidServiceAccountName, internal.InvalidServiceAccountName)))
 
 				Expect(cmdOut.Out).To(MatchRegexp(
 					fmt.Sprintf("(pods \"source-pod-)([a-z]{6})\" is forbidden: error looking up service account %s/%s: serviceaccount \"%s\" not found",
-						defaultTestNs, invalidServiceAccountName, invalidServiceAccountName)))
+						defaultTestNs, internal.InvalidServiceAccountName, internal.InvalidServiceAccountName)))
 
 				Expect(cmdOut.Out).To(MatchRegexp(
 					fmt.Sprintf("(Preflight check for volume snapshot and restore failed)(.*)"+
 						"(error looking up service account %s/%s: serviceaccount \"%s\" not found)",
-						defaultTestNs, invalidServiceAccountName, invalidServiceAccountName)))
+						defaultTestNs, internal.InvalidServiceAccountName, internal.InvalidServiceAccountName)))
 
 				nonCRUDPreflightCheckAssertion(inputFlags[storageClassFlag], "", cmdOut.Out)
 			})
@@ -168,7 +169,7 @@ var _ = Describe("Preflight Tests", func() {
 			It("Should set default logging level as INFO if incorrect logging level is provided", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
-				inputFlags[logLevelFlag] = invalidLogLevel
+				inputFlags[logLevelFlag] = internal.InvalidLogLevel
 				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).To(BeNil())
 
@@ -183,7 +184,7 @@ var _ = Describe("Preflight Tests", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
 				delete(inputFlags, cleanupOnFailureFlag)
-				inputFlags[localRegistryFlag] = invalidLocalRegistryName
+				inputFlags[localRegistryFlag] = internal.InvalidLocalRegistryName
 				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).ToNot(BeNil())
 
@@ -224,7 +225,7 @@ var _ = Describe("Preflight Tests", func() {
 			It("Should fail DNS and volume snapshot check if given namespace is not present on cluster", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
-				inputFlags[namespaceFlag] = invalidNamespace
+				inputFlags[namespaceFlag] = internal.InvalidNamespace
 				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).ToNot(BeNil())
 
@@ -237,7 +238,7 @@ var _ = Describe("Preflight Tests", func() {
 
 			It("Should fail preflight check if namespace flag is provided with zero value", func() {
 				var output []byte
-				args := []string{"run", storageClassFlag, defaultTestStorageClass,
+				args := []string{"run", storageClassFlag, internal.DefaultTestStorageClass,
 					namespaceFlag, "", kubeconfigFlag, kubeConfPath,
 					cleanupOnFailureFlag}
 				cmd := exec.Command(preflightBinaryFilePath, args...)
@@ -313,6 +314,7 @@ var _ = Describe("Preflight Tests", func() {
 				Expect(err).To(BeNil())
 
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD CPU REQUEST=\"%s\"", cpu300)))
+				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD CPU REQUEST=\"%s\"", cpu300)))
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD MEMORY REQUEST=\"%s\"", cmd.DefaultPodLimitMemory)))
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD CPU LIMIT=\"%s\"", cpu600)))
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD MEMORY LIMIT=\"%s\"", memory256)))
@@ -352,7 +354,7 @@ var _ = Describe("Preflight Tests", func() {
 				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).To(BeNil())
 
-				nonCRUDPreflightCheckAssertion(defaultTestStorageClass, defaultTestSnapshotClass, cmdOut.Out)
+				nonCRUDPreflightCheckAssertion(internal.DefaultTestStorageClass, internal.DefaultTestSnapshotClass, cmdOut.Out)
 				assertDNSResolutionCheckSuccess(cmdOut.Out)
 				assertVolumeSnapshotCheckSuccess(cmdOut.Out)
 				assertPVCStorageRequestCheckSuccess(cmdOut.Out, "")
@@ -377,7 +379,7 @@ var _ = Describe("Preflight Tests", func() {
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD CPU LIMIT=\"%s\"", cmd.DefaultPodLimitCPU)))
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf("POD MEMORY LIMIT=\"%s\"", memory256)))
 
-				nonCRUDPreflightCheckAssertion(defaultTestStorageClass, defaultTestSnapshotClass, cmdOut.Out)
+				nonCRUDPreflightCheckAssertion(internal.DefaultTestStorageClass, internal.DefaultTestSnapshotClass, cmdOut.Out)
 				assertDNSResolutionCheckSuccess(cmdOut.Out)
 				assertVolumeSnapshotCheckSuccess(cmdOut.Out)
 				assertPVCStorageRequestCheckSuccess(cmdOut.Out, inputFlags[pvcStorageRequestFlag])
@@ -543,7 +545,7 @@ var _ = Describe("Preflight Tests", func() {
 
 					assertPodScheduleSuccess(cmdOut.Out, highAffineTestNode)
 
-					nonCRUDPreflightCheckAssertion(defaultTestStorageClass, "", cmdOut.Out)
+					nonCRUDPreflightCheckAssertion(internal.DefaultTestStorageClass, "", cmdOut.Out)
 					assertDNSResolutionCheckSuccess(cmdOut.Out)
 					assertVolumeSnapshotCheckSuccess(cmdOut.Out)
 				})
@@ -639,11 +641,12 @@ var _ = Describe("Preflight Tests", func() {
 					inputFlags := make(map[string]string)
 					copyMap(flagsMap, inputFlags)
 					inputFlags[configFileFlag] = yamlFilePath
+					inputFlags[namespaceFlag] = defaultTestNs
 					cmdOut, err = runPreflightChecks(inputFlags)
 					Expect(err).To(BeNil())
 
 					assertPodScheduleSuccess(cmdOut.Out, testNodeName)
-					nonCRUDPreflightCheckAssertion(defaultTestStorageClass, "", cmdOut.Out)
+					nonCRUDPreflightCheckAssertion(internal.DefaultTestStorageClass, "", cmdOut.Out)
 					assertDNSResolutionCheckSuccess(cmdOut.Out)
 					assertVolumeSnapshotCheckSuccess(cmdOut.Out)
 				})

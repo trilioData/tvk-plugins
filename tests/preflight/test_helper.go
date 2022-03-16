@@ -81,7 +81,7 @@ func assertHelmVersionCheckSuccess(outputLog string) {
 	} else {
 		Expect(outputLog).To(ContainSubstring("helm found at path - "))
 		var helmVersion string
-		helmVersion, err = preflight.GetHelmVersion()
+		helmVersion, err = preflight.GetHelmVersion(preflight.HelmBinaryName)
 		Expect(err).To(BeNil())
 		Expect(outputLog).
 			To(ContainSubstring(fmt.Sprintf("Helm version %s meets required version", helmVersion)))
@@ -336,7 +336,7 @@ func createPreflightPVCSpec(preflightUID string) *corev1.PersistentVolumeClaim {
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-			StorageClassName: func() *string { var storageClass = defaultTestStorageClass; return &storageClass }(),
+			StorageClassName: func() *string { var storageClass = internal.DefaultTestStorageClass; return &storageClass }(),
 			Resources: corev1.ResourceRequirements{
 				Requests: map[corev1.ResourceName]resource.Quantity{
 					corev1.ResourceStorage: resource.MustParse("1Gi"),
@@ -359,7 +359,7 @@ func createPreflightVolumeSnapshotSpec(pvcName, preflightUID string) *unstructur
 	volSnap := &unstructured.Unstructured{}
 	volSnap.Object = map[string]interface{}{
 		"spec": map[string]interface{}{
-			"volumeSnapshotClassName": defaultTestSnapshotClass,
+			"volumeSnapshotClassName": internal.DefaultTestSnapshotClass,
 			"source": map[string]string{
 				"persistentVolumeClaimName": pvcName,
 			},
@@ -519,6 +519,7 @@ func createAffineBusyboxPod(podName, affinity, namespace string) {
 	pod := getPodTemplate(podName, uid)
 	podLabels := pod.GetLabels()
 	podLabels[preflightPodAffinityKey] = affinity
+	pod.SetLabels(podLabels)
 	pod.Spec = corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
