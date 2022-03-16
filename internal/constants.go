@@ -46,11 +46,12 @@ const (
 	DefaultNs                    = "default"
 	InstallNamespace             = "INSTALL_NAMESPACE"
 	OcpAPIVersion                = "security.openshift.io/v1"
-
+	StorageClassKind          = "StorageClass"
+	ServiceKind               = "Service"
+	KubeconfigEnv             = "KUBECONFIG"
 	KubeconfigFlag          = "kubeconfig"
 	KubeconfigShorthandFlag = "k"
 	KubeconfigUsage         = "Specifies the custom path for your kubeconfig"
-
 	LogLevelFlag            = "log-level"
 	LogLevelFlagShorthand   = "l"
 	ServiceTypeLoadBalancer = "LoadBalancer"

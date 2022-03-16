@@ -81,6 +81,10 @@ func managePreflightInputs(cmd *cobra.Command) (err error) {
 			return fmt.Errorf("failed to read preflight input from file :: %s", err.Error())
 		}
 	}
+	err = updateNodeSelectorLabelsFromCLI(cmd)
+	if err != nil {
+		return err
+	}
 	return overridePreflightFileInputsFromCLI(cmd)
 }
 

@@ -19,7 +19,6 @@ type CleanupOptions struct {
 type Cleanup struct {
 	CleanupOptions
 	CommonOptions
-	UID string `json:"uid"`
 }
 
 func (co *Cleanup) logCleanupOptions() {
@@ -94,7 +93,7 @@ func (co *Cleanup) cleanResource(ctx context.Context, resource *unstructured.Uns
 func getCleanupResourceGVKList() ([]schema.GroupVersionKind, error) {
 	cleanupResourceList := make([]schema.GroupVersionKind, 0)
 
-	snapVerList, err := getVersionsOfGroup(StorageSnapshotGroup)
+	snapVerList, err := getVersionsOfGroup(StorageSnapshotGroup, clientSet)
 	if err != nil {
 		return nil, err
 	}

@@ -28,7 +28,7 @@ const (
 	cleanupOnFailureUsage = "Cleanup the resources on cluster if preflight checks fail. By-default it is false"
 
 	ConfigFileFlag      = "config-file"
-	configFileUsage     = "Specify the name of the yaml file for inputs to the preflight Run and Cleanup commands"
+	configFileUsage     = "Specify the name of the yaml file for inputs to the preflight run and cleanup commands"
 	configFlagShorthand = "f"
 
 	InClusterFlag          = "in-cluster"
