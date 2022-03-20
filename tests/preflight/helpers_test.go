@@ -377,34 +377,6 @@ func createPreflightVolumeSnapshotSpec(pvcName, preflightUID string) *unstructur
 	return volSnap
 }
 
-func createVolumeSnapshotClass() {
-	vsc := &unstructured.Unstructured{}
-	vsc.Object = map[string]interface{}{
-		"metadata": map[string]interface{}{
-			"name": sampleVolSnapClassName,
-		},
-		"driver":         invalidVolSnapDriver,
-		"deletionPolicy": "Delete",
-	}
-	vsc.SetGroupVersionKind(snapshotClassGVK)
-
-	err = runtimeClient.Create(ctx, vsc)
-	Expect(err).To(BeNil())
-}
-
-func deleteVolumeSnapshotClass() {
-	vsc := &unstructured.Unstructured{}
-	vsc.Object = map[string]interface{}{
-		"metadata": map[string]interface{}{
-			"name": sampleVolSnapClassName,
-		},
-	}
-	vsc.SetGroupVersionKind(snapshotClassGVK)
-
-	err = runtimeClient.Delete(ctx, vsc)
-	Expect(err).To(BeNil())
-}
-
 // A basic pod template for any pod to be created for testing purpose
 func getPodTemplate(name, preflightUID string) *corev1.Pod {
 	return &corev1.Pod{

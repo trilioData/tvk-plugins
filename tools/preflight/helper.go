@@ -69,12 +69,12 @@ const (
 	GcrRegistryPath  = "gcr.io/kubernetes-e2e-test-images"
 	DNSUtilsImage    = "dnsutils:1.3"
 
-	volSnapRetrySteps                  = 30
-	volSnapRetryInterval time.Duration = 2 * time.Second
-	volSnapRetryFactor                 = 1.1
-	volSnapRetryJitter                 = 0.1
-	VolMountName                       = "source-data"
-	VolMountPath                       = "/demo/data"
+	volSnapRetrySteps    = 30
+	volSnapRetryInterval = 2 * time.Second
+	volSnapRetryFactor   = 1.1
+	volSnapRetryJitter   = 0.1
+	VolMountName         = "source-data"
+	VolMountPath         = "/demo/data"
 
 	execTimeoutDuration       = 3 * time.Minute
 	deletionGracePeriod int64 = 5
@@ -83,6 +83,7 @@ const (
 	snapshotClassVersionV1      = "v1"
 	snapshotClassVersionV1Beta1 = "v1beta1"
 	minServerVerForV1CrdVersion = "v1.20.0"
+	defaultVSCName              = "preflight-generated-snapshot-class"
 )
 
 var (
@@ -217,7 +218,7 @@ func getVersionsOfGroup(grp string) ([]string, error) {
 	return apiVerList, nil
 }
 
-func getPrefVersionCRDObj(serverVersion string) (prefVersion string, err error) {
+func getPrefSnapshotClassVersion(serverVersion string) (prefVersion string, err error) {
 	currentVersion, err := getSemverVersion(serverVersion)
 	if err != nil {
 		return "", err
@@ -365,8 +366,8 @@ func createVolumeSnapshotPodSpec(pvcName string, op *Run) *corev1.Pod {
 	return pod
 }
 
-// createVolumeSnapsotSpec creates pvc for volume snapshot
-func createVolumeSnapsotSpec(name, namespace, snapVer, pvcName string) *unstructured.Unstructured {
+// createVolumeSnapshotSpec creates pvc for volume snapshot
+func createVolumeSnapshotSpec(name, namespace, snapVer, pvcName string) *unstructured.Unstructured {
 	volSnap := &unstructured.Unstructured{}
 	volSnap.Object = map[string]interface{}{
 		"spec": map[string]interface{}{

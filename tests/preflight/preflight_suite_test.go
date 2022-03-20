@@ -50,13 +50,11 @@ const (
 	dnsPodNamePrefix = "test-dns-pod-"
 	dnsContainerName = "test-dnsutils"
 
-	sampleVolSnapClassName = "sample-snap-class"
-	invalidVolSnapDriver   = "invalid.csi.k8s.io"
-	preflightSAName        = "preflight-sa"
-	preflightKubeConf      = "preflight_test_config"
-	flagNamespace          = "preflight-flag-ns"
-	kubeconfigEnv          = "KUBECONFIG"
-	filePermission         = 0644
+	preflightSAName   = "preflight-sa"
+	preflightKubeConf = "preflight_test_config"
+	flagNamespace     = "preflight-flag-ns"
+	kubeconfigEnv     = "KUBECONFIG"
+	filePermission    = 0644
 
 	timeout        = time.Minute * 1
 	interval       = time.Second * 1
@@ -99,7 +97,6 @@ var (
 	preflightLogFilePrefix    = "preflight-"
 	cleanupLogFilePrefix      = "preflight_cleanup-"
 	invalidStorageClassName   = "invalid-storage-class"
-	invalidSnapshotClassName  = "invalid-snapshot-class"
 	invalidLocalRegistryName  = "invalid-local-registry"
 	invalidServiceAccountName = "invalid-service-account"
 	invalidLogLevel           = "invalidLogLevel"

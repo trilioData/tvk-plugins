@@ -57,53 +57,6 @@ var _ = Describe("Preflight Tests", func() {
 			})
 		})
 
-		Context("Preflight run command snapshot class flag test cases", func() {
-
-			It("Preflight checks should pass if snapshot class is present on cluster and provided as a flag value", func() {
-				inputFlags := make(map[string]string)
-				copyMap(flagsMap, inputFlags)
-				inputFlags[snapshotClassFlag] = defaultTestSnapshotClass
-				cmdOut, err = runPreflightChecks(inputFlags)
-				Expect(err).To(BeNil())
-
-				assertSuccessfulPreflightChecks(inputFlags, cmdOut.Out)
-			})
-
-			It("Preflight checks should fail if snapshot class is not present on cluster", func() {
-				inputFlags := make(map[string]string)
-				copyMap(flagsMap, inputFlags)
-				inputFlags[snapshotClassFlag] = invalidSnapshotClassName
-				cmdOut, err = runPreflightChecks(inputFlags)
-				Expect(err).ToNot(BeNil())
-
-				Expect(cmdOut.Out).To(ContainSubstring(
-					fmt.Sprintf("volume snapshot class %s not found on cluster :: "+
-						"volumesnapshotclasses.snapshot.storage.k8s.io \"%s\" not found",
-						invalidSnapshotClassName, invalidSnapshotClassName)))
-				Expect(cmdOut.Out).
-					To(ContainSubstring(fmt.Sprintf("Preflight check for SnapshotClass failed :: "+
-						"volume snapshot class %s not found", invalidSnapshotClassName)))
-				Expect(cmdOut.Out).
-					To(ContainSubstring("Skipping volume snapshot and restore check as preflight check for SnapshotClass failed"))
-			})
-
-			It("Preflight checks should fail if volume snapshot class does not match with storage class provisioner", func() {
-				createVolumeSnapshotClass()
-				defer deleteVolumeSnapshotClass()
-				inputFlags := make(map[string]string)
-				copyMap(flagsMap, inputFlags)
-				inputFlags[snapshotClassFlag] = sampleVolSnapClassName
-				cmdOut, err = runPreflightChecks(inputFlags)
-				Expect(err).ToNot(BeNil())
-
-				Expect(cmdOut.Out).To(ContainSubstring(
-					fmt.Sprintf("Preflight check for SnapshotClass failed :: volume snapshot class - %s "+
-						"driver does not match with given StorageClass's provisioner=", sampleVolSnapClassName)))
-				Expect(cmdOut.Out).To(ContainSubstring(
-					"Skipping volume snapshot and restore check as preflight check for SnapshotClass failed"))
-			})
-		})
-
 		Context("Preflight run command local registry flag test cases", func() {
 
 			It("Should fail DNS resolution and volume snapshot check if invalid local registry path is provided", func() {

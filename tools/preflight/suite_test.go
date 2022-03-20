@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	vsnapv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
+	vsnapv1beta1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
@@ -38,6 +40,8 @@ var _ = BeforeSuite(func() {
 	By("Bootstrapping test environment")
 	envTestScheme = runtime.NewScheme()
 	Expect(apiextensionsv1.AddToScheme(envTestScheme)).To(BeNil())
+	Expect(vsnapv1.AddToScheme(envTestScheme)).To(BeNil())
+	Expect(vsnapv1beta1.AddToScheme(envTestScheme)).To(BeNil())
 	Expect(clientGoScheme.AddToScheme(envTestScheme)).To(BeNil())
 
 	// starting the env cluster
