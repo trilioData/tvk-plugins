@@ -23,6 +23,7 @@ import (
 	"k8s.io/client-go/discovery"
 	goclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/trilioData/tvk-plugins/internal"
@@ -150,7 +151,11 @@ func InitKubeEnv(kubeconfig string) error {
 
 	utilruntime.Must(corev1.AddToScheme(scheme))
 	utilruntime.Must(apiextensions.AddToScheme(scheme))
-	kubeEnv, err := internal.NewEnv(kubeconfig, scheme)
+	var config *rest.Config
+	if kubeconfig == "" {
+		config = ctrl.GetConfigOrDie()
+	}
+	kubeEnv, err := internal.NewEnv(kubeconfig, config, scheme)
 	if err != nil {
 		return err
 	}

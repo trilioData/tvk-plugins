@@ -37,7 +37,7 @@ func Execute() {
 //  initializes flags and logger for the application
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&kubeconfig, internal.KubeconfigFlag,
-		internal.KubeconfigShorthandFlag, internal.KubeConfigDefault, internal.KubeconfigUsage)
+		internal.KubeconfigShorthandFlag, "", internal.KubeconfigUsage)
 	rootCmd.PersistentFlags().StringVarP(&namespace, NamespaceFlag, namespaceFlagShorthand, internal.DefaultNs, namespaceUsage)
 	rootCmd.PersistentFlags().StringVarP(&logLevel, internal.LogLevelFlag,
 		internal.LogLevelFlagShorthand, internal.DefaultLogLevel, internal.LogLevelUsage)

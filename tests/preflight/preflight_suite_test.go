@@ -189,7 +189,7 @@ var _ = BeforeSuite(func() {
 
 	kubeconfig, err = internal.NewConfigFromCommandline("")
 	Expect(err).To(BeNil())
-	kubeAccessor, err = internal.NewAccessor(kubeconfig, scheme)
+	kubeAccessor, err = internal.NewAccessor(kubeconfig, nil, scheme)
 	Expect(err).To(BeNil())
 	k8sClient = kubeAccessor.GetClientset()
 	runtimeClient = kubeAccessor.GetRuntimeClient()
