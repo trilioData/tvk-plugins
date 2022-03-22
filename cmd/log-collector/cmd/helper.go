@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
-	"reflect"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 	apiv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/yaml"
 
@@ -130,35 +131,27 @@ func parseLabelSelector(labelSlice []string) ([]apiv1.LabelSelector, error) {
 
 func deDuplicateLabelSelector(lbSelectors []apiv1.LabelSelector) []apiv1.LabelSelector {
 	var uniqueSelectors []apiv1.LabelSelector
-
+	labelSet := sets.NewString()
 	for idx := range lbSelectors {
-		skip := false
-		for idx1 := range uniqueSelectors {
-			if reflect.DeepEqual(lbSelectors[idx], uniqueSelectors[idx1]) {
-				skip = true
-				break
-			}
+		if labelSet.Has(lbSelectors[idx].String()) {
+			continue
 		}
-		if !skip {
-			uniqueSelectors = append(uniqueSelectors, lbSelectors[idx])
-		}
+		labelSet.Insert(lbSelectors[idx].String())
+		uniqueSelectors = append(uniqueSelectors, lbSelectors[idx])
 	}
 	return uniqueSelectors
 }
 
 func deDuplicateGVKs(gvks []logcollector.GroupVersionKind) []logcollector.GroupVersionKind {
 	var uniquegvks []logcollector.GroupVersionKind
+	gvkSet := sets.NewString()
 	for idx := range gvks {
-		skip := false
-		for idx1 := range uniquegvks {
-			if reflect.DeepEqual(gvks[idx], uniquegvks[idx1]) {
-				skip = true
-				break
-			}
+		gvkString := strings.ToLower(fmt.Sprintf("%s", gvks[idx]))
+		if gvkSet.Has(gvkString) {
+			continue
 		}
-		if !skip {
-			uniquegvks = append(uniquegvks, gvks[idx])
-		}
+		gvkSet.Insert(gvkString)
+		uniquegvks = append(uniquegvks, gvks[idx])
 	}
 	return uniquegvks
 }

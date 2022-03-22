@@ -15,7 +15,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apiv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,9 +33,9 @@ import (
 )
 
 type GroupVersionKind struct {
-	Group   string `json:"group,omitempty"`
-	Version string `json:"version,omitempty"`
-	Kind    string `json:"kind,omitempty"`
+	Group   string `json:"group"`
+	Version string `json:"version"`
+	Kind    string `json:"kind"`
 }
 
 var (
@@ -384,35 +383,32 @@ func (l *LogCollector) zipDir() error {
 func (l *LogCollector) filterResourceObjects(resourcePath string,
 	resource *apiv1.APIResource) (allObjects unstructured.UnstructuredList, err error) {
 
-	if l.checkIfMatchesInputGVKs(resource) {
-		log.Infof("Fetching '%s' Resource", resource.Kind)
+	if nonLabeledResources.Has(resource.Kind) {
+		log.Infof("Filtering '%s' Resource", resource.Kind)
 		return l.getResourceObjects(resourcePath, resource), nil
 	}
 
-	if (!resource.Namespaced && clusteredResources.Has(resource.Kind)) ||
-		(resource.Namespaced && !excludeResources.Has(resource.Kind)) {
-
-		if resource.Name == CRD {
-			log.Infof("Fetching '%s' Resource", resource.Kind)
-			allObjects, err = filterTvkSnapshotAndCSICRD(l.getResourceObjects(resourcePath, resource))
-			if err != nil {
-				return allObjects, err
-			}
-		}
-
-		if resource.Name == Namespaces && !l.Clustered {
-			log.Infof("Fetching '%s' Resource", resource.Kind)
-			allObjects = filterInputNS(l.getResourceObjects(resourcePath, resource), l.Namespaces)
-		}
-
-		if resource.Name == ClusterServiceVersion {
-			log.Infof("Fetching '%s' Resource", resource.Kind)
-			allObjects = filterTvkCSV(l.getResourceObjects(resourcePath, resource))
+	if resource.Name == CRD {
+		log.Infof("Filtering '%s' Resource", resource.Kind)
+		allObjects, err = filterTvkSnapshotAndCSICRD(l.getResourceObjects(resourcePath, resource))
+		if err != nil {
+			return allObjects, err
 		}
 	}
-	if (!nonLabeledResources.Has(resource.Kind) &&
-		!clusteredResources.Has(resource.Kind)) || (l.Clustered && !resource.Namespaced) {
-		log.Infof("Fetching '%s' Resource", resource.Kind)
+
+	if resource.Name == Namespaces {
+		log.Infof("Filtering '%s' Resource", resource.Kind)
+		allObjects = l.filterInputNS(l.getResourceObjects(resourcePath, resource))
+	}
+
+	if resource.Name == ClusterServiceVersion {
+		log.Infof("Filtering '%s' Resource", resource.Kind)
+		allObjects = filterTvkCSV(l.getResourceObjects(resourcePath, resource))
+	}
+
+	if ((!nonLabeledResources.Has(resource.Kind) && resource.Namespaced) ||
+		(l.Clustered && !resource.Namespaced)) && !excludeResources.Has(resource.Kind) {
+		log.Infof("Filtering '%s' Resource", resource.Kind)
 		allObjects = l.getResourceObjects(resourcePath, resource)
 		l.filterTvkResourcesByLabel(&allObjects)
 	}
@@ -458,6 +454,11 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 				return err
 			}
 			resObjects.Items = append(resObjects.Items, resObject.Items...)
+
+			if l.checkIfMatchesInputGVKs(&resources[index], groupVersion) {
+				gvkObjs := l.getResourceObjects(getAPIGroupVersionResourcePath(groupVersion), &resources[index])
+				resObjects.Items = append(resObjects.Items, gvkObjs.Items...)
+			}
 
 			if internal.CheckIsOpenshift(l.DisClient, ocpAPIVersion) {
 				ocpObj, oErr := l.getOcpResourcesByOwnerRef(getAPIGroupVersionResourcePath(groupVersion), &resources[index])
@@ -535,7 +536,16 @@ func (l *LogCollector) getTrilioGroupResources(trilioGVResources []apiv1.APIReso
 	return nil
 }
 
-func (l *LogCollector) checkIfMatchesInputGVKs(resource *apiv1.APIResource) bool {
+func (l *LogCollector) checkIfMatchesInputGVKs(resource *apiv1.APIResource, groupVersion string) bool {
+
+	gvSplitter := strings.Split(groupVersion, "/")
+	if len(gvSplitter) == 2 {
+		resource.Group = gvSplitter[0]
+		resource.Version = gvSplitter[1]
+	} else {
+		resource.Version = groupVersion
+	}
+
 	for idx := range l.GroupVersionKinds {
 		if strings.EqualFold(l.GroupVersionKinds[idx].Group, resource.Group) &&
 			strings.EqualFold(l.GroupVersionKinds[idx].Version, resource.Version) &&
@@ -667,44 +677,20 @@ func (l *LogCollector) getResourceEvents(eventResource *apiv1.APIResource, resou
 	return nil
 }
 
-func MatchLabelSelectors(objLabels map[string]string, labelSelector []apiv1.LabelSelector) bool {
-	if len(labelSelector) == 0 {
-		return true
+// filterInputNS returns list of Namespaces Object given by user input in --namespaces flag
+func (l *LogCollector) filterInputNS(nsObjs unstructured.UnstructuredList) unstructured.UnstructuredList {
+
+	if l.Clustered {
+		return nsObjs
 	}
 
-	for i := range labelSelector {
-		ls := labelSelector[i]
-		if MatchLabels(objLabels, ls.MatchLabels) && MatchExpressions(objLabels, ls.MatchExpressions) {
-			return true
+	var filteredNSObjects unstructured.UnstructuredList
+	nsNames := sets.NewString(l.Namespaces...)
+
+	for _, nsObj := range nsObjs.Items {
+		if nsNames.Has(nsObj.GetName()) {
+			filteredNSObjects.Items = append(filteredNSObjects.Items, nsObj)
 		}
 	}
-	return false
-}
-
-func MatchLabels(objLabels, matchLabels map[string]string) bool {
-	for k, v := range matchLabels {
-		value, ok := objLabels[k]
-		if !ok {
-			return false
-		}
-		if value != v {
-			return false
-		}
-	}
-	return true
-}
-
-func MatchExpressions(objLabels map[string]string, matchExpr []apiv1.LabelSelectorRequirement) bool {
-
-	for i := range matchExpr {
-		expr := matchExpr[i]
-		matchReq, err := labels.NewRequirement(expr.Key, matchExpressionOperator[expr.Operator], expr.Values)
-		if err != nil {
-			log.Errorf("failed to create requirement")
-		}
-		if !matchReq.Matches(labels.Set(objLabels)) {
-			return false
-		}
-	}
-	return true
+	return filteredNSObjects
 }

@@ -6,9 +6,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	log "github.com/sirupsen/logrus"
-
 	corev1 "k8s.io/api/core/v1"
+	apiv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -41,8 +42,7 @@ const (
 var (
 	K8STrilioVaultLabel   = map[string]string{"app.kubernetes.io/part-of": TrilioPrefix}
 	K8STrilioVaultOpLabel = map[string]string{"app.kubernetes.io/part-of": TrilioOpPrefix}
-	nonLabeledResources   = sets.NewString("ResourceQuota", "LimitRange", "VolumeSnapshot", "ClusterServiceVersion")
-	clusteredResources    = sets.NewString("Node", "Namespace", "CustomResourceDefinition", "StorageClass",
+	nonLabeledResources   = sets.NewString("ResourceQuota", "LimitRange", "VolumeSnapshot", "Node", "StorageClass",
 		"VolumeSnapshotClass")
 	excludeResources = sets.NewString("Secret", "PackageManifest")
 )
@@ -157,20 +157,6 @@ func filterTvkSnapshotAndCSICRD(crdObjs unstructured.UnstructuredList) (unstruct
 	return filteredCRDObjects, nil
 }
 
-// filterInputNS returns list of Namespaces Object given by user input in --namespaces flag
-func filterInputNS(nsObjs unstructured.UnstructuredList, namespaces []string) unstructured.UnstructuredList {
-	var filteredNSObjects unstructured.UnstructuredList
-
-	nsNames := sets.NewString(namespaces...)
-
-	for _, nsObj := range nsObjs.Items {
-		if nsNames.Has(nsObj.GetName()) {
-			filteredNSObjects.Items = append(filteredNSObjects.Items, nsObj)
-		}
-	}
-	return filteredNSObjects
-}
-
 // getContainerStatusValue returns whether current and previous container present to capture logs
 func getContainerStatusValue(containerStatus *corev1.ContainerStatus) (conStatObj containerStat) {
 
@@ -255,4 +241,46 @@ func (l *LogCollector) filterTvkResourcesByLabel(allObjects *unstructured.Unstru
 		}
 	}
 	allObjects.Items = objects.Items
+}
+
+func MatchLabelSelectors(objLabels map[string]string, labelSelector []apiv1.LabelSelector) bool {
+	if len(labelSelector) == 0 {
+		return true
+	}
+
+	for i := range labelSelector {
+		ls := labelSelector[i]
+		if MatchLabels(objLabels, ls.MatchLabels) && MatchExpressions(objLabels, ls.MatchExpressions) {
+			return true
+		}
+	}
+	return false
+}
+
+func MatchLabels(objLabels, matchLabels map[string]string) bool {
+	for k, v := range matchLabels {
+		value, ok := objLabels[k]
+		if !ok {
+			return false
+		}
+		if value != v {
+			return false
+		}
+	}
+	return true
+}
+
+func MatchExpressions(objLabels map[string]string, matchExpr []apiv1.LabelSelectorRequirement) bool {
+
+	for i := range matchExpr {
+		expr := matchExpr[i]
+		matchReq, err := labels.NewRequirement(expr.Key, matchExpressionOperator[expr.Operator], expr.Values)
+		if err != nil {
+			log.Errorf("failed to create requirement")
+		}
+		if !matchReq.Matches(labels.Set(objLabels)) {
+			return false
+		}
+	}
+	return true
 }
