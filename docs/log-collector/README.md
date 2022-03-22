@@ -108,13 +108,13 @@ Verify installation with `kubectl tvk-log-collector --help`
 
         kubectl tvk-log-collector --clustered --keep-source-folder --log-level error
 
-- To collect logs by providing gvk :
+- To collect logs by providing object gvk which log collector doesn't collect by default :
 
-        kubectl tvk-log-collector --clustered --gvk '[{"group": "<group>", "version": "<version>", "kind": "<kind>"}, {...}]'
+        kubectl tvk-log-collector --clustered --gvks "/v1/pod","apps//Deployment"
 
-- To collect logs by providing label-selector :
+- To collect object logs by providing labels which log collector doesn't collect by default :
         
-        kubectl tvk-log-collector --clustered  --label-selector '[{"matchLabels":{"key":"value","key2":"value2"}}]'
+        kubectl tvk-log-collector --clustered  --labels "app=frontend,custom=label","app=backend"
 
 - To collect logs by providing config file :
 
@@ -123,26 +123,38 @@ Verify installation with `kubectl tvk-log-collector --help`
 The format of data in a file should be according to the below example:
 
 ```yaml
-keep-source-folder: <true/false>
-clustered: <true/false>
+keep-source-folder: true
+clustered: false
 namespaces:
-  - <ns1>
-  - <ns2>
-logLevel: <LOG-LEVEL>
-kubeConfig: <path/to/config> 
-labelSelector:
+  - default
+  - tvk
+logLevel: INFO
+kubeConfig: path/to/config
+labels:
   - matchLabels:
-      "key": "value"
-      "key2": "value2"
+      "app": "frontend"
+      "custom": "label"
   - matchLabels:
-      "key3": "value3"
-groupVersionKind:
-  - group: <group>
-    version: <version>
-    kind: <kind>
-  - group: <group2>
-    version: <version2>
-    kind: <kind2>
+      "app": "backend"
+gvks:
+  - group: ""
+    version: ""
+    kind: pod
+  - group: apps
+    version: ""
+    kind: Deployment
+
+```
+Run a log collector with predefined values using a sample file. Download the file using below commands:
+
+By `wget`
+```shell script
+wget https://github.com/trilioData/tvk-plugins/tree/main/docs/log-collector/sample_input.yaml
+```
+
+By `curl`
+```shell script
+curl https://github.com/trilioData/tvk-plugins/tree/main/docs/log-collector/sample_input.yaml
 ```
 
 ## Output

@@ -9,7 +9,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -40,8 +39,6 @@ const (
 )
 
 var (
-	scheme = runtime.NewScheme()
-
 	K8STrilioVaultLabel   = map[string]string{"app.kubernetes.io/part-of": TrilioPrefix}
 	K8STrilioVaultOpLabel = map[string]string{"app.kubernetes.io/part-of": TrilioOpPrefix}
 	nonLabeledResources   = sets.NewString("ResourceQuota", "LimitRange", "VolumeSnapshot", "ClusterServiceVersion")
@@ -252,7 +249,7 @@ func (l *LogCollector) filterTvkResourcesByLabel(allObjects *unstructured.Unstru
 		if len(objectLabel) != 0 {
 			if checkLabelExist(objectLabel, K8STrilioVaultLabel) ||
 				checkLabelExist(objectLabel, K8STrilioVaultOpLabel) ||
-				MatchLabelSelectors(objectLabel, l.LabelSelector) {
+				MatchLabelSelectors(objectLabel, l.LabelSelectors) {
 				objects.Items = append(objects.Items, object)
 			}
 		}
