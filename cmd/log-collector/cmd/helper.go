@@ -34,6 +34,7 @@ func manageFileInputs() error {
 
 // overrideFileInputsFromCLI checks if external flag is given. if yes then override
 func overrideFileInputsFromCLI() error {
+	var err error
 
 	if cmd.Flags().Changed(internal.KubeconfigFlag) || logCollector.KubeConfig == "" {
 		logCollector.KubeConfig = kubeConfig
@@ -51,46 +52,35 @@ func overrideFileInputsFromCLI() error {
 		logCollector.CleanOutput = keepSource
 	}
 	if cmd.Flags().Changed(gvkFlag) {
-		gvks, err := parseGVK(gvkSlice)
-		if err != nil {
-			return err
+		gvks, gErr := parseGVK(gvkSlice)
+		if gErr != nil {
+			return gErr
 		}
-		logCollector.GroupVersionKinds = deDuplicateGVKs(gvks)
+		logCollector.GroupVersionKinds = gvks
 	}
+	logCollector.GroupVersionKinds, err = deDuplicateAndFixGVKs(logCollector.GroupVersionKinds)
+	if err != nil {
+		return err
+	}
+
 	if cmd.Flags().Changed(labelsFlag) {
 		labels, err := parseLabelSelector(labelSlice)
 		if err != nil {
 			return err
 		}
-		logCollector.LabelSelectors = deDuplicateLabelSelector(labels)
+		logCollector.LabelSelectors = labels
 	}
+	logCollector.LabelSelectors = deDuplicateLabelSelector(logCollector.LabelSelectors)
 
 	return nil
 }
 
 func parseGVK(gvkSlice []string) ([]logcollector.GroupVersionKind, error) {
 	var gvks []logcollector.GroupVersionKind
-	groupList, err := logCollector.DisClient.ServerGroups()
-
-	if err != nil {
-		if !discovery.IsGroupDiscoveryFailedError(err) {
-			log.Error(err, "Error while getting the resource list from discovery client")
-			return gvks, err
-		}
-		log.Warnf("The Kubernetes server has an orphaned API service. Server reports: %s", err.Error())
-		log.Warn("To fix this, kubectl delete apiservice <service-name>")
-	}
 
 	for idx := range gvkSlice {
 		splitGVK := strings.Split(gvkSlice[idx], "/")
 		if len(splitGVK) == 3 && splitGVK[2] != "" {
-			if splitGVK[1] == "" {
-				for idx := range groupList.Groups {
-					if strings.EqualFold(groupList.Groups[idx].Name, splitGVK[0]) {
-						splitGVK[1] = groupList.Groups[idx].PreferredVersion.Version
-					}
-				}
-			}
 			gvk := logcollector.GroupVersionKind{
 				Group:   splitGVK[0],
 				Version: splitGVK[1],
@@ -142,16 +132,38 @@ func deDuplicateLabelSelector(lbSelectors []apiv1.LabelSelector) []apiv1.LabelSe
 	return uniqueSelectors
 }
 
-func deDuplicateGVKs(gvks []logcollector.GroupVersionKind) []logcollector.GroupVersionKind {
+func deDuplicateAndFixGVKs(gvks []logcollector.GroupVersionKind) ([]logcollector.GroupVersionKind, error) {
 	var uniquegvks []logcollector.GroupVersionKind
 	gvkSet := sets.NewString()
+
+	groupList, err := logCollector.DisClient.ServerGroups()
+
+	if err != nil {
+		if !discovery.IsGroupDiscoveryFailedError(err) {
+			log.Error(err, "Error while getting the resource list from discovery client")
+			return gvks, err
+		}
+		log.Warnf("The Kubernetes server has an orphaned API service. Server reports: %s", err.Error())
+		log.Warn("To fix this, kubectl delete apiservice <service-name>")
+	}
+
 	for idx := range gvks {
 		gvkString := strings.ToLower(fmt.Sprintf("%s", gvks[idx]))
 		if gvkSet.Has(gvkString) {
 			continue
 		}
 		gvkSet.Insert(gvkString)
+		if gvks[idx].Kind == "" {
+			return gvks, errors.New("kind cannot be empty in gvks, check your config file")
+		}
+		if gvks[idx].Version == "" {
+			for index := range groupList.Groups {
+				if strings.EqualFold(groupList.Groups[index].Name, gvks[idx].Group) {
+					gvks[idx].Version = groupList.Groups[index].PreferredVersion.Version
+				}
+			}
+		}
 		uniquegvks = append(uniquegvks, gvks[idx])
 	}
-	return uniquegvks
+	return uniquegvks, nil
 }

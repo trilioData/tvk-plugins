@@ -33,8 +33,8 @@ import (
 )
 
 type GroupVersionKind struct {
-	Group   string `json:"group"`
-	Version string `json:"version"`
+	Group   string `json:"group,omitempty"`
+	Version string `json:"version,omitempty"`
 	Kind    string `json:"kind"`
 }
 

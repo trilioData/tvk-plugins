@@ -1,10 +1,10 @@
-keep-source-folder: <true/false>
-clustered: <true/false>
+keep-source-folder: true
+clustered: false
 namespaces:
   - default
   - tvk
 logLevel: INFO
-kubeConfig: path/to/config
+kubeConfig: ""
 labels:
   - matchLabels:
       "app": "frontend"
