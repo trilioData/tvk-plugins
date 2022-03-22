@@ -128,6 +128,7 @@ type CommonOptions struct {
 	Kubeconfig string `yaml:"kubeconfig,omitempty"`
 	Namespace  string `yaml:"namespace,omitempty"`
 	LogLevel   string `yaml:"logLevel,omitempty"`
+	InCluster  bool   `yaml:"inCluster,omitempty"`
 	Logger     *logrus.Logger
 }
 
@@ -135,6 +136,7 @@ func (co *CommonOptions) logCommonOptions() {
 	co.Logger.Infof("LOG-LEVEL=\"%s\"", co.LogLevel)
 	co.Logger.Infof("KUBECONFIG-PATH=\"%s\"", co.Kubeconfig)
 	co.Logger.Infof("NAMESPACE=\"%s\"", co.Namespace)
+	co.Logger.Infof("INCLUSTER=\"%t\"", co.InCluster)
 }
 
 type podSchedulingOptions struct {

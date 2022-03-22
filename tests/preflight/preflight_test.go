@@ -256,6 +256,22 @@ var _ = Describe("Preflight Tests", func() {
 			})
 		})
 
+		Context("Preflight run command, inCluster flag test cases", func() {
+
+			It("Should skip kubectl and helm checks when inCluster flag is set to true", func() {
+				inputFlags := make(map[string]string)
+				copyMap(flagsMap, inputFlags)
+				inputFlags[inClusterFlag] = ""
+				cmdOut, err = runPreflightChecks(inputFlags)
+				Expect(err).ToNot(BeNil())
+				Expect(cmdOut.Out).To(And(ContainSubstring("In cluster flag enabled. Skipping check for kubectl"),
+					ContainSubstring("In cluster flag enabled. Skipping check for helm")))
+				Expect(cmdOut.Out).NotTo(And(ContainSubstring("Checking for kubectl"),
+					ContainSubstring("Checking for required Helm version")))
+			})
+
+		})
+
 		Context("Preflight run command, volume snapshot pod resource requests and limits flag testcase", func() {
 			It("Pods for volume snapshot check should use CPU and memory resources according to the given flag values", func() {
 				inputFlags := make(map[string]string)

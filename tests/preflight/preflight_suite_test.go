@@ -93,6 +93,7 @@ var (
 	limitsFlag            = flagPrefix + cmd.PodLimitFlag
 	requestsFlag          = flagPrefix + cmd.PodRequestFlag
 	nodeSelectorFlag      = flagPrefix + cmd.NodeSelectorFlag
+	inClusterFlag         = flagPrefix + cmd.InClusterFlag
 
 	preflightLogFilePrefix    = "preflight-"
 	cleanupLogFilePrefix      = "preflight_cleanup-"

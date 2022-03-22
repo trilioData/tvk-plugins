@@ -79,6 +79,7 @@ func (o *Run) logPreflightOptions() {
 	o.Logger.Infof("====PREFLIGHT RUN OPTIONS END====")
 }
 
+//nolint:gocyclo // for future ref
 // PerformPreflightChecks performs all preflight checks.
 func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 	o.logPreflightOptions()
@@ -94,13 +95,17 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 	o.Logger.Infof("Generated UID for preflight check - %s\n", resNameSuffix)
 
 	//  check kubectl
-	o.Logger.Infoln("Checking for kubectl")
-	err = o.checkKubectl()
-	if err != nil {
-		o.Logger.Errorf("%s Preflight check for kubectl utility failed :: %s\n", cross, err.Error())
-		preflightStatus = false
+	if o.InCluster {
+		o.Logger.Infoln("In cluster flag enabled. Skipping check for kubectl...")
 	} else {
-		o.Logger.Infof("%s Preflight check for kubectl utility is successful\n", check)
+		o.Logger.Infoln("Checking for kubectl")
+		err = o.checkKubectl()
+		if err != nil {
+			o.Logger.Errorf("%s Preflight check for kubectl utility failed :: %s\n", cross, err.Error())
+			preflightStatus = false
+		} else {
+			o.Logger.Infof("%s Preflight check for kubectl utility is successful\n", check)
+		}
 	}
 
 	o.Logger.Infoln("Checking access to the default namespace of cluster")
@@ -112,13 +117,17 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		o.Logger.Infof("%s Preflight check for kubectl access is successful\n", check)
 	}
 
-	o.Logger.Infof("Checking for required Helm version (>= %s)\n", minHelmVersion)
-	err = o.checkHelmVersion()
-	if err != nil {
-		o.Logger.Errorf("%s Preflight check for helm version failed :: %s\n", cross, err.Error())
-		preflightStatus = false
+	if o.InCluster {
+		o.Logger.Infoln("In cluster flag enabled. Skipping check for helm...")
 	} else {
-		o.Logger.Infof("%s Preflight check for helm version is successful\n", check)
+		o.Logger.Infof("Checking for required Helm version (>= %s)\n", minHelmVersion)
+		err = o.checkHelmVersion()
+		if err != nil {
+			o.Logger.Errorf("%s Preflight check for helm version failed :: %s\n", cross, err.Error())
+			preflightStatus = false
+		} else {
+			o.Logger.Infof("%s Preflight check for helm version is successful\n", check)
+		}
 	}
 
 	o.Logger.Infof("Checking for required kubernetes server version (>=%s)\n", minK8sVersion)
@@ -568,7 +577,7 @@ func (o *Run) checkDNSResolution(ctx context.Context) error {
 	}
 	err = execInPod(&op, o.Logger)
 	if err != nil {
-		return fmt.Errorf("not able to resolve DNS 'kubernetes.default' service inside pods")
+		return fmt.Errorf("not able to resolve DNS 'kubernetes.default' service inside pods: %s", err.Error())
 	}
 
 	// Delete DNS pod when resolution is successful

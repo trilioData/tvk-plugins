@@ -12,13 +12,12 @@ import (
 	"github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/trilioData/tvk-plugins/internal"
-	"github.com/trilioData/tvk-plugins/tools/preflight"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-
 	"sigs.k8s.io/yaml"
+
+	"github.com/trilioData/tvk-plugins/internal"
+	"github.com/trilioData/tvk-plugins/tools/preflight"
 )
 
 type preflightCmdOps struct {
@@ -128,6 +127,9 @@ func updateCommonInputsFromCLI(cmd *cobra.Command, comnOps *preflight.CommonOpti
 	}
 	if cmd.Flags().Changed(internal.LogLevelFlag) || comnOps.LogLevel == "" {
 		comnOps.LogLevel = logLevel
+	}
+	if cmd.Flags().Changed(InClusterFlag) || comnOps.InCluster {
+		comnOps.InCluster = inCluster
 	}
 }
 
