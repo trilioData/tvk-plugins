@@ -37,11 +37,12 @@ func Execute() {
 //  initializes flags and logger for the application
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&kubeconfig, internal.KubeconfigFlag,
-		internal.KubeconfigShorthandFlag, internal.KubeConfigDefault, internal.KubeconfigUsage)
+		internal.KubeconfigShorthandFlag, "", internal.KubeconfigUsage)
 	rootCmd.PersistentFlags().StringVarP(&namespace, NamespaceFlag, namespaceFlagShorthand, internal.DefaultNs, namespaceUsage)
 	rootCmd.PersistentFlags().StringVarP(&logLevel, internal.LogLevelFlag,
 		internal.LogLevelFlagShorthand, internal.DefaultLogLevel, internal.LogLevelUsage)
 	rootCmd.PersistentFlags().StringVarP(&inputFileName, ConfigFileFlag, configFlagShorthand, "", configFileUsage)
+	rootCmd.PersistentFlags().BoolVarP(&inCluster, InClusterFlag, inClusterFlagShorthand, false, inClusterUsage)
 
 	logger = logrus.New()
 	logger.SetFormatter(&logrus.TextFormatter{ForceColors: true})

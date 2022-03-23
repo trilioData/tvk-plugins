@@ -28,7 +28,7 @@ func (targetBrowserConfig *Config) Authenticate(ctx context.Context) (*AuthInfo,
 		return nil, err
 	}
 
-	acc, err := internal.NewAccessor(targetBrowserConfig.KubeConfig, targetBrowserConfig.Scheme)
+	acc, err := internal.NewAccessor(targetBrowserConfig.KubeConfig, nil, targetBrowserConfig.Scheme)
 	if err != nil {
 		return nil, err
 	}

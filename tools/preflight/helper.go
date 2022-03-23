@@ -2,12 +2,16 @@ package preflight
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	gort "runtime"
 	"strings"
 	"time"
 
+	semVersion "github.com/hashicorp/go-version"
+	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
+	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,9 +23,9 @@ import (
 	"k8s.io/client-go/discovery"
 	goclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/sirupsen/logrus"
 	"github.com/trilioData/tvk-plugins/internal"
 	"github.com/trilioData/tvk-plugins/internal/utils/shell"
 	"github.com/trilioData/tvk-plugins/tools/preflight/exec"
@@ -41,19 +45,17 @@ const (
 
 	letterBytes = "abcdefghijklmnopqrstuvwxyz"
 
-	LabelK8sPartOf                  = "app.kubernetes.io/part-of"
-	LabelK8sPartOfValue             = "k8s-triliovault"
-	LabelTrilioKey                  = "trilio"
-	LabelTvkPreflightValue          = "tvk-preflight"
-	LabelPreflightRunKey            = "preflight-run"
-	LabelK8sName                    = "app.kubernetes.io/name"
-	LabelK8sNameValue               = "k8s-triliovault"
-	SourcePodNamePrefix             = "source-pod-"
-	SourcePvcNamePrefix      string = "source-pvc-"
-	VolumeSnapSrcNamePrefix         = "snapshot-source-pvc-"
-	customResourceDefinition        = "CustomResourceDefinition"
+	LabelK8sPartOf                 = "app.kubernetes.io/part-of"
+	LabelK8sPartOfValue            = "k8s-triliovault"
+	LabelTrilioKey                 = "trilio"
+	LabelTvkPreflightValue         = "tvk-preflight"
+	LabelPreflightRunKey           = "preflight-run"
+	LabelK8sName                   = "app.kubernetes.io/name"
+	LabelK8sNameValue              = "k8s-triliovault"
+	SourcePodNamePrefix            = "source-pod-"
+	SourcePvcNamePrefix     string = "source-pvc-"
+	VolumeSnapSrcNamePrefix        = "snapshot-source-pvc-"
 
-	apiExtenstionsGroup              = "apiextensions.k8s.io"
 	StorageSnapshotGroup             = "snapshot.storage.k8s.io"
 	RestorePvcNamePrefix             = "restored-pvc-"
 	RestorePodNamePrefix             = "restored-pod-"
@@ -68,22 +70,28 @@ const (
 	GcrRegistryPath  = "gcr.io/kubernetes-e2e-test-images"
 	DNSUtilsImage    = "dnsutils:1.3"
 
-	volSnapRetrySteps                  = 30
-	volSnapRetryInterval time.Duration = 2 * time.Second
-	volSnapRetryFactor                 = 1.1
-	volSnapRetryJitter                 = 0.1
-	VolMountName                       = "source-data"
-	VolMountPath                       = "/demo/data"
+	volSnapRetrySteps    = 30
+	volSnapRetryInterval = 2 * time.Second
+	volSnapRetryFactor   = 1.1
+	volSnapRetryJitter   = 0.1
+	VolMountName         = "source-data"
+	VolMountPath         = "/demo/data"
 
 	execTimeoutDuration       = 3 * time.Minute
 	deletionGracePeriod int64 = 5
+
+	volumeSnapshotCRDYamlDir    = "volumesnapshotcrdyamls"
+	snapshotClassVersionV1      = "v1"
+	snapshotClassVersionV1Beta1 = "v1beta1"
+	minServerVerForV1CrdVersion = "v1.20.0"
+	defaultVSCName              = "preflight-generated-snapshot-class"
 )
 
 var (
 	check = "\xE2\x9C\x94"
 	cross = "\xE2\x9D\x8C"
 
-	CsiApis = [3]string{
+	VolumeSnapshotCRDs = [3]string{
 		"volumesnapshotclasses." + StorageSnapshotGroup,
 		"volumesnapshotcontents." + StorageSnapshotGroup,
 		"volumesnapshots." + StorageSnapshotGroup,
@@ -111,12 +119,16 @@ var (
 	runtimeClient client.Client
 	discClient    *discovery.DiscoveryClient
 	restConfig    *rest.Config
+
+	//go:embed volumesnapshotcrdyamls/*
+	crdYamlFiles embed.FS
 )
 
 type CommonOptions struct {
 	Kubeconfig string `yaml:"kubeconfig,omitempty"`
 	Namespace  string `yaml:"namespace,omitempty"`
 	LogLevel   string `yaml:"logLevel,omitempty"`
+	InCluster  bool   `yaml:"inCluster,omitempty"`
 	Logger     *logrus.Logger
 }
 
@@ -124,6 +136,7 @@ func (co *CommonOptions) logCommonOptions() {
 	co.Logger.Infof("LOG-LEVEL=\"%s\"", co.LogLevel)
 	co.Logger.Infof("KUBECONFIG-PATH=\"%s\"", co.Kubeconfig)
 	co.Logger.Infof("NAMESPACE=\"%s\"", co.Namespace)
+	co.Logger.Infof("INCLUSTER=\"%t\"", co.InCluster)
 }
 
 type podSchedulingOptions struct {
@@ -139,7 +152,12 @@ func InitKubeEnv(kubeconfig string) error {
 	}
 
 	utilruntime.Must(corev1.AddToScheme(scheme))
-	kubeEnv, err := internal.NewEnv(kubeconfig, scheme)
+	utilruntime.Must(apiextensions.AddToScheme(scheme))
+	var config *rest.Config
+	if kubeconfig == "" {
+		config = ctrl.GetConfigOrDie()
+	}
+	kubeEnv, err := internal.NewEnv(kubeconfig, config, scheme)
 	if err != nil {
 		return err
 	}
@@ -205,6 +223,38 @@ func getVersionsOfGroup(grp string) ([]string, error) {
 	}
 
 	return apiVerList, nil
+}
+
+func getPrefSnapshotClassVersion(serverVersion string) (prefVersion string, err error) {
+	currentVersion, err := getSemverVersion(serverVersion)
+	if err != nil {
+		return "", err
+	}
+
+	minV1SupportedVersion, err := getSemverVersion(minServerVerForV1CrdVersion)
+	if err != nil {
+		return "", err
+	}
+
+	prefCRDVersion := snapshotClassVersionV1
+	if currentVersion.LessThan(minV1SupportedVersion) {
+		prefCRDVersion = snapshotClassVersionV1Beta1
+	}
+
+	return prefCRDVersion, nil
+}
+
+func getSemverVersion(ver string) (*semVersion.Version, error) {
+	semVer, err := semVersion.NewSemver(ver)
+
+	if err != nil {
+		return semVer, err
+	}
+
+	if semVer == nil {
+		return nil, fmt.Errorf("invalid semver version: [%s]", ver)
+	}
+	return semVer, err
 }
 
 //  clusterHasVolumeSnapshotClass checks and returns volume snapshot class if present on cluster.
@@ -299,7 +349,7 @@ func createVolumeSnapshotPodSpec(pvcName string, op *Run) *corev1.Pod {
 			},
 			ReadinessProbe: &corev1.Probe{
 				InitialDelaySeconds: 30,
-				Handler: corev1.Handler{
+				ProbeHandler: corev1.ProbeHandler{
 					Exec: &corev1.ExecAction{
 						Command: execRestoreDataCheckCommand,
 					},
@@ -323,8 +373,8 @@ func createVolumeSnapshotPodSpec(pvcName string, op *Run) *corev1.Pod {
 	return pod
 }
 
-// createVolumeSnapsotSpec creates pvc for volume snapshot
-func createVolumeSnapsotSpec(name, namespace, snapVer, pvcName string) *unstructured.Unstructured {
+// createVolumeSnapshotSpec creates pvc for volume snapshot
+func createVolumeSnapshotSpec(name, namespace, snapVer, pvcName string) *unstructured.Unstructured {
 	volSnap := &unstructured.Unstructured{}
 	volSnap.Object = map[string]interface{}{
 		"spec": map[string]interface{}{

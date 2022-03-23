@@ -50,13 +50,11 @@ const (
 	dnsPodNamePrefix = "test-dns-pod-"
 	dnsContainerName = "test-dnsutils"
 
-	sampleVolSnapClassName = "sample-snap-class"
-	invalidVolSnapDriver   = "invalid.csi.k8s.io"
-	preflightSAName        = "preflight-sa"
-	preflightKubeConf      = "preflight_test_config"
-	flagNamespace          = "preflight-flag-ns"
-	kubeconfigEnv          = "KUBECONFIG"
-	filePermission         = 0644
+	preflightSAName   = "preflight-sa"
+	preflightKubeConf = "preflight_test_config"
+	flagNamespace     = "preflight-flag-ns"
+	kubeconfigEnv     = "KUBECONFIG"
+	filePermission    = 0644
 
 	timeout        = time.Minute * 1
 	interval       = time.Second * 1
@@ -95,11 +93,11 @@ var (
 	limitsFlag            = flagPrefix + cmd.PodLimitFlag
 	requestsFlag          = flagPrefix + cmd.PodRequestFlag
 	nodeSelectorFlag      = flagPrefix + cmd.NodeSelectorFlag
+	inClusterFlag         = flagPrefix + cmd.InClusterFlag
 
 	preflightLogFilePrefix    = "preflight-"
 	cleanupLogFilePrefix      = "preflight_cleanup-"
 	invalidStorageClassName   = "invalid-storage-class"
-	invalidSnapshotClassName  = "invalid-snapshot-class"
 	invalidLocalRegistryName  = "invalid-local-registry"
 	invalidServiceAccountName = "invalid-service-account"
 	invalidLogLevel           = "invalidLogLevel"
@@ -192,7 +190,7 @@ var _ = BeforeSuite(func() {
 
 	kubeconfig, err = internal.NewConfigFromCommandline("")
 	Expect(err).To(BeNil())
-	kubeAccessor, err = internal.NewAccessor(kubeconfig, scheme)
+	kubeAccessor, err = internal.NewAccessor(kubeconfig, nil, scheme)
 	Expect(err).To(BeNil())
 	k8sClient = kubeAccessor.GetClientset()
 	runtimeClient = kubeAccessor.GetRuntimeClient()

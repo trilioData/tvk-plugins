@@ -49,8 +49,7 @@ var runCmd = &cobra.Command{
   # run preflight with pvc storage request flag for volume snapshot check
   kubectl tvk-preflight run --storage-class <storage-class-name> --pvc-storage-request <storage request value>
 `,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		var err error
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		err = managePreflightInputs(cmd)
 		if err != nil {
 			log.Fatal(err.Error())

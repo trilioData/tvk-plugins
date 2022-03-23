@@ -33,13 +33,19 @@ type Accessor struct {
 }
 
 // NewEnv returns a new Kubernetes environment with accessor
-func NewEnv(kubeConfig string, scheme *runtime.Scheme) (*Accessor, error) {
-	confPath, err := NewConfigFromCommandline(kubeConfig)
-	if err != nil {
-		return nil, err
+func NewEnv(kubeConfig string, restConfig *rest.Config, scheme *runtime.Scheme) (*Accessor, error) {
+	var (
+		confPath string
+		err      error
+	)
+	if restConfig == nil {
+		confPath, err = NewConfigFromCommandline(kubeConfig)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	accessor, err := NewAccessor(confPath, scheme)
+	accessor, err := NewAccessor(confPath, restConfig, scheme)
 	if err != nil {
 		return nil, err
 	}
@@ -47,16 +53,19 @@ func NewEnv(kubeConfig string, scheme *runtime.Scheme) (*Accessor, error) {
 }
 
 // NewAccessor returns a new instance of an accessor.
-func NewAccessor(kubeConfig string, scheme *runtime.Scheme) (*Accessor, error) {
-	restConfig, err := LoadKubeConfigOrDie(kubeConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create rest config. %v", err)
-	}
+func NewAccessor(kubeConfig string, restConfig *rest.Config, scheme *runtime.Scheme) (*Accessor, error) {
+	var err error
+	if restConfig == nil {
+		restConfig, err = LoadKubeConfigOrDie(kubeConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create rest config. %v", err)
+		}
 
-	// copy to avoid mutating the passed-in config
-	restConfig = rest.CopyConfig(restConfig)
-	// set the warning handler for this client to ignore warnings
-	restConfig.WarningHandler = rest.NoWarnings{}
+		// copy to avoid mutating the passed-in config
+		restConfig = rest.CopyConfig(restConfig)
+		// set the warning handler for this client to ignore warnings
+		restConfig.WarningHandler = rest.NoWarnings{}
+	}
 
 	set, err := client.NewForConfig(restConfig)
 	if err != nil {

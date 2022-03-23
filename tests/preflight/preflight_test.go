@@ -13,14 +13,14 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tLog "github.com/sirupsen/logrus"
-	"github.com/trilioData/tvk-plugins/cmd/preflight/cmd"
-	"github.com/trilioData/tvk-plugins/tools/preflight"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/trilioData/tvk-plugins/cmd/preflight/cmd"
 	"github.com/trilioData/tvk-plugins/internal/utils/shell"
+	"github.com/trilioData/tvk-plugins/tools/preflight"
 )
 
 var _ = Describe("Preflight Tests", func() {
@@ -54,53 +54,6 @@ var _ = Describe("Preflight Tests", func() {
 				cmd := fmt.Sprintf("%s run", preflightBinaryFilePath)
 				_, err = shell.RunCmd(cmd)
 				Expect(err).ToNot(BeNil())
-			})
-		})
-
-		Context("Preflight run command snapshot class flag test cases", func() {
-
-			It("Preflight checks should pass if snapshot class is present on cluster and provided as a flag value", func() {
-				inputFlags := make(map[string]string)
-				copyMap(flagsMap, inputFlags)
-				inputFlags[snapshotClassFlag] = defaultTestSnapshotClass
-				cmdOut, err = runPreflightChecks(inputFlags)
-				Expect(err).To(BeNil())
-
-				assertSuccessfulPreflightChecks(inputFlags, cmdOut.Out)
-			})
-
-			It("Preflight checks should fail if snapshot class is not present on cluster", func() {
-				inputFlags := make(map[string]string)
-				copyMap(flagsMap, inputFlags)
-				inputFlags[snapshotClassFlag] = invalidSnapshotClassName
-				cmdOut, err = runPreflightChecks(inputFlags)
-				Expect(err).ToNot(BeNil())
-
-				Expect(cmdOut.Out).To(ContainSubstring(
-					fmt.Sprintf("volume snapshot class %s not found on cluster :: "+
-						"volumesnapshotclasses.snapshot.storage.k8s.io \"%s\" not found",
-						invalidSnapshotClassName, invalidSnapshotClassName)))
-				Expect(cmdOut.Out).
-					To(ContainSubstring(fmt.Sprintf("Preflight check for SnapshotClass failed :: "+
-						"volume snapshot class %s not found", invalidSnapshotClassName)))
-				Expect(cmdOut.Out).
-					To(ContainSubstring("Skipping volume snapshot and restore check as preflight check for SnapshotClass failed"))
-			})
-
-			It("Preflight checks should fail if volume snapshot class does not match with storage class provisioner", func() {
-				createVolumeSnapshotClass()
-				defer deleteVolumeSnapshotClass()
-				inputFlags := make(map[string]string)
-				copyMap(flagsMap, inputFlags)
-				inputFlags[snapshotClassFlag] = sampleVolSnapClassName
-				cmdOut, err = runPreflightChecks(inputFlags)
-				Expect(err).ToNot(BeNil())
-
-				Expect(cmdOut.Out).To(ContainSubstring(
-					fmt.Sprintf("Preflight check for SnapshotClass failed :: volume snapshot class - %s "+
-						"driver does not match with given StorageClass's provisioner=", sampleVolSnapClassName)))
-				Expect(cmdOut.Out).To(ContainSubstring(
-					"Skipping volume snapshot and restore check as preflight check for SnapshotClass failed"))
 			})
 		})
 
@@ -301,6 +254,22 @@ var _ = Describe("Preflight Tests", func() {
 
 				assertSuccessfulPreflightChecks(flagsMap, string(output))
 			})
+		})
+
+		Context("Preflight run command, inCluster flag test cases", func() {
+
+			It("Should skip kubectl and helm checks when inCluster flag is set to true", func() {
+				inputFlags := make(map[string]string)
+				copyMap(flagsMap, inputFlags)
+				inputFlags[inClusterFlag] = ""
+				cmdOut, err = runPreflightChecks(inputFlags)
+				Expect(err).ToNot(BeNil())
+				Expect(cmdOut.Out).To(And(ContainSubstring("In cluster flag enabled. Skipping check for kubectl"),
+					ContainSubstring("In cluster flag enabled. Skipping check for helm")))
+				Expect(cmdOut.Out).NotTo(And(ContainSubstring("Checking for kubectl"),
+					ContainSubstring("Checking for required Helm version")))
+			})
+
 		})
 
 		Context("Preflight run command, volume snapshot pod resource requests and limits flag testcase", func() {
@@ -832,6 +801,7 @@ var _ = Describe("Preflight Tests", func() {
 	})
 
 	Context("Preflight cleanup command test-cases", func() {
+
 		Context("cleanup all preflight resources on the cluster in a particular namespace", func() {
 
 			It("Should clean all preflight resources in a particular namespace", func() {
@@ -977,5 +947,6 @@ var _ = Describe("Preflight Tests", func() {
 				}, timeout, interval).Should(Equal(0))
 			})
 		})
+
 	})
 })

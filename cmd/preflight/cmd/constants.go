@@ -31,6 +31,10 @@ const (
 	configFileUsage     = "Specify the name of the yaml file for inputs to the preflight Run and Cleanup commands"
 	configFlagShorthand = "f"
 
+	InClusterFlag          = "in-cluster"
+	inClusterUsage         = "Skip kubectl and helm binary check if running inside a container. By-default it is false"
+	inClusterFlagShorthand = "i"
+
 	PodLimitFlag  = "limits"
 	podLimitUsage = "Pod memory and cpu resource limits for DNS and volume snapshot preflight check"
 
@@ -75,4 +79,5 @@ var (
 	pvcStorageRequest string
 	nodeSelector      string
 	cleanupUID        string
+	inCluster         bool
 )

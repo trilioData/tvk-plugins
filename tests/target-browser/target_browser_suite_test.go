@@ -87,7 +87,7 @@ var _ = BeforeSuite(func() {
 	kubeConfig, err := internal.NewConfigFromCommandline("")
 	Expect(err).Should(BeNil())
 
-	acc, err := internal.NewAccessor(kubeConfig, scheme)
+	acc, err := internal.NewAccessor(kubeConfig, nil, scheme)
 	Expect(err).Should(BeNil())
 
 	k8sClient = acc.GetRuntimeClient()
