@@ -154,7 +154,7 @@ jobs:
 
     - name: Set up Cloud SDK
       if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
-      uses: google-github-actions/setup-gcloud@master
+      uses: google-github-actions/setup-gcloud@v0
       with:
         project_id: ${{ secrets.GCS_PROJECT_ID }}
         service_account_key: ${{ secrets.GKE_SA_KEY }}
@@ -217,7 +217,7 @@ jobs:
 
       #- name: Set up Cloud SDK
       #if: (needs.pre-build.outputs.testCleanup == 'true') || startsWith(github.ref, 'refs/tags/')
-      #uses: google-github-actions/setup-gcloud@master
+      #uses: google-github-actions/setup-gcloud@v0
       #with:
       #  project_id: ${{ secrets.GCS_PROJECT_ID }}
       #  service_account_key: ${{ secrets.GKE_SA_KEY }}
@@ -287,7 +287,7 @@ jobs:
 
       - name: Set up Cloud SDK
         if: ${{ github.ref == 'refs/heads/main' }}
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@v0
         with:
           project_id: ${{ secrets.GCS_PROJECT_ID }}
           service_account_key: ${{ secrets.GCS_ARTIFACTS_CREDENTIALS }}
@@ -329,7 +329,7 @@ jobs:
 
       - name: Set up Cloud SDK
         if: (needs.pre-build.outputs.testTargetBrowser == 'true') || startsWith(github.ref, 'refs/tags/')
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@v0
         with:
           project_id: ${{ secrets.GCS_PROJECT_ID }}
           service_account_key: ${{ secrets.GKE_SA_KEY }}
@@ -379,7 +379,7 @@ jobs:
 
       #- name: Set up Cloud SDK
       #  if: (needs.pre-build.outputs.testoneclick == 'true') || startsWith(github.ref, 'refs/tags/')
-      #  uses: google-github-actions/setup-gcloud@master
+      #  uses: google-github-actions/setup-gcloud@v0
       #  with:
       #    project_id: ${{ secrets.GCS_PROJECT_ID }}
       #    service_account_key: ${{ secrets.GKE_SA_KEY }}
