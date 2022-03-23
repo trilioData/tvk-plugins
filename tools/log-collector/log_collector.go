@@ -15,6 +15,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apiv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -30,29 +32,52 @@ import (
 	"github.com/trilioData/tvk-plugins/internal"
 )
 
-type LogCollector struct {
-	OutputDir    string
-	CleanOutput  bool
-	Clustered    bool
-	Namespaces   []string
-	Loglevel     string
-	k8sClient    client.Client
-	disClient    *discovery.DiscoveryClient
-	k8sClientSet *kubernetes.Clientset
-	KubeConfig   string
+type GroupVersionKind struct {
+	Group   string `json:"group,omitempty"`
+	Version string `json:"version,omitempty"`
+	Kind    string `json:"kind"`
 }
 
-// initializeKubeClients initialize clients for kubernetes environment
-func (l *LogCollector) initializeKubeClients() error {
+var (
+	matchExpressionOperator = map[apiv1.LabelSelectorOperator]selection.Operator{
+		apiv1.LabelSelectorOpIn:           selection.In,
+		apiv1.LabelSelectorOpNotIn:        selection.NotIn,
+		apiv1.LabelSelectorOpExists:       selection.Exists,
+		apiv1.LabelSelectorOpDoesNotExist: selection.DoesNotExist,
+	}
+)
+
+type LogCollector struct {
+	OutputDir         string                     `json:"outputDirectory"`
+	CleanOutput       bool                       `json:"keep-source-folder"`
+	Clustered         bool                       `json:"clustered"`
+	Namespaces        []string                   `json:"namespaces"`
+	Loglevel          string                     `json:"logLevel"`
+	K8sClient         client.Client              `json:"-"`
+	DisClient         *discovery.DiscoveryClient `json:"-"`
+	K8sClientSet      *kubernetes.Clientset      `json:"-"`
+	KubeConfig        string                     `json:"kubeConfig"`
+	LabelSelectors    []apiv1.LabelSelector      `json:"labels,omitempty"`
+	GroupVersionKinds []GroupVersionKind         `json:"gvks"`
+}
+
+// InitializeKubeClients initialize clients for kubernetes environment
+func (l *LogCollector) InitializeKubeClients() error {
+	scheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(v1beta1.AddToScheme(scheme))
 
+	if l.KubeConfig == "" {
+		l.KubeConfig = internal.KubeConfigDefault
+	}
+
 	acc, err := internal.NewEnv(l.KubeConfig, scheme)
 	if err != nil {
+		log.Infof("Kubeconfig : %s", l.KubeConfig)
 		return err
 	}
-	l.k8sClient, l.disClient, l.k8sClientSet = acc.GetRuntimeClient(), acc.GetDiscoveryClient(), acc.GetClientset()
-	l.disClient.LegacyPrefix = "/api/"
+	l.K8sClient, l.DisClient, l.K8sClientSet = acc.GetRuntimeClient(), acc.GetDiscoveryClient(), acc.GetClientset()
+	l.DisClient.LegacyPrefix = "/api/"
 
 	return nil
 }
@@ -60,7 +85,7 @@ func (l *LogCollector) initializeKubeClients() error {
 // CollectLogsAndDump collects call all the related resources of triliovault
 func (l *LogCollector) CollectLogsAndDump() error {
 
-	if err := l.initializeKubeClients(); err != nil {
+	if err := l.InitializeKubeClients(); err != nil {
 		return err
 	}
 
@@ -102,7 +127,7 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 		for index := range l.Namespaces {
 			var obj unstructured.UnstructuredList
 			listPath := fmt.Sprintf("%s/namespaces/%s/%s", resourcePath, l.Namespaces[index], resource.Name)
-			err := l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&obj)
+			err := l.DisClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&obj)
 			if err != nil {
 				if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
 					log.Warnf("api error : %s", err.Error())
@@ -123,7 +148,7 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 		return objects
 	}
 	listPath := fmt.Sprintf("%s/%s", resourcePath, resource.Name)
-	err := l.disClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&objects)
+	err := l.DisClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&objects)
 	if err != nil {
 		if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
 			log.Warnf("%s", err.Error())
@@ -226,7 +251,7 @@ func (l *LogCollector) writeLogs(resourceDir string, obj unstructured.Unstructur
 	}
 
 	var podObj corev1.Pod
-	err := l.k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: objNs}, &podObj)
+	err := l.K8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: objNs}, &podObj)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Warnf("%s", err.Error())
@@ -262,7 +287,7 @@ func (l *LogCollector) writeLog(resourceDir, objNs, objName, container string, i
 		Previous:  isPrevious,
 	}
 
-	req := l.k8sClientSet.CoreV1().Pods(objNs).GetLogs(objName, &logOption)
+	req := l.K8sClientSet.CoreV1().Pods(objNs).GetLogs(objName, &logOption)
 	podLogs, err := req.Stream(context.TODO())
 	if err != nil {
 		log.Errorf("Unable to get Logs for container %s : %s", container, err.Error())
@@ -358,31 +383,34 @@ func (l *LogCollector) zipDir() error {
 func (l *LogCollector) filterResourceObjects(resourcePath string,
 	resource *apiv1.APIResource) (allObjects unstructured.UnstructuredList, err error) {
 
-	if (!resource.Namespaced && clusteredResources.Has(resource.Kind)) ||
-		(resource.Namespaced && !excludeResources.Has(resource.Kind)) {
+	if nonLabeledResources.Has(resource.Kind) {
+		log.Infof("Filtering '%s' Resource", resource.Kind)
+		return l.getResourceObjects(resourcePath, resource), nil
+	}
 
-		log.Infof("Fetching '%s' Resource", resource.Kind)
-		allObjects = l.getResourceObjects(resourcePath, resource)
-
-		if resource.Name == CRD {
-			allObjects, err = filterTvkSnapshotAndCSICRD(allObjects)
-			if err != nil {
-				return allObjects, err
-			}
-		}
-
-		if resource.Name == Namespaces && !l.Clustered {
-			allObjects = filterInputNS(allObjects, l.Namespaces)
-		}
-
-		if resource.Name == ClusterServiceVersion {
-			allObjects = filterTvkCSV(allObjects)
+	if resource.Name == CRD {
+		log.Infof("Filtering '%s' Resource", resource.Kind)
+		allObjects, err = filterTvkSnapshotAndCSICRD(l.getResourceObjects(resourcePath, resource))
+		if err != nil {
+			return allObjects, err
 		}
 	}
 
-	if !nonLabeledResources.Has(resource.Kind) &&
-		!clusteredResources.Has(resource.Kind) {
-		filterTvkResourcesByLabel(&allObjects)
+	if resource.Name == Namespaces {
+		log.Infof("Filtering '%s' Resource", resource.Kind)
+		allObjects = l.filterInputNS(l.getResourceObjects(resourcePath, resource))
+	}
+
+	if resource.Name == ClusterServiceVersion {
+		log.Infof("Filtering '%s' Resource", resource.Kind)
+		allObjects = filterTvkCSV(l.getResourceObjects(resourcePath, resource))
+	}
+
+	if ((!nonLabeledResources.Has(resource.Kind) && resource.Namespaced) ||
+		(l.Clustered && !resource.Namespaced)) && !excludeResources.Has(resource.Kind) {
+		log.Infof("Filtering '%s' Resource", resource.Kind)
+		allObjects = l.getResourceObjects(resourcePath, resource)
+		l.filterTvkResourcesByLabel(&allObjects)
 	}
 	return allObjects, nil
 }
@@ -427,7 +455,12 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 			}
 			resObjects.Items = append(resObjects.Items, resObject.Items...)
 
-			if internal.CheckIsOpenshift(l.disClient, ocpAPIVersion) {
+			if l.checkIfMatchesInputGVKs(&resources[index], groupVersion) {
+				gvkObjs := l.getResourceObjects(getAPIGroupVersionResourcePath(groupVersion), &resources[index])
+				resObjects.Items = append(resObjects.Items, gvkObjs.Items...)
+			}
+
+			if internal.CheckIsOpenshift(l.DisClient, ocpAPIVersion) {
 				ocpObj, oErr := l.getOcpResourcesByOwnerRef(getAPIGroupVersionResourcePath(groupVersion), &resources[index])
 				if oErr != nil {
 					return oErr
@@ -503,12 +536,32 @@ func (l *LogCollector) getTrilioGroupResources(trilioGVResources []apiv1.APIReso
 	return nil
 }
 
+func (l *LogCollector) checkIfMatchesInputGVKs(resource *apiv1.APIResource, groupVersion string) bool {
+
+	gvSplitter := strings.Split(groupVersion, "/")
+	if len(gvSplitter) == 2 {
+		resource.Group = gvSplitter[0]
+		resource.Version = gvSplitter[1]
+	} else {
+		resource.Version = groupVersion
+	}
+
+	for idx := range l.GroupVersionKinds {
+		if strings.EqualFold(l.GroupVersionKinds[idx].Group, resource.Group) &&
+			strings.EqualFold(l.GroupVersionKinds[idx].Version, resource.Version) &&
+			strings.EqualFold(l.GroupVersionKinds[idx].Kind, resource.Kind) {
+			return true
+		}
+	}
+	return false
+}
+
 // getAPIResourceList returns the list of all API Groups of the supported resources for all groups and versions.
 func (l *LogCollector) getAPIResourceList() (map[string][]apiv1.APIResource, error) {
 
 	resourceMapList := make(map[string][]apiv1.APIResource)
 	log.Info("Fetching API Group version list")
-	_, resourceList, err := l.disClient.ServerGroupsAndResources()
+	resourceList, err := l.DisClient.ServerPreferredResources()
 	if err != nil {
 		if !discovery.IsGroupDiscoveryFailedError(err) {
 			log.Error(err, "Error while getting the resource list from discovery client")
@@ -582,7 +635,7 @@ func (l *LogCollector) checkIfNamespacesExist() (err error) {
 	var nonExistNs []string
 
 	var namespaces corev1.NamespaceList
-	err = l.k8sClient.List(context.Background(), &namespaces)
+	err = l.K8sClient.List(context.Background(), &namespaces)
 	if err != nil {
 		log.Errorf("%s", err.Error())
 		return err
@@ -622,4 +675,22 @@ func (l *LogCollector) getResourceEvents(eventResource *apiv1.APIResource, resou
 		return eErr
 	}
 	return nil
+}
+
+// filterInputNS returns list of Namespaces Object given by user input in --namespaces flag
+func (l *LogCollector) filterInputNS(nsObjs unstructured.UnstructuredList) unstructured.UnstructuredList {
+
+	if l.Clustered {
+		return nsObjs
+	}
+
+	var filteredNSObjects unstructured.UnstructuredList
+	nsNames := sets.NewString(l.Namespaces...)
+
+	for _, nsObj := range nsObjs.Items {
+		if nsNames.Has(nsObj.GetName()) {
+			filteredNSObjects.Items = append(filteredNSObjects.Items, nsObj)
+		}
+	}
+	return filteredNSObjects
 }

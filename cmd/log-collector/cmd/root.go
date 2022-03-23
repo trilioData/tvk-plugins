@@ -6,41 +6,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-
 	"github.com/trilioData/tvk-plugins/internal"
-	logcollector "github.com/trilioData/tvk-plugins/tools/log-collector"
-)
-
-const (
-	binaryName     = "log-collector"
-	clusteredFlag  = "clustered"
-	namespacesFlag = "namespaces"
-	keepSourceFlag = "keep-source-folder"
-
-	shortUsage = "log-collector collects the information of resources such as yaml configuration and logs from k8s cluster."
-	longUsage  = "log-collector let you define what you need to log and how to log it by collecting the the logs " +
-		"and events of Pod alongside the metadata of all resources related to TVK as either namespaced by providing " +
-		"namespaces name separated by comma or clustered. It also collects the CRDs related to TVK and zip them " +
-		"on the path you specify"
-
-	namespacesUsage   = "specifies all the namespaces separated by commas"
-	namespacesShort   = "n"
-	clusteredUsage    = "specifies clustered object"
-	clusteredDefault  = false
-	clusteredShort    = "c"
-	keepSourceUsage   = "Keep source directory and Zip both"
-	keepSourceDefault = false
-	keepSourceShort   = "s"
-)
-
-var (
-	rootCmd           *cobra.Command
-	clustered         bool
-	namespaces        []string
-	kubeConfig        string
-	keepSource        bool
-	logLevel          string
-	namespacesDefault []string
 )
 
 func init() {
@@ -48,44 +14,34 @@ func init() {
 }
 
 func logCollectorCommand() *cobra.Command {
-	var cmd = &cobra.Command{
+	cmd = &cobra.Command{
 		Use:               binaryName,
 		Short:             shortUsage,
 		Long:              longUsage,
 		RunE:              runLogCollector,
 		PersistentPreRunE: preRun,
 	}
-
 	cmd.Flags().StringSliceVarP(&namespaces, namespacesFlag, namespacesShort, namespacesDefault, namespacesUsage)
 	cmd.Flags().BoolVarP(&clustered, clusteredFlag, clusteredShort, clusteredDefault, clusteredUsage)
 	cmd.Flags().StringVarP(&kubeConfig, internal.KubeconfigFlag,
 		internal.KubeconfigShorthandFlag, internal.KubeConfigDefault, internal.KubeconfigUsage)
 	cmd.Flags().BoolVarP(&keepSource, keepSourceFlag, keepSourceShort, keepSourceDefault, keepSourceUsage)
 	cmd.Flags().StringVarP(&logLevel, internal.LogLevelFlag, internal.LogLevelFlagShorthand, internal.DefaultLogLevel, internal.LogLevelUsage)
+	cmd.Flags().StringVarP(&inputFileName, configFileFlag, configFlagShorthand, "", configFileUsage)
+	cmd.Flags().StringSliceVarP(&gvkSlice, gvkFlag, gvkFlagShorthand, []string{}, gvkUsage)
+	cmd.Flags().StringSliceVarP(&labelSlice, labelsFlag, labelsFlagShorthand, []string{}, labelsUsage)
 
 	return cmd
 }
 
 func runLogCollector(*cobra.Command, []string) error {
 	log.Info("---------    LOG COLLECTOR    --------- ")
-
-	if !clustered && len(namespaces) == 0 {
-		log.Fatalf("Either clustered option or at least one namespace in namespace option should be specified for collecting logs")
-	}
-
 	t := time.Now()
 	formatted := fmt.Sprintf("%d-%02d-%02dT%02d-%02d-%02d",
 		t.Year(), t.Month(), t.Day(),
 		t.Hour(), t.Minute(), t.Second())
+	logCollector.OutputDir = "triliovault-" + formatted
 
-	logCollector := logcollector.LogCollector{
-		KubeConfig:  kubeConfig,
-		OutputDir:   "triliovault-" + formatted,
-		CleanOutput: !keepSource,
-		Clustered:   clustered,
-		Namespaces:  namespaces,
-		Loglevel:    logLevel,
-	}
 	err := logCollector.CollectLogsAndDump()
 	if err != nil {
 		log.Fatalf("Log collection failed - %s", err.Error())
@@ -105,15 +61,31 @@ func Execute() {
 
 // preRun runs just before the run for any pre checks and setting up vars
 func preRun(*cobra.Command, []string) error {
+
+	err := logCollector.InitializeKubeClients()
+	if err != nil {
+		return err
+	}
+
+	// manage values file inputs
+	iErr := manageFileInputs()
+	if iErr != nil {
+		log.Fatalf("%s", iErr.Error())
+	}
+
 	// Setting Log Level
-	level, lErr := log.ParseLevel(logLevel)
+	level, lErr := log.ParseLevel(logCollector.Loglevel)
 	if lErr != nil {
 		log.Fatalf("Unable to Parse Log Level : %s", lErr.Error())
 	}
 	log.SetLevel(level)
 
-	if len(namespaces) != 0 && clustered {
+	if len(logCollector.Namespaces) != 0 && logCollector.Clustered {
 		log.Fatalf("Cannot use flag %s and %s scope at the same time", namespacesFlag, clusteredFlag)
+	}
+
+	if !logCollector.Clustered && len(logCollector.Namespaces) == 0 {
+		logCollector.Namespaces = append(logCollector.Namespaces, defaultNamespace)
 	}
 	return nil
 }

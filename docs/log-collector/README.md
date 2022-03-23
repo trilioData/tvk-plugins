@@ -90,6 +90,9 @@ Verify installation with `kubectl tvk-log-collector --help`
 | --kubeconfig            |   ~/.kube/config             |path to the kubernetes config
 | --keep-source-folder            | false            | Keep source directory and Zip both
 | --log-level                | INFO             | log level for debugging ( INFO ERROR DEBUG WARNING DEBUG )
+| --config-file |  | path to config file for log collector inputs
+| --gvk | | json string to give list of GVKs that want be collected other than log collector handles
+| --label-selector | | json string to give list of all label selector for resources to be collected other than log collector collects
 
 ## Examples
 
@@ -105,6 +108,54 @@ Verify installation with `kubectl tvk-log-collector --help`
 
         kubectl tvk-log-collector --clustered --keep-source-folder --log-level error
 
+- To collect logs by providing object gvk which log collector doesn't collect by default :
+
+        kubectl tvk-log-collector --clustered --gvks "/v1/pod","apps//Deployment"
+
+- To collect object logs by providing labels which log collector doesn't collect by default :
+        
+        kubectl tvk-log-collector --clustered  --labels "app=frontend,custom=label","app=backend"
+
+- To collect logs by providing config file :
+
+        kubectl tvk-log-collector --config-file <path/to/config/file.yaml>
+
+The format of data in a file should be according to the below example:
+
+```yaml
+keep-source-folder: true
+clustered: false
+namespaces:
+  - default
+  - tvk
+logLevel: INFO
+kubeConfig: path/to/config
+labels:
+  - matchLabels:
+      "app": "frontend"
+      "custom": "label"
+  - matchLabels:
+      "app": "backend"
+gvks:
+  - group: ""
+    version: ""
+    kind: pod
+  - group: apps
+    version: ""
+    kind: Deployment
+
+```
+Run a log collector with predefined values using a sample file. Download the file using below commands:
+
+By `wget`
+```shell script
+wget https://github.com/trilioData/tvk-plugins/tree/main/docs/log-collector/sample_input.yaml
+```
+
+By `curl`
+```shell script
+curl https://github.com/trilioData/tvk-plugins/tree/main/docs/log-collector/sample_input.yaml
+```
 
 ## Output
 This command will create `triliovault-<date-time>.zip` zip file containing cluster debugging information.
@@ -135,7 +186,16 @@ Role
 RoleBinding
 Namespaces
 Nodes
-```  
+```
+when clustered flag enabled
+```
+ClusterRole
+ClusterRoleBinding
+MutatingWebhookConfiguration
+ValidatingWebhookConfiguration
+PersistentVolume
+IngressClass
+```
 and ```TrilioVault Resources```
 
 ## OCP Specific Resources Considered for Log Collection:
