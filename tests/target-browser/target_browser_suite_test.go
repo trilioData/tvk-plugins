@@ -233,17 +233,8 @@ func exeCommand(args []string, cmdName string) bytes.Buffer {
 	)
 
 	opFormat, args = mergeArgs(args)
-	Eventually(func() bool {
-		command := exec.Command(targetBrowserBinaryFilePath, args...)
-		log.Infof("%s command is: %s", cmdName, command)
-		output, err = command.CombinedOutput()
-		if err != nil {
-			log.Errorf(fmt.Sprintf("Error to execute command %s", err.Error()))
-			log.Infof("%s data is %s", cmdName, output)
-		}
-		return strings.Contains(string(output), "502 Bad Gateway")
-	}, apiRetryTimeout, interval).Should(BeFalse())
-
+	output, err = runCommand(args, cmdName)
+	Expect(err).ShouldNot(HaveOccurred())
 	if cmdName == cmdBackup {
 		selector = targetbrowser.BackupSelector
 	}
@@ -258,6 +249,26 @@ func exeCommand(args []string, cmdName string) bytes.Buffer {
 		}
 	}
 	return formatOutput(string(output), selector)
+}
+
+func runCommand(args []string, cmdName string) ([]byte, error) {
+	var (
+		output []byte
+		err    error
+	)
+	Eventually(func() bool {
+		command := exec.Command(targetBrowserBinaryFilePath, args...)
+		log.Infof("%s command is: %s", cmdName, command)
+		output, err = command.CombinedOutput()
+		if err != nil {
+			log.Errorf(fmt.Sprintf("Error to execute command %s", err.Error()))
+			log.Infof("%s data is %s", cmdName, output)
+		}
+		return strings.Contains(string(output), "502 Bad Gateway") ||
+			strings.Contains(string(output), "503 Service Temporarily Unavailable")
+	}, apiRetryTimeout, interval).Should(BeFalse())
+
+	return output, err
 }
 
 func formatOutput(finalOutput string, selector []string) bytes.Buffer {
