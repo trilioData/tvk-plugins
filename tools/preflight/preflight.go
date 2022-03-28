@@ -9,6 +9,10 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/trilioData/tvk-plugins/internal"
+	"github.com/trilioData/tvk-plugins/tools/preflight/exec"
+	"github.com/trilioData/tvk-plugins/tools/preflight/wait"
+
 	version "github.com/hashicorp/go-version"
 	corev1 "k8s.io/api/core/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -19,12 +23,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
-
-	"github.com/trilioData/tvk-plugins/internal"
-	"github.com/trilioData/tvk-plugins/tools/preflight/exec"
-	"github.com/trilioData/tvk-plugins/tools/preflight/wait"
 )
 
 // RunOptions input options required for running preflight.
@@ -122,7 +123,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		o.Logger.Infoln("In cluster flag enabled. Skipping check for helm...")
 	} else {
 		o.Logger.Infof("Checking for required Helm version (>= %s)\n", MinHelmVersion)
-		err = o.checkHelmVersion(HelmBinaryName)
+		err = o.checkHelmVersion(HelmBinaryName, discClient)
 		if err != nil {
 			o.Logger.Errorf("%s Preflight check for helm version failed :: %s\n", cross, err.Error())
 			preflightStatus = false
@@ -131,8 +132,8 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		}
 	}
 
-	o.Logger.Infof("Checking for required kubernetes server version (>=%s)\n", MinK8sVersion)
-	err = o.checkKubernetesVersion(MinK8sVersion)
+	o.Logger.Infof("Checking for required kubernetes server version (>=%s)\n", minK8sVersion)
+	err = o.checkKubernetesVersion(minK8sVersion, clientSet)
 	if err != nil {
 		o.Logger.Errorf("%s Preflight check for kubernetes version failed :: %s\n", cross, err.Error())
 		preflightStatus = false
@@ -141,7 +142,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 	}
 
 	o.Logger.Infoln("Checking Kubernetes RBAC")
-	err = o.checkKubernetesRBAC(RBACAPIGroup, RBACAPIVersion)
+	err = o.checkKubernetesRBAC(RBACAPIGroup, RBACAPIVersion, discClient)
 	if err != nil {
 		o.Logger.Errorf("%s Preflight check for kubernetes RBAC failed :: %s\n", cross, err.Error())
 		preflightStatus = false
@@ -160,7 +161,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		preflightStatus = false
 	}
 	if !skipSnapshotCRDCheck {
-		err = o.checkAndCreateVolumeSnapshotCRDs(ctx, serverVersion.String())
+		err = o.checkAndCreateVolumeSnapshotCRDs(ctx, serverVersion.String(), runtimeClient)
 		if err != nil {
 			o.Logger.Errorf("Preflight check for VolumeSnapshot CRDs failed :: %s\n", err.Error())
 			preflightStatus = false
@@ -198,7 +199,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		}
 
 		if !skipSnapshotClassCheck {
-			err = o.checkStorageSnapshotClass(ctx, sc.Provisioner, prefVersion)
+			err = o.checkStorageSnapshotClass(ctx, sc.Provisioner, prefVersion, runtimeClient)
 			if err != nil {
 				o.Logger.Errorf("%s Preflight check for SnapshotClass failed :: %s\n", cross, err.Error())
 				storageSnapshotSuccess = false
@@ -284,8 +285,8 @@ func (o *Run) checkClusterAccess(ctx context.Context) error {
 }
 
 // checkHelmVersion checks whether minimum helm version is present.
-func (o *Run) checkHelmVersion(binaryName string) error {
-	err := o.validateHelmBinary(binaryName)
+func (o *Run) checkHelmVersion(binaryName string, cl *discovery.DiscoveryClient) error {
+	err := o.validateHelmBinary(binaryName, cl)
 	if err != nil {
 		return err
 	}
@@ -319,8 +320,8 @@ func (o *Run) validateHelmVersion(curVersion string) error {
 	return nil
 }
 
-func (o *Run) validateHelmBinary(binaryName string) error {
-	if internal.CheckIsOpenshift(discClient, internal.OcpAPIVersion) {
+func (o *Run) validateHelmBinary(binaryName string, cl *discovery.DiscoveryClient) error {
+	if internal.CheckIsOpenshift(cl, internal.OcpAPIVersion) {
 		o.Logger.Infof("%s Running OCP cluster. Helm not needed for OCP clusters\n", check)
 		return nil
 	}
@@ -335,8 +336,8 @@ func (o *Run) validateHelmBinary(binaryName string) error {
 }
 
 // checkKubernetesVersion checks whether minimum k8s version requirement is met
-func (o *Run) checkKubernetesVersion(minVersion string) error {
-	serverVer, err := clientSet.ServerVersion()
+func (o *Run) checkKubernetesVersion(minVersion string, cl *kubernetes.Clientset) error {
+	serverVer, err := cl.ServerVersion()
 	if err != nil {
 		return err
 	}
@@ -359,8 +360,8 @@ func (o *Run) checkKubernetesVersion(minVersion string) error {
 // checkKubernetesRBAC fetches the apiVersions present on k8s server.
 // And checks whether api group and version are present.
 // 'ExtractGroupVersions' func call is taken from kubectl mirror repo.
-func (o *Run) checkKubernetesRBAC(apiGroup, apiVersion string) error {
-	groupList, err := discClient.ServerGroups()
+func (o *Run) checkKubernetesRBAC(apiGroup, apiVersion string, cl *discovery.DiscoveryClient) error {
+	groupList, err := cl.ServerGroups()
 	if err != nil {
 		if !discovery.IsGroupDiscoveryFailedError(err) {
 			o.Logger.Errorf("Unable to fetch groups from server :: %s\n", err.Error())
@@ -391,18 +392,18 @@ func (o *Run) checkKubernetesRBAC(apiGroup, apiVersion string) error {
 
 // checkStorageSnapshotClass checks whether storageclass is present.
 // Checks whether storageclass and volumesnapshotclass provisioner are same.
-func (o *Run) checkStorageSnapshotClass(ctx context.Context, provisioner, prefVersion string) error {
+func (o *Run) checkStorageSnapshotClass(ctx context.Context, provisioner, prefVersion string, cl client.Client) error {
 	o.Logger.Infof("%s Storageclass - %s found on cluster\n", check, o.StorageClass)
 	if o.SnapshotClass == "" {
 		var err error
-		storageVolSnapClass, err = o.checkAndCreateSnapshotClassForProvisioner(ctx, prefVersion, provisioner)
+		storageVolSnapClass, err = o.checkAndCreateSnapshotClassForProvisioner(ctx, prefVersion, provisioner, cl)
 		if err != nil {
 			o.Logger.Errorf("%s %s\n", cross, err.Error())
 			return err
 		}
 	} else {
 		storageVolSnapClass = o.SnapshotClass
-		vsc, err := clusterHasVolumeSnapshotClass(ctx, o.SnapshotClass, runtimeClient)
+		vsc, err := clusterHasVolumeSnapshotClass(ctx, o.SnapshotClass, runtimeClient, clientSet)
 		if err != nil {
 			o.Logger.Errorf("%s %s\n", cross, err.Error())
 			return err
@@ -421,7 +422,8 @@ func (o *Run) checkStorageSnapshotClass(ctx context.Context, provisioner, prefVe
 }
 
 //  checkAndCreateSnapshotClassForProvisioner checks whether snapshot-class exist for a provisioner, and creates if not present
-func (o *Run) checkAndCreateSnapshotClassForProvisioner(ctx context.Context, prefVersion, provisioner string) (string, error) {
+func (o *Run) checkAndCreateSnapshotClassForProvisioner(ctx context.Context, prefVersion,
+	provisioner string, cl client.Client) (string, error) {
 	var err error
 
 	vsscList := unstructured.UnstructuredList{}
@@ -430,13 +432,13 @@ func (o *Run) checkAndCreateSnapshotClassForProvisioner(ctx context.Context, pre
 		Version: prefVersion,
 		Kind:    internal.VolumeSnapshotClassKind,
 	})
-	err = runtimeClient.List(ctx, &vsscList)
+	err = cl.List(ctx, &vsscList)
 	if err != nil {
 		return "", err
 	} else if len(vsscList.Items) == 0 {
 		o.Logger.Infof("no volume snapshot class for APIVersion - %s/%s found on cluster, attempting installation...",
 			StorageSnapshotGroup, prefVersion)
-		if cErr := o.createVolumeSnapshotClass(ctx, provisioner, prefVersion); cErr != nil {
+		if cErr := o.createVolumeSnapshotClass(ctx, provisioner, prefVersion, cl); cErr != nil {
 			return "", fmt.Errorf("error creating volume snapshot class having driver - %s"+
 				" :: %s", provisioner, cErr.Error())
 		}
@@ -455,7 +457,7 @@ func (o *Run) checkAndCreateSnapshotClassForProvisioner(ctx context.Context, pre
 	if sscName == "" {
 		o.Logger.Infof("no matching volume snapshot class having driver "+
 			"same as provisioner - %s found on cluster, attempting installation...", provisioner)
-		if cErr := o.createVolumeSnapshotClass(ctx, provisioner, prefVersion); cErr != nil {
+		if cErr := o.createVolumeSnapshotClass(ctx, provisioner, prefVersion, cl); cErr != nil {
 			return "", fmt.Errorf("error creating volume snapshot class having driver - %s"+
 				" :: %s", provisioner, cErr.Error())
 		}
@@ -468,7 +470,7 @@ func (o *Run) checkAndCreateSnapshotClassForProvisioner(ctx context.Context, pre
 	return sscName, nil
 }
 
-func (o *Run) createVolumeSnapshotClass(ctx context.Context, driver, prefVersion string) error {
+func (o *Run) createVolumeSnapshotClass(ctx context.Context, driver, prefVersion string, cl client.Client) error {
 	vscUnstrObj := &unstructured.Unstructured{}
 	vscUnstrObj.SetUnstructuredContent(map[string]interface{}{
 		"driver":         driver,
@@ -481,7 +483,7 @@ func (o *Run) createVolumeSnapshotClass(ctx context.Context, driver, prefVersion
 	})
 	vscUnstrObj.SetName(defaultVSCName)
 
-	if cErr := runtimeClient.Create(ctx, vscUnstrObj); cErr != nil {
+	if cErr := cl.Create(ctx, vscUnstrObj); cErr != nil {
 		return cErr
 	}
 
@@ -504,7 +506,7 @@ func (o *Run) createVolumeSnapshotClass(ctx context.Context, driver, prefVersion
 }
 
 //  checkAndCreateVolumeSnapshotCRDs checks and creates volumesnapshot and related CRDs if not present on cluster.
-func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context, serverVersion string) error {
+func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context, serverVersion string, cl client.Client) error {
 
 	prefCRDVersion, gErr := getPrefSnapshotClassVersion(serverVersion)
 	if gErr != nil {
@@ -514,7 +516,7 @@ func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context, serverVersio
 	var errs []error
 	for _, crd := range VolumeSnapshotCRDs {
 		var crdObj = &apiextensions.CustomResourceDefinition{}
-		if err := runtimeClient.Get(ctx, client.ObjectKey{Name: crd}, crdObj); err != nil {
+		if err := cl.Get(ctx, client.ObjectKey{Name: crd}, crdObj); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return fmt.Errorf("error getting volume snapshot class CRD :: %s", err.Error())
 			}
@@ -532,7 +534,7 @@ func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context, serverVersio
 				continue
 			}
 
-			if cErr := runtimeClient.Create(ctx, unmarshalCRDObj); cErr != nil {
+			if cErr := cl.Create(ctx, unmarshalCRDObj); cErr != nil {
 				errs = append(errs, cErr)
 				continue
 			}
@@ -586,8 +588,7 @@ func (o *Run) checkDNSResolution(ctx context.Context, execCommand []string, podN
 	logPodScheduleStmt(pod, o.Logger)
 
 	op := exec.Options{
-		Namespace: o.Namespace,
-		//Command:       []string{"nslookup", "kubernetes.default"},
+		Namespace:     o.Namespace,
 		Command:       execCommand,
 		PodName:       pod.GetName(),
 		ContainerName: dnsContainerName,
@@ -601,7 +602,7 @@ func (o *Run) checkDNSResolution(ctx context.Context, execCommand []string, podN
 	}
 
 	// Delete DNS pod when resolution is successful
-	err = deleteK8sResource(ctx, pod)
+	err = deleteK8sResource(ctx, pod, runtimeClient)
 	if err != nil {
 		o.Logger.Warnf("Problem occurred deleting DNS pod - '%s' :: %s", pod.GetName(), err.Error())
 	} else {
@@ -636,10 +637,9 @@ func (o *Run) checkVolumeSnapshot(ctx context.Context, nameSuffix string) error 
 		return err
 	}
 	execOp = exec.Options{
-		Namespace: o.Namespace,
-		Command:   execRestoreDataCheckCommand,
-		PodName:   restorePod.GetName(),
-		//ContainerName: BusyboxContainerName,
+		Namespace:     o.Namespace,
+		Command:       execRestoreDataCheckCommand,
+		PodName:       restorePod.GetName(),
 		ContainerName: restorePod.Spec.Containers[0].Name,
 		Executor:      &exec.DefaultRemoteExecutor{},
 		Config:        restConfig,
@@ -659,7 +659,7 @@ func (o *Run) checkVolumeSnapshot(ctx context.Context, nameSuffix string) error 
 	}
 
 	o.Logger.Infof("Deleting source pod - %s\n", srcPod.GetName())
-	err = deleteK8sResource(ctx, srcPod)
+	err = deleteK8sResource(ctx, srcPod, runtimeClient)
 	if err != nil {
 		return err
 	}

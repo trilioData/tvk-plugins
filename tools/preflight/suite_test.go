@@ -2,30 +2,29 @@ package preflight
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	vsnapv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	vsnapv1beta1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1"
+	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
+	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	clientGoScheme "k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/discovery"
+	goclient "k8s.io/client-go/kubernetes"
+	clientGoScheme "k8s.io/client-go/kubernetes/scheme"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 
 	"github.com/trilioData/tvk-plugins/internal"
-	testutils "github.com/trilioData/tvk-plugins/tests/test_utils"
 )
 
 const (
@@ -37,6 +36,7 @@ const (
 	defaultPodCPULimit       = "500m"
 	defaultPodMemoryLimit    = "128Mi"
 	defaultLogLevel          = "info"
+	defaultCleanupGVKListLen = 2
 
 	storageClassGroup = "storage.k8s.io"
 
@@ -45,39 +45,29 @@ const (
 	invalidHelmVersion       = "1.0.0"
 	invalidK8sVersion        = "99.99.0"
 	invalidRBACAPIGroup      = "invalid.rbac.k8s.io"
-	invalidStorageClass      = "invalid-sc"
 	invalidSnapshotClass     = "invalid-vssc"
-	invalidService           = "invalid-svc"
-	invalidNamespace         = "invalid-ns"
-	invalidPVC               = "invalid-pvc"
 	invalidGroup             = "invalid.group.k8s.io"
 
-	testNameSuffix       = "abcdef"
-	testPodPrefix        = "test-pod-"
-	testPVCPrefix        = "test-pvc-"
-	testSnapPrefix       = "test-snap-"
-	testStorageClass     = "unit-test-sc"
-	testProvisioner      = "test.csi.k8s.io"
-	testSnapshotClass    = "ut-snapshot-class"
-	testDriver           = "test.snapshot.driver.io"
-	testService          = "unit-test-svc"
-	testContainerName    = "test-container"
-	reclaimDelete        = "Delete"
-	bindingModeImmediate = "Immediate"
+	testNameSuffix    = "abcdef"
+	testPodPrefix     = "test-pod-"
+	testSnapshotClass = "ut-snapshot-class"
+	testDriver        = "test.snapshot.driver.io"
+	testMinK8sVersion = "1.10.0"
+	testContainerName = "test-container"
+
+	installNs = "default"
 )
 
 var (
 	ctx           = context.Background()
-	k8sClient     client.Client
+	k8sClient     *goclient.Clientset
+	k8sDiscClient *discovery.DiscoveryClient
+	k8sManager    ctrl.Manager
 	testEnv       = &envtest.Environment{}
 	envTestScheme *runtime.Scheme
 	logger        *logrus.Logger
-	run           *Run
 
-	cancel     context.CancelFunc
-	testScheme *runtime.Scheme
 	contClient client.Client
-	installNs  = testutils.GetInstallNamespace()
 
 	currentDir, _      = os.Getwd()
 	projectRoot        = filepath.Dir(filepath.Dir(currentDir))
@@ -89,8 +79,6 @@ var (
 
 	runOps     Run
 	cleanupOps Cleanup
-
-	execTestServiceCmd = []string{"nslookup", fmt.Sprintf("%s.%s", testService, installNs)}
 )
 
 func TestPreflight(t *testing.T) {
@@ -109,20 +97,11 @@ var _ = BeforeSuite(func() {
 	Expect(vsnapv1beta1.AddToScheme(envTestScheme)).To(BeNil())
 	Expect(clientGoScheme.AddToScheme(envTestScheme)).To(BeNil())
 
-	initRunOps()
-	err := InitKubeEnv(runOps.Kubeconfig)
-	Expect(err).To(BeNil())
-
-	initCleanupOps()
-
-	initServerClients()
-
-	// starting the env cluster
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
+	k8sManager, err = ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: envTestScheme,
 	})
 	Expect(err).ToNot(HaveOccurred())
@@ -132,16 +111,24 @@ var _ = BeforeSuite(func() {
 		Expect(err).ToNot(HaveOccurred())
 	}()
 
-	k8sClient = k8sManager.GetClient()
+	k8sClient, err = goclient.NewForConfig(cfg)
+	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).ToNot(BeNil())
-	runtimeClient = k8sClient
+	k8sDiscClient = k8sClient.DiscoveryClient
+	Expect(k8sDiscClient).ToNot(BeNil())
+	contClient = k8sManager.GetClient()
+	Expect(contClient).ToNot(BeNil())
+
+	initRunOps()
+	initCleanupOps()
 
 	logger = logrus.New()
 	logger.SetFormatter(&logrus.TextFormatter{ForceColors: true})
 })
 
 var _ = AfterSuite(func() {
-	cancel()
+	err := testEnv.Stop()
+	Expect(err).To(BeNil())
 })
 
 func initRunOps() {
@@ -182,17 +169,6 @@ func getTestCommonOps() CommonOptions {
 		Kubeconfig: os.Getenv(internal.KubeconfigEnv),
 		Namespace:  installNs,
 		LogLevel:   defaultLogLevel,
-		Logger: logger,
+		Logger:     logger,
 	}
-}
-
-func initServerClients() {
-	testScheme = runtime.NewScheme()
-	kubeconfig := os.Getenv(internal.KubeconfigEnv)
-
-	utilruntime.Must(corev1.AddToScheme(testScheme))
-	kubeEnv, err := internal.NewEnv(kubeconfig, testScheme)
-	Expect(err).To(BeNil())
-	k8sClient = kubeEnv.GetClientset()
-	contClient = kubeEnv.GetRuntimeClient()
 }

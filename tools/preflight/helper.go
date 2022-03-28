@@ -270,15 +270,16 @@ func getSemverVersion(ver string) (*semVersion.Version, error) {
 }
 
 //  clusterHasVolumeSnapshotClass checks and returns volume snapshot class if present on cluster.
-func clusterHasVolumeSnapshotClass(ctx context.Context, snapshotClass string, cl client.Client) (*unstructured.Unstructured, error) {
-	if cl == nil {
+func clusterHasVolumeSnapshotClass(ctx context.Context, snapshotClass string,
+	runtClient client.Client, kubeClient *goclient.Clientset) (*unstructured.Unstructured, error) {
+	if runtClient == nil {
 		return nil, fmt.Errorf("runtime client object is nil, cannot fetch snapshot class from server")
 	}
 	var (
 		prefVersion string
 		err         error
 	)
-	prefVersion, err = GetServerPreferredVersionForGroup(StorageSnapshotGroup, clientSet)
+	prefVersion, err = GetServerPreferredVersionForGroup(StorageSnapshotGroup, kubeClient)
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +289,7 @@ func clusterHasVolumeSnapshotClass(ctx context.Context, snapshotClass string, cl
 		Version: prefVersion,
 		Kind:    internal.VolumeSnapshotClassKind,
 	})
-	err = cl.Get(ctx, client.ObjectKey{
+	err = runtClient.Get(ctx, client.ObjectKey{
 		Name: snapshotClass,
 	}, u)
 	if err != nil {
@@ -595,10 +596,10 @@ func removeFinalizer(ctx context.Context, obj client.Object) error {
 	return nil
 }
 
-func deleteK8sResource(ctx context.Context, obj client.Object) error {
+func deleteK8sResource(ctx context.Context, obj client.Object, cl client.Client) error {
 	var err error
 
-	err = runtimeClient.Delete(ctx, obj, client.DeleteOption(client.GracePeriodSeconds(deletionGracePeriod)))
+	err = cl.Delete(ctx, obj, client.DeleteOption(client.GracePeriodSeconds(deletionGracePeriod)))
 	if err != nil {
 		return fmt.Errorf("problem occurred deleting %s - %s :: %s", obj.GetName(), obj.GetNamespace(), err.Error())
 	}
@@ -609,7 +610,7 @@ func deleteK8sResource(ctx context.Context, obj client.Object) error {
 	}
 	updatedRes := &unstructured.Unstructured{}
 	updatedRes.SetGroupVersionKind(gvk)
-	err = runtimeClient.Get(ctx, client.ObjectKey{
+	err = cl.Get(ctx, client.ObjectKey{
 		Name:      obj.GetName(),
 		Namespace: obj.GetNamespace(),
 	}, updatedRes)
