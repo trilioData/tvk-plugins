@@ -12,7 +12,7 @@ COPY tools/preflight tools/preflight
 COPY internal/ internal/
 COPY vendor/ vendor/
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOFLAGS=-mod=vendor go build -a -o preflight github.com/trilioData/tvk-plugins/cmd/preflight
+RUN CGO_ENABLED=0 GOOS=linux GOFLAGS=-mod=vendor go build -a -o preflight github.com/trilioData/tvk-plugins/cmd/preflight
 
 FROM registry.access.redhat.com/ubi8/ubi:latest as final
 LABEL name=tvk-plugins-preflight
