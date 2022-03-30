@@ -111,7 +111,7 @@ func (l *LogCollector) CollectLogsAndDump() error {
 	}
 
 	// check for clean output flag. if true, clean.
-	if l.CleanOutput {
+	if !l.CleanOutput {
 		err := os.RemoveAll(l.OutputDir)
 		if err != nil {
 			return err
@@ -369,7 +369,7 @@ func (l *LogCollector) zipDir() error {
 		log.Errorf("Unable to walk thorugh directory : %s", err.Error())
 		return err
 	}
-	if l.CleanOutput {
+	if !l.CleanOutput {
 		err = os.RemoveAll(l.OutputDir)
 		if err != nil {
 			log.Errorf("Unable to remove directory : %s", err.Error())
@@ -403,7 +403,7 @@ func (l *LogCollector) filterResourceObjects(resourcePath string,
 
 	if resource.Name == ClusterServiceVersion {
 		log.Infof("Filtering '%s' Resource", resource.Kind)
-		allObjects = filterTvkCSV(l.getResourceObjects(resourcePath, resource))
+		return filterTvkCSV(l.getResourceObjects(resourcePath, resource)), nil
 	}
 
 	if ((!nonLabeledResources.Has(resource.Kind) && resource.Namespaced) ||

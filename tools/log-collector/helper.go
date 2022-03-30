@@ -233,9 +233,10 @@ func (l *LogCollector) filterTvkResourcesByLabel(allObjects *unstructured.Unstru
 	for _, object := range allObjects.Items {
 		objectLabel := object.GetLabels()
 		if len(objectLabel) != 0 {
-			if checkLabelExist(objectLabel, K8STrilioVaultLabel) ||
-				checkLabelExist(objectLabel, K8STrilioVaultOpLabel) ||
-				MatchLabelSelectors(objectLabel, l.LabelSelectors) {
+			if checkLabelExist(K8STrilioVaultLabel, objectLabel) ||
+				checkLabelExist(K8STrilioVaultOpLabel, objectLabel) ||
+				(len(l.LabelSelectors) != 0 && MatchLabelSelectors(objectLabel, l.LabelSelectors)) {
+				log.Infof(" Label Matched %s", object.GetKind())
 				objects.Items = append(objects.Items, object)
 			}
 		}
