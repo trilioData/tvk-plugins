@@ -581,7 +581,7 @@ func (o *Run) checkDNSResolution(ctx context.Context) error {
 	}
 
 	// Delete DNS pod when resolution is successful
-	err = deleteK8sResourceWithForceTimeout(ctx, pod, o.Logger)
+	err = deleteK8sResource(ctx, pod)
 	if err != nil {
 		o.Logger.Warnf("Problem occurred deleting DNS pod - '%s' :: %s", pod.GetName(), err.Error())
 	} else {
@@ -709,7 +709,7 @@ func (o *Run) checkVolumeSnapshot(ctx context.Context) error {
 		return err
 	}
 	o.Logger.Infof("Deleting source pod - %s\n", srcPod.GetName())
-	err = deleteK8sResourceWithForceTimeout(ctx, srcPod, o.Logger)
+	err = deleteK8sResource(ctx, srcPod)
 	if err != nil {
 		return err
 	}
