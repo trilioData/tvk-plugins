@@ -47,38 +47,46 @@ This `UID` is particularly useful to perform cleanup of resources created during
 
 The following checks are included in preflight:
 
-1. `check-kubectl` - Ensures **kubectl** utility is present on system
-2. `check-kubectl-access` - Ensures **kubectl** is pointed to k8s cluster (i.e can access the remote target cluster)
+1. `check-kubectl` - Ensures **kubectl** utility is present on system. This check is skipped if `--in-cluster` flag is enabled.
+
+2. `check-cluster-access` - Ensures preflight can access the remote target cluster.
+
 3. `check-helm-version` -
     1. Ensures **helm**[version>=v3.x.x] utility is present on system and pointed to the cluster
     2. Aborts successfully for Openshift cluster
+    3. This check is skipped if `--in-cluster` flag is enabled.
+
 4. `check-kubernetes-version` - Ensures minimum Kubernetes version >= 1.18.x
+
 5. `check-kubernetes-rbac` - Ensures RBAC is enabled in cluster
-6. `check-storage-snapshot-class` -
+
+6. `check-csi` -
+   1. Checks if the following CSI apis are present on the cluster -
+       - "volumesnapshotclasses.snapshot.storage.k8s.io"
+       - "volumesnapshotcontents.snapshot.storage.k8s.io"
+       - "volumesnapshots.snapshot.storage.k8s.io"
+   2. If not present, creates the missing CSI apis as per the k8s server version. If k8s server version is 1.19, installs the above CSI apis that support v1beta1 version. If k8s server version is 1.20+, installs the above CSI apis that support both v1 and v1beta1 version.
+
+7. `check-storage-snapshot-class` -
     1. Ensures provided storageClass is present in cluster
         1. Provided storageClass's `provisioner` [JSON Path: `storageclass.provisioner`] should match with provided volumeSnapshotClass's `driver`[JSON Path: `volumesnapshotclass.driver`]
-        2. If volumeSnapshotClass is not provided then, volumeSnapshotClass which satisfies condition `[i]` will be selected.
-        If there's are multiple volumeSnapshotClasses satisfying condition `[i]`, default volumeSnapshotClass[which has annotation `snapshot.storage.kubernetes.io/is-default-class: "true"` set]
-        will be used for further pre-flight checks.
-        3. Pre-flight check fails if no volumeSnapshotClass is found[after considering all above mentioned conditions].
+        2. If volumeSnapshotClass is not provided then, volumeSnapshotClass which satisfies condition `[i]` will be selected. If there's are multiple volumeSnapshotClasses satisfying condition `[i]`, default volumeSnapshotClass[which has annotation `snapshot.storage.kubernetes.io/is-default-class: "true"` set] will be used for further pre-flight checks.
+        3. If none of the above conditions is satisfied, then a volume snapshot class is generated with the name `preflight-generated-snapshot-class` with the same `driver`[JSON Path: `volumesnapshotclass.driver`] as storageClass's `provisioner` [JSON Path: `storageclass.provisioner`]
     2. Ensures at least one volumeSnapshotClass is marked as *default* in cluster if user has not provided volumeSnapshotClass as input.
-7. `check-csi` -
-    1. Ensure following CSI apis are present in cluster -
-        - "volumesnapshotclasses.snapshot.storage.k8s.io"
-        - "volumesnapshotcontents.snapshot.storage.k8s.io"
-        - "volumesnapshots.snapshot.storage.k8s.io"
-9. `check-dns-resolution` -
+
+8. `check-dns-resolution` -
     1. Ensure DNS resolution works as expected in the cluster
         - Creates a new pod (**dnsutils-${UID}**) then resolves **kubernetes.default** service from inside the pod
-10. `check_volume_snapshot` - 
-    1. Ensure Volume Snapshot functionality works as expected for both mounted and unmounted PVCs
-        1. Creates a Pod and PVC (**source-pod-${UID}** and **source-pvc-${UID}**).
-        2. Creates Volume snapshot (**snapshot-source-pvc-${UID}**) from the mounted PVC(**source-pvc-${UID}**).
-        3. Creates volume snapshot of unmounted PVC(**source-pvc-${UID}** [deletes the source pod before snapshotting].
-        4. Restores PVC(**restored-pvc-${UID}**) from volume snapshot of mounted PVC and creates a Pod(**restored-pod-${UID}**) and attaches to restored PVC.
-        5. Restores PVC(**unmounted-restored-pvc-${UID}**) from volume snapshot from unmounted PVC and creates a Pod(**unmounted-restored-pod-${UID}**) and attaches to restored PVC.
-        6. Ensure data in restored PVCs is correct[checks for a file[/demo/data/sample-file.txt] which was present at the time of snapshotting].
-    2. If `check-storage-snapshot-class` fails then, `check_volume_snapshot` check is skipped.
+
+9. `check_volume_snapshot` - 
+   1. Ensure Volume Snapshot functionality works as expected for both mounted and unmounted PVCs
+       1. Creates a Pod and PVC (**source-pod-${UID}** and **source-pvc-${UID}**).
+       2. Creates Volume snapshot (**snapshot-source-pvc-${UID}**) from the mounted PVC(**source-pvc-${UID}**).
+       3. Creates volume snapshot of unmounted PVC(**source-pvc-${UID}** [deletes the source pod before snapshotting].
+       4. Restores PVC(**restored-pvc-${UID}**) from volume snapshot of mounted PVC and creates a Pod(**restored-pod-${UID}**) and attaches to restored PVC.
+       5. Restores PVC(**unmounted-restored-pvc-${UID}**) from volume snapshot from unmounted PVC and creates a Pod(**unmounted-restored-pod-${UID}**) and attaches to restored PVC.
+       6. Ensure data in restored PVCs is correct[checks for a file[/demo/data/sample-file.txt] which was present at the time of snapshotting].
+   2. If `check-storage-snapshot-class` fails then, `check_volume_snapshot` check is skipped.
 
 After all above checks are performed, cleanup of all the intermediate resources created during preflight checks' execution is done.
 
@@ -152,12 +160,15 @@ NOT SUPPORTED
 The preflight binary has three common flags to both the subcommands.
 
 #### Common Flags
-| Parameter     | Shorthand  | Default       | Description   |    
-| :-------------| :----------|:-------------:| :-------------|  
-| --namespace   | -n       | default        | Namespace of the cluster in which resources will be created, preflight checks will be performed or resources will cleaned. Default is 'default' namespace of the cluster (Optional)
-| --kubeconfig  | -k       | ~/.kube/config | kubeconfig file path (Optional)
-| --log-level   | -l       | INFO           | Logging level for the preflight check and cleanup. Logging levels are FATAL, ERROR, WARN, INFO, DEBUG (Optional)
-| --config-file  | -f       |                | yaml file path to provide inputs for run and cleanup subcommand (Optional)
+| Parameter     | Shorthand |    Default     | Description                                                                                                                                                                         |    
+|:--------------|:----------|:--------------:|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| --namespace   | -n        |    default     | Namespace of the cluster in which resources will be created, preflight checks will be performed or resources will cleaned. Default is 'default' namespace of the cluster (Optional) |
+| --kubeconfig  | -k        | ~/.kube/config | kubeconfig file path (Optional)                                                                                                                                                     |
+| --log-level   | -l        |      INFO      | Logging level for the preflight check and cleanup. Logging levels are FATAL, ERROR, WARN, INFO, DEBUG (Optional)                                                                    |
+| --config-file | -f        |                | yaml file path to provide inputs for run and cleanup subcommand (Optional)                                                                                                          |
+| --in-cluster  | -i        |     false      | Skip kubectl and helm binary check if running inside a container.                                                                                                                   |
+
+#####Note: --in-cluster flag should only be set when running inside a container where kubectl and helm checks are not required.
 
 The inputs for running preflight checks and cleanup can be provided through a single file.
 The format of data in a file should be according to the below example:
@@ -167,6 +178,7 @@ run:
   snapshotClass: <snapshot-class>
   namespace: <perform preflight checks in the given namespace>
   kubeconfig: <kubeconfig file path>
+  inCluster: <bool>
   serviceAccount: <service-account>
   localRegistry: <complete path of the registry to pull the images from>
   imagePullSecret: <Name of the secret while pulling images from the local registry>
