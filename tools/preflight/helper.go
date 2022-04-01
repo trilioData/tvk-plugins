@@ -38,7 +38,7 @@ const (
 	windowsCrossSymbol = "[X]"
 
 	minHelmVersion = "3.0.0"
-	minK8sVersion  = "1.18.0"
+	minK8sVersion  = "1.19.0"
 
 	rbacAPIGroup   = "rbac.authorization.k8s.io"
 	rbacAPIVersion = "v1"
