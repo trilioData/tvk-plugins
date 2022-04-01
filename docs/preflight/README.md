@@ -49,7 +49,7 @@ The following checks are included in preflight:
 
 1. `check-kubectl` - Ensures **kubectl** utility is present on system. This check is skipped if `--in-cluster` flag is enabled.
 
-2. `check-kubectl-access` - Ensures **kubectl** is pointed to k8s cluster (i.e can access the remote target cluster). This check is skipped if `--in-cluster` flag is enabled.
+2. `check-cluster-access` - Ensures preflight can access the remote target cluster.
 
 3. `check-helm-version` -
     1. Ensures **helm**[version>=v3.x.x] utility is present on system and pointed to the cluster
