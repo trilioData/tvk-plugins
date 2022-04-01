@@ -56,7 +56,7 @@ The following checks are included in preflight:
     2. Aborts successfully for Openshift cluster
     3. This check is skipped if `--in-cluster` flag is enabled.
 
-4. `check-kubernetes-version` - Ensures minimum Kubernetes version >= 1.18.x
+4. `check-kubernetes-version` - Ensures minimum Kubernetes version >= 1.19.x
 
 5. `check-kubernetes-rbac` - Ensures RBAC is enabled in cluster
 
