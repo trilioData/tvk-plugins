@@ -580,20 +580,51 @@ func removeFinalizer(ctx context.Context, obj client.Object) error {
 	return nil
 }
 
-func deleteK8sResourceWithForceTimeout(ctx context.Context, obj client.Object, logger *logrus.Logger) error {
+func deleteK8sResource(ctx context.Context, obj client.Object) error {
 	var err error
-	err = removeFinalizer(ctx, obj)
-	if err != nil {
-		logger.Warnf("problem occurred while removing finalizers of %s - %s :: %s",
-			obj.GetObjectKind().GroupVersionKind().Kind, obj.GetName(), err.Error())
-	}
 
 	err = runtimeClient.Delete(ctx, obj, client.DeleteOption(client.GracePeriodSeconds(deletionGracePeriod)))
 	if err != nil {
 		return fmt.Errorf("problem occurred deleting %s - %s :: %s", obj.GetName(), obj.GetNamespace(), err.Error())
 	}
 
+	gvk := obj.GetObjectKind().GroupVersionKind()
+	if gvk.Empty() {
+		gvk = GetObjGVKFromStructuredType(obj)
+	}
+	updatedRes := &unstructured.Unstructured{}
+	updatedRes.SetGroupVersionKind(gvk)
+	err = runtimeClient.Get(ctx, client.ObjectKey{
+		Name:      obj.GetName(),
+		Namespace: obj.GetNamespace(),
+	}, updatedRes)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	err = removeFinalizer(ctx, updatedRes)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// GetObjGVKFromStructuredType returns gvk for structured object kind
+func GetObjGVKFromStructuredType(obj client.Object) schema.GroupVersionKind {
+
+	switch obj.(type) {
+	case *corev1.Pod:
+		return corev1.SchemeGroupVersion.WithKind(internal.PodKind)
+
+	case *corev1.PersistentVolumeClaim:
+		return corev1.SchemeGroupVersion.WithKind(internal.PersistentVolumeClaimKind)
+	}
+
+	return schema.GroupVersionKind{}
 }
 
 // getDefaultRetryBackoffParams returns a backoff object with timeout of approx. 5 min
