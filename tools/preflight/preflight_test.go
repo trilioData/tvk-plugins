@@ -33,6 +33,10 @@ func preflightTestCases(serverVersion string) {
 
 	Describe("Preflight unit test cases", func() {
 
+		BeforeEach(func() {
+			run = &Run{CommonOptions: CommonOptions{Logger: logger}}
+		})
+
 		Describe("Preflight run command volume snapshot CRD test cases", func() {
 
 			AfterEach(func() {
@@ -87,25 +91,53 @@ func preflightTestCases(serverVersion string) {
 				deleteAllVolumeSnapshotCRD()
 			})
 
-			Context("When preflight run command executed with/without volume snapshot class on cluster", func() {
+			Context("When preflight run command executed without volume snapshot class flag", func() {
 
 				It("Should skip installation if volume snapshot class is present", func() {
 					installVolumeSnapshotClass(crVersion, dummyProvisioner, defaultVSCName)
 					Expect(run.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion)).To(BeNil())
-					checkVolumeSnapshotClassExists(crVersion, defaultVSCName)
+					checkVolumeSnapshotClassExists(crVersion)
 				})
 
 				It("Should install volume snapshot class with default name when volume snapshot class doesn't exists", func() {
 					deleteAllVolumeSnapshotClass(crVersion)
 					Expect(run.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion)).To(BeNil())
-					checkVolumeSnapshotClassExists(crVersion, defaultVSCName)
+					checkVolumeSnapshotClassExists(crVersion)
 				})
 
 				It("Should install volume snapshot class with default name when volume snapshot class exists but with"+
 					" a different driver", func() {
 					installVolumeSnapshotClass(crVersion, "dummy-provisioner-2", "another-snapshot-class")
 					Expect(run.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion)).To(BeNil())
-					checkVolumeSnapshotClassExists(crVersion, defaultVSCName)
+					checkVolumeSnapshotClassExists(crVersion)
+				})
+
+			})
+
+			Context("When preflight run command executed with volume snapshot class name on cluster", func() {
+
+				It("Should skip installation if volume snapshot class with provided name is present", func() {
+					run.SnapshotClass = defaultVSCName
+					installVolumeSnapshotClass(crVersion, dummyProvisioner, defaultVSCName)
+					Expect(run.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion)).To(BeNil())
+					checkVolumeSnapshotClassExists(crVersion)
+				})
+
+				It("Should fail when volume snapshot class with provided name doesn't exist", func() {
+					run.SnapshotClass = "abc"
+					err = run.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion)
+					Expect(err).NotTo(BeNil())
+					Expect(err.Error()).To(ContainSubstring("not found"))
+				})
+
+				It("Should create volume snapshot class when volume snapshot CRDs doesn't exist", func() {
+					run.SnapshotClass = defaultVSCName
+					deleteAllVolumeSnapshotCRD()
+					Expect(run.checkAndCreateVolumeSnapshotCRDs(ctx, serverVersion)).To(BeNil())
+					checkVolumeSnapshotCRDExists()
+					Expect(run.SnapshotClass).To(Equal(""))
+					Expect(run.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion)).To(BeNil())
+					checkVolumeSnapshotClassExists(crVersion)
 				})
 
 			})
@@ -174,16 +206,16 @@ func checkVolumeSnapshotCRDExists() {
 	}
 }
 
-func checkVolumeSnapshotClassExists(version, vscName string) {
+func checkVolumeSnapshotClassExists(version string) {
 	vscUnstrObj := &unstructured.Unstructured{}
 	vscUnstrObj.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   StorageSnapshotGroup,
 		Version: version,
 		Kind:    internal.VolumeSnapshotClassKind,
 	})
-	vscUnstrObj.SetName(vscName)
+	vscUnstrObj.SetName(defaultVSCName)
 	Eventually(func() error {
-		return k8sClient.Get(ctx, types.NamespacedName{Name: vscName}, vscUnstrObj)
+		return k8sClient.Get(ctx, types.NamespacedName{Name: defaultVSCName}, vscUnstrObj)
 	}, timeout, interval).ShouldNot(HaveOccurred())
 }
 

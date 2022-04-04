@@ -258,15 +258,8 @@ func getSemverVersion(ver string) (*semVersion.Version, error) {
 }
 
 //  clusterHasVolumeSnapshotClass checks and returns volume snapshot class if present on cluster.
-func clusterHasVolumeSnapshotClass(ctx context.Context, snapshotClass, namespace string) (*unstructured.Unstructured, error) {
-	var (
-		prefVersion string
-		err         error
-	)
-	prefVersion, err = GetServerPreferredVersionForGroup(StorageSnapshotGroup, clientSet)
-	if err != nil {
-		return nil, err
-	}
+func clusterHasVolumeSnapshotClass(ctx context.Context, snapshotClass, namespace, prefVersion string) (*unstructured.Unstructured, error) {
+	var err error
 	u := &unstructured.Unstructured{}
 	u.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   StorageSnapshotGroup,
