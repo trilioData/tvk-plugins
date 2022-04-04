@@ -5,35 +5,145 @@ metadata:
 spec:
   homepage: https://github.com/trilioData/tvk-plugins/blob/main/docs/preflight/README.md
   shortDescription: TVK application preflight check for k8s cluster
-  version: v1.1.0-rc4
+  version: v2.0.0-rc.1
   caveats: |
     Curl and Git neeed to be installed on system for Krew index update to work properly
   platforms:
   - selector:
-      matchExpressions:
-      - key: os
-        operator: In
-        values:
-        - darwin
-        - linux
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc4/preflight.tar.gz
-    sha256: 395db720193afaeebc2f3129c60b38636ad437569565f23c6c56a023ed2ba145
+      matchLabels:
+        os: linux
+        arch: amd64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.0.0-rc.1/preflight_v2.0.0-rc.1_linux_amd64.tar.gz
+    sha256: bae5d648f188e769e530b175d9af11d59a9ae72102e4c9e6271abb591561a862
     bin: preflight
     files:
-    - from: preflight/*
+    - from: '*'
       to: .
+  - selector:
+      matchLabels:
+        os: linux
+        arch: arm64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.0.0-rc.1/preflight_v2.0.0-rc.1_linux_arm64.tar.gz
+    sha256: 47625c50db50d8c2b3138352987073360df4b6bb3f170aa7fd9ba9bbed2c778a
+    bin: preflight
+    files:
+    - from: '*'
+      to: .
+  - selector:
+      matchLabels:
+        os: linux
+        arch: arm
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.0.0-rc.1/preflight_v2.0.0-rc.1_linux_arm.tar.gz
+    sha256: 0ac84184380c5067c106ab2c2ec59c05ba6205d45f1bbbef1a1b3f5b743da445
+    bin: preflight
+    files:
+      - from: '*'
+        to: .
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: amd64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.0.0-rc.1/preflight_v2.0.0-rc.1_darwin_amd64.tar.gz
+    sha256: d1402fbe1af5133a8dc07075b1f5edf32fafa7768fa7a0908c662fb8c05879c4
+    bin: preflight
+    files:
+    - from: '*'
+      to: .
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: arm64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.0.0-rc.1/preflight_v2.0.0-rc.1_darwin_arm64.tar.gz
+    sha256: 71b0a552b500dc3d951b0b9ec91158786734794db2ee43e21fe8af65471a817a
+    bin: preflight
+    files:
+    - from: '*'
+      to: .
+
+  - selector:
+      matchLabels:
+        os: windows
+        arch: amd64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.0.0-rc.1/preflight_v2.0.0-rc.1_windows_amd64.zip
+    sha256: 5cf5f1e0e067d39d82ff62ec6139252caebfca1139d06b25ac171a8e9424d85e
+    bin: preflight.exe
+    files:
+    - from: '*'
+      to: .
+
+  #  # TODO: remove/comment following two selectors 'windows/arm64' & 'windows/arm' while adding it to 'plugins' dir, as these are not supported by krew as of now.
+  #  - selector:
+  #      matchLabels:
+  #        os: windows
+  #        arch: arm64
+  #    uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.0.0-rc.1/preflight_v2.0.0-rc.1_windows_arm64.zip
+  #    sha256: 0654bdfc087ed8244b9bf943c0b209d2915615b9572e39b12ea7e0a9126989a0
+  #    bin: preflight.exe
+  #    files:
+  #    - from: '*'
+  #      to: .
+  #  - selector:
+  #      matchLabels:
+  #        os: windows
+  #        arch: arm
+  #    uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.0.0-rc.1/preflight_v2.0.0-rc.1_windows_arm.zip
+  #    sha256: 82ba829762a9c28f8b0b8c90180d6196557c2096f207ae81a3be1e4d4b42fcb2
+  #    bin: preflight.exe
+  #    files:
+  #    - from: '*'
+  #      to: .
+
 
   description: |
     tvk-preflight is a kubectl plugin which checks whether all the pre-requisites are met before installing Triliovault
     for Kubernetes(TVK) application in a Kubernetes cluster.
 
     > Check available flags for preflight plugin with :-
-    kubectl preflight --help
+    kubectl tvk-preflight --help
 
-    --storageclass - Name of storage class being used in k8s cluster (Needed)
-    --snapshotclass - Name of volume snapshot class being used in k8s cluster (Needed)
-    --kubeconfig - Kubeconfig path, if not given default is used by kubectl (Optional)
+    tvk-preflight contains two subcommands:
+    1. run: performs checks on system where this plugin is installed and few checks are performed on the K8s cluster where current-context of kubeconfig is pointing to. Check available flags and options for run subcommand with:-
+    kubectl tvk-preflight run --help
+    2. cleanup: cleans/deletes the resources created during failed preflight checks and not cleaned-up on failure. Check available flags and options for cleanup subcommand with:-
+    kubectl tvk-preflight cleanup --help
 
     > Usage :-
+    1. Perform preflight checks
+    # run preflight checks
+    kubectl tvk-preflight run --storage-class <storage-class-name>
 
-    kubectl tvk-preflight --storageclass my-hostpath-sc --snapshotclass default-snapclass --kubeconfig /home/usr/kubeconfig
+    # run preflight checks with a particular volume snapshot class
+    kubectl tvk-preflight run --storage-class <storage-class-name> --volume-snapshot-class <snapshot-class-name>
+
+    # run preflight checks in a particular namespace
+    kubectl tvk-preflight run --storage-class <storage-class-name> --namespace <namespace>
+
+    # run preflight checks with a particular log level
+    kubectl tvk-preflight run --storage-class <storage-class-name> --log-level <log-level>
+
+    # cleanup the resources generated during preflight check if preflight check fails. Default is false.
+    # If the preflight check is successful, then all resources are cleaned.
+    kubectl tvk-preflight run --storage-class <storage-class-name> --cleanup-on-failure
+
+    # run preflight with a particular kubeconfig file
+    kubectl tvk-preflight run --storage-class <storage-class-name> --kubeconfig <kubeconfig-file-path>
+
+    # run preflight with local registry and image pull secret
+    To use image-pull-secret, local-registry flag must be specified. vice-versa is not true
+    kubectl tvk-preflight run --storage-class <storage-class-name> --local-registry <local registry path> --image-pull-secret <image pull secret>
+
+    # run preflight with a particular serviceaccount
+    kubectl tvk-preflight run --storage-class <storage-class-name> --service-account-name <service account name>
+
+    2. Perform cleanup of preflight resources
+    # clean preflight resources with a particular uid
+    kubectl tvk-preflight cleanup --uid <preflight run uid> --namespace <namespace>
+
+    # clean all preflight resources created till date
+    kubectl tvk-preflight cleanup --namespace <namespace>
+
+    # clean preflight resource with a specified logging level
+    kubectl tvk-preflight cleanup --uid <preflight run uid> --log-level <log-level>
+
+    # cleanup preflight resources with a particular kubeconfig file
+    kubectl tvk-preflight cleanup --uid <preflight run uid> --namespace <namespace> --kubeconfig <kubeconfig-file-path>

@@ -26,6 +26,11 @@ jobs:
         reporter: local
         filter_mode: nofilter
 
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17
+
     - name: Ensure Required Utilities Installed
       run: make install-required-utilities
 
