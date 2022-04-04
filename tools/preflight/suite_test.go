@@ -65,5 +65,4 @@ var _ = BeforeSuite(func() {
 
 	logger = logrus.New()
 	logger.SetFormatter(&logrus.TextFormatter{ForceColors: true})
-	run = &Run{CommonOptions: CommonOptions{Logger: logger}}
 })

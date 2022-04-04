@@ -385,22 +385,18 @@ func (o *Run) checkStorageSnapshotClass(ctx context.Context, provisioner, prefVe
 		}
 	} else {
 		storageVolSnapClass = o.SnapshotClass
-		vssc, err := clusterHasVolumeSnapshotClass(ctx, o.SnapshotClass, o.Namespace)
+		vsc, err := clusterHasVolumeSnapshotClass(ctx, o.SnapshotClass, o.Namespace, prefVersion)
 		if err != nil {
 			o.Logger.Errorf("%s %s\n", cross, err.Error())
 			return err
 		}
 
-		if vssc.Object["driver"] == provisioner {
+		if vsc.Object["driver"] == provisioner {
 			o.Logger.Infof("%s Volume snapshot class - %s driver matches with given storage class provisioner\n",
 				check, o.SnapshotClass)
 		} else {
-			o.Logger.Infof("no matching volume snapshot class having driver "+
-				"same as provisioner - %s found on cluster, attempting installation...", provisioner)
-			if cErr := o.createVolumeSnapshotClass(ctx, provisioner, prefVersion); cErr != nil {
-				return fmt.Errorf("error creating volume snapshot class having driver - %s"+
-					" :: %s", provisioner, cErr.Error())
-			}
+			return fmt.Errorf("volume snapshot class - %s driver does not match with given StorageClass's"+
+				" provisioner=%s", o.SnapshotClass, provisioner)
 		}
 	}
 
@@ -522,6 +518,12 @@ func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context, serverVersio
 			if cErr := runtimeClient.Create(ctx, unmarshalCRDObj); cErr != nil {
 				errs = append(errs, cErr)
 				continue
+			}
+
+			// if we are creating the volumesnapshotclass CRD, then any user provided volumesnapshotclass name should be
+			// overridden because no volumesnapshotclass will be existing without CRD.
+			if crd == "volumesnapshotclasses."+StorageSnapshotGroup {
+				o.SnapshotClass = ""
 			}
 
 			o.Logger.Infof("%s Volume snapshot CRD: %s successfully created", check, crd)

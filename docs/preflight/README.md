@@ -65,13 +65,13 @@ The following checks are included in preflight:
        - "volumesnapshotclasses.snapshot.storage.k8s.io"
        - "volumesnapshotcontents.snapshot.storage.k8s.io"
        - "volumesnapshots.snapshot.storage.k8s.io"
-   2. If not present, creates the missing CSI apis as per the k8s server version. If k8s server version is 1.19, installs the above CSI apis that support v1beta1 version. If k8s server version is 1.20+, installs the above CSI apis that support both v1 and v1beta1 version.
+   2. If not present, creates the missing CSI apis as per the k8s server version. If k8s server version is 1.19, installs the above CSI apis that support v1beta1 version. If k8s server version is 1.20+, installs the above CSI apis that support both v1 and v1beta1 version. Also, if volumesnapshot CRDs don't exist, any provided volume snapshot class will be overridden with default value.
 
 7. `check-storage-snapshot-class` -
     1. Ensures provided storageClass is present in cluster
         1. Provided storageClass's `provisioner` [JSON Path: `storageclass.provisioner`] should match with provided volumeSnapshotClass's `driver`[JSON Path: `volumesnapshotclass.driver`]
         2. If volumeSnapshotClass is not provided then, volumeSnapshotClass which satisfies condition `[i]` will be selected. If there's are multiple volumeSnapshotClasses satisfying condition `[i]`, default volumeSnapshotClass[which has annotation `snapshot.storage.kubernetes.io/is-default-class: "true"` set] will be used for further pre-flight checks.
-        3. If none of the above conditions is satisfied, then a volume snapshot class is generated with the name `preflight-generated-snapshot-class` with the same `driver`[JSON Path: `volumesnapshotclass.driver`] as storageClass's `provisioner` [JSON Path: `storageclass.provisioner`]
+        3. If volumeSnapshotClass is provided and matches with storage class provisioner, only then that volumeSnapshotClass will be used for further operations, otherwise preflight will fail with not found error.
     2. Ensures at least one volumeSnapshotClass is marked as *default* in cluster if user has not provided volumeSnapshotClass as input.
 
 8. `check-dns-resolution` -
