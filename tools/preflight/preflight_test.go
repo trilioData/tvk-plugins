@@ -122,7 +122,6 @@ var _ = Context("Preflight Unit Tests", func() {
 })
 
 func installVolumeSnapshotCRD(version string, volumeSnapshotCRDToInstall map[string]bool) {
-
 	for i := range VolumeSnapshotCRDs {
 		if volumeSnapshotCRDToInstall[VolumeSnapshotCRDs[i]] {
 			crdObj := &apiextensions.CustomResourceDefinition{}
