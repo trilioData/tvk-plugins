@@ -3,6 +3,7 @@
 [![Plugin Manifests CI](https://github.com/trilioData/tvk-plugins/actions/workflows/plugin-manifests.yml/badge.svg)](https://github.com/trilioData/tvk-plugins/actions/workflows/plugin-manifests.yml)
 [![LICENSE](https://img.shields.io/github/license/trilioData/tvk-plugins.svg)](https://github.com/trilioData/tvk-plugins/blob/master/LICENSE.md)
 [![Releases](https://img.shields.io/github/v/release/trilioData/tvk-plugins.svg?include_prereleases)](https://github.com/trilioData/tvk-plugins/releases)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FtrilioData%2Ftvk-plugins.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FtrilioData%2Ftvk-plugins?ref=badge_shield)
 
 kubectl-plugins for log-collector, preflight and target-browser CLI.
 
@@ -65,3 +66,6 @@ Follow release guidelines mentioned in doc [`RELEASE.md`](docs/RELEASE.md)
 ## LICENSE:
 
 Check here [`LICENSE.md`](LICENSE.md) 
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FtrilioData%2Ftvk-plugins.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FtrilioData%2Ftvk-plugins?ref=badge_large)
