@@ -116,7 +116,7 @@ func preflightTestCases(serverVersion string) {
 
 			Context("When preflight run command executed with volume snapshot class name on cluster", func() {
 
-				It("Should skip installation if volume snapshot class with provided is present", func() {
+				It("Should skip installation if volume snapshot class with provided name is present", func() {
 					run.SnapshotClass = defaultVSCName
 					installVolumeSnapshotClass(crVersion, dummyProvisioner, defaultVSCName)
 					Expect(run.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion)).To(BeNil())
