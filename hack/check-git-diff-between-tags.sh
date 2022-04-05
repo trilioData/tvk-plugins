@@ -11,11 +11,15 @@ git describe --exact-match --tags --match "$current_tag"
 
 # shellcheck disable=SC2046
 # shellcheck disable=SC2006
-# add flag '-v -e "v*-rc*"', if need to compute diff from last stable tag instead of RC
 previous_tag=$(git tag --sort=-creatordate | grep -e "v[0-9].[0-9].[0-9]" | grep -v -e "$current_tag" -e "v*-alpha*" -e "v*-beta*" | head -n 1)
 # use hard coded values if required
 #current_tag=v0.0.6-main
 #previous_tag=v0.0.5-dev
+
+# if current tag is stable one, check its diff with last stable tag
+if echo "$current_tag" | grep -w '^v[0-9].[0-9].[0-9]$'; then
+  previous_tag=$(git tag --sort=-creatordate | grep -e "v[0-9].[0-9].[0-9]" | grep -v -e "$current_tag" -e "v*-alpha*" -e "v*-beta*" -e "v*-rc*" | head -n 1)
+fi
 
 echo "current_tag=$current_tag and previous_tag=$previous_tag"
 
