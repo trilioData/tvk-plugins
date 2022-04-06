@@ -294,7 +294,7 @@ Storage-class is a required flag for **run** subcommand.
 - With `--volume-snapshot-class`: Performs preflight checks on the cluster with the given volumeSnapshotClass in the given namespace.
 
 ```shell script
-kubectl tvk-preflight --storage-class <storageclass name> --volume-snapshot-class <volumeSnapshotClass name>
+kubectl tvk-preflight run --storage-class <storageclass name> --volume-snapshot-class <volumeSnapshotClass name>
 ```
 
 - With `--local-registry` | `--service-account`: Performs preflight checks on the cluster with the given local-registry and service-account in the given namespace.
