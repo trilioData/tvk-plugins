@@ -192,10 +192,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: preflight-junit
-        path: |
-          tests/preflight/junit-preflight.xml
-          cmd/preflight/cmd/junit-preflight-cmd-unit-tests.xml
-          tools/preflight/junit-preflight-unit-test.xml
+        path: junit-report.xml
 
     - name: Test Preflight Plugin Locally
       run: make test-preflight-plugin-locally
@@ -429,7 +426,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: target-browser-junit
-          path: tests/target-browser/target-browser-junit.xml
+          path: junit-report.xml
 
       - name: Test Target-Browser Plugin Locally
         run: make test-target-browser-plugin-locally
