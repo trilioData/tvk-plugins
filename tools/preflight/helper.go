@@ -84,7 +84,7 @@ const (
 	snapshotClassVersionV1      = "v1"
 	snapshotClassVersionV1Beta1 = "v1beta1"
 	minServerVerForV1CrdVersion = "v1.20.0"
-	defaultVSCName              = "preflight-generated-snapshot-class"
+	defaultVSCNamePrefix        = "preflight-generated-snapshot-class-"
 )
 
 var (

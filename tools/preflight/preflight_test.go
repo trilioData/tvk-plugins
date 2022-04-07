@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -19,14 +20,15 @@ import (
 )
 
 const (
-	v1beta1K8sVersion = "v1.19.0"
-	v1K8sVersion      = "v1.20.0"
-	timeout           = time.Second * 60
-	interval          = time.Second * 1
-	vsClassCRD        = "volumesnapshotclasses." + StorageSnapshotGroup
-	vsContentCRD      = "volumesnapshotcontents." + StorageSnapshotGroup
-	vsCRD             = "volumesnapshots." + StorageSnapshotGroup
-	dummyProvisioner  = "dummy-provisioner"
+	v1beta1K8sVersion        = "v1.19.0"
+	v1K8sVersion             = "v1.20.0"
+	timeout                  = time.Second * 60
+	interval                 = time.Second * 1
+	vsClassCRD               = "volumesnapshotclasses." + StorageSnapshotGroup
+	vsContentCRD             = "volumesnapshotcontents." + StorageSnapshotGroup
+	vsCRD                    = "volumesnapshots." + StorageSnapshotGroup
+	dummyProvisioner         = "dummy-provisioner"
+	dummyVolumeSnapshotClass = "dummy-vsc"
 )
 
 func preflightCSITestcases(serverVersion string) {
@@ -80,25 +82,25 @@ func preflightCSITestcases(serverVersion string) {
 			Expect(err).To(BeNil())
 		})
 
-		AfterEach(func() {
-			deleteAllVolumeSnapshotClass(crVersion)
-			deleteAllVolumeSnapshotCRD()
-		})
+			AfterEach(func() {
+				deleteAllVolumeSnapshotCRD()
+			})
 
 		Context("When preflight run command executed without volume snapshot class flag", func() {
 
 			It("Should skip installation if volume snapshot class is present", func() {
-				installVolumeSnapshotClass(crVersion, dummyProvisioner, defaultVSCName)
+				installVolumeSnapshotClass(crVersion, dummyProvisioner, dummyVolumeSnapshotClass)
 				Expect(runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
 					testClient.ClientSet, testClient.RuntimeClient)).To(BeNil())
-				checkVolumeSnapshotClassExists(crVersion)
+				checkVolumeSnapshotClassExists(dummyVolumeSnapshotClass, crVersion, 1)
+					deleteAllVolumeSnapshotClass(crVersion, 1)
 			})
 
-			It("Should install volume snapshot class with default name when volume snapshot class doesn't exists", func() {
-				deleteAllVolumeSnapshotClass(crVersion)
-				Expect(runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
+				It("Should install volume snapshot class with default name when volume snapshot class doesn't exists", func() {
+					Expect(runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
 					testClient.ClientSet, testClient.RuntimeClient)).To(BeNil())
-				checkVolumeSnapshotClassExists(crVersion)
+				checkVolumeSnapshotClassExists("", crVersion, 1)
+					deleteAllVolumeSnapshotClass(crVersion, 1)
 			})
 
 			It("Should install volume snapshot class with default name when volume snapshot class exists but with"+
@@ -106,7 +108,8 @@ func preflightCSITestcases(serverVersion string) {
 				installVolumeSnapshotClass(crVersion, "dummy-provisioner-2", "another-snapshot-class")
 				Expect(runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
 					testClient.ClientSet, testClient.RuntimeClient)).To(BeNil())
-				checkVolumeSnapshotClassExists(crVersion)
+				checkVolumeSnapshotClassExists("", crVersion, 2)
+					deleteAllVolumeSnapshotClass(crVersion, 2)
 			})
 
 		})
@@ -114,11 +117,12 @@ func preflightCSITestcases(serverVersion string) {
 		Context("When preflight run command executed with volume snapshot class name on cluster", func() {
 
 			It("Should skip installation if volume snapshot class with provided name is present", func() {
-				runOps.SnapshotClass = defaultVSCName
-				installVolumeSnapshotClass(crVersion, dummyProvisioner, defaultVSCName)
+				runOps.SnapshotClass = dummyVolumeSnapshotClass
+				installVolumeSnapshotClass(crVersion, dummyProvisioner, dummyVolumeSnapshotClass)
 				Expect(runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
 					testClient.ClientSet, testClient.RuntimeClient)).To(BeNil())
-				checkVolumeSnapshotClassExists(crVersion)
+				checkVolumeSnapshotClassExists(dummyVolumeSnapshotClass, crVersion, 1)
+					deleteAllVolumeSnapshotClass(crVersion, 1)
 			})
 
 			It("Should fail when volume snapshot class with provided name doesn't exist", func() {
@@ -129,15 +133,16 @@ func preflightCSITestcases(serverVersion string) {
 				Expect(err.Error()).To(ContainSubstring("not found"))
 			})
 
-			It("Should create volume snapshot class when volume snapshot CRDs doesn't exist", func() {
-				runOps.SnapshotClass = defaultVSCName
+			It("Should create volume snapshot class when volume snapshot CRDs doesn't exist and override provided name", func() {
+				runOps.SnapshotClass = dummyVolumeSnapshotClass
 				deleteAllVolumeSnapshotCRD()
 				Expect(runOps.checkAndCreateVolumeSnapshotCRDs(ctx, serverVersion, testClient.RuntimeClient)).To(BeNil())
 				checkVolumeSnapshotCRDExists()
 				Expect(runOps.SnapshotClass).To(Equal(""))
 				Expect(runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
 					testClient.ClientSet, testClient.RuntimeClient)).To(BeNil())
-				checkVolumeSnapshotClassExists(crVersion)
+				checkVolumeSnapshotClassExists("", crVersion, 1)
+					deleteAllVolumeSnapshotClass(crVersion, 1)
 			})
 
 		})
@@ -316,17 +321,35 @@ func checkVolumeSnapshotCRDExists() {
 	}
 }
 
-func checkVolumeSnapshotClassExists(version string) {
-	vscUnstrObj := &unstructured.Unstructured{}
-	vscUnstrObj.SetGroupVersionKind(schema.GroupVersionKind{
+func checkVolumeSnapshotClassExists(vscName, version string, expectedVscCount int) {
+	vscUnstrObjList := &unstructured.UnstructuredList{}
+	vscUnstrObjList.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   StorageSnapshotGroup,
 		Version: version,
-		Kind:    internal.VolumeSnapshotClassKind,
+		Kind:    internal.VolumeSnapshotClassKind + "List",
 	})
-	vscUnstrObj.SetName(defaultVSCName)
-	Eventually(func() error {
-		return testClient.RuntimeClient.Get(ctx, types.NamespacedName{Name: defaultVSCName}, vscUnstrObj)
-	}, timeout, interval).ShouldNot(HaveOccurred())
+	Eventually(func() bool {
+		if err := testClient.RuntimeClient.List(ctx, vscUnstrObjList); err != nil {
+			return false
+		}
+		return len(vscUnstrObjList.Items) > 0
+	}, timeout, interval).Should(BeTrue())
+	Expect(len(vscUnstrObjList.Items)).To(Equal(expectedVscCount))
+
+	if vscName == "" {
+		vscName = defaultVSCNamePrefix
+	}
+	var found bool
+	for _, vsc := range vscUnstrObjList.Items {
+		if strings.Contains(vsc.GetName(), vscName) {
+			Eventually(func() error {
+				return testClient.RuntimeClient.Get(ctx, types.NamespacedName{Name: vsc.GetName()}, &vsc)
+			}, timeout, interval).ShouldNot(HaveOccurred())
+			found = true
+			break
+		}
+	}
+	Expect(found).To(BeTrue())
 }
 
 func deleteAllVolumeSnapshotCRD() {
@@ -344,27 +367,27 @@ func deleteAllVolumeSnapshotCRD() {
 	}
 }
 
-func deleteAllVolumeSnapshotClass(version string) {
-	var vscGVK = schema.GroupVersionKind{
+func deleteAllVolumeSnapshotClass(version string, vscCountToDelete int) {
+	vscUnstrObjList := &unstructured.UnstructuredList{}
+	vscUnstrObjList.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   StorageSnapshotGroup,
 		Version: version,
-		Kind:    internal.VolumeSnapshotClassKind,
-	}
-	vscUnstrObjList := &unstructured.UnstructuredList{}
-	vscUnstrObjList.SetGroupVersionKind(vscGVK)
-	Eventually(func() error {
-		return testClient.RuntimeClient.List(ctx, vscUnstrObjList)
-	}, timeout, interval).ShouldNot(HaveOccurred())
+		Kind:    internal.VolumeSnapshotClassKind + "List",
+	})
+	Eventually(func() bool {
+		if err := testClient.RuntimeClient.List(ctx, vscUnstrObjList); err != nil {
+			return false
+		}
+		return len(vscUnstrObjList.Items) == vscCountToDelete
+	}, timeout, interval).Should(BeTrue())
 
 	for _, vsc := range vscUnstrObjList.Items {
-		vscUnstrObj := &unstructured.Unstructured{}
-		vscUnstrObj.SetGroupVersionKind(vscGVK)
 		Eventually(func() bool {
-			err := testClient.RuntimeClient.Get(ctx, types.NamespacedName{Name: vsc.GetName()}, vscUnstrObj)
+			err := testClient.RuntimeClient.Get(ctx, types.NamespacedName{Name: vsc.GetName()}, &vsc)
 			if k8serrors.IsNotFound(err) {
 				return true
 			}
-			Expect(testClient.RuntimeClient.Delete(ctx, vscUnstrObj)).To(BeNil())
+			Expect(testClient.RuntimeClient.Delete(ctx, &vsc)).To(BeNil())
 			return false
 		}, timeout, interval).Should(BeTrue())
 	}
