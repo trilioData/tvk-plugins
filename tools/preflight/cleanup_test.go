@@ -5,67 +5,72 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/trilioData/tvk-plugins/internal"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Cleanup Unit Tests", func() {
 
-	Context("Delete preflight resources of structured or unstructured type", func() {
+	Context("Delete preflight resources when exists on cluster", func() {
 
-		Context("When resource is of unstructured type", func() {
+		It("Should delete pod resource successfully with finalizers set on the resource", func() {
+			var (
+				err error
+				pod = &unstructured.Unstructured{}
+			)
 
-			It("Should delete pod resource of unstructured type", func() {
-				resourceSuffix, err := CreateResourceNameSuffix()
+			createTestPod(testPodName)
+			pod.SetGroupVersionKind(corev1.SchemeGroupVersion.WithKind(internal.PodKind))
+			Eventually(func() error {
+				err = testClient.RuntimeClient.Get(ctx, client.ObjectKey{
+					Namespace: installNs,
+					Name:      testPodName,
+				}, pod)
+				return err
+			}, timeout, interval).ShouldNot(HaveOccurred())
+
+			pod.SetFinalizers([]string{"kubernetes"})
+			err = testClient.RuntimeClient.Update(ctx, pod)
+			Eventually(func() bool {
+				err = testClient.RuntimeClient.Get(ctx, client.ObjectKey{
+					Namespace: installNs,
+					Name:      testPodName,
+				}, pod)
 				Expect(err).To(BeNil())
-				pod := createTestPod(testPodPrefix+resourceSuffix, cleanupOps.Namespace, nil)
-				err = cleanupOps.cleanResource(ctx, pod, contClient)
-				Expect(err).To(BeNil())
-			})
+				return len(pod.GetFinalizers()) == 1
+			}, timeout, interval).Should(Equal(true))
 
-			It("Should return error when resource of unstructured type does not exist in cluster", func() {
-				res := &unstructured.Unstructured{}
-				res.SetName(testPodPrefix + testNameSuffix)
-				res.SetNamespace(installNs)
-				res.SetGroupVersionKind(corev1.SchemeGroupVersion.WithKind(internal.PodKind))
-				err := cleanupOps.cleanResource(ctx, res, contClient)
-				Expect(err).ToNot(BeNil())
-			})
+			err = deleteK8sResource(ctx, pod, testClient.RuntimeClient)
+			Expect(err).To(BeNil())
 		})
 
-		Context("When resource is of structured type", func() {
+		It("Should delete pod resource, but return error when no finalizers are set for the resource", func() {
 			var (
-				resourceSuffix string
-				err            error
+				err error
+				pod = &unstructured.Unstructured{}
 			)
-			BeforeEach(func() {
-				resourceSuffix, err = CreateResourceNameSuffix()
-				Expect(err).To(BeNil())
-			})
+			createTestPod(testPodName)
+			pod.SetGroupVersionKind(corev1.SchemeGroupVersion.WithKind(internal.PodKind))
+			Eventually(func() error {
+				err = testClient.RuntimeClient.Get(ctx, client.ObjectKey{
+					Namespace: installNs,
+					Name:      testPodName,
+				}, pod)
+				return err
+			}, timeout, interval).ShouldNot(HaveOccurred())
 
-			It("Should delete pod resource of structured type", func() {
-				pod := createTestPodStructured(testPodPrefix+resourceSuffix, installNs)
-				err = deleteK8sResource(ctx, pod, contClient)
-				Expect(err).To(BeNil())
-			})
-
-			It("Should return error when pod resource of structured type does not exist on cluster", func() {
-				pod := getPodTemplate(testPodPrefix+resourceSuffix, resourceSuffix, &runOps)
-				err = deleteK8sResource(ctx, pod, contClient)
-				Expect(err).ToNot(BeNil())
-			})
+			err = deleteK8sResource(ctx, pod, testClient.RuntimeClient)
+			Expect(err).ToNot(BeNil())
+			Expect(k8serrors.IsNotFound(err)).Should(Equal(true))
 		})
 	})
 
 	Context("Fetch resource cleanup GVK list", func() {
 		It("Should return list of API GVK to be cleaned", func() {
-			gvkList, err := getCleanupResourceGVKList(k8sClient)
+			gvkList, err := getCleanupResourceGVKList(testClient.ClientSet)
 			Expect(err).To(BeNil())
 			Expect(len(gvkList)).To(BeNumerically(">=", defaultCleanupGVKListLen))
-		})
-
-		It("Should return error when nil clientset object is provided", func() {
-			_, err := getCleanupResourceGVKList(nil)
-			Expect(err).ToNot(BeNil())
 		})
 	})
 })

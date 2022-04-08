@@ -16,11 +16,9 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/discovery"
 	goclient "k8s.io/client-go/kubernetes"
 	clientGoScheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 
@@ -29,7 +27,6 @@ import (
 
 const (
 	defaultStorageClass      = "csi-gce-pd"
-	defaultSnapshotClass     = "default-snapshot-class"
 	defaultPVCStorageRequest = "1Gi"
 	defaultPodCPURequest     = "250m"
 	defaultPodMemoryRequest  = "64Mi"
@@ -47,27 +44,23 @@ const (
 	invalidRBACAPIGroup      = "invalid.rbac.k8s.io"
 	invalidSnapshotClass     = "invalid-vssc"
 	invalidGroup             = "invalid.group.k8s.io"
+	invalidNamespace         = "invalid-ns"
 
-	testNameSuffix    = "abcdef"
-	testPodPrefix     = "test-pod-"
+	testPodName       = "test-ut-pod"
 	testSnapshotClass = "ut-snapshot-class"
 	testDriver        = "test.snapshot.driver.io"
 	testMinK8sVersion = "1.10.0"
-	testContainerName = "test-container"
 
-	installNs = "default"
+	installNs = internal.DefaultNs
 )
 
 var (
 	ctx           = context.Background()
-	k8sClient     *goclient.Clientset
-	k8sDiscClient *discovery.DiscoveryClient
+	testClient    ServerClients
 	k8sManager    ctrl.Manager
 	testEnv       = &envtest.Environment{}
 	envTestScheme *runtime.Scheme
 	logger        *logrus.Logger
-
-	contClient client.Client
 
 	currentDir, _      = os.Getwd()
 	projectRoot        = filepath.Dir(filepath.Dir(currentDir))
@@ -111,13 +104,13 @@ var _ = BeforeSuite(func() {
 		Expect(err).ToNot(HaveOccurred())
 	}()
 
-	k8sClient, err = goclient.NewForConfig(cfg)
+	testClient.ClientSet, err = goclient.NewForConfig(cfg)
 	Expect(err).ToNot(HaveOccurred())
-	Expect(k8sClient).ToNot(BeNil())
-	k8sDiscClient = k8sClient.DiscoveryClient
-	Expect(k8sDiscClient).ToNot(BeNil())
-	contClient = k8sManager.GetClient()
-	Expect(contClient).ToNot(BeNil())
+	Expect(testClient.ClientSet).ToNot(BeNil())
+	testClient.DiscClient = testClient.ClientSet.DiscoveryClient
+	Expect(testClient.DiscClient).ToNot(BeNil())
+	testClient.RuntimeClient = k8sManager.GetClient()
+	Expect(testClient.RuntimeClient).ToNot(BeNil())
 
 	initRunOps()
 	initCleanupOps()
@@ -135,7 +128,6 @@ func initRunOps() {
 	runOps = Run{
 		RunOptions: RunOptions{
 			StorageClass:         defaultStorageClass,
-			SnapshotClass:        defaultSnapshotClass,
 			PerformCleanupOnFail: true,
 			PVCStorageRequest:    resource.MustParse(defaultPVCStorageRequest),
 			ResourceRequirements: corev1.ResourceRequirements{

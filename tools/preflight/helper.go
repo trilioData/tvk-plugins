@@ -120,14 +120,18 @@ var (
 	kubectlBinaryName = "kubectl"
 	HelmBinaryName    = "helm"
 
-	clientSet     *goclient.Clientset
-	runtimeClient client.Client
-	discClient    *discovery.DiscoveryClient
-	restConfig    *rest.Config
+	kubeClient ServerClients
 
 	//go:embed volumesnapshotcrdyamls/*
 	crdYamlFiles embed.FS
 )
+
+type ServerClients struct {
+	ClientSet     *goclient.Clientset
+	RuntimeClient client.Client
+	DiscClient    *discovery.DiscoveryClient
+	RestConfig    *rest.Config
+}
 
 type CommonOptions struct {
 	Kubeconfig string `yaml:"kubeconfig,omitempty"`
@@ -166,17 +170,23 @@ func InitKubeEnv(kubeconfig string) error {
 	if err != nil {
 		return err
 	}
-	clientSet = kubeEnv.GetClientset()
-	runtimeClient = kubeEnv.GetRuntimeClient()
-	discClient = kubeEnv.GetDiscoveryClient()
-	restConfig = kubeEnv.GetRestConfig()
+	kubeClient.ClientSet = kubeEnv.GetClientset()
+	if kubeClient.ClientSet == nil {
+		return fmt.Errorf("client-set object initialized to nil, cannot perform CRUD operation for preflight resources")
+	}
+	kubeClient.RuntimeClient = kubeEnv.GetRuntimeClient()
+	if kubeClient.RuntimeClient == nil {
+		return fmt.Errorf("runtime-client object initialized to nil, cannot perform CRUD operation for preflight resources")
+	}
+	kubeClient.DiscClient = kubeEnv.GetDiscoveryClient()
+	kubeClient.RestConfig = kubeEnv.GetRestConfig()
 
 	return nil
 }
 
 func GetHelmVersion(binaryName string) (string, error) {
-	cmdOut, err := shell.RunCmd(fmt.Sprintf("%s ver"+
-		"sion --template '{{.Version}}'", binaryName))
+	cmdOut, err := shell.RunCmd(fmt.Sprintf("%s version "+
+		"--template '{{.Version}}'", binaryName))
 	if err != nil {
 		return "", err
 	}
@@ -186,9 +196,6 @@ func GetHelmVersion(binaryName string) (string, error) {
 }
 
 func GetServerPreferredVersionForGroup(grp string, cl *goclient.Clientset) (string, error) {
-	if cl == nil {
-		return "", fmt.Errorf("client object is nil, cannot fetch versions of group - %s", grp)
-	}
 	var (
 		apiResList  *metav1.APIGroupList
 		err         error
@@ -213,9 +220,6 @@ func GetServerPreferredVersionForGroup(grp string, cl *goclient.Clientset) (stri
 }
 
 func getVersionsOfGroup(grp string, cl *goclient.Clientset) ([]string, error) {
-	if cl == nil {
-		return nil, fmt.Errorf("client object is nil, cannot fetch versions of group - %s", grp)
-	}
 	var (
 		apiResList *metav1.APIGroupList
 		err        error
@@ -271,10 +275,7 @@ func getSemverVersion(ver string) (*semVersion.Version, error) {
 
 //  clusterHasVolumeSnapshotClass checks and returns volume snapshot class if present on cluster.
 func clusterHasVolumeSnapshotClass(ctx context.Context, snapshotClass string,
-	runtClient client.Client, kubeClient *goclient.Clientset) (*unstructured.Unstructured, error) {
-	if runtClient == nil {
-		return nil, fmt.Errorf("runtime client object is nil, cannot fetch snapshot class from server")
-	}
+	kubeClient *goclient.Clientset, runtClient client.Client) (*unstructured.Unstructured, error) {
 	var (
 		prefVersion string
 		err         error
@@ -533,7 +534,7 @@ func waitUntilVolSnapReadyToUse(volSnap *unstructured.Unstructured, snapshotVer 
 			Version: snapshotVer,
 			Kind:    internal.VolumeSnapshotKind,
 		})
-		err = runtimeClient.Get(context.Background(), client.ObjectKey{
+		err = kubeClient.RuntimeClient.Get(context.Background(), client.ObjectKey{
 			Namespace: volSnap.GetNamespace(),
 			Name:      volSnap.GetName(),
 		}, volSnapSrc)
@@ -586,10 +587,10 @@ func execInPod(execOp *exec.Options, logger *logrus.Logger) error {
 	return nil
 }
 
-func removeFinalizer(ctx context.Context, obj client.Object) error {
+func removeFinalizer(ctx context.Context, obj client.Object, cl client.Client) error {
 	var err error
 	obj.SetFinalizers([]string{})
-	err = runtimeClient.Update(ctx, obj)
+	err = cl.Update(ctx, obj)
 	if err != nil {
 		return err
 	}
@@ -615,13 +616,10 @@ func deleteK8sResource(ctx context.Context, obj client.Object, cl client.Client)
 		Namespace: obj.GetNamespace(),
 	}, updatedRes)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return nil
-		}
 		return err
 	}
 
-	err = removeFinalizer(ctx, updatedRes)
+	err = removeFinalizer(ctx, updatedRes, cl)
 	if err != nil {
 		return err
 	}
