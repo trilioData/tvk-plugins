@@ -82,9 +82,9 @@ func preflightCSITestcases(serverVersion string) {
 			Expect(err).To(BeNil())
 		})
 
-			AfterEach(func() {
-				deleteAllVolumeSnapshotCRD()
-			})
+		AfterEach(func() {
+			deleteAllVolumeSnapshotCRD()
+		})
 
 		Context("When preflight run command executed without volume snapshot class flag", func() {
 
@@ -93,14 +93,14 @@ func preflightCSITestcases(serverVersion string) {
 				Expect(runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
 					testClient.ClientSet, testClient.RuntimeClient)).To(BeNil())
 				checkVolumeSnapshotClassExists(dummyVolumeSnapshotClass, crVersion, 1)
-					deleteAllVolumeSnapshotClass(crVersion, 1)
+				deleteAllVolumeSnapshotClass(crVersion, 1)
 			})
 
-				It("Should install volume snapshot class with default name when volume snapshot class doesn't exists", func() {
-					Expect(runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
+			It("Should install volume snapshot class with default name when volume snapshot class doesn't exists", func() {
+				Expect(runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
 					testClient.ClientSet, testClient.RuntimeClient)).To(BeNil())
 				checkVolumeSnapshotClassExists("", crVersion, 1)
-					deleteAllVolumeSnapshotClass(crVersion, 1)
+				deleteAllVolumeSnapshotClass(crVersion, 1)
 			})
 
 			It("Should install volume snapshot class with default name when volume snapshot class exists but with"+
@@ -109,7 +109,7 @@ func preflightCSITestcases(serverVersion string) {
 				Expect(runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
 					testClient.ClientSet, testClient.RuntimeClient)).To(BeNil())
 				checkVolumeSnapshotClassExists("", crVersion, 2)
-					deleteAllVolumeSnapshotClass(crVersion, 2)
+				deleteAllVolumeSnapshotClass(crVersion, 2)
 			})
 
 		})
@@ -122,7 +122,7 @@ func preflightCSITestcases(serverVersion string) {
 				Expect(runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
 					testClient.ClientSet, testClient.RuntimeClient)).To(BeNil())
 				checkVolumeSnapshotClassExists(dummyVolumeSnapshotClass, crVersion, 1)
-					deleteAllVolumeSnapshotClass(crVersion, 1)
+				deleteAllVolumeSnapshotClass(crVersion, 1)
 			})
 
 			It("Should fail when volume snapshot class with provided name doesn't exist", func() {
@@ -142,7 +142,7 @@ func preflightCSITestcases(serverVersion string) {
 				Expect(runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
 					testClient.ClientSet, testClient.RuntimeClient)).To(BeNil())
 				checkVolumeSnapshotClassExists("", crVersion, 1)
-					deleteAllVolumeSnapshotClass(crVersion, 1)
+				deleteAllVolumeSnapshotClass(crVersion, 1)
 			})
 
 		})
