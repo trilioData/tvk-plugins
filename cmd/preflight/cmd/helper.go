@@ -81,6 +81,7 @@ func managePreflightInputs(cmd *cobra.Command) (err error) {
 			return fmt.Errorf("failed to read preflight input from file :: %s", err.Error())
 		}
 	}
+
 	return overridePreflightFileInputsFromCLI(cmd)
 }
 

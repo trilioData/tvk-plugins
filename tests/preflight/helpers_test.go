@@ -81,7 +81,7 @@ func assertHelmVersionCheckSuccess(outputLog string) {
 	} else {
 		Expect(outputLog).To(ContainSubstring("helm found at path - "))
 		var helmVersion string
-		helmVersion, err = preflight.GetHelmVersion()
+		helmVersion, err = preflight.GetHelmVersion(preflight.HelmBinaryName)
 		Expect(err).To(BeNil())
 		Expect(outputLog).
 			To(ContainSubstring(fmt.Sprintf("Helm version %s meets required version", helmVersion)))
@@ -485,12 +485,10 @@ func deletePreflightServiceAccount() {
 }
 
 func createAffineBusyboxPod(podName, affinity, namespace string) {
-	var uid string
-	uid, err = preflight.CreateResourceNameSuffix()
-	Expect(err).To(BeNil())
-	pod := getPodTemplate(podName, uid)
+	pod := getPodTemplate(podName, "")
 	podLabels := pod.GetLabels()
 	podLabels[preflightPodAffinityKey] = affinity
+	pod.SetLabels(podLabels)
 	pod.Spec = corev1.PodSpec{
 		Containers: []corev1.Container{
 			{

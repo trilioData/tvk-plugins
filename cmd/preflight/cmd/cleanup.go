@@ -11,7 +11,7 @@ import (
 	"github.com/trilioData/tvk-plugins/tools/preflight"
 )
 
-// cleanupCmd represents the Cleanup command
+// cleanupCmd represents the cleanup command
 var cleanupCmd = &cobra.Command{
 	Use:   cleanupCmdName,
 	Short: "Cleans-up the preflight resources created during preflight checks.",
@@ -26,7 +26,7 @@ If uid flag is not specified then all preflight resources created till date are 
   # clean preflight resource with a specified logging level
   kubectl tvk-preflight cleanup --uid <preflight Run uid> --log-level <log-level>
 
-  # Cleanup preflight resources with a particular kubeconfig file
+  # cleanup preflight resources with a particular kubeconfig file
   kubectl tvk-preflight cleanup --uid <preflight run uid> --namespace <namespace> --kubeconfig <kubeconfig-file-path>
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {

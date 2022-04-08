@@ -608,6 +608,7 @@ var _ = Describe("Preflight Tests", func() {
 					inputFlags := make(map[string]string)
 					copyMap(flagsMap, inputFlags)
 					inputFlags[configFileFlag] = yamlFilePath
+					inputFlags[namespaceFlag] = defaultTestNs
 					cmdOut, err = runPreflightChecks(inputFlags)
 					Expect(err).To(BeNil())
 
