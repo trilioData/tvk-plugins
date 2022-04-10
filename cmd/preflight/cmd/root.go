@@ -10,11 +10,10 @@ import (
 )
 
 var (
-	logger               *logrus.Logger
-	logFile              *os.File
-	preflightLogFilename string
-	cmdOps               preflightCmdOps
-	err                  error
+	logger  *logrus.Logger
+	logFile *os.File
+	cmdOps  *preflightCmdOps
+	err     error
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -29,7 +28,7 @@ application in a Kubernetes cluster.
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
+	if err = rootCmd.Execute(); err != nil {
 		log.Fatalln("preflight command execution failed -", err.Error())
 	}
 }
@@ -46,4 +45,6 @@ func init() {
 
 	logger = logrus.New()
 	logger.SetFormatter(&logrus.TextFormatter{ForceColors: true})
+
+	cmdOps = &preflightCmdOps{}
 }

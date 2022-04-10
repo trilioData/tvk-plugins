@@ -50,11 +50,12 @@ var runCmd = &cobra.Command{
   kubectl tvk-preflight run --storage-class <storage-class-name> --pvc-storage-request <storage request value>
 `,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		var preflightLogFilename string
 		err = managePreflightInputs(cmd)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
-		err = setupLogger(preflightLogFilePrefix, cmdOps.Run.LogLevel)
+		preflightLogFilename, err = setupLogger(preflightLogFilePrefix, cmdOps.Run.LogLevel)
 		if err != nil {
 			log.Fatalf("Failed to setup a logger :: %s", err.Error())
 		}
