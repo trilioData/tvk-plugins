@@ -84,15 +84,29 @@ func (co *Cleanup) CleanupPreflightResources(ctx context.Context) error {
 func (co *Cleanup) cleanResource(ctx context.Context, resource *unstructured.Unstructured, cl client.Client) error {
 	var err error
 	co.Logger.Infof("Cleaning %s - %s", resource.GetKind(), resource.GetName())
-	err = deleteK8sResource(ctx, resource, cl)
+	updatedRes := &unstructured.Unstructured{}
+	updatedRes.SetGroupVersionKind(resource.GroupVersionKind())
+	// fetch updated resource from the cluster
+	err = cl.Get(ctx, client.ObjectKey{
+		Name:      resource.GetName(),
+		Namespace: resource.GetNamespace(),
+	}, updatedRes)
 	if err != nil {
-		co.Logger.Errorf("%s Error cleaning %s - %s :: %s\n",
+		co.Logger.Warnf("%s error fetching %s - %s from cluster to cleanup :: %s",
 			cross, resource.GetKind(), resource.GetName(), err.Error())
 	}
-	if k8serrors.IsNotFound(err) {
-		return nil
+
+	err = deleteK8sResource(ctx, updatedRes, cl)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil
+		}
+
+		co.Logger.Errorf("%s error cleaning %s - %s :: %s\n",
+			cross, resource.GetKind(), resource.GetName(), err.Error())
+		return err
 	}
-	return err
+	return nil
 }
 
 func getCleanupResourceGVKList(cl *kubernetes.Clientset) ([]schema.GroupVersionKind, error) {
