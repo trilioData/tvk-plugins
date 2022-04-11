@@ -9,8 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -40,10 +39,7 @@ var (
 
 func TestCmd(t *testing.T) {
 	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("junit-preflight-cmd-unit-tests.xml")
-	RunSpecsWithDefaultAndCustomReporters(t,
-		"Preflight Cmd Suite",
-		[]Reporter{junitReporter})
+	RunSpecs(t, "Preflight Cmd Suite")
 }
 
 var _ = BeforeSuite(func() {})
