@@ -250,8 +250,8 @@ func createPreflightResourcesForCleanup() string {
 	Expect(err).To(BeNil())
 	createPreflightPVC(uid)
 	srcPvcName := strings.Join([]string{preflight.SourcePvcNamePrefix, uid}, "")
-	createPreflightVolumeSnapshot(srcPvcName, uid)
 	createPreflightPods(srcPvcName, uid)
+	createPreflightVolumeSnapshot(srcPvcName, uid)
 
 	return uid
 }
@@ -265,6 +265,8 @@ func createDNSPod(preflightUID string) {
 	dnsPod := createDNSPodSpec(preflightUID)
 	err = runtimeClient.Create(ctx, dnsPod)
 	Expect(err).To(BeNil())
+
+	waitForPodToBeReady(dnsPodNamePrefix + preflightUID)
 }
 
 func createDNSPodSpec(preflightUID string) *corev1.Pod {
@@ -286,6 +288,8 @@ func createSourcePod(pvcName, preflightUID string) {
 	srcPod := createSourcePodSpec(pvcName, preflightUID)
 	err = runtimeClient.Create(ctx, srcPod)
 	Expect(err).To(BeNil())
+
+	waitForPodToBeReady(preflight.SourcePodNamePrefix + preflightUID)
 }
 
 func createSourcePodSpec(pvcName, preflightUID string) *corev1.Pod {
@@ -321,6 +325,20 @@ func createSourcePodSpec(pvcName, preflightUID string) *corev1.Pod {
 	return pod
 }
 
+func waitForPodToBeReady(podName string) {
+	var pod *corev1.Pod
+	Eventually(func() bool {
+		pod, err = k8sClient.CoreV1().Pods(defaultTestNs).Get(ctx, podName, metav1.GetOptions{})
+		Expect(err).To(BeNil())
+		for _, cond := range pod.Status.Conditions {
+			if cond.Type == corev1.PodReady && cond.Status == corev1.ConditionTrue {
+				return true
+			}
+		}
+		return false
+	}, timeout, interval).Should(Equal(true))
+}
+
 func createPreflightPVC(preflightUID string) {
 	pvc := createPreflightPVCSpec(preflightUID)
 	err = runtimeClient.Create(ctx, pvc)
@@ -336,7 +354,7 @@ func createPreflightPVCSpec(preflightUID string) *corev1.PersistentVolumeClaim {
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-			StorageClassName: func() *string { var storageClass = defaultTestStorageClass; return &storageClass }(),
+			StorageClassName: func() *string { var storageClass = internal.DefaultTestStorageClass; return &storageClass }(),
 			Resources: corev1.ResourceRequirements{
 				Requests: map[corev1.ResourceName]resource.Quantity{
 					corev1.ResourceStorage: resource.MustParse("1Gi"),
@@ -350,6 +368,8 @@ func createPreflightVolumeSnapshot(pvcName, preflightUID string) {
 	volSnap := createPreflightVolumeSnapshotSpec(pvcName, preflightUID)
 	err = runtimeClient.Create(ctx, volSnap)
 	Expect(err).To(BeNil())
+
+	waitForVolSnapToBeReady(preflight.VolumeSnapSrcNamePrefix + preflightUID)
 }
 
 func createPreflightVolumeSnapshotSpec(pvcName, preflightUID string) *unstructured.Unstructured {
@@ -359,7 +379,7 @@ func createPreflightVolumeSnapshotSpec(pvcName, preflightUID string) *unstructur
 	volSnap := &unstructured.Unstructured{}
 	volSnap.Object = map[string]interface{}{
 		"spec": map[string]interface{}{
-			"volumeSnapshotClassName": defaultTestSnapshotClass,
+			"volumeSnapshotClassName": internal.DefaultTestSnapshotClass,
 			"source": map[string]string{
 				"persistentVolumeClaimName": pvcName,
 			},
@@ -375,6 +395,24 @@ func createPreflightVolumeSnapshotSpec(pvcName, preflightUID string) *unstructur
 	volSnap.SetLabels(getPreflightResourceLabels(preflightUID))
 
 	return volSnap
+}
+
+func waitForVolSnapToBeReady(volSnapName string) {
+	var (
+		ready bool
+		found bool
+	)
+	volSnap := &unstructured.Unstructured{}
+	volSnap.SetGroupVersionKind(snapshotGVK)
+	Eventually(func() bool {
+		err = runtimeClient.Get(ctx, client.ObjectKey{
+			Name:      volSnapName,
+			Namespace: defaultTestNs,
+		}, volSnap)
+		Expect(err).To(BeNil())
+		ready, found, err = unstructured.NestedBool(volSnap.Object, "status", "readyToUse")
+		return found && err == nil && ready
+	}, 2*timeout, interval).Should(Equal(true))
 }
 
 // A basic pod template for any pod to be created for testing purpose

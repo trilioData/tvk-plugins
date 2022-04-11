@@ -1,9 +1,10 @@
 package preflight
 
 import (
+	"github.com/trilioData/tvk-plugins/internal"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/trilioData/tvk-plugins/internal"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

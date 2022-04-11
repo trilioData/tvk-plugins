@@ -25,13 +25,13 @@ type preflightCmdOps struct {
 	Cleanup preflight.Cleanup `json:"cleanup"`
 }
 
-func setupLogger(logFilePrefix, logLvl string) error {
-	var err error
-	preflightLogFilename = generateLogFileName(logFilePrefix)
-	logFile, err = os.OpenFile(preflightLogFilename, os.O_CREATE|os.O_WRONLY, filePermission)
+// Returns the name of the logging file created and error if occurred any
+func setupLogger(logFilePrefix, logLvl string) (logFilename string, err error) {
+	logFilename = generateLogFileName(logFilePrefix)
+	logFile, err = os.OpenFile(logFilename, os.O_CREATE|os.O_WRONLY, filePermission)
 	if err != nil {
-		log.Errorf("Unable to create log file - %s. Aborting preflight checks...", preflightLogFilename)
-		return err
+		log.Errorf("Unable to create log file - %s. Aborting preflight checks...", logFilename)
+		return "", err
 	}
 	defer logFile.Close()
 	logger.SetOutput(io.MultiWriter(colorable.NewColorableStdout(), logFile))
@@ -40,12 +40,12 @@ func setupLogger(logFilePrefix, logLvl string) error {
 	if err != nil {
 		logger.SetLevel(log.InfoLevel)
 		logger.Errorf("Failed to parse log-level flag. Setting log level as %s\n", internal.DefaultLogLevel)
-		return nil
+		return logFilename, nil
 	}
 	logger.Infof("Setting log level as %s\n", strings.ToLower(logLvl))
 	logger.SetLevel(lvl)
 
-	return nil
+	return logFilename, nil
 }
 
 func generateLogFileName(logFilePrefix string) string {
@@ -114,7 +114,7 @@ func overridePreflightFileInputsFromCLI(cmd *cobra.Command) error {
 
 	err = updateNodeSelectorLabelsFromCLI(cmd)
 	if err != nil {
-		log.Fatalf("problem updating node selector labels :: %s", err.Error())
+		return fmt.Errorf("problem updating node selector labels :: %s", err.Error())
 	}
 	return updateResReqFromCLI()
 }
@@ -239,10 +239,10 @@ func manageCleanupInputs(cmd *cobra.Command) (err error) {
 
 func validateRunOptions() error {
 	if cmdOps.Run.StorageClass == "" {
-		logger.Fatalf("storage-class is required, cannot be empty")
+		return fmt.Errorf("storage-class is required, cannot be empty")
 	}
 	if cmdOps.Run.ImagePullSecret != "" && cmdOps.Run.LocalRegistry == "" {
-		logger.Fatalf("Cannot give image pull secret if local registry is not provided.\nUse --local-registry flag to provide local registry")
+		return fmt.Errorf("cannot give image pull secret if local registry is not provided.\nUse --local-registry flag to provide local registry")
 	}
 
 	reqMem := cmdOps.Run.Requests.Memory()

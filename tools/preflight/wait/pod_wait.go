@@ -2,7 +2,6 @@ package wait
 
 import (
 	"context"
-	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,12 +21,11 @@ type Response struct {
 // PodWaitOptions  waits until the pod reaches the desired condition or times-out.
 type PodWaitOptions struct {
 	//  Name - pod name
-	Name      string
-	Namespace string
-	//  timeout - time to wait till pod reaches the desired condition
-	Timeout      time.Duration
-	PodCondition corev1.PodConditionType
-	ClientSet    *client.Clientset
+	Name               string
+	Namespace          string
+	RetryBackoffParams wait.Backoff
+	PodCondition       corev1.PodConditionType
+	ClientSet          *client.Clientset
 }
 
 func (o *PodWaitOptions) WaitOnPod(ctx context.Context, retryBackoff wait.Backoff) *Response {

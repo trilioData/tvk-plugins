@@ -194,6 +194,7 @@ jobs:
         name: preflight-junit
         path: |
           tests/preflight/junit-preflight.xml
+          cmd/preflight/cmd/junit-preflight-cmd-unit-tests.xml
           tools/preflight/junit-preflight-unit-test.xml
 
     - name: Test Preflight Plugin Locally

@@ -37,15 +37,9 @@ import (
 )
 
 const (
-	defaultTestStorageClass  = "csi-gce-pd"
-	defaultTestSnapshotClass = "default-snapshot-class"
-	memory256                = "256Mi"
-	cpu300                   = "300m"
-	cpu400                   = "400m"
-	cpu600                   = "600m"
-	resourceCPUToken         = "cpu"
-	resourceMemoryToken      = "memory"
-	storageClassPlaceholder  = "STORAGE_CLASS"
+	resourceCPUToken        = "cpu"
+	resourceMemoryToken     = "memory"
+	storageClassPlaceholder = "STORAGE_CLASS"
 
 	dnsPodNamePrefix = "test-dns-pod-"
 	dnsContainerName = "test-dnsutils"
@@ -95,22 +89,16 @@ var (
 	nodeSelectorFlag      = flagPrefix + cmd.NodeSelectorFlag
 	inClusterFlag         = flagPrefix + cmd.InClusterFlag
 
-	preflightLogFilePrefix    = "preflight-"
-	cleanupLogFilePrefix      = "preflight_cleanup-"
-	invalidStorageClassName   = "invalid-storage-class"
-	invalidLocalRegistryName  = "invalid-local-registry"
-	invalidServiceAccountName = "invalid-service-account"
-	invalidLogLevel           = "invalidLogLevel"
-	invalidNamespace          = "invalid-ns"
-	invalidKubeConfFilename   = path.Join([]string{".", "invalid_kc_file"}...)
-	invalidKubeConfFileData   = "invalid data"
-	invalidYamlFilePath       = "invalid_path.yaml"
-	invalidKeyYamlFileName    = "invalid_key_file.yaml"
-	invalidPVCStorageRequest  = "2Ga"
-	defaultTestNs             = testutils.GetInstallNamespace()
-	permYamlFile              = "file_permission.yaml"
-	cleanupUIDInputYamlFile   = "cleanup_uid_input.yaml"
-	cleanupFileInputData      = strings.Join([]string{"cleanup:",
+	preflightLogFilePrefix  = "preflight-"
+	cleanupLogFilePrefix    = "preflight_cleanup-"
+	invalidKubeConfFilename = path.Join([]string{".", "invalid_kc_file"}...)
+	invalidKubeConfFileData = "invalid data"
+	invalidYamlFilePath     = "invalid_path.yaml"
+	invalidKeyYamlFileName  = "invalid_key_file.yaml"
+	defaultTestNs           = testutils.GetInstallNamespace()
+	permYamlFile            = "file_permission.yaml"
+	cleanupUIDInputYamlFile = "cleanup_uid_input.yaml"
+	cleanupFileInputData    = strings.Join([]string{"cleanup:",
 		fmt.Sprintf("  namespace: %s", defaultTestNs), "  logLevel: info"}, "\n")
 	cleanupAllInputYamlFile  = "cleanup_all_input.yaml"
 	invalidNodeSelectorKey   = "node-sel-key"
@@ -143,7 +131,7 @@ var (
 	preflightBusyboxPod = "preflight-busybox"
 
 	flagsMap = map[string]string{
-		storageClassFlag:     defaultTestStorageClass,
+		storageClassFlag:     internal.DefaultTestStorageClass,
 		namespaceFlag:        defaultTestNs,
 		cleanupOnFailureFlag: "",
 		kubeconfigFlag:       kubeConfPath,
@@ -247,7 +235,7 @@ func getVolSnapClassGVK() schema.GroupVersionKind {
 
 func assignPlaceholderValues() {
 	kv := map[string]string{
-		storageClassPlaceholder: defaultTestStorageClass,
+		storageClassPlaceholder: internal.DefaultTestStorageClass,
 	}
 
 	Expect(testutils.UpdateYAMLs(kv, filepath.Join(testDataDirRelPath, podAffinityInputFile))).To(BeNil())
@@ -259,7 +247,7 @@ func assignPlaceholderValues() {
 
 func revertPlaceholderValues() {
 	kv := map[string]string{
-		defaultTestStorageClass: storageClassPlaceholder,
+		internal.DefaultTestStorageClass: storageClassPlaceholder,
 	}
 
 	Expect(testutils.UpdateYAMLs(kv, filepath.Join(testDataDirRelPath, testFileInputName))).To(BeNil())

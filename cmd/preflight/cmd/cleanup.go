@@ -29,13 +29,13 @@ If uid flag is not specified then all preflight resources created till date are 
   # cleanup preflight resources with a particular kubeconfig file
   kubectl tvk-preflight cleanup --uid <preflight run uid> --namespace <namespace> --kubeconfig <kubeconfig-file-path>
 `,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		var err error
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		var cleanupLogFilename string
 		err = manageCleanupInputs(cmd)
 		if err != nil {
 			return err
 		}
-		err = setupLogger(cleanupLogFilePrefix, cmdOps.Cleanup.LogLevel)
+		cleanupLogFilename, err = setupLogger(cleanupLogFilePrefix, cmdOps.Cleanup.LogLevel)
 		if err != nil {
 			return err
 		}
@@ -44,7 +44,7 @@ If uid flag is not specified then all preflight resources created till date are 
 			return err
 		}
 
-		logFile, err = os.OpenFile(preflightLogFilename, os.O_APPEND|os.O_WRONLY, filePermission)
+		logFile, err = os.OpenFile(cleanupLogFilename, os.O_APPEND|os.O_WRONLY, filePermission)
 		if err != nil {
 			log.Fatalf("Failed to open preflight log file :: %s", err.Error())
 		}

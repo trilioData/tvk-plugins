@@ -7,7 +7,6 @@ import (
 	"math/big"
 	goexec "os/exec"
 	"path/filepath"
-	"time"
 
 	"github.com/trilioData/tvk-plugins/internal"
 	"github.com/trilioData/tvk-plugins/tools/preflight/exec"
@@ -570,11 +569,11 @@ func (o *Run) checkDNSResolution(ctx context.Context, execCommand []string, podN
 	o.Logger.Infof("Pod %s created in cluster\n", pod.GetName())
 
 	waitOptions := &wait.PodWaitOptions{
-		Name:         pod.GetName(),
-		Namespace:    o.Namespace,
-		Timeout:      3 * time.Minute,
-		PodCondition: corev1.PodReady,
-		ClientSet:    clients.ClientSet,
+		Name:               pod.GetName(),
+		Namespace:          o.Namespace,
+		RetryBackoffParams: getDefaultRetryBackoffParams(),
+		PodCondition:       corev1.PodReady,
+		ClientSet:          clients.ClientSet,
 	}
 	o.Logger.Infoln("Waiting for dns pod to become ready")
 	err = waitUntilPodCondition(ctx, waitOptions)
@@ -710,11 +709,11 @@ func (o *Run) createSourcePodAndPVC(ctx context.Context, nameSuffix string,
 
 	//  Wait for snapshot pod to become ready.
 	waitOptions := &wait.PodWaitOptions{
-		Name:         srcPod.GetName(),
-		Namespace:    o.Namespace,
-		Timeout:      3 * time.Minute,
-		PodCondition: corev1.PodReady,
-		ClientSet:    k8sClient,
+		Name:               srcPod.GetName(),
+		Namespace:          o.Namespace,
+		RetryBackoffParams: getDefaultRetryBackoffParams(),
+		PodCondition:       corev1.PodReady,
+		ClientSet:          k8sClient,
 	}
 	o.Logger.Infof("Waiting for source pod - %s to become ready\n", srcPod.GetName())
 	err = waitUntilPodCondition(ctx, waitOptions)
@@ -777,11 +776,11 @@ func (o *Run) createRestorePodFromSnapshot(ctx context.Context, volSnapshot *uns
 
 	//  Wait for snapshot pod to become ready.
 	waitOptions := &wait.PodWaitOptions{
-		Name:         restorePod.GetName(),
-		Namespace:    o.Namespace,
-		Timeout:      3 * time.Minute,
-		PodCondition: corev1.PodReady,
-		ClientSet:    k8slient,
+		Name:               restorePod.GetName(),
+		Namespace:          o.Namespace,
+		RetryBackoffParams: getDefaultRetryBackoffParams(),
+		PodCondition:       corev1.PodReady,
+		ClientSet:          k8slient,
 	}
 	o.Logger.Infof("Waiting for restore pod - %s to become ready\n", restorePod.GetName())
 	waitOptions.Name = restorePod.GetName()
