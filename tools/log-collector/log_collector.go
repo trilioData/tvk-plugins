@@ -394,11 +394,12 @@ func (l *LogCollector) filterResourceObjects(resourcePath string,
 		if err != nil {
 			return allObjects, err
 		}
+		return allObjects, nil
 	}
 
 	if resource.Name == Namespaces {
 		log.Infof("Filtering '%s' Resource", resource.Kind)
-		allObjects = l.filterInputNS(l.getResourceObjects(resourcePath, resource))
+		return l.filterInputNS(l.getResourceObjects(resourcePath, resource)), nil
 	}
 
 	if resource.Name == ClusterServiceVersion {
