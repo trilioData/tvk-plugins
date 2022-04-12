@@ -68,8 +68,10 @@ func (co *Cleanup) CleanupPreflightResources(ctx context.Context) error {
 			res := res
 			err = co.cleanResource(ctx, &res, kubeClient.RuntimeClient)
 			if err != nil {
-				allSuccess = false
-				co.Logger.Errorf("problem occurred deleting %s - %s :: %s", res.GetKind(), res.GetName(), err.Error())
+				if !k8serrors.IsNotFound(err) {
+					allSuccess = false
+					co.Logger.Errorf("problem occurred deleting %s - %s :: %s", res.GetKind(), res.GetName(), err.Error())
+				}
 			}
 		}
 	}
@@ -96,17 +98,7 @@ func (co *Cleanup) cleanResource(ctx context.Context, resource *unstructured.Uns
 			cross, resource.GetKind(), resource.GetName(), err.Error())
 	}
 
-	err = deleteK8sResource(ctx, updatedRes, cl)
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return nil
-		}
-
-		co.Logger.Errorf("%s error cleaning %s - %s :: %s\n",
-			cross, resource.GetKind(), resource.GetName(), err.Error())
-		return err
-	}
-	return nil
+	return deleteK8sResource(ctx, updatedRes, cl)
 }
 
 func getCleanupResourceGVKList(cl *kubernetes.Clientset) ([]schema.GroupVersionKind, error) {
