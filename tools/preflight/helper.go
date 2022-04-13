@@ -602,7 +602,7 @@ func deleteK8sResource(ctx context.Context, obj client.Object, cl client.Client)
 
 	err = cl.Delete(ctx, obj, client.DeleteOption(client.GracePeriodSeconds(deletionGracePeriod)))
 	if err != nil {
-		return fmt.Errorf("problem occurred deleting %s - %s :: %s", obj.GetName(), obj.GetNamespace(), err.Error())
+		return err
 	}
 
 	gvk := obj.GetObjectKind().GroupVersionKind()
