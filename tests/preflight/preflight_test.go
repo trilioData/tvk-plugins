@@ -8,9 +8,8 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"sync"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	tLog "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -409,26 +408,23 @@ var _ = Describe("Preflight Tests", func() {
 
 		Context("Preflight pod scheduling test cases", func() {
 
-			Context("Preflight run command, node selector test cases", func() {
+			Context("Preflight run command, node selector test cases", Ordered, func() {
 				var (
-					beforeOnce   sync.Once
-					afterOnce    sync.Once
 					nodeList     *corev1.NodeList
 					testNodeName string
 				)
-				BeforeEach(func() {
-					beforeOnce.Do(func() {
-						nodeList, err = k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-						Expect(err).To(BeNil())
-						Expect(len(nodeList.Items)).ToNot(Equal(0))
-						node := nodeList.Items[0]
-						testNodeName = node.GetName()
-						nodeLabels := node.GetLabels()
-						nodeLabels[preflightNodeLabelKey] = preflightNodeLabelValue
-						node.SetLabels(nodeLabels)
-						_, err = k8sClient.CoreV1().Nodes().Update(ctx, &node, metav1.UpdateOptions{})
-						Expect(err).To(BeNil())
-					})
+				BeforeAll(func() {
+
+					nodeList, err = k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+					Expect(err).To(BeNil())
+					Expect(len(nodeList.Items)).ToNot(Equal(0))
+					node := nodeList.Items[0]
+					testNodeName = node.GetName()
+					nodeLabels := node.GetLabels()
+					nodeLabels[preflightNodeLabelKey] = preflightNodeLabelValue
+					node.SetLabels(nodeLabels)
+					_, err = k8sClient.CoreV1().Nodes().Update(ctx, &node, metav1.UpdateOptions{})
+					Expect(err).To(BeNil())
 				})
 
 				It(fmt.Sprintf("Should schedule preflight pods on node - %s and perform preflight checks", testNodeName), func() {
@@ -459,17 +455,17 @@ var _ = Describe("Preflight Tests", func() {
 						"Preflight check for volume snapshot and restore failed :: pod source-pod-[a-z]{6} hasn't reached into ready state"))
 				})
 
-				AfterEach(func() {
-					afterOnce.Do(func() {
-						var testNode *corev1.Node
-						testNode, err = k8sClient.CoreV1().Nodes().Get(ctx, testNodeName, metav1.GetOptions{})
-						Expect(err).To(BeNil())
-						nodeLabels := testNode.GetLabels()
-						delete(nodeLabels, preflightNodeLabelKey)
-						testNode.SetLabels(nodeLabels)
-						_, err = k8sClient.CoreV1().Nodes().Update(ctx, testNode, metav1.UpdateOptions{})
-						Expect(err).To(BeNil())
-					})
+				AfterAll(func() {
+
+					var testNode *corev1.Node
+					testNode, err = k8sClient.CoreV1().Nodes().Get(ctx, testNodeName, metav1.GetOptions{})
+					Expect(err).To(BeNil())
+					nodeLabels := testNode.GetLabels()
+					delete(nodeLabels, preflightNodeLabelKey)
+					testNode.SetLabels(nodeLabels)
+					_, err = k8sClient.CoreV1().Nodes().Update(ctx, testNode, metav1.UpdateOptions{})
+					Expect(err).To(BeNil())
+
 				})
 			})
 

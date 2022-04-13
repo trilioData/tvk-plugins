@@ -14,8 +14,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	log "github.com/sirupsen/logrus"
 	"github.com/thedevsaddam/gojsonq"
@@ -72,14 +71,11 @@ const sampleTVKHost = "k8s-tvk.com"
 
 func TestTargetBrowser(t *testing.T) {
 	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("target-browser-junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "TargetBrowser Suite", []Reporter{junitReporter})
+	RunSpecs(t, "TargetBrowser Suite")
 }
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
-
-	By("bootstrapping test environment")
 
 	scheme := runtime.NewScheme()
 	_ = clientGoScheme.AddToScheme(scheme)
@@ -113,7 +109,7 @@ var _ = BeforeSuite(func() {
 
 	// Update tvk host
 	updateTvkHostIngress()
-}, 60)
+})
 
 var _ = AfterSuite(func() {
 	Expect(updateYAMLs(

@@ -8,8 +8,7 @@ import (
 
 	vsnapv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	vsnapv1beta1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1beta1"
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -20,7 +19,6 @@ import (
 	clientGoScheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 
 	"github.com/trilioData/tvk-plugins/internal"
 )
@@ -76,10 +74,7 @@ var (
 
 func TestPreflight(t *testing.T) {
 	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("junit-preflight-unit-test.xml")
-	RunSpecsWithDefaultAndCustomReporters(t,
-		"preflight unit tests",
-		[]Reporter{printer.NewlineReporter{}, junitReporter})
+	RunSpecs(t, "preflight unit tests")
 }
 
 var _ = BeforeSuite(func() {

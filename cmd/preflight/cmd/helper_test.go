@@ -5,14 +5,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/trilioData/tvk-plugins/internal"
-	"github.com/trilioData/tvk-plugins/tools/preflight"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+
+	"github.com/trilioData/tvk-plugins/internal"
+	"github.com/trilioData/tvk-plugins/tools/preflight"
 )
 
 var _ = Describe("Preflight cmd helper unit tests", func() {
@@ -71,21 +71,19 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 		})
 	})
 
-	Context("When updating resource requirements file inputs from CLI", func() {
-		var once sync.Once
-		BeforeEach(func() {
-			once.Do(func() {
-				cmdOps = &preflightCmdOps{
-					Run: preflight.Run{
-						RunOptions: preflight.RunOptions{
-							ResourceRequirements: corev1.ResourceRequirements{
-								Limits:   map[corev1.ResourceName]resource.Quantity{},
-								Requests: map[corev1.ResourceName]resource.Quantity{},
-							},
+	Context("When updating resource requirements file inputs from CLI", Ordered, func() {
+
+		BeforeAll(func() {
+			cmdOps = &preflightCmdOps{
+				Run: preflight.Run{
+					RunOptions: preflight.RunOptions{
+						ResourceRequirements: corev1.ResourceRequirements{
+							Limits:   map[corev1.ResourceName]resource.Quantity{},
+							Requests: map[corev1.ResourceName]resource.Quantity{},
 						},
 					},
-				}
-			})
+				},
+			}
 		})
 
 		It("Should update resource requirements when provided in correct format", func() {
