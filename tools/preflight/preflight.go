@@ -439,11 +439,12 @@ func (o *Run) checkAndCreateSnapshotClassForProvisioner(ctx context.Context, pre
 	} else if len(vsscList.Items) == 0 {
 		o.Logger.Infof("no volume snapshot class for APIVersion - %s/%s found on cluster, attempting installation...",
 			StorageSnapshotGroup, prefVersion)
-		if cErr := o.createVolumeSnapshotClass(ctx, provisioner, prefVersion, cl); cErr != nil {
+		vscName, cErr := o.createVolumeSnapshotClass(ctx, provisioner, prefVersion, cl)
+		if cErr != nil {
 			return "", fmt.Errorf("error creating volume snapshot class having driver - %s"+
 				" :: %s", provisioner, cErr.Error())
 		}
-		return defaultVSCName, nil
+		return vscName, nil
 	}
 
 	sscName := ""
@@ -458,11 +459,12 @@ func (o *Run) checkAndCreateSnapshotClassForProvisioner(ctx context.Context, pre
 	if sscName == "" {
 		o.Logger.Infof("no matching volume snapshot class having driver "+
 			"same as provisioner - %s found on cluster, attempting installation...", provisioner)
-		if cErr := o.createVolumeSnapshotClass(ctx, provisioner, prefVersion, cl); cErr != nil {
+		vscName, cErr := o.createVolumeSnapshotClass(ctx, provisioner, prefVersion, cl)
+		if cErr != nil {
 			return "", fmt.Errorf("error creating volume snapshot class having driver - %s"+
 				" :: %s", provisioner, cErr.Error())
 		}
-		return defaultVSCName, nil
+		return vscName, nil
 	}
 
 	o.Logger.Infof("%s Extracted volume snapshot class - %s found in cluster", check, sscName)
@@ -471,7 +473,7 @@ func (o *Run) checkAndCreateSnapshotClassForProvisioner(ctx context.Context, pre
 	return sscName, nil
 }
 
-func (o *Run) createVolumeSnapshotClass(ctx context.Context, driver, prefVersion string, cl client.Client) error {
+func (o *Run) createVolumeSnapshotClass(ctx context.Context, driver, prefVersion string, cl client.Client) (string, error) {
 	vscUnstrObj := &unstructured.Unstructured{}
 	vscUnstrObj.SetUnstructuredContent(map[string]interface{}{
 		"driver":         driver,
@@ -482,20 +484,25 @@ func (o *Run) createVolumeSnapshotClass(ctx context.Context, driver, prefVersion
 		Version: prefVersion,
 		Kind:    internal.VolumeSnapshotClassKind,
 	})
-	vscUnstrObj.SetName(defaultVSCName)
+	randStr, err := CreateResourceNameSuffix()
+	if err != nil {
+		return "", fmt.Errorf("error generating resource name suffix: %s", err.Error())
+	}
+	vscName := defaultVSCNamePrefix + randStr
+	vscUnstrObj.SetName(vscName)
 
 	if cErr := cl.Create(ctx, vscUnstrObj); cErr != nil {
-		return cErr
+		return "", cErr
 	}
 
 	jsonOut, mErr := vscUnstrObj.MarshalJSON()
 	if mErr != nil {
-		return fmt.Errorf("error marshaling created volume snapshot class :: %s", mErr.Error())
+		return "", fmt.Errorf("error marshaling created volume snapshot class :: %s", mErr.Error())
 	}
 
 	yamlOut, jErr := yaml.JSONToYAML(jsonOut)
 	if jErr != nil {
-		return fmt.Errorf("error converting json object to yaml :: %s", jErr.Error())
+		return "", fmt.Errorf("error converting json object to yaml :: %s", jErr.Error())
 	}
 
 	o.Logger.Infof("%s Volume snapshot class with driver as - %s for version - %s successfully created",
@@ -503,7 +510,7 @@ func (o *Run) createVolumeSnapshotClass(ctx context.Context, driver, prefVersion
 	o.Logger.Warnf("Volume snapshot class object created with the following spec."+
 		" User can edit fields later, if required.. \n::::::::\n%s::::::::", string(yamlOut))
 
-	return nil
+	return vscName, nil
 }
 
 //  checkAndCreateVolumeSnapshotCRDs checks and creates volumesnapshot and related CRDs if not present on cluster.

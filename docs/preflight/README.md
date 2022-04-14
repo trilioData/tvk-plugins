@@ -70,7 +70,7 @@ The following checks are included in preflight:
 7. `check-storage-snapshot-class` -
     1. Ensures provided storageClass is present in cluster
         1. Provided storageClass's `provisioner` [JSON Path: `storageclass.provisioner`] should match with provided volumeSnapshotClass's `driver`[JSON Path: `volumesnapshotclass.driver`]
-        2. If volumeSnapshotClass is not provided then, volumeSnapshotClass which satisfies condition `[i]` will be selected. If there's are multiple volumeSnapshotClasses satisfying condition `[i]`, default volumeSnapshotClass[which has annotation `snapshot.storage.kubernetes.io/is-default-class: "true"` set] will be used for further pre-flight checks.
+        2. If volumeSnapshotClass is not provided then, volumeSnapshotClass which satisfies condition `[i]` will be selected. If there's are multiple volumeSnapshotClasses satisfying condition `[i]`, default volumeSnapshotClass[which has annotation `snapshot.storage.kubernetes.io/is-default-class: "true"` set] will be used for further pre-flight checks. If no volumeSnapshotClass matching with the storage class's provisioner is found, then a volumeSnapshotClass with `driver` as storageClass's `provisioner` and `deletionPolicy` as `Delete` will be created with a name that starts with `preflight-generated-snapshot-class` and has a random suffix.
         3. If volumeSnapshotClass is provided and matches with storage class provisioner, only then that volumeSnapshotClass will be used for further operations, otherwise preflight will fail with not found error.
     2. Ensures at least one volumeSnapshotClass is marked as *default* in cluster if user has not provided volumeSnapshotClass as input.
 

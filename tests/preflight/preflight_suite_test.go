@@ -14,7 +14,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -70,7 +69,6 @@ var (
 	cmdOut                *shell.CmdOut
 	kubeconfig            string
 	ctx                   = context.Background()
-	log                   *logrus.Entry
 	flagPrefix            = "--"
 	storageClassFlag      = flagPrefix + cmd.StorageClassFlag
 	snapshotClassFlag     = flagPrefix + cmd.SnapshotClassFlag
@@ -145,8 +143,7 @@ var (
 		Version: "v1",
 		Kind:    internal.PersistentVolumeClaimKind,
 	}
-	snapshotGVK      schema.GroupVersionKind
-	snapshotClassGVK schema.GroupVersionKind
+	snapshotGVK schema.GroupVersionKind
 
 	scheme        *runtime.Scheme
 	kubeAccessor  *internal.Accessor
@@ -163,8 +160,6 @@ func TestPreflight(t *testing.T) {
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
-	log = logrus.WithFields(logrus.Fields{"namespace": defaultTestNs})
-
 	scheme = runtime.NewScheme()
 	Expect(corev1.AddToScheme(scheme)).ShouldNot(HaveOccurred())
 	Expect(appsv1.AddToScheme(scheme)).ShouldNot(HaveOccurred())
@@ -179,7 +174,6 @@ var _ = BeforeSuite(func() {
 	discClient = kubeAccessor.GetDiscoveryClient()
 
 	snapshotGVK = getVolSnapshotGVK()
-	snapshotClassGVK = getVolSnapClassGVK()
 
 	assignPlaceholderValues()
 })
@@ -213,17 +207,6 @@ func getVolSnapshotGVK() schema.GroupVersionKind {
 		Group:   preflight.StorageSnapshotGroup,
 		Version: prefVer,
 		Kind:    internal.VolumeSnapshotKind,
-	}
-}
-
-func getVolSnapClassGVK() schema.GroupVersionKind {
-	var prefVer string
-	prefVer, err = preflight.GetServerPreferredVersionForGroup(preflight.StorageSnapshotGroup, k8sClient)
-	Expect(err).To(BeNil())
-	return schema.GroupVersionKind{
-		Group:   preflight.StorageSnapshotGroup,
-		Version: prefVer,
-		Kind:    internal.VolumeSnapshotClassKind,
 	}
 }
 
