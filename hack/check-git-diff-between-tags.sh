@@ -28,7 +28,6 @@ echo "checking paths of modified files-"
 preflight_changed=false
 log_collector_changed=false
 target_browser_changed=false
-tvk_oneclick_changed=false
 cleanup_changed=false
 
 cmd_dir="cmd"
@@ -38,7 +37,6 @@ internal_dir="internal"
 target_browser_dir="target-browser"
 preflight_dir="preflight"
 
-tvk_oneclick_dir=$tools_dir/tvk-oneclick
 cleanup_dir=$tools_dir/cleanup
 
 # shellcheck disable=SC2086
@@ -77,12 +75,6 @@ while IFS= read -r file; do
     target_browser_changed=true
   fi
 
-  if [[ $tvk_oneclick_changed == false && $file == $tvk_oneclick_dir/* ]]; then
-    echo "tvk-oneclick related code changes have been detected"
-    echo "::set-output name=release_tvk_oneclick::true"
-    tvk_oneclick_changed=true
-  fi
-
   if [[ $cleanup_changed == false && $file == $cleanup_dir/* ]]; then
     echo "cleanup related code changes have been detected"
     echo "::set-output name=release_cleanup::true"
@@ -91,8 +83,8 @@ while IFS= read -r file; do
 
 done <files.txt
 
-if [[ $preflight_changed == true || $log_collector_changed == true || $target_browser_changed == true || $tvk_oneclick_changed == true || $cleanup_changed ]]; then
-  echo "Creating Release as files related to preflight, log-collector, target-browser, tvk-oneclick or cleanup have been changed"
+if [[ $preflight_changed == true || $log_collector_changed == true || $target_browser_changed == true || $cleanup_changed ]]; then
+  echo "Creating Release as files related to preflight, log-collector, target-browser or cleanup have been changed"
   echo "::set-output name=create_release::true"
 fi
 
@@ -102,5 +94,4 @@ fi
 #echo "::set-output name=release_preflight::true"
 #echo "::set-output name=release_log_collector::true"
 #echo "::set-output name=release_target_browser::true"
-#echo "::set-output name=release_tvk_oneclick::true"
 #echo "::set-output name=release_cleanup::true"

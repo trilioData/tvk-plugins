@@ -8,4 +8,3 @@ SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 "$SCRIPT_PATH"/update-log-collector-manifest.sh
 "$SCRIPT_PATH"/update-target-browser-manifest.sh
 "$SCRIPT_PATH"/update-cleanup-manifest.sh
-"$SCRIPT_PATH"/update-tvk-oneclick-manifests.sh

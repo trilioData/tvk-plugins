@@ -10,21 +10,13 @@ echo "release log-collector package:" "$release_log_collector"
 echo "release target-browser package:" "$release_target_browser"
 # shellcheck disable=SC2154
 echo "release cleanup package:" "$release_cleanup"
-# shellcheck disable=SC2154
-echo "release tvk-oneclick package:" "$release_tvk_oneclick"
 
 SRC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
 goreleaser_yaml=$SRC_ROOT/.goreleaser.yml
 
-if [[ $release_cleanup == true || $release_tvk_oneclick == true ]]; then
+if [[ $release_cleanup == true ]]; then
 
   echo '  extra_files:' >>"$goreleaser_yaml"
-
-  if [[ $release_tvk_oneclick == true ]]; then
-    echo "adding tvk-oneclick packages to goreleaser.yml"
-    echo '    - glob: build/tvk-oneclick/tvk-oneclick.tar.gz
-    - glob: build/tvk-oneclick/tvk-oneclick-sha256.txt' >>"$goreleaser_yaml"
-  fi
 
   if [[ $release_cleanup == true ]]; then
     echo "adding cleanup packages to goreleaser.yml"
