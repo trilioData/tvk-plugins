@@ -48,6 +48,7 @@ const (
 	testSnapshotClass = "ut-snapshot-class"
 	testDriver        = "test.snapshot.driver.io"
 	testMinK8sVersion = "1.10.0"
+	testSentence      = "This is a test-sentence with special char $%^&*() which can be inserted anywhere in test data"
 
 	installNs = internal.DefaultNs
 )

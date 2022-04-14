@@ -109,6 +109,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		}
 	}
 
+	// check cluster default ns access
 	o.Logger.Infoln("Checking access to the default namespace of cluster")
 	err = o.checkClusterAccess(ctx, internal.DefaultNs, kubeClient.ClientSet)
 	if err != nil {
@@ -118,6 +119,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		o.Logger.Infof("%s Preflight check for kubectl access is successful\n", check)
 	}
 
+	// Helm check
 	if o.InCluster {
 		o.Logger.Infoln("In cluster flag enabled. Skipping check for helm...")
 	} else {
@@ -131,6 +133,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		}
 	}
 
+	// kubernetes server version check
 	o.Logger.Infof("Checking for required kubernetes server version (>=%s)\n", minK8sVersion)
 	err = o.checkKubernetesVersion(minK8sVersion, kubeClient.ClientSet)
 	if err != nil {
@@ -140,6 +143,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		o.Logger.Infof("%s Preflight check for kubernetes version is successful\n", check)
 	}
 
+	// rbac check
 	o.Logger.Infoln("Checking Kubernetes RBAC")
 	err = o.checkKubernetesRBAC(RBACAPIGroup, RBACAPIVersion, kubeClient.DiscClient)
 	if err != nil {
@@ -211,8 +215,8 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 	}
 
 	//  Check DNS resolution
-	o.Logger.Infoln("Checking if DNS resolution is working in k8s cluster")
 	err = o.checkDNSResolution(ctx, execDNSResolutionCmd, resNameSuffix, kubeClient)
+	o.Logger.Infoln("Checking if DNS resolution is working in k8s cluster")
 	if err != nil {
 		o.Logger.Errorf("%s Preflight check for DNS resolution failed :: %s\n", cross, err.Error())
 		preflightStatus = false
