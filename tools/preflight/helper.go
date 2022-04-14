@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"regexp"
 	gort "runtime"
 	"strings"
 	"time"
@@ -37,8 +38,9 @@ const (
 	windowsCheckSymbol = "\u2713"
 	windowsCrossSymbol = "[X]"
 
-	minHelmVersion = "3.0.0"
-	minK8sVersion  = "1.19.0"
+	versionRegexpCompile = "v[0-9]+.[0-9]+.[0-9]+"
+	minHelmVersion       = "3.0.0"
+	minK8sVersion        = "1.19.0"
 
 	RBACAPIGroup   = "rbac.authorization.k8s.io"
 	RBACAPIVersion = "v1"
@@ -185,14 +187,38 @@ func InitKubeEnv(kubeconfig string) error {
 }
 
 func GetHelmVersion(binaryName string) (string, error) {
-	cmdOut, err := shell.RunCmd(fmt.Sprintf("%s version "+
+	var (
+		helmVersion string
+		cmdOut      *shell.CmdOut
+		err         error
+	)
+	cmdOut, err = shell.RunCmd(fmt.Sprintf("%s version "+
 		"--template '{{.Version}}'", binaryName))
 	if err != nil {
 		return "", err
 	}
-	helmVersion := cmdOut.Out[2 : len(cmdOut.Out)-1]
+
+	helmVersion, err = extractVersionFromString(cmdOut.Out)
+	if err != nil {
+		return "", err
+	}
 
 	return helmVersion, nil
+}
+
+// extractVersionFromString extracts version satisfying the regex compile rule
+func extractVersionFromString(str string) (string, error) {
+	verexp := regexp.MustCompile(versionRegexpCompile)
+	matches := verexp.FindAllStringSubmatch(str, -1)
+	if len(matches) == 0 {
+		return "", fmt.Errorf("no version of type vX.Y.Z found in the string")
+	}
+	// pick the last match if there are multiple versions mentioned in the output.
+	// because warnings and errors are printed before the actual version output in most cases.
+	version := matches[len(matches)-1][0]
+	version = version[1:]
+
+	return version, nil
 }
 
 func GetServerPreferredVersionForGroup(grp string, cl *goclient.Clientset) (string, error) {

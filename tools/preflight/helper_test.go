@@ -61,6 +61,67 @@ var _ = Describe("Preflight Helper Funcs Unit Tests", func() {
 		})
 	})
 
+	Context("when extracting version of type vX.Y.Z from string of sentences", func() {
+
+		Context("When valid version is present in string", func() {
+
+			It("Should extract version when version is mentioned at the end of the string", func() {
+				verStr := fmt.Sprintf("%s %s v%s", testSentence, testSentence, minHelmVersion)
+				version, err := extractVersionFromString(verStr)
+				Expect(err).To(BeNil())
+				Expect(version).To(Equal(minHelmVersion))
+			})
+
+			It("Should extract version when version is mentioned at the start of the string", func() {
+				verStr := fmt.Sprintf("v%s %s %s", minHelmVersion, testSentence, testSentence)
+				version, err := extractVersionFromString(verStr)
+				Expect(err).To(BeNil())
+				Expect(version).To(Equal(minHelmVersion))
+			})
+
+			It("Should extract version when version is mentioned in the middle of the string", func() {
+				verStr := fmt.Sprintf("%s v%s %s", testSentence, minHelmVersion, testSentence)
+				version, err := extractVersionFromString(verStr)
+				Expect(err).To(BeNil())
+				Expect(version).To(Equal(minHelmVersion))
+			})
+
+			It("Should extract the last version of string when multiple valid versions are present in the string", func() {
+				verStr := fmt.Sprintf("%s v%s %s v%s", testSentence, minHelmVersion, testSentence, minK8sVersion)
+				version, err := extractVersionFromString(verStr)
+				Expect(err).To(BeNil())
+				Expect(version).To(Equal(minK8sVersion))
+			})
+		})
+
+		Context("When invalid version is present in the string", func() {
+
+			It("Should return error when major numeral of version is not a digit", func() {
+				_, err := extractVersionFromString("va1.2.3")
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("no version of type vX.Y.Z found in the string"))
+			})
+
+			It("Should return error when minor numeral of version is not a digit", func() {
+				_, err := extractVersionFromString("v1.a2.3")
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("no version of type vX.Y.Z found in the string"))
+			})
+
+			It("Should return error when patch numeral of version is not a digit", func() {
+				_, err := extractVersionFromString("v1.2.a3")
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("no version of type vX.Y.Z found in the string"))
+			})
+
+			It("Should return error when there is no version specified in the string", func() {
+				_, err := extractVersionFromString(testSentence)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("no version of type vX.Y.Z found in the string"))
+			})
+		})
+	})
+
 	Context("Fetch server preferred version for a API group on cluster", func() {
 
 		It("Should return preferred version of valid group using a go-client", func() {
