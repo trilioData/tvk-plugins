@@ -42,9 +42,6 @@ build-preflight:
 build-cleanup:
 	./hack/build-cleanup-artifacts.sh
 
-build-tvk-oneclick:
-	./hack/build-tvk-oneclick-artifacts.sh
-
 build-log-collector:
 	find . -name .goreleaser.yml -exec sed -i '/binary: target-browser/a \ \ skip: true' {} +
 	find . -name .goreleaser.yml -exec sed -i '/binary: preflight/a \ \ skip: true' {} +
@@ -57,7 +54,7 @@ build-target-browser:
 	goreleaser release --snapshot --skip-publish --rm-dist
 	find . -name .goreleaser.yml -exec sed -i '/skip: true/d' {} +
 
-build: build-preflight build-cleanup build_test_tvk_oneclick
+build: build-preflight build-cleanup
 	goreleaser release --snapshot --skip-publish --rm-dist
 
 test-preflight-plugin-locally:
@@ -76,10 +73,6 @@ test-target-browser-plugin-locally:
 	./hack/generate-test-target-browser-plugin-manifest.sh
 	./hack/test-target-browser-plugin-locally.sh
 
-test-tvk-oneclick-plugin-locally:
-	./hack/generate-test-tvk-oneclick-plugin-manifest.sh
-	./hack/test-tvk-oneclick-plugin-locally.sh
-
 test-preflight-unit:
 	./hack/run-unit-tests.sh cmd/preflight/cmd/...
 	./hack/run-unit-tests.sh tools/preflight/...
@@ -90,14 +83,10 @@ test-preflight-integration:
 test-cleanup-integration:
 	./tests/cleanup/cleanup_test.sh
 
-test-tvk_oneclick-integration:
-	./tests/tvk-oneclick/create_virtual_cluster.sh
-	./tests/tvk-oneclick/tvk_oneclick_test.sh
-
 test-target-browser-integration:
 	./hack/run-integration-tests.sh tests/target-browser/...
 
-test: test-preflight-integration test-target-browser-integration test-cleanup-integration test-tvk_oneclick-integration
+test: test-preflight-integration test-target-browser-integration test-cleanup-integration
 
 test-preflight: clean build-preflight test-preflight-plugin-locally
 
@@ -107,11 +96,9 @@ test-log-collector: clean build-log-collector test-log-collector-plugin-locally
 
 test-target-browser: clean build-target-browser test-target-browser-integration test-target-browser-plugin-locally
 
-test-tvk-oneclick: clean build-tvk-oneclick test-tvk_oneclick-integration test-tvk-oneclick-plugin-locally
+test-plugins-locally: test-preflight-plugin-locally test-log-collector-plugin-locally test-target-browser-plugin-locally test-cleanup-plugin-locally
 
-test-plugins-locally: test-preflight-plugin-locally test-log-collector-plugin-locally test-target-browser-plugin-locally test-cleanup-plugin-locally test-tvk-oneclick-plugin-locally
-
-test-plugins-packages: test-preflight test-log-collector test-target-browser test-cleanup test-tvk-oneclick
+test-plugins-packages: test-preflight test-log-collector test-target-browser test-cleanup
 
 validate-plugin-manifests:
 	./hack/validate-plugin-manifests.sh
@@ -131,10 +118,7 @@ update-log-collector-manifest:
 update-target-browser-manifest:
 	./hack/update-target-browser-manifest.sh
 
-update-tvk-oneclick-manifests:
-	./hack/update-tvk-oneclick-manifests.sh
-
-update-plugin-manifests: update-preflight-manifest update-log-collector-manifest update-target-browser-manifest update-cleanup-manifest update-tvk-oneclick-manifests
+update-plugin-manifests: update-preflight-manifest update-log-collector-manifest update-target-browser-manifest update-cleanup-manifest
 
 ready: fmt vet lint verify-code-patterns
 

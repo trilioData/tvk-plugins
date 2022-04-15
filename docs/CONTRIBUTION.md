@@ -21,13 +21,11 @@ tvk-plugins
  │   ├── tvk-log-collector.yaml 
  │   └── tvk-preflight.yaml
  │   ├── tvk-cleanup.yaml 
- │   └── tvk-oneclick.yaml
  │   ├── tvk-target-browser.yaml 
  ├── tests : Integration Test
  │   ├── target-browser : target-browser test suite
  │   └── preflight : preflight test files
  │   ├── cleanup : cleanup test suite
- │   └── tvk-oneclick : oneclick test suite
  ├── tools : business logic of plugins
  │   ├── log-collector : business logic of log-collector
  │   └── preflight : business logic of preflight
@@ -145,7 +143,6 @@ make ready
     export LOG_COLLECTOR_VERSION=<log-collector-release-tag>
     export TARGET_BROWSER_VERSION=<target-browser-release-tag>
     export CLEANUP_VERSION=<cleanup-release-tag>
-    export TVK_ONECLICK_VERSION=<tvk-oneclick-release-tag>
     ```
    
     Preflight:
