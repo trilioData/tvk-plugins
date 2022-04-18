@@ -509,14 +509,17 @@ func getPodTemplate(name, uid string, op *Run) *corev1.Pod {
 	pod := &corev1.Pod{
 		ObjectMeta: getObjectMetaTemplate(name, op.Namespace, uid),
 		Spec: corev1.PodSpec{
-			ImagePullSecrets: []corev1.LocalObjectReference{
-				{Name: op.ImagePullSecret},
-			},
 			ServiceAccountName: op.ServiceAccountName,
 			NodeSelector:       op.PodSchedOps.NodeSelector,
 			Affinity:           op.PodSchedOps.Affinity,
 			Tolerations:        op.PodSchedOps.Tolerations,
 		},
+	}
+
+	if op.ImagePullSecret != "" {
+		pod.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
+			{Name: op.ImagePullSecret},
+		}
 	}
 
 	return pod
