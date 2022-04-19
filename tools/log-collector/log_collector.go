@@ -623,6 +623,16 @@ func (l *LogCollector) getOcpResourcesByOwnerRef(resourcePath string,
 				objects.Items = append(objects.Items, object)
 			}
 		}
+
+		labels := object.GetLabels()
+		if ownerKind, exists := labels[OlmOwnerKind]; exists && ownerKind == ClusterServiceVersionKind {
+			if owner, ownerExist := labels[OlmOwner]; ownerExist && strings.HasPrefix(owner, TrilioPrefix) {
+				if ownerWebhook, ownerWebhookExist := labels[OlmWebhook]; ownerWebhookExist &&
+					strings.Contains(ownerWebhook, TrilioDomain) {
+					objects.Items = append(objects.Items, object)
+				}
+			}
+		}
 	}
 	return objects, nil
 }

@@ -23,6 +23,9 @@ const (
 	ClusterServiceVersionKind = "ClusterServiceVersion"
 	TriliovaultGroupVersion   = "triliovault.trilio.io/v1"
 	ocpAPIVersion             = "security.openshift.io/v1"
+	OlmOwnerKind              = "olm.owner.kind"
+	OlmOwner                  = "olm.owner"
+	OlmWebhook                = "olm.webhook-description-generate-name"
 
 	CoreGv           = "v1"
 	Events           = "events"
@@ -37,6 +40,7 @@ const (
 
 	TrilioPrefix   = "k8s-triliovault"
 	TrilioOpPrefix = "k8s-triliovault-operator"
+	TrilioDomain   = "trilio.io"
 )
 
 var (
