@@ -5,7 +5,7 @@ metadata:
 spec:
   homepage: https://github.com/trilioData/tvk-plugins/blob/main/docs/cleanup/README.md
   shortDescription: TVK cleanup cleans up TVK resources from k8s cluster
-  version: v1.1.0-rc4
+  version: v1.2.0
   caveats: |
     Curl and Git neeed to be installed on system for Krew index update to work properly
   platforms:
@@ -16,8 +16,8 @@ spec:
         values:
         - darwin
         - linux
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.1.0-rc4/cleanup.tar.gz
-    sha256: fe4dce901048e962c93d4a1a59b8fa6afcf405dcaf8393dbaf3cf6919dc130b6
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.0/cleanup.tar.gz
+    sha256: 402e3e66840ec86ef3d9839d09cabd89c4a4a31d1662b26066dc3e0ab548fa65
     bin: cleanup
     files:
     - from: cleanup/*

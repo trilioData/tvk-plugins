@@ -5,7 +5,7 @@ metadata:
 spec:
   homepage: https://github.com/trilioData/tvk-plugins/blob/master/docs/target-browser/README.md
   shortDescription: TVK Target Browser queries mounted target to get details of backup, backupPlan, backup metadata, backup resource-metadata, trilio-resources etc.
-  version: v2.0.0-rc.1
+  version: v1.2.0
   caveats: |
     Curl and Git neeed to be installed on system for Krew index update to work properly
   platforms:
@@ -13,8 +13,8 @@ spec:
       matchLabels:
         os: linux
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.0.0-rc.1/target-browser_v2.0.0-rc.1_linux_amd64.tar.gz
-    sha256: d962e593d4e89dbc08026842bf6ef422e4dd95a54681bfdcf1ce76d4be4de763
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.0/target-browser_v1.2.0_linux_amd64.tar.gz
+    sha256: 936a546854676081b858ac7558b85f56e4037bfbbf574aeeb6a914f7b3aaed28
     bin: target-browser
     files:
     - from: '*'
@@ -23,8 +23,8 @@ spec:
       matchLabels:
         os: linux
         arch: arm64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.0.0-rc.1/target-browser_v2.0.0-rc.1_linux_arm64.tar.gz
-    sha256: f202def55cdce28bfc193148ddde3837f6c87bcc12b92136cbfc48d629c72a49
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.0/target-browser_v1.2.0_linux_arm64.tar.gz
+    sha256: fa19c8bae67c3a81755560a793671a126bf5fe7422028eabf6bed225707e5c1e
     bin: target-browser
     files:
     - from: '*'
@@ -33,8 +33,8 @@ spec:
       matchLabels:
         os: linux
         arch: arm
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.0.0-rc.1/target-browser_v2.0.0-rc.1_linux_arm.tar.gz
-    sha256: b2979b8077747aef40b0fd800fbcb73b4550211f1e23f445992024036764cfe5
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.0/target-browser_v1.2.0_linux_arm.tar.gz
+    sha256: 246bdd97a66e4b97f903948f73a7adb0d60bc7b79336192264d8d74151a873ae
     bin: target-browser
     files:
     - from: '*'
@@ -44,8 +44,8 @@ spec:
       matchLabels:
         os: darwin
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.0.0-rc.1/target-browser_v2.0.0-rc.1_darwin_amd64.tar.gz
-    sha256: d5a68e116b12a0345076302698721a9b016a54ff3210e5a2e08f28ca2ac24f64
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.0/target-browser_v1.2.0_darwin_amd64.tar.gz
+    sha256: 642ac093baef463f69dc8616edb179972cb5555902b5edf3be87e7d8e14ef023
     bin: target-browser
     files:
     - from: '*'
@@ -54,8 +54,8 @@ spec:
       matchLabels:
         os: darwin
         arch: arm64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.0.0-rc.1/target-browser_v2.0.0-rc.1_darwin_arm64.tar.gz
-    sha256: 5bd8f259afb56885ba6f9d32ccf751198f4b2ae805f752138497f37756fc4113
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.0/target-browser_v1.2.0_darwin_arm64.tar.gz
+    sha256: 8397e0cb6e43a937326739fafa624dc857a51f241722d643f3f4d1ba442378e4
     bin: target-browser
     files:
     - from: '*'
@@ -65,8 +65,8 @@ spec:
       matchLabels:
         os: windows
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.0.0-rc.1/target-browser_v2.0.0-rc.1_windows_amd64.zip
-    sha256: 9faa21f762ad158fd24c93dd4a61189e4486c34f1e1461468fb01974d3662d9b
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.0/target-browser_v1.2.0_windows_amd64.zip
+    sha256: c8b573384f30532b7391fa66b9f3ee3ff3caab791b9d484483181fce80c3996f
     bin: target-browser.exe
     files:
     - from: '*'
@@ -77,8 +77,8 @@ spec:
   #      matchLabels:
   #        os: windows
   #        arch: arm64
-  #    uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.0.0-rc.1/target-browser_v2.0.0-rc.1_windows_arm64.zip
-  #    sha256: 8b7f7dc1905a6407192cfcae2c2f5a306ab3ff2fc4a7315875c6ffc45fcca775
+  #    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.0/target-browser_v1.2.0_windows_arm64.zip
+  #    sha256: cac78193765878faefc8a320e4fac453077fde9a5fb803c739977e6df48cccbd
   #    bin: target-browser.exe
   #    files:
   #    - from: '*'
@@ -87,8 +87,8 @@ spec:
   #      matchLabels:
   #        os: windows
   #        arch: arm
-  #    uri: https://github.com/trilioData/tvk-plugins/releases/download/v2.0.0-rc.1/target-browser_v2.0.0-rc.1_windows_arm.zip
-  #    sha256: 3561f1208b5311ee5c0a9cc2e44d9fd417f44662b1a2323032e25e2295fca9b4
+  #    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.0/target-browser_v1.2.0_windows_arm.zip
+  #    sha256: 02b623bac40f640f6d2ec8d4ecd667a9a4619fe723b515205f7d4fc1c1e827af
   #    bin: target-browser.exe
   #    files:
   #    - from: '*'
