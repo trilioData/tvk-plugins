@@ -36,11 +36,6 @@ func logCollectorCommand() *cobra.Command {
 
 func runLogCollector(*cobra.Command, []string) error {
 	log.Info("---------    LOG COLLECTOR    --------- ")
-	t := time.Now()
-	formatted := fmt.Sprintf("%d-%02d-%02dT%02d-%02d-%02d",
-		t.Year(), t.Month(), t.Day(),
-		t.Hour(), t.Minute(), t.Second())
-	logCollector.OutputDir = "triliovault-" + formatted
 
 	err := logCollector.CollectLogsAndDump()
 	if err != nil {
@@ -87,5 +82,12 @@ func preRun(*cobra.Command, []string) error {
 	if !logCollector.Clustered && len(logCollector.Namespaces) == 0 {
 		logCollector.Namespaces = append(logCollector.Namespaces, defaultNamespace)
 	}
+
+	t := time.Now()
+	formatted := fmt.Sprintf("%d-%02d-%02dT%02d-%02d-%02d",
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second())
+	logCollector.OutputDir = "triliovault-" + formatted
+
 	return nil
 }

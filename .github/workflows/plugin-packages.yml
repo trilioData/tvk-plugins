@@ -353,6 +353,13 @@ jobs:
       - name: Upload Log-Collector binary to GCS artifact
         if: ${{ github.ref == 'refs/heads/main' }}
         run: gsutil cp dist/log-collector_linux_amd64/log-collector gs://trilio-artifacts/tvk-plugins/log-collector/main/log-collector
+
+      - name: Run Log Collector Unit Tests
+        if: (needs.pre-build.outputs.logCollector == 'true') || startsWith(github.ref, 'refs/tags/')
+        run: make test-logcollector-unit
+        env:
+          job_name: logcollector
+          build_id: lc-${{ github.run_id }}
   # build_test_target-browser job builds target-browser packages, runs integration tests and tests packages for plugin creation(install, uninstall)
   build_test_target-browser:
     runs-on: ubuntu-latest

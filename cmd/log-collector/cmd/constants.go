@@ -29,7 +29,7 @@ const (
 	keepSourceUsage     = "Keep source directory and Zip both"
 	keepSourceDefault   = false
 	keepSourceShort     = "s"
-	configFileUsage     = "specifies the name of the yaml file for inputs to the logCollector flags"
+	configFileUsage     = "specifies the name of the yaml file for inputs to the LCObj flags"
 	configFlagShorthand = "f"
 	gvkUsage            = "specifies the gvk(s) string of all gvk other than log collector handles by default"
 	gvkFlagShorthand    = "g"
