@@ -19,7 +19,8 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 		It("Should initialize log collector objects when valid kubeconfig file path is provided", func() {
 
 			command := logCollectorCommand()
-			command.PersistentPreRunE(command, []string{})
+			err := command.PersistentPreRunE(command, []string{})
+			Expect(err).Should(BeNil())
 			Expect(logCollector.KubeConfig).ShouldNot(BeEmpty())
 			Expect(logCollector.Clustered).Should(BeFalse())
 			Expect(logCollector.Namespaces).ShouldNot(BeEmpty())
@@ -39,8 +40,9 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 			var newLogCollector logcollector.LogCollector
 			command := logCollectorCommand()
 			inputFileName = filepath.Join(testDataDir, testInputFile)
-			command.PersistentPreRunE(command, []string{})
-			log.Info(logCollector)
+			err := command.PersistentPreRunE(command, []string{})
+			Expect(err).Should(BeNil())
+			log.Debug(logCollector)
 
 			data, err := ioutil.ReadFile(inputFileName)
 			Expect(err).ShouldNot(HaveOccurred())
@@ -64,16 +66,16 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 			data, err := ioutil.ReadFile(inputFileName)
 			Expect(err).ShouldNot(HaveOccurred())
 			newLCerr := yaml.UnmarshalStrict(data, &newLogCollector)
-			Expect(pErr.Error()).Should(Equal(newLCerr.Error()))
+			Expect(pErr).Should(Equal(newLCerr))
 		})
 
 		It("Should filter duplicate values from gvk and label selector", func() {
 
 			var newLogCollector logcollector.LogCollector
-			command := logCollectorCommand()
 			inputFileName = filepath.Join(testDataDir, testInputFileDuplicate)
-			command.PersistentPreRunE(command, []string{})
-			log.Info(logCollector)
+			err := manageFileInputs()
+			Expect(err).Should(BeNil())
+			log.Debug(logCollector)
 
 			data, err := ioutil.ReadFile(inputFileName)
 			Expect(err).ShouldNot(HaveOccurred())
@@ -82,9 +84,20 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 			Expect(len(newLogCollector.GroupVersionKinds)).ShouldNot(Equal(len(logCollector.GroupVersionKinds)))
 			Expect(len(newLogCollector.LabelSelectors)).ShouldNot(Equal(len(logCollector.LabelSelectors)))
 
+			for idx := range logCollector.LabelSelectors {
+				Expect(logCollector.LabelSelectors[idx].MatchLabels).Should(HaveKeyWithValue("app", "frontend"))
+				Expect(logCollector.LabelSelectors[idx].MatchLabels).Should(HaveKeyWithValue("custom", "label"))
+			}
+
+			for idx := range logCollector.GroupVersionKinds {
+				Expect(logCollector.GroupVersionKinds[idx].Version).Should(Equal("v1"))
+				Expect(logCollector.GroupVersionKinds[idx].Kind).Should(Equal("pod"))
+			}
+
 			// check if version populates in pre run if not given
 			Expect(newLogCollector.GroupVersionKinds[0].Version).Should(BeEmpty())
 			Expect(logCollector.GroupVersionKinds[0].Version).ShouldNot(BeEmpty())
+			Expect(logCollector.GroupVersionKinds[0].Version).Should(Equal("v1"))
 
 			Expect(newLogCollector.CleanOutput).Should(Equal(logCollector.CleanOutput))
 			Expect(newLogCollector.Clustered).Should(Equal(logCollector.Clustered))
