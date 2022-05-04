@@ -43,7 +43,7 @@ const (
 	TargetBrowserDataPath     = "/src/nfs/targetbrowsertesting"
 	TargetName                = "sample-target"
 	TargetLocation            = "/triliodata"
-	TargetBrowserDir          = "target-browser_linux_amd64"
+	TargetBrowserDir          = "target-browser_linux_amd64_v1"
 	TargetBrowserBinaryName   = "target-browser"
 	DistDir                   = "dist"
 	PollingPeriod             = "POLLING_PERIOD"
