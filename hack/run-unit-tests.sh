@@ -23,8 +23,8 @@ prepare_namespaces() {
 run_tests() {
   components=("$@")
 
-  GO111MODULE=on go get github.com/onsi/ginkgo/v2/ginkgo
-  ginkgo --junit-report=junit-report.xml -r -keep-going --flake-attempts 2 "${components[@]}"
+  GO111MODULE=on go install github.com/onsi/ginkgo/v2/ginkgo@v2.0.0
+  ginkgo -r --junit-report junit-test-report.xml --timeout 7h --keep-going --flake-attempts 2 "${components[@]}"
 }
 
 # install kubebuilder for env tests
