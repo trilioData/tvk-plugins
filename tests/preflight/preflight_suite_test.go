@@ -105,7 +105,7 @@ var (
 	kubeConfPath             = os.Getenv(kubeconfigEnv)
 
 	distDir                 = "dist"
-	preflightDir            = "preflight_linux_amd64"
+	preflightDir            = "preflight_linux_amd64_v1"
 	currentDir, _           = os.Getwd()
 	projectRoot             = filepath.Dir(filepath.Dir(currentDir))
 	preflightBinaryDir      = filepath.Join(projectRoot, distDir, preflightDir)
