@@ -57,6 +57,10 @@ build-target-browser:
 build: build-preflight build-cleanup
 	goreleaser release --snapshot --skip-publish --rm-dist
 
+
+test-logcollector-unit:
+	./hack/run-unit-tests.sh cmd/log-collector/cmd/...
+
 test-preflight-plugin-locally:
 	./hack/generate-test-preflight-plugin-manifest.sh
 	./hack/test-preflight-plugin-locally.sh

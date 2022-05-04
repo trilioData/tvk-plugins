@@ -68,7 +68,11 @@ func (l *LogCollector) InitializeKubeClients() error {
 	utilruntime.Must(v1beta1.AddToScheme(scheme))
 
 	if l.KubeConfig == "" {
-		l.KubeConfig = internal.KubeConfigDefault
+		if os.Getenv(internal.KubeconfigEnv) != "" {
+			l.KubeConfig = os.Getenv(internal.KubeconfigEnv)
+		} else {
+			l.KubeConfig = internal.KubeConfigDefault
+		}
 	}
 
 	acc, err := internal.NewEnv(l.KubeConfig, nil, scheme)

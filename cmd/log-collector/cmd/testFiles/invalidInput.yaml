@@ -1,0 +1,4 @@
+keep-source-folder: default
+clustered: default
+logLevel: INFO
+kubeConfig: 123

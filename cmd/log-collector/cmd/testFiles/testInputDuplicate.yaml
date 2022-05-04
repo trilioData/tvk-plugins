@@ -1,0 +1,21 @@
+keep-source-folder: true
+clustered: false
+namespaces:
+  - default
+  - tvk
+logLevel: INFO
+kubeConfig: ""
+labels:
+  - matchLabels:
+      "app": "frontend"
+      "custom": "label"
+  - matchLabels:
+      "app": "frontend"
+      "custom": "label"
+gvks:
+  - group: ""
+    version: ""
+    kind: pod
+  - group: ""
+    version: ""
+    kind: pod
