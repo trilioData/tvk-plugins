@@ -35,6 +35,8 @@ const (
 	name                      = "name"
 	successfulBackups         = "successfulBackups"
 	backupTimestamp           = "backupTimestamp"
+	backupCreationTimestamp   = "creationTimestamp"
+	backupCompletionTimestamp = "completionTimestamp"
 	status                    = "status"
 	cmdBackupPlan             = cmd.BackupPlanCmdName
 	cmdBackup                 = cmd.BackupCmdName
@@ -1018,7 +1020,8 @@ var _ = Describe("Target Browser Tests", func() {
 	})
 
 	Context("Backup command test-cases", func() {
-		Context(fmt.Sprintf("test-cases for filtering and sorting operations on %s, %s columns of Backup", status, name), Ordered, func() {
+		Context(fmt.Sprintf("test-cases for filtering and sorting operations on %s, %s, %s, %s columns of Backup",
+			status, name, backupCompletionTimestamp, backupCreationTimestamp), Ordered, func() {
 			var (
 				backupPlanUIDs                   []string
 				noOfBackupPlansToCreate          = 4
@@ -1084,6 +1087,52 @@ var _ = Describe("Target Browser Tests", func() {
 				backupData := runCmdBackup(args)
 				for index := 0; index < len(backupData)-1; index++ {
 					Expect(backupData[index].Status <= backupData[index+1].Status).Should(BeTrue())
+				}
+			})
+			It(fmt.Sprintf("Should sort in ascending order '%s'", backupCreationTimestamp), func() {
+				args := []string{cmdGet, cmdBackup, flagOrderBy, backupCreationTimestamp, flagOutputFormat, internal.FormatJSON}
+				backupData := runCmdBackup(args)
+				for index := 0; index < len(backupData)-1; index++ {
+					bkpTS1, _ := time.Parse(time.RFC3339, backupData[index].CreationTime)
+					bkpTS2, _ := time.Parse(time.RFC3339, backupData[index+1].CreationTime)
+					if !bkpTS1.Equal(bkpTS2) {
+						Expect(bkpTS1.Before(bkpTS2)).Should(BeTrue())
+					}
+				}
+			})
+
+			It(fmt.Sprintf("Should sort in descending order '%s'", backupCreationTimestamp), func() {
+				args := []string{cmdGet, cmdBackup, flagOrderBy, hyphen + backupCreationTimestamp, flagOutputFormat, internal.FormatJSON}
+				backupData := runCmdBackup(args)
+				for index := 0; index < len(backupData)-1; index++ {
+					bkpTS1, _ := time.Parse(time.RFC3339, backupData[index].CreationTime)
+					bkpTS2, _ := time.Parse(time.RFC3339, backupData[index+1].CreationTime)
+					if !bkpTS1.Equal(bkpTS2) {
+						Expect(bkpTS1.After(bkpTS2)).Should(BeTrue())
+					}
+				}
+			})
+			It(fmt.Sprintf("Should sort in ascending order '%s'", backupCompletionTimestamp), func() {
+				args := []string{cmdGet, cmdBackup, flagOrderBy, backupCompletionTimestamp, flagOutputFormat, internal.FormatJSON}
+				backupData := runCmdBackup(args)
+				for index := 0; index < len(backupData)-1; index++ {
+					bkpTS1, _ := time.Parse(time.RFC3339, backupData[index].CompletionTime)
+					bkpTS2, _ := time.Parse(time.RFC3339, backupData[index+1].CompletionTime)
+					if !bkpTS1.Equal(bkpTS2) {
+						Expect(bkpTS1.Before(bkpTS2)).Should(BeTrue())
+					}
+				}
+			})
+
+			It(fmt.Sprintf("Should sort in descending order '%s'", backupCompletionTimestamp), func() {
+				args := []string{cmdGet, cmdBackup, flagOrderBy, hyphen + backupCompletionTimestamp, flagOutputFormat, internal.FormatJSON}
+				backupData := runCmdBackup(args)
+				for index := 0; index < len(backupData)-1; index++ {
+					bkpTS1, _ := time.Parse(time.RFC3339, backupData[index].CompletionTime)
+					bkpTS2, _ := time.Parse(time.RFC3339, backupData[index+1].CompletionTime)
+					if !bkpTS1.Equal(bkpTS2) {
+						Expect(bkpTS1.After(bkpTS2)).Should(BeTrue())
+					}
 				}
 			})
 		})
