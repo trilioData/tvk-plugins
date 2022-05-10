@@ -36,9 +36,15 @@ func manageFileInputs() error {
 func overrideFileInputsFromCLI() error {
 	var err error
 
-	if cmd.Flags().Changed(internal.KubeconfigFlag) || logCollector.KubeConfig == "" {
+	if cmd.Flags().Changed(internal.KubeconfigFlag) {
 		logCollector.KubeConfig = kubeConfig
 	}
+
+	err = logCollector.InitializeKubeClients()
+	if err != nil {
+		return err
+	}
+
 	if cmd.Flags().Changed(internal.LogLevelFlag) || logCollector.Loglevel == "" {
 		logCollector.Loglevel = logLevel
 	}
@@ -101,7 +107,8 @@ func parseLabelSelector(labelSlice []string) ([]apiv1.LabelSelector, error) {
 	var lbSelectors []apiv1.LabelSelector
 
 	for idx0 := range labelSlice {
-		andLabels := strings.Split(labelSlice[idx0], ",")
+		log.Info(labelSlice[idx0])
+		andLabels := strings.Split(labelSlice[idx0], "|")
 		matchLabels := make(map[string]string)
 		for idx := range andLabels {
 			mapKeysValues := strings.Split(andLabels[idx], "=")

@@ -62,20 +62,10 @@ type LogCollector struct {
 }
 
 // InitializeKubeClients initialize clients for kubernetes environment
-func (l *LogCollector) InitializeKubeClients(config string) error {
+func (l *LogCollector) InitializeKubeClients() error {
 	scheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(v1beta1.AddToScheme(scheme))
-
-	if config == "" {
-		if os.Getenv(internal.KubeconfigEnv) != "" {
-			l.KubeConfig = os.Getenv(internal.KubeconfigEnv)
-		} else {
-			l.KubeConfig = internal.KubeConfigDefault
-		}
-	} else {
-		l.KubeConfig = config
-	}
 
 	acc, err := internal.NewEnv(l.KubeConfig, nil, scheme)
 	if err != nil {

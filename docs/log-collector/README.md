@@ -114,7 +114,7 @@ Verify installation with `kubectl tvk-log-collector --help`
 
 - To collect object logs by providing labels which log collector doesn't collect by default :
         
-        kubectl tvk-log-collector --clustered  --labels "app=frontend,custom=label","app=backend"
+        kubectl tvk-log-collector --clustered  --labels "app=frontend|custom=label","app=backend"
 
 - To collect logs by providing config file :
 

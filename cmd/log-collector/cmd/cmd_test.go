@@ -19,7 +19,7 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 	Context("Initialization of log collector", func() {
 
 		BeforeEach(func() {
-			kubeConfig = os.Getenv(internal.KubeconfigEnv)
+			internal.KubeConfigDefault = os.Getenv(internal.KubeconfigEnv)
 		})
 
 		It("Should initialize log collector objects when valid kubeconfig file path is provided", func() {
@@ -111,7 +111,7 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 		})
 
 		It("Should return error when kubeconfig file contains invalid data", func() {
-			err := logCollector.InitializeKubeClients("invalid/path/to/kubeconfig")
+			err := logCollector.InitializeKubeClients()
 			Expect(err).ShouldNot(BeNil())
 		})
 	})

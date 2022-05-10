@@ -37,6 +37,8 @@ func logCollectorCommand() *cobra.Command {
 func runLogCollector(*cobra.Command, []string) error {
 	log.Info("---------    LOG COLLECTOR    --------- ")
 
+	log.Infof(" LC : %+v", logCollector)
+
 	err := logCollector.CollectLogsAndDump()
 	if err != nil {
 		log.Fatalf("Log collection failed - %s", err.Error())
@@ -56,11 +58,6 @@ func Execute() {
 
 // preRun runs just before the run for any pre checks and setting up vars
 func preRun(*cobra.Command, []string) error {
-
-	err := logCollector.InitializeKubeClients(kubeConfig)
-	if err != nil {
-		return err
-	}
 
 	// manage values file inputs
 	iErr := manageFileInputs()
