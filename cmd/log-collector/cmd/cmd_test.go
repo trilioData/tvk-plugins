@@ -111,6 +111,8 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 		})
 
 		It("Should return error when kubeconfig file contains invalid data", func() {
+
+			logCollector.KubeConfig = "invalid/path/to/kubeconfig"
 			err := logCollector.InitializeKubeClients()
 			Expect(err).ShouldNot(BeNil())
 		})

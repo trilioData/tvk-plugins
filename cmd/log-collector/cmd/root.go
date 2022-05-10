@@ -37,8 +37,6 @@ func logCollectorCommand() *cobra.Command {
 func runLogCollector(*cobra.Command, []string) error {
 	log.Info("---------    LOG COLLECTOR    --------- ")
 
-	log.Infof(" LC : %+v", logCollector)
-
 	err := logCollector.CollectLogsAndDump()
 	if err != nil {
 		log.Fatalf("Log collection failed - %s", err.Error())

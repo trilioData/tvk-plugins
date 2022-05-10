@@ -36,7 +36,7 @@ func manageFileInputs() error {
 func overrideFileInputsFromCLI() error {
 	var err error
 
-	if cmd.Flags().Changed(internal.KubeconfigFlag) {
+	if cmd.Flags().Changed(internal.KubeconfigFlag) || logCollector.KubeConfig == "" {
 		logCollector.KubeConfig = kubeConfig
 	}
 
@@ -48,15 +48,19 @@ func overrideFileInputsFromCLI() error {
 	if cmd.Flags().Changed(internal.LogLevelFlag) || logCollector.Loglevel == "" {
 		logCollector.Loglevel = logLevel
 	}
+
 	if cmd.Flags().Changed(clusteredFlag) {
 		logCollector.Clustered = clustered
 	}
-	if cmd.Flags().Changed(namespacesFlag) {
+
+	if cmd.Flags().Changed(namespacesFlag) || !logCollector.Clustered {
 		logCollector.Namespaces = namespaces
 	}
+
 	if cmd.Flags().Changed(keepSourceFlag) {
 		logCollector.CleanOutput = keepSource
 	}
+
 	if cmd.Flags().Changed(gvkFlag) {
 		gvks, gErr := parseGVK(gvkSlice)
 		if gErr != nil {
@@ -64,6 +68,7 @@ func overrideFileInputsFromCLI() error {
 		}
 		logCollector.GroupVersionKinds = gvks
 	}
+
 	logCollector.GroupVersionKinds, err = deDuplicateAndFixGVKs(logCollector.GroupVersionKinds)
 	if err != nil {
 		return err
@@ -107,7 +112,6 @@ func parseLabelSelector(labelSlice []string) ([]apiv1.LabelSelector, error) {
 	var lbSelectors []apiv1.LabelSelector
 
 	for idx0 := range labelSlice {
-		log.Info(labelSlice[idx0])
 		andLabels := strings.Split(labelSlice[idx0], "|")
 		matchLabels := make(map[string]string)
 		for idx := range andLabels {
