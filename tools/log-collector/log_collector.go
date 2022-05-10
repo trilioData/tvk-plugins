@@ -69,7 +69,7 @@ func (l *LogCollector) InitializeKubeClients() error {
 
 	acc, err := internal.NewEnv(l.KubeConfig, nil, scheme)
 	if err != nil {
-		log.Infof("Invalid Kubeconfig : %s", l.KubeConfig)
+		log.Errorf("Invalid Kubeconfig : %s", l.KubeConfig)
 		return err
 	}
 
