@@ -70,7 +70,7 @@ helm_install() {
   if [[ -n "${UPDATE_INGRESS}" ]]; then
     selector=$(kubectl get svc k8s-triliovault-ingress-nginx-controller -n "${INSTALL_NAMESPACE}" -o wide | awk '{print $NF}' | tail -n +2)
     node=$(kubectl get pods -o wide -l "$selector" -n "${INSTALL_NAMESPACE}" | awk '{print $7}' | tail -n +2)
-    instance_info=$(gcloud compute instances describe "$node" --zone "$(kubectl get nodes --show-labels --no-headers | awk -F"topology.kubernetes.io/zone=" '{print $2}' | head -n 1)" --format=json | jq '.| "\(.tags.items[0]) \(.networkInterfaces[].network)"')
+    instance_info=$(gcloud compute instances describe "$node" --zone "$(kubectl get nodes "$node" --show-labels --no-headers | awk -F"topology.kubernetes.io/zone=" '{print $2}' | head -n 1)" --format=json | jq '.| "\(.tags.items[0]) \(.networkInterfaces[].network)"')
     IFS=" " read -r -a node_port <<<"$(kubectl get svc k8s-triliovault-ingress-nginx-controller -n "${INSTALL_NAMESPACE}" --template='{{range .spec.ports}}{{print "\n" .nodePort}}{{end}}' | tr '\n' ' ')"
     node_external_ip=$(kubectl get no "$node" -o=jsonpath='{.status.addresses[?(@.type=="ExternalIP")].address}')
     port=""
