@@ -21,7 +21,7 @@ on:
 
 env:
   GKE_CLUSTER: ci-cluster
-  GKE_ZONE: us-east1-b
+  GKE_REGION: us-east1
 
 jobs:
   # pre-build job runs yaml lint, shell lint, golangci-lint and detects file changes to sets job variables which will be used to
@@ -154,7 +154,7 @@ jobs:
       uses: google-github-actions/get-gke-credentials@main
       with:
         cluster_name: ${{ env.GKE_CLUSTER }}
-        location: ${{ env.GKE_ZONE }}
+        location: ${{ env.GKE_REGION }}
         use_auth_provider: true
         credentials: ${{ secrets.GKE_SA_KEY }}
 
@@ -285,7 +285,7 @@ jobs:
       #uses: google-github-actions/get-gke-credentials@main
       #with:
       #  cluster_name: ${{ env.GKE_CLUSTER }}
-      #  location: ${{ env.GKE_ZONE }}
+      #  location: ${{ env.GKE_REGION }}
       #  use_auth_provider: true
       #  credentials: ${{ secrets.GKE_SA_KEY }}
 
@@ -353,7 +353,7 @@ jobs:
         uses: google-github-actions/get-gke-credentials@main
         with:
           cluster_name: ${{ env.GKE_CLUSTER }}
-          location: ${{ env.GKE_ZONE }}
+          location: ${{ env.GKE_REGION }}
           use_auth_provider: true
           credentials: ${{ secrets.GKE_SA_KEY }}
 
@@ -420,7 +420,7 @@ jobs:
         uses: google-github-actions/get-gke-credentials@main
         with:
           cluster_name: ${{ env.GKE_CLUSTER }}
-          location: ${{ env.GKE_ZONE }}
+          location: ${{ env.GKE_REGION }}
           use_auth_provider: true
           credentials: ${{ secrets.GKE_SA_KEY }}
 
