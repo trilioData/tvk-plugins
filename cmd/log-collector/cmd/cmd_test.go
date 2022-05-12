@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -9,12 +10,17 @@ import (
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
 
+	"github.com/trilioData/tvk-plugins/internal"
 	logcollector "github.com/trilioData/tvk-plugins/tools/log-collector"
 )
 
 var _ = Describe("log collector cmd helper unit tests", func() {
 
 	Context("Initialization of log collector", func() {
+
+		BeforeEach(func() {
+			internal.KubeConfigDefault = os.Getenv(internal.KubeconfigEnv)
+		})
 
 		It("Should initialize log collector objects when valid kubeconfig file path is provided", func() {
 

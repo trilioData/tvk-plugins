@@ -147,13 +147,12 @@ func checkFileExists(path string) error {
 
 // LoadKubeConfigOrDie will load the kube-config from the path of kubeConfig parameter passed
 func LoadKubeConfigOrDie(kubeConfig string) (*rest.Config, error) {
-	defaultConf := config.GetConfigOrDie()
 	if kubeConfig != "" {
 		info, err := os.Stat(kubeConfig)
 		if err != nil || info.Size() == 0 {
 			// If the specified kubeconfig doesn't exists / empty file / any other error
 			// from file stat, fall back to default
-			return defaultConf, err
+			return config.GetConfigOrDie(), err
 		}
 		cfg, err := clientcmd.BuildConfigFromFlags("", kubeConfig)
 		if err != nil {
@@ -163,7 +162,7 @@ func LoadKubeConfigOrDie(kubeConfig string) (*rest.Config, error) {
 		return cfg, nil
 	}
 
-	return defaultConf, nil
+	return config.GetConfigOrDie(), nil
 }
 
 func (a *Accessor) GetRestConfig() *rest.Config {

@@ -67,19 +67,12 @@ func (l *LogCollector) InitializeKubeClients() error {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(v1beta1.AddToScheme(scheme))
 
-	if l.KubeConfig == "" {
-		if os.Getenv(internal.KubeconfigEnv) != "" {
-			l.KubeConfig = os.Getenv(internal.KubeconfigEnv)
-		} else {
-			l.KubeConfig = internal.KubeConfigDefault
-		}
-	}
-
 	acc, err := internal.NewEnv(l.KubeConfig, nil, scheme)
 	if err != nil {
-		log.Infof("Kubeconfig : %s", l.KubeConfig)
+		log.Errorf("Invalid Kubeconfig : %s", l.KubeConfig)
 		return err
 	}
+
 	l.K8sClient, l.DisClient, l.K8sClientSet = acc.GetRuntimeClient(), acc.GetDiscoveryClient(), acc.GetClientset()
 	l.DisClient.LegacyPrefix = "/api/"
 
@@ -88,10 +81,6 @@ func (l *LogCollector) InitializeKubeClients() error {
 
 // CollectLogsAndDump collects call all the related resources of triliovault
 func (l *LogCollector) CollectLogsAndDump() error {
-
-	if err := l.InitializeKubeClients(); err != nil {
-		return err
-	}
 
 	nsErr := l.checkIfNamespacesExist()
 	if nsErr != nil {

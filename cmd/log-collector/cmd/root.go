@@ -57,11 +57,6 @@ func Execute() {
 // preRun runs just before the run for any pre checks and setting up vars
 func preRun(*cobra.Command, []string) error {
 
-	err := logCollector.InitializeKubeClients()
-	if err != nil {
-		return err
-	}
-
 	// manage values file inputs
 	iErr := manageFileInputs()
 	if iErr != nil {
