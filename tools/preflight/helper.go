@@ -38,7 +38,7 @@ const (
 	windowsCheckSymbol = "\u2713"
 	windowsCrossSymbol = "[X]"
 
-	versionRegexpCompile = "v[0-9]+.[0-9]+.[0-9]+"
+	versionRegexpCompile = "v\\d+.\\d+.\\d+"
 	minHelmVersion       = "3.0.0"
 	minK8sVersion        = "1.19.0"
 
@@ -581,10 +581,6 @@ func waitUntilVolSnapReadyToUse(volSnap *unstructured.Unstructured, snapshotVer 
 		return false, nil
 	})
 	if retErr != nil {
-		if retErr == k8swait.ErrWaitTimeout {
-			return fmt.Errorf("volume snapshot - '%s' not readyToUse (waited 300 sec) :: %s",
-				volSnap.GetName(), retErr.Error())
-		}
 		return retErr
 	}
 	return nil

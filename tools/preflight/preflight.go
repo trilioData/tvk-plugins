@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
+	k8swait "k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -758,7 +759,18 @@ func (o *Run) createSnapshotFromPVC(ctx context.Context, volSnapName, volSnapCla
 	o.Logger.Infof("Waiting for volume snapshot - %s created from pvc to become 'readyToUse:true'", volSnap.GetName())
 	err = waitUntilVolSnapReadyToUse(volSnap, snapshotVer, getDefaultRetryBackoffParams())
 	if err != nil {
-		return nil, err
+		if err == k8swait.ErrWaitTimeout {
+			o.Logger.Warnf("volume snapshot - %s not readyToUse (waited 300 sec). Retrying...", volSnap.GetName())
+			if err = waitUntilVolSnapReadyToUse(volSnap, snapshotVer, getDefaultRetryBackoffParams()); err != nil {
+				if err == k8swait.ErrWaitTimeout {
+					return nil, fmt.Errorf("volume snapshot - %s not readyToUse (waited 600 sec) :: %s",
+						volSnap.GetName(), err.Error())
+				}
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
 	}
 	o.Logger.Infof("%s volume snapshot - %s is ready-to-use", check, volSnap.GetName())
 
