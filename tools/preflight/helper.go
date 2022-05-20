@@ -556,7 +556,8 @@ func waitUntilPodCondition(ctx context.Context, wop *wait.PodWaitOptions) error 
 }
 
 // waitUntilVolSnapReadyToUse waits until volume snapshot becomes ready or timeouts
-func waitUntilVolSnapReadyToUse(volSnap *unstructured.Unstructured, snapshotVer string, retryBackoff k8swait.Backoff) error {
+func waitUntilVolSnapReadyToUse(volSnap *unstructured.Unstructured, snapshotVer string,
+	retryBackoff k8swait.Backoff, runtimeClient client.Client) error {
 	retErr := k8swait.ExponentialBackoff(retryBackoff, func() (done bool, err error) {
 		volSnapSrc := &unstructured.Unstructured{}
 		volSnapSrc.SetGroupVersionKind(schema.GroupVersionKind{
@@ -564,7 +565,7 @@ func waitUntilVolSnapReadyToUse(volSnap *unstructured.Unstructured, snapshotVer 
 			Version: snapshotVer,
 			Kind:    internal.VolumeSnapshotKind,
 		})
-		err = kubeClient.RuntimeClient.Get(context.Background(), client.ObjectKey{
+		err = runtimeClient.Get(context.Background(), client.ObjectKey{
 			Namespace: volSnap.GetNamespace(),
 			Name:      volSnap.GetName(),
 		}, volSnapSrc)

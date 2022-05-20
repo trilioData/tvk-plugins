@@ -44,11 +44,14 @@ const (
 	invalidGroup             = "invalid.group.k8s.io"
 	invalidNamespace         = "invalid-ns"
 
-	testPodName       = "test-ut-pod"
-	testSnapshotClass = "ut-snapshot-class"
-	testDriver        = "test.snapshot.driver.io"
-	testMinK8sVersion = "1.10.0"
-	testSentence      = "This is a test-sentence with special char $%^&*() which can be inserted anywhere in test data"
+	testPodName        = "test-ut-pod"
+	testSnapshotClass  = "ut-snapshot-class"
+	testVolumeSnapshot = "ut-volume-snapshot"
+	testPVC            = "test-pvc"
+	testDriver         = "test.snapshot.driver.io"
+	testNameSuffix     = "abcdef"
+	testMinK8sVersion  = "1.10.0"
+	testSentence       = "This is a test-sentence with special char $%^&*() which can be inserted anywhere in test data"
 
 	installNs = internal.DefaultNs
 )
