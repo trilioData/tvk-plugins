@@ -72,12 +72,13 @@ const (
 	GcrRegistryPath  = "gcr.io/kubernetes-e2e-test-images"
 	DNSUtilsImage    = "dnsutils:1.3"
 
-	volSnapRetrySteps    = 30
-	volSnapRetryInterval = 2 * time.Second
-	volSnapRetryFactor   = 1.1
-	volSnapRetryJitter   = 0.1
-	VolMountName         = "source-data"
-	VolMountPath         = "/demo/data"
+	defaultRetrySteps    = 120
+	defaultRetryInterval = 5 * time.Second
+	defaultRetryFactor   = 1.0
+	defaultRetryJitter   = 0.1
+
+	VolMountName = "source-data"
+	VolMountPath = "/demo/data"
 
 	execTimeoutDuration       = 3 * time.Minute
 	deletionGracePeriod int64 = 5
@@ -666,11 +667,11 @@ func GetObjGVKFromStructuredType(obj client.Object) schema.GroupVersionKind {
 	return schema.GroupVersionKind{}
 }
 
-// getDefaultRetryBackoffParams returns a backoff object with timeout of approx. 5 min
+// getDefaultRetryBackoffParams returns a backoff object with timeout of approx. 300s ~ 5 min
 func getDefaultRetryBackoffParams() k8swait.Backoff {
 	return k8swait.Backoff{
-		Steps: volSnapRetrySteps, Duration: volSnapRetryInterval,
-		Factor: volSnapRetryFactor, Jitter: volSnapRetryJitter,
+		Steps: defaultRetrySteps, Duration: defaultRetryInterval,
+		Factor: defaultRetryFactor, Jitter: defaultRetryJitter,
 	}
 }
 
