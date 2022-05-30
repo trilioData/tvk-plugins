@@ -90,14 +90,14 @@ func preflightCSITestcases(serverVersion string) {
 
 			It("Should skip installation if volume snapshot class is present", func() {
 				installVolumeSnapshotClass(crVersion, dummyProvisioner, dummyVolumeSnapshotClass)
-				Expect(runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
+				Expect(runOps.validateStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
 					testClient.ClientSet, testClient.RuntimeClient)).To(BeNil())
 				checkVolumeSnapshotClassExists(dummyVolumeSnapshotClass, crVersion, 1)
 				deleteAllVolumeSnapshotClass(crVersion, 1)
 			})
 
 			It("Should install volume snapshot class with default name when volume snapshot class doesn't exists", func() {
-				Expect(runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
+				Expect(runOps.validateStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
 					testClient.ClientSet, testClient.RuntimeClient)).To(BeNil())
 				checkVolumeSnapshotClassExists("", crVersion, 1)
 				deleteAllVolumeSnapshotClass(crVersion, 1)
@@ -106,7 +106,7 @@ func preflightCSITestcases(serverVersion string) {
 			It("Should install volume snapshot class with default name when volume snapshot class exists but with"+
 				" a different driver", func() {
 				installVolumeSnapshotClass(crVersion, "dummy-provisioner-2", "another-snapshot-class")
-				Expect(runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
+				Expect(runOps.validateStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
 					testClient.ClientSet, testClient.RuntimeClient)).To(BeNil())
 				checkVolumeSnapshotClassExists("", crVersion, 2)
 				deleteAllVolumeSnapshotClass(crVersion, 2)
@@ -119,7 +119,7 @@ func preflightCSITestcases(serverVersion string) {
 			It("Should skip installation if volume snapshot class with provided name is present", func() {
 				runOps.SnapshotClass = dummyVolumeSnapshotClass
 				installVolumeSnapshotClass(crVersion, dummyProvisioner, dummyVolumeSnapshotClass)
-				Expect(runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
+				Expect(runOps.validateStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
 					testClient.ClientSet, testClient.RuntimeClient)).To(BeNil())
 				checkVolumeSnapshotClassExists(dummyVolumeSnapshotClass, crVersion, 1)
 				deleteAllVolumeSnapshotClass(crVersion, 1)
@@ -127,7 +127,7 @@ func preflightCSITestcases(serverVersion string) {
 
 			It("Should fail when volume snapshot class with provided name doesn't exist", func() {
 				runOps.SnapshotClass = "abc"
-				err = runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
+				err = runOps.validateStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
 					testClient.ClientSet, testClient.RuntimeClient)
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring("not found"))
@@ -139,7 +139,7 @@ func preflightCSITestcases(serverVersion string) {
 				Expect(runOps.checkAndCreateVolumeSnapshotCRDs(ctx, serverVersion, testClient.RuntimeClient)).To(BeNil())
 				checkVolumeSnapshotCRDExists()
 				Expect(runOps.SnapshotClass).To(Equal(""))
-				Expect(runOps.checkStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
+				Expect(runOps.validateStorageSnapshotClass(ctx, dummyProvisioner, crVersion,
 					testClient.ClientSet, testClient.RuntimeClient)).To(BeNil())
 				checkVolumeSnapshotClassExists("", crVersion, 1)
 				deleteAllVolumeSnapshotClass(crVersion, 1)
@@ -157,12 +157,12 @@ func preflightFuncsTestcases() {
 		Context("Check whether kubectl binary is present on the system", func() {
 
 			It("Should be able to find kubectl binary when correct binary name is provided", func() {
-				err := runOps.checkKubectl(kubectlBinaryName)
+				err := runOps.validateKubectl(kubectlBinaryName)
 				Expect(err).To(BeNil())
 			})
 
 			It("Should return error when invalid kubectl binary name is provided", func() {
-				err := runOps.checkKubectl(invalidKubectlBinaryName)
+				err := runOps.validateKubectl(invalidKubectlBinaryName)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring(
 					fmt.Sprintf("error finding '%s' binary in $PATH of the system ::", invalidKubectlBinaryName)))
@@ -186,12 +186,12 @@ func preflightFuncsTestcases() {
 			})
 
 			It("Should pass helm check if correct binary name is provided", func() {
-				err := runOps.checkHelmVersion(HelmBinaryName, testClient.DiscClient)
+				err := runOps.validateSystemHelmVersion(HelmBinaryName, testClient.DiscClient)
 				Expect(err).To(BeNil())
 			})
 
 			It("Should fail helm binary check if invalid binary name is provided", func() {
-				err := runOps.checkHelmVersion(invalidHelmBinaryName, testClient.DiscClient)
+				err := runOps.validateSystemHelmVersion(invalidHelmBinaryName, testClient.DiscClient)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(
 					"error finding '%s' binary in $PATH of the system ::", invalidHelmBinaryName)))
@@ -204,12 +204,12 @@ func preflightFuncsTestcases() {
 		Context("When kubernetes server version satisfy/not satisfy minimum version requirement", func() {
 
 			It("Should pass kubernetes server version check if minimum version provided is >= threshold minimum version", func() {
-				err := runOps.checkKubernetesVersion(testMinK8sVersion, testClient.ClientSet)
+				err := runOps.validateKubernetesVersion(testMinK8sVersion, testClient.ClientSet)
 				Expect(err).To(BeNil())
 			})
 
 			It("Should return error when kubernetes server version is less than the minimum required version", func() {
-				err := runOps.checkKubernetesVersion(invalidK8sVersion, testClient.ClientSet)
+				err := runOps.validateKubernetesVersion(invalidK8sVersion, testClient.ClientSet)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("kubernetes server version does not meet minimum requirements"))
 			})
@@ -221,14 +221,14 @@ func preflightFuncsTestcases() {
 		Context("When namespace exists on cluster", func() {
 
 			It("Should be able to access default namespace of the cluster", func() {
-				err := runOps.checkClusterAccess(ctx, internal.DefaultNs, testClient.ClientSet)
+				err := runOps.validateClusterAccess(ctx, internal.DefaultNs, testClient.ClientSet)
 				Expect(err).To(BeNil())
 			})
 		})
 
 		Context("When namespace does not exist on cluster", func() {
 			It("Should not able access non-existent namesapce and return error", func() {
-				err := runOps.checkClusterAccess(ctx, invalidNamespace, testClient.ClientSet)
+				err := runOps.validateClusterAccess(ctx, invalidNamespace, testClient.ClientSet)
 				Expect(err).ToNot(BeNil())
 			})
 		})
@@ -237,12 +237,12 @@ func preflightFuncsTestcases() {
 	Context("Check rbac-API group and version on the cluster", func() {
 
 		It("Should pass RBAC check when correct rbac-API group and version is provided", func() {
-			err := runOps.checkKubernetesRBAC(RBACAPIGroup, RBACAPIVersion, testClient.DiscClient)
+			err := runOps.validateKubernetesRBAC(RBACAPIGroup, RBACAPIVersion, testClient.DiscClient)
 			Expect(err).To(BeNil())
 		})
 
 		It("Should return error when rbac-API group and version is not present on server", func() {
-			err := runOps.checkKubernetesRBAC(invalidRBACAPIGroup, RBACAPIVersion, testClient.DiscClient)
+			err := runOps.validateKubernetesRBAC(invalidRBACAPIGroup, RBACAPIVersion, testClient.DiscClient)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("not enabled kubernetes RBAC"))
 		})

@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
+	k8swait "k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -99,7 +100,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		o.Logger.Infoln("In cluster flag enabled. Skipping check for kubectl...")
 	} else {
 		o.Logger.Infoln("Checking for kubectl")
-		err = o.checkKubectl(kubectlBinaryName)
+		err = o.validateKubectl(kubectlBinaryName)
 		if err != nil {
 			o.Logger.Errorf("%s Preflight check for kubectl utility failed :: %s\n", cross, err.Error())
 			o.Logger.Errorf("%s Preflight check for kubectl utility failed :: %s\n", cross, err.Error())
@@ -111,7 +112,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 
 	// check cluster default ns access
 	o.Logger.Infoln("Checking access to the default namespace of cluster")
-	err = o.checkClusterAccess(ctx, internal.DefaultNs, kubeClient.ClientSet)
+	err = o.validateClusterAccess(ctx, internal.DefaultNs, kubeClient.ClientSet)
 	if err != nil {
 		o.Logger.Errorf("%s Preflight check for cluster access failed :: %s\n", cross, err.Error())
 		preflightStatus = false
@@ -124,7 +125,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		o.Logger.Infoln("In cluster flag enabled. Skipping check for helm...")
 	} else {
 		o.Logger.Infof("Checking for required Helm version (>= %s)\n", minHelmVersion)
-		err = o.checkHelmVersion(HelmBinaryName, kubeClient.DiscClient)
+		err = o.validateSystemHelmVersion(HelmBinaryName, kubeClient.DiscClient)
 		if err != nil {
 			o.Logger.Errorf("%s Preflight check for helm version failed :: %s\n", cross, err.Error())
 			preflightStatus = false
@@ -135,7 +136,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 
 	// kubernetes server version check
 	o.Logger.Infof("Checking for required kubernetes server version (>=%s)\n", minK8sVersion)
-	err = o.checkKubernetesVersion(minK8sVersion, kubeClient.ClientSet)
+	err = o.validateKubernetesVersion(minK8sVersion, kubeClient.ClientSet)
 	if err != nil {
 		o.Logger.Errorf("%s Preflight check for kubernetes version failed :: %s\n", cross, err.Error())
 		preflightStatus = false
@@ -145,7 +146,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 
 	// rbac check
 	o.Logger.Infoln("Checking Kubernetes RBAC")
-	err = o.checkKubernetesRBAC(RBACAPIGroup, RBACAPIVersion, kubeClient.DiscClient)
+	err = o.validateKubernetesRBAC(RBACAPIGroup, RBACAPIVersion, kubeClient.DiscClient)
 	if err != nil {
 		o.Logger.Errorf("%s Preflight check for kubernetes RBAC failed :: %s\n", cross, err.Error())
 		preflightStatus = false
@@ -202,7 +203,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		}
 
 		if !skipSnapshotClassCheck {
-			err = o.checkStorageSnapshotClass(ctx, sc.Provisioner, prefVersion,
+			err = o.validateStorageSnapshotClass(ctx, sc.Provisioner, prefVersion,
 				kubeClient.ClientSet, kubeClient.RuntimeClient)
 			if err != nil {
 				o.Logger.Errorf("%s Preflight check for SnapshotClass failed :: %s\n", cross, err.Error())
@@ -215,7 +216,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 	}
 
 	//  Check DNS resolution
-	err = o.checkDNSResolution(ctx, execDNSResolutionCmd, resNameSuffix, kubeClient)
+	err = o.validateDNSResolution(ctx, execDNSResolutionCmd, resNameSuffix, kubeClient)
 	o.Logger.Infoln("Checking if DNS resolution is working in k8s cluster")
 	if err != nil {
 		o.Logger.Errorf("%s Preflight check for DNS resolution failed :: %s\n", cross, err.Error())
@@ -227,7 +228,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 	//  Check volume snapshot and restore
 	if storageSnapshotSuccess {
 		o.Logger.Infoln("Checking if volume snapshot and restore is enabled in cluster")
-		err = o.checkVolumeSnapshot(ctx, resNameSuffix, kubeClient)
+		err = o.validateVolumeSnapshot(ctx, resNameSuffix, kubeClient)
 		if err != nil {
 			o.Logger.Errorf("%s Preflight check for volume snapshot and restore failed :: %s\n", cross, err.Error())
 			preflightStatus = false
@@ -267,8 +268,8 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 	return nil
 }
 
-// checkKubectl checks whether kubectl utility is installed.
-func (o *Run) checkKubectl(binaryName string) error {
+// validateKubectl checks whether kubectl utility is installed.
+func (o *Run) validateKubectl(binaryName string) error {
 	path, err := goexec.LookPath(binaryName)
 	if err != nil {
 		return fmt.Errorf("error finding '%s' binary in $PATH of the system :: %s", binaryName, err.Error())
@@ -278,8 +279,8 @@ func (o *Run) checkKubectl(binaryName string) error {
 	return nil
 }
 
-// checkClusterAccess Checks access to default namespace to cluster
-func (o *Run) checkClusterAccess(ctx context.Context, namespace string, kubeClient *kubernetes.Clientset) error {
+// validateClusterAccess Checks access to default namespace to cluster
+func (o *Run) validateClusterAccess(ctx context.Context, namespace string, kubeClient *kubernetes.Clientset) error {
 	_, err := kubeClient.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("unable to access default namespace of cluster :: %s", err.Error())
@@ -288,8 +289,8 @@ func (o *Run) checkClusterAccess(ctx context.Context, namespace string, kubeClie
 	return nil
 }
 
-// checkHelmVersion checks whether minimum helm version is present.
-func (o *Run) checkHelmVersion(binaryName string, cl *discovery.DiscoveryClient) error {
+// validateSystemHelmVersion checks whether minimum helm version is present.
+func (o *Run) validateSystemHelmVersion(binaryName string, cl *discovery.DiscoveryClient) error {
 	err := o.validateHelmBinary(binaryName, cl)
 	if err != nil {
 		return err
@@ -339,8 +340,8 @@ func (o *Run) validateHelmBinary(binaryName string, cl *discovery.DiscoveryClien
 	return nil
 }
 
-// checkKubernetesVersion checks whether minimum k8s version requirement is met
-func (o *Run) checkKubernetesVersion(minVersion string, cl *kubernetes.Clientset) error {
+// validateKubernetesVersion checks whether minimum k8s version requirement is met
+func (o *Run) validateKubernetesVersion(minVersion string, cl *kubernetes.Clientset) error {
 	serverVer, err := cl.ServerVersion()
 	if err != nil {
 		return err
@@ -361,10 +362,10 @@ func (o *Run) checkKubernetesVersion(minVersion string, cl *kubernetes.Clientset
 	return nil
 }
 
-// checkKubernetesRBAC fetches the apiVersions present on k8s server.
+// validateKubernetesRBAC fetches the apiVersions present on k8s server.
 // And checks whether api group and version are present.
 // 'ExtractGroupVersions' func call is taken from kubectl mirror repo.
-func (o *Run) checkKubernetesRBAC(apiGroup, apiVersion string, cl *discovery.DiscoveryClient) error {
+func (o *Run) validateKubernetesRBAC(apiGroup, apiVersion string, cl *discovery.DiscoveryClient) error {
 	groupList, err := cl.ServerGroups()
 	if err != nil {
 		if !discovery.IsGroupDiscoveryFailedError(err) {
@@ -394,9 +395,9 @@ func (o *Run) checkKubernetesRBAC(apiGroup, apiVersion string, cl *discovery.Dis
 	return nil
 }
 
-// checkStorageSnapshotClass checks whether storageclass is present.
+// validateStorageSnapshotClass checks whether storageclass is present.
 // Checks whether storageclass and volumesnapshotclass provisioner are same.
-func (o *Run) checkStorageSnapshotClass(ctx context.Context, provisioner, prefVersion string,
+func (o *Run) validateStorageSnapshotClass(ctx context.Context, provisioner, prefVersion string,
 	kubeClient *kubernetes.Clientset, runtClient client.Client) error {
 	o.Logger.Infof("%s Storageclass - %s found on cluster\n", check, o.StorageClass)
 	if o.SnapshotClass == "" {
@@ -570,8 +571,8 @@ func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context, serverVersio
 	return nil
 }
 
-//  checkDNSResolution checks whether DNS resolution is working on k8s cluster
-func (o *Run) checkDNSResolution(ctx context.Context, execCommand []string, podNameSuffix string, clients ServerClients) error {
+//  validateDNSResolution checks whether DNS resolution is working on k8s cluster
+func (o *Run) validateDNSResolution(ctx context.Context, execCommand []string, podNameSuffix string, clients ServerClients) error {
 	pod := createDNSPodSpec(o, podNameSuffix)
 	_, err := clients.ClientSet.CoreV1().Pods(o.Namespace).Create(ctx, pod, metav1.CreateOptions{})
 	if err != nil {
@@ -624,8 +625,8 @@ func (o *Run) checkDNSResolution(ctx context.Context, execCommand []string, podN
 	return nil
 }
 
-// checkVolumeSnapshot checks if volume snapshot and restore is enabled in the cluster
-func (o *Run) checkVolumeSnapshot(ctx context.Context, nameSuffix string, clients ServerClients) error {
+// validateVolumeSnapshot checks if volume snapshot and restore is enabled in the cluster
+func (o *Run) validateVolumeSnapshot(ctx context.Context, nameSuffix string, clients ServerClients) error {
 	var (
 		execOp exec.Options
 		err    error
@@ -758,6 +759,10 @@ func (o *Run) createSnapshotFromPVC(ctx context.Context, volSnapName, volSnapCla
 	o.Logger.Infof("Waiting for volume snapshot - %s created from pvc to become 'readyToUse:true'", volSnap.GetName())
 	err = waitUntilVolSnapReadyToUse(volSnap, snapshotVer, getDefaultRetryBackoffParams())
 	if err != nil {
+		if err == k8swait.ErrWaitTimeout {
+			return nil, fmt.Errorf("volume snapshot - %s not readyToUse (waited 600 sec) :: %s",
+				volSnap.GetName(), err.Error())
+		}
 		return nil, err
 	}
 	o.Logger.Infof("%s volume snapshot - %s is ready-to-use", check, volSnap.GetName())
