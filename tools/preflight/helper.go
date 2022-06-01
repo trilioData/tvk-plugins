@@ -419,10 +419,11 @@ func createVolumeSnapshotPodSpec(pvcName string, op *Run, nameSuffix string) *co
 // createVolumeSnapsotSpec creates pvc for volume snapshot
 func createVolumeSnapsotSpec(name, snapshotClass, namespace, snapVer, pvcName, uid string) *unstructured.Unstructured {
 	volSnap := &unstructured.Unstructured{}
+
 	volSnap.Object = map[string]interface{}{
 		"spec": map[string]interface{}{
 			"volumeSnapshotClassName": snapshotClass,
-			"source": map[string]string{
+			"source": map[string]interface{}{
 				"persistentVolumeClaimName": pvcName,
 			},
 		},
@@ -556,7 +557,8 @@ func waitUntilPodCondition(ctx context.Context, wop *wait.PodWaitOptions) error 
 }
 
 // waitUntilVolSnapReadyToUse waits until volume snapshot becomes ready or timeouts
-func waitUntilVolSnapReadyToUse(volSnap *unstructured.Unstructured, snapshotVer string, retryBackoff k8swait.Backoff) error {
+func waitUntilVolSnapReadyToUse(volSnap *unstructured.Unstructured, snapshotVer string,
+	retryBackoff k8swait.Backoff, runtimeClient client.Client) error {
 	retErr := k8swait.ExponentialBackoff(retryBackoff, func() (done bool, err error) {
 		volSnapSrc := &unstructured.Unstructured{}
 		volSnapSrc.SetGroupVersionKind(schema.GroupVersionKind{
@@ -564,7 +566,7 @@ func waitUntilVolSnapReadyToUse(volSnap *unstructured.Unstructured, snapshotVer 
 			Version: snapshotVer,
 			Kind:    internal.VolumeSnapshotKind,
 		})
-		err = kubeClient.RuntimeClient.Get(context.Background(), client.ObjectKey{
+		err = runtimeClient.Get(context.Background(), client.ObjectKey{
 			Namespace: volSnap.GetNamespace(),
 			Name:      volSnap.GetName(),
 		}, volSnapSrc)

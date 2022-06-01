@@ -573,32 +573,10 @@ func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context, serverVersio
 
 //  validateDNSResolution checks whether DNS resolution is working on k8s cluster
 func (o *Run) validateDNSResolution(ctx context.Context, execCommand []string, podNameSuffix string, clients ServerClients) error {
-	pod := createDNSPodSpec(o, podNameSuffix)
-	_, err := clients.ClientSet.CoreV1().Pods(o.Namespace).Create(ctx, pod, metav1.CreateOptions{})
+	pod, err := o.createDNSPodOnCluster(ctx, podNameSuffix, clients.ClientSet)
 	if err != nil {
 		return err
 	}
-	o.Logger.Infof("Pod %s created in cluster\n", pod.GetName())
-
-	waitOptions := &wait.PodWaitOptions{
-		Name:               pod.GetName(),
-		Namespace:          o.Namespace,
-		RetryBackoffParams: getDefaultRetryBackoffParams(),
-		PodCondition:       corev1.PodReady,
-		ClientSet:          clients.ClientSet,
-	}
-	o.Logger.Infoln("Waiting for dns pod to become ready")
-	err = waitUntilPodCondition(ctx, waitOptions)
-	if err != nil {
-		o.Logger.Errorf("DNS pod - %s hasn't reached into ready state", pod.GetName())
-		return err
-	}
-
-	pod, err = clients.ClientSet.CoreV1().Pods(o.Namespace).Get(ctx, pod.GetName(), metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	logPodScheduleStmt(pod, o.Logger)
 
 	op := exec.Options{
 		Namespace:     o.Namespace,
@@ -625,20 +603,64 @@ func (o *Run) validateDNSResolution(ctx context.Context, execCommand []string, p
 	return nil
 }
 
+func (o *Run) createDNSPodOnCluster(ctx context.Context, podNameSuffix string, clientSet *kubernetes.Clientset) (*corev1.Pod, error) {
+	pod := createDNSPodSpec(o, podNameSuffix)
+	_, err := clientSet.CoreV1().Pods(o.Namespace).Create(ctx, pod, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+	o.Logger.Infof("Pod %s created in cluster\n", pod.GetName())
+
+	waitOptions := &wait.PodWaitOptions{
+		Name:               pod.GetName(),
+		Namespace:          o.Namespace,
+		RetryBackoffParams: getDefaultRetryBackoffParams(),
+		PodCondition:       corev1.PodReady,
+		ClientSet:          clientSet,
+	}
+	o.Logger.Infoln("Waiting for dns pod to become ready")
+	err = waitUntilPodCondition(ctx, waitOptions)
+	if err != nil {
+		o.Logger.Errorf("DNS pod - %s hasn't reached into ready state", pod.GetName())
+		return nil, err
+	}
+
+	pod, err = clientSet.CoreV1().Pods(o.Namespace).Get(ctx, pod.GetName(), metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	logPodScheduleStmt(pod, o.Logger)
+
+	return pod, nil
+}
+
 // validateVolumeSnapshot checks if volume snapshot and restore is enabled in the cluster
 func (o *Run) validateVolumeSnapshot(ctx context.Context, nameSuffix string, clients ServerClients) error {
 	var (
-		execOp exec.Options
-		err    error
+		execOp          exec.Options
+		err             error
+		pvc             *corev1.PersistentVolumeClaim
+		srcPod          *corev1.Pod
+		prefSnapshotVer string
 	)
 
+	prefSnapshotVer, err = GetServerPreferredVersionForGroup(StorageSnapshotGroup, clients.ClientSet)
+	if err != nil {
+		return err
+	}
+
 	// create source pod, pvc and volume snapshot
-	pvc, srcPod, err := o.createSourcePodAndPVC(ctx, nameSuffix, clients.ClientSet)
+	pvc, err = o.createSourcePVC(ctx, nameSuffix, clients.ClientSet)
+	if err != nil {
+		return err
+	}
+	o.Logger.Infof("Created source pvc - %s", pvc.GetName())
+	srcPod, err = o.createSourcePodFromPVC(ctx, nameSuffix, pvc.GetName(), clients.ClientSet)
 	if err != nil {
 		return err
 	}
 	volSnap, err := o.createSnapshotFromPVC(ctx, VolumeSnapSrcNamePrefix+nameSuffix,
-		storageVolSnapClass, pvc.GetName(), nameSuffix, clients)
+		storageVolSnapClass, prefSnapshotVer, pvc.GetName(), nameSuffix, clients)
 	if err != nil {
 		return err
 	}
@@ -680,7 +702,7 @@ func (o *Run) validateVolumeSnapshot(ctx context.Context, nameSuffix string, cli
 
 	// create unmounted pod, pvc and  snapshot from source pvc
 	unmountedVolSnapSrc, err := o.createSnapshotFromPVC(ctx, UnmountedVolumeSnapSrcNamePrefix+nameSuffix,
-		storageVolSnapClass, pvc.GetName(), nameSuffix, clients)
+		storageVolSnapClass, prefSnapshotVer, pvc.GetName(), nameSuffix, clients)
 	if err != nil {
 		return err
 	}
@@ -701,21 +723,26 @@ func (o *Run) validateVolumeSnapshot(ctx context.Context, nameSuffix string, cli
 	return nil
 }
 
-// createSourcePodAndPVC creates source pod and pvc for volume snapshot check
-func (o *Run) createSourcePodAndPVC(ctx context.Context, nameSuffix string,
-	k8sClient *kubernetes.Clientset) (*corev1.PersistentVolumeClaim, *corev1.Pod, error) {
-	var err error
-	pvc := createVolumeSnapshotPVCSpec(o, SourcePvcNamePrefix+nameSuffix, nameSuffix)
+func (o *Run) createSourcePVC(ctx context.Context, nameSuffix string,
+	k8sClient *kubernetes.Clientset) (pvc *corev1.PersistentVolumeClaim, err error) {
+	pvc = createVolumeSnapshotPVCSpec(o, SourcePvcNamePrefix+nameSuffix, nameSuffix)
 	pvc, err = k8sClient.CoreV1().PersistentVolumeClaims(o.Namespace).Create(ctx, pvc, metav1.CreateOptions{})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	o.Logger.Infof("Created source pvc - %s", pvc.GetName())
-	srcPod := createVolumeSnapshotPodSpec(pvc.GetName(), o, nameSuffix)
+
+	return pvc, nil
+}
+
+// createSourcePodFromPVC creates source pod and pvc for volume snapshot check
+func (o *Run) createSourcePodFromPVC(ctx context.Context, nameSuffix, pvcName string,
+	k8sClient *kubernetes.Clientset) (srcPod *corev1.Pod, err error) {
+
+	srcPod = createVolumeSnapshotPodSpec(pvcName, o, nameSuffix)
 	srcPod, err = k8sClient.CoreV1().Pods(o.Namespace).Create(ctx, srcPod, metav1.CreateOptions{})
 	if err != nil {
 		o.Logger.Errorln(err.Error())
-		return pvc, nil, err
+		return nil, err
 	}
 	o.Logger.Infof("Created source pod - %s", srcPod.GetName())
 
@@ -730,34 +757,29 @@ func (o *Run) createSourcePodAndPVC(ctx context.Context, nameSuffix string,
 	o.Logger.Infof("Waiting for source pod - %s to become ready\n", srcPod.GetName())
 	err = waitUntilPodCondition(ctx, waitOptions)
 	if err != nil {
-		return pvc, srcPod, fmt.Errorf("pod %s hasn't reached into ready state", srcPod.GetName())
+		return srcPod, fmt.Errorf("pod %s hasn't reached into ready state", srcPod.GetName())
 	}
 	o.Logger.Infof("Source pod - %s has reached into ready state\n", srcPod.GetName())
 
 	srcPod, err = k8sClient.CoreV1().Pods(o.Namespace).Get(ctx, srcPod.GetName(), metav1.GetOptions{})
 	if err != nil {
-		return pvc, srcPod, err
+		return srcPod, err
 	}
 	logPodScheduleStmt(srcPod, o.Logger)
 
-	return pvc, srcPod, err
+	return srcPod, err
 }
 
-func (o *Run) createSnapshotFromPVC(ctx context.Context, volSnapName, volSnapClass,
+func (o *Run) createSnapshotFromPVC(ctx context.Context, volSnapName, volSnapClass, snapshotVer,
 	pvcName, uid string, clients ServerClients) (*unstructured.Unstructured, error) {
-	snapshotVer, err := GetServerPreferredVersionForGroup(StorageSnapshotGroup, clients.ClientSet)
-	if err != nil {
-		o.Logger.Errorln(err.Error())
-		return nil, err
-	}
 	volSnap := createVolumeSnapsotSpec(volSnapName, volSnapClass, o.Namespace, snapshotVer, pvcName, uid)
-	if err = clients.RuntimeClient.Create(ctx, volSnap); err != nil {
+	if err := clients.RuntimeClient.Create(ctx, volSnap); err != nil {
 		return nil, fmt.Errorf("%s error creating volume snapshot from pvc :: %s", cross, err.Error())
 	}
 	o.Logger.Infof("Created volume snapshot - %s from pvc", volSnap.GetName())
 
 	o.Logger.Infof("Waiting for volume snapshot - %s created from pvc to become 'readyToUse:true'", volSnap.GetName())
-	err = waitUntilVolSnapReadyToUse(volSnap, snapshotVer, getDefaultRetryBackoffParams())
+	err := waitUntilVolSnapReadyToUse(volSnap, snapshotVer, getDefaultRetryBackoffParams(), clients.RuntimeClient)
 	if err != nil {
 		if err == k8swait.ErrWaitTimeout {
 			return nil, fmt.Errorf("volume snapshot - %s not readyToUse (waited 600 sec) :: %s",

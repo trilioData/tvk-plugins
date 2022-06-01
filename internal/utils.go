@@ -1,9 +1,13 @@
 package internal
 
 import (
+	cryptorand "crypto/rand"
+	"math/big"
+	"math/rand"
+	"time"
+
 	log "github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/discovery"
@@ -39,4 +43,20 @@ func CheckIsOpenshift(disClient *discovery.DiscoveryClient, groupVersion string)
 		}
 	}
 	return true
+}
+
+func GenerateRandomString(n int, isOnlyAlphabetic bool) string {
+	letters := "abcdefghijklmnopqrstuvwxyz"
+	numbers := "1234567890"
+	rand.Seed(time.Now().UnixNano())
+	letterRunes := []rune(letters)
+	if !isOnlyAlphabetic {
+		letterRunes = []rune(letters + numbers)
+	}
+	b := make([]rune, n)
+	for i := range b {
+		randNum, _ := cryptorand.Int(cryptorand.Reader, big.NewInt(int64(len(letterRunes))))
+		b[i] = letterRunes[randNum.Int64()]
+	}
+	return string(b)
 }
