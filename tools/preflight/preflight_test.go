@@ -262,58 +262,44 @@ func preflightFuncsTestcases() {
 						Name:      SourcePodNamePrefix + nameSuffix,
 						Namespace: installNs,
 					}
-
-					Expect(err).To(BeNil())
-					err = createTestPVC(pvcKey)
-					Expect(err).To(BeNil())
-					Eventually(func() error {
-						return testClient.RuntimeClient.Get(ctx, pvcKey, pvc)
-					}, timeout, interval).Should(BeNil())
-
-					// Bind the PVC
-					pvc.Status.Phase = corev1.ClaimBound
-					Expect(testClient.RuntimeClient.Status().Update(ctx, pvc)).To(BeNil())
-					Eventually(func() bool {
-						Expect(testClient.RuntimeClient.Get(ctx, pvcKey, pvc)).To(BeNil())
-						return pvc.Status.Phase == corev1.ClaimBound
-					})
-
-					// create pod from pvc
-					go func(pvcName string) {
-						var testErr error
-						pod, testErr = runOps.createSourcePodFromPVC(ctx, nameSuffix, pvcName, testClient.ClientSet)
-						resultChan <- testErr
-					}(pvc.GetName())
 				})
 			})
 
 			It("Should create source pod with appropriate spec fields", func() {
-				unstructPod := &unstructured.Unstructured{}
-				unstructPod.SetGroupVersionKind(corev1.SchemeGroupVersion.WithKind(internal.PodKind))
-				Eventually(func() error {
-					return testClient.RuntimeClient.Get(ctx, podKey, unstructPod)
-				}, timeout, interval).Should(BeNil())
+				structPod := createVolumeSnapshotPodSpec(pvcKey.Name, &runOps, nameSuffix)
 
-				specObj, found, err := unstructured.NestedFieldNoCopy(unstructPod.Object, "spec", "volumes")
-				Expect(found).To(BeTrue())
-				Expect(err).To(BeNil())
-
-				specObj = specObj.([]interface{})[0]
-				val, ok := specObj.(map[string]interface{})["name"]
-				Expect(ok).To(BeTrue())
+				// check volume fields
+				val := structPod.Spec.Volumes[0].Name
 				Expect(val).To(Equal(VolMountName))
-
-				pvcMap, ok := specObj.(map[string]interface{})["persistentVolumeClaim"]
-				Expect(ok).To(BeTrue())
-
-				val, ok = pvcMap.(map[string]interface{})["claimName"]
-				Expect(ok).To(BeTrue())
+				val = structPod.Spec.Volumes[0].PersistentVolumeClaim.ClaimName
 				Expect(val).To(Equal(pvcKey.Name))
 
-				verifyTVKResourceLabels(unstructPod, nameSuffix)
+				verifyTVKResourceLabels(structPod, nameSuffix)
 			})
 
 			It("Should create source pod from pvc in bound state", func() {
+				// create pvc in bound state
+				err = createTestPVC(pvcKey)
+				Expect(err).To(BeNil())
+				Eventually(func() error {
+					return testClient.RuntimeClient.Get(ctx, pvcKey, pvc)
+				}, timeout, interval).Should(BeNil())
+
+				// Bind the PVC
+				pvc.Status.Phase = corev1.ClaimBound
+				Expect(testClient.RuntimeClient.Status().Update(ctx, pvc)).To(BeNil())
+				Eventually(func() bool {
+					Expect(testClient.RuntimeClient.Get(ctx, pvcKey, pvc)).To(BeNil())
+					return pvc.Status.Phase == corev1.ClaimBound
+				})
+
+				// create pod from pvc
+				go func(pvcName string) {
+					var testErr error
+					pod, testErr = runOps.createSourcePodFromPVC(ctx, nameSuffix, pvcName, testClient.ClientSet)
+					resultChan <- testErr
+				}(pvc.GetName())
+
 				// Get the source pod from cache
 				Eventually(func() error {
 					return testClient.RuntimeClient.Get(ctx, podKey, pod)
@@ -329,6 +315,9 @@ func preflightFuncsTestcases() {
 				Expect(testClient.RuntimeClient.Status().Update(ctx, pod)).To(BeNil())
 
 				Expect(<-resultChan).To(BeNil())
+
+				// delete source pod
+				deleteTestPod(podKey)
 			})
 		})
 
@@ -359,58 +348,31 @@ func preflightFuncsTestcases() {
 				})
 			})
 
-			AfterEach(func() {
-				deleteVolumeSnapshot(volSnapKey, volSnap.GroupVersionKind())
-			})
-
 			AfterAll(func() {
 				deleteAllVolumeSnapshotCRD()
 			})
 
-			It("Should have correct pvc name as the source in the spec of volume-snapshot", func() {
-				go func() {
-					_, testErr := runOps.createSnapshotFromPVC(ctx, volSnapKey.Name, testSnapshotClass, internal.V1Version,
-						testPVC, testNameSuffix, testClient)
-					resultChan <- testErr
-				}()
-				Eventually(func() error {
-					return testClient.RuntimeClient.Get(ctx, volSnapKey, volSnap)
-				}, timeout, interval).Should(BeNil())
+			It("Should have correct spec fields and metadata labels for volume-snapshot created from PVC", func() {
+				volSnap = createVolumeSnapsotSpec(volSnapKey.Name, testSnapshotClass, runOps.Namespace, internal.V1Version, testPVC, testNameSuffix)
 
-				pvcMap, found, err := unstructured.NestedMap(volSnap.Object, "spec", "source")
+				// check namespace
+				Expect(volSnap.GetNamespace()).To(Equal(runOps.Namespace))
+
+				// correct pvc name
+				pvcMap, found, err := unstructured.NestedStringMap(volSnap.Object, "spec", "source")
 				Expect(found).To(BeTrue())
 				Expect(err).To(BeNil())
 				val, ok := pvcMap["persistentVolumeClaimName"]
 				Expect(ok).To(BeTrue())
 				Expect(val).To(Equal(testPVC))
-			})
 
-			It("Should have correct snapshot-class name in spec field of volume-snapshot", func() {
-				go func() {
-					_, testErr := runOps.createSnapshotFromPVC(ctx, volSnapKey.Name, testSnapshotClass, internal.V1Version,
-						testPVC, testNameSuffix, testClient)
-					resultChan <- testErr
-				}()
-				Eventually(func() error {
-					return testClient.RuntimeClient.Get(ctx, volSnapKey, volSnap)
-				}, timeout, interval).Should(BeNil())
-
+				//snapshot-class name check
 				vscName, found, err := unstructured.NestedFieldNoCopy(volSnap.Object, "spec", "volumeSnapshotClassName")
 				Expect(found).Should(BeTrue())
 				Expect(err).To(BeNil())
 				Expect(vscName).To(Equal(testSnapshotClass))
-			})
 
-			It("Should have correct labels set on volume-snapshot", func() {
-				go func() {
-					_, testErr := runOps.createSnapshotFromPVC(ctx, volSnapKey.Name, testSnapshotClass, internal.V1Version,
-						testPVC, testNameSuffix, testClient)
-					resultChan <- testErr
-				}()
-				Eventually(func() error {
-					return testClient.RuntimeClient.Get(ctx, volSnapKey, volSnap)
-				}, timeout, interval).Should(BeNil())
-
+				// label verification
 				verifyTVKResourceLabels(volSnap, testNameSuffix)
 			})
 
@@ -442,48 +404,46 @@ func preflightFuncsTestcases() {
 
 				// successfully complete execution of func
 				Expect(<-resultChan).To(BeNil())
+
+				// delete resource at the end
+				deleteVolumeSnapshot(volSnapKey, volSnap.GroupVersionKind())
 			})
 		})
 
 		Context("When creating restore pod from volume snapshot", Ordered, func() {
 			var (
-				volSnapKey types.NamespacedName
-				pvcKey     types.NamespacedName
-				podKey     types.NamespacedName
-				volSnap    = &unstructured.Unstructured{}
-				pvc        = &unstructured.Unstructured{}
-				vsCRDsMap  = map[string]bool{vsClassCRD: true, vsContentCRD: true, vsCRD: true}
-				resultChan = make(chan error, 1)
+				volSnapKey    types.NamespacedName
+				restorePVCKey types.NamespacedName
+				podKey        types.NamespacedName
+				volSnap       = &unstructured.Unstructured{}
+				pvc           = &corev1.PersistentVolumeClaim{}
+				vsCRDsMap     = map[string]bool{vsClassCRD: true, vsContentCRD: true, vsCRD: true}
 			)
 
 			BeforeAll(func() {
 				installVolumeSnapshotCRD(v1K8sVersion, vsCRDsMap)
 				checkVolumeSnapshotCRDExists()
 
-				pvc.SetGroupVersionKind(corev1.SchemeGroupVersion.WithKind(internal.PersistentVolumeClaimKind))
-				pvcKey = types.NamespacedName{
-					Name:      "ut-pvc-" + internal.GenerateRandomString(6, false),
+				volSnap.SetGroupVersionKind(schema.GroupVersionKind{
+					Group:   StorageSnapshotGroup,
+					Version: internal.V1Version,
+					Kind:    internal.VolumeSnapshotKind,
+				})
+				volSnapKey = types.NamespacedName{
+					Name:      testVolumeSnapshot,
+					Namespace: installNs,
+				}
+			})
+
+			BeforeEach(func() {
+				restorePVCKey = types.NamespacedName{
+					Name:      testPVC + "-" + internal.GenerateRandomString(6, false),
 					Namespace: installNs,
 				}
 				podKey = types.NamespacedName{
 					Name:      testPodName + "-" + internal.GenerateRandomString(6, false),
 					Namespace: installNs,
 				}
-				volSnapKey = types.NamespacedName{
-					Name:      testVolumeSnapshot,
-					Namespace: installNs,
-				}
-				Eventually(func() error {
-					return createTestVolumeSnapsot(volSnapKey, pvcKey.Name, internal.V1Version)
-				}, timeout, interval).ShouldNot(HaveOccurred())
-				Eventually(func() error {
-					return testClient.RuntimeClient.Get(ctx, volSnapKey, volSnap)
-				}, timeout, interval)
-
-				go func() {
-					_, err := runOps.createRestorePodFromSnapshot(ctx, volSnap, testPVC, podKey.Name, testNameSuffix, testClient.ClientSet)
-					resultChan <- err
-				}()
 			})
 
 			AfterAll(func() {
@@ -491,68 +451,24 @@ func preflightFuncsTestcases() {
 			})
 
 			It("Should create pvc for restore pod with volume snapshot as its data-source", func() {
-				snapPvcKey := types.NamespacedName{
-					Name:      testPVC,
-					Namespace: installNs,
-				}
-				Eventually(func() error {
-					return testClient.RuntimeClient.Get(ctx, snapPvcKey, pvc)
-				}, timeout, interval).Should(BeNil())
+				pvc = createRestorePVCSpec(restorePVCKey.Name, volSnapKey.Name, testNameSuffix, &runOps)
 
-				ds, found, err := unstructured.NestedMap(pvc.Object, "spec")
-				Expect(found).To(BeTrue())
-				Expect(err).To(BeNil())
-
-				val, ok := ds["storageClassName"]
-				Expect(ok).To(BeTrue())
-				Expect(val).To(Equal(runOps.StorageClass))
+				Expect(pvc.Namespace).Should(Equal(runOps.Namespace))
+				Expect(*pvc.Spec.StorageClassName).Should(Equal(runOps.StorageClass))
 
 				verifyTVKResourceLabels(pvc, testNameSuffix)
 			})
 
 			It("Should create pod using restore PVC", func() {
-				restorePod := &unstructured.Unstructured{}
-				restorePod.SetGroupVersionKind(corev1.SchemeGroupVersion.WithKind(internal.PodKind))
-				Eventually(func() error {
-					return testClient.RuntimeClient.Get(ctx, podKey, restorePod)
-				}, timeout, interval).Should(BeNil())
+				pod := createRestorePodSpec(podKey.Name, restorePVCKey.Name, testNameSuffix, &runOps)
 
-				specObj, found, err := unstructured.NestedFieldNoCopy(restorePod.Object, "spec", "volumes")
-				Expect(found).To(BeTrue())
-				Expect(err).To(BeNil())
+				Expect(pod.Spec.Volumes).ShouldNot(BeNil())
+				Expect(len(pod.Spec.Volumes)).ShouldNot(BeZero())
 
-				specObj = specObj.([]interface{})[0]
-				val, ok := specObj.(map[string]interface{})["name"]
-				Expect(ok).To(BeTrue())
-				Expect(val).To(Equal(VolMountName))
+				Expect(pod.Spec.Volumes[0].Name).Should(Equal(VolMountName))
+				Expect(pod.Spec.Volumes[0].PersistentVolumeClaim.ClaimName).Should(Equal(restorePVCKey.Name))
 
-				pvcMap, ok := specObj.(map[string]interface{})["persistentVolumeClaim"]
-				Expect(ok).To(BeTrue())
-
-				val, ok = pvcMap.(map[string]interface{})["claimName"]
-				Expect(ok).To(BeTrue())
-				Expect(val).To(Equal(testPVC))
-
-				verifyTVKResourceLabels(restorePod, testNameSuffix)
-			})
-
-			It("Should not return any error when restore pod goes into ready state", func() {
-				restorePod := &corev1.Pod{}
-				Eventually(func() error {
-					return testClient.RuntimeClient.Get(ctx, podKey, restorePod)
-				}, timeout, interval).Should(BeNil())
-
-				// add pod condition as ready
-				Expect(testClient.RuntimeClient.Get(ctx, podKey, restorePod)).To(BeNil())
-				restorePod.Status.Conditions = append(restorePod.Status.Conditions, corev1.PodCondition{
-					Type:               corev1.PodReady,
-					Status:             corev1.ConditionTrue,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-				})
-				Expect(testClient.RuntimeClient.Status().Update(ctx, restorePod)).To(BeNil())
-
-				// The creation of restore should be successful
-				Expect(<-resultChan).To(BeNil())
+				verifyTVKResourceLabels(pod, testNameSuffix)
 			})
 		})
 	})
@@ -560,58 +476,36 @@ func preflightFuncsTestcases() {
 	Describe("Preflight DNS Pod test scenarios", Ordered, func() {
 		var (
 			podKey     types.NamespacedName
-			dnsPod     = &unstructured.Unstructured{}
 			resultChan = make(chan error)
 		)
 
 		BeforeAll(func() {
-			dnsPod.SetGroupVersionKind(corev1.SchemeGroupVersion.WithKind(internal.PodKind))
 			podKey = types.NamespacedName{
 				Name:      dnsUtils + testNameSuffix,
 				Namespace: installNs,
 			}
 		})
 
-		AfterEach(func() {
-			deletePod(podKey)
-		})
-
 		It("Should create DNS pod with appropriate spec values", func() {
-			go func() {
-				//_, testErr := runOps.createDNSPodOnCluster(ctx, testNameSuffix, testClient.ClientSet)
-				_, testErr := runOps.createDNSPodOnCluster(ctx, testNameSuffix, testClient.ClientSet)
-				resultChan <- testErr
-			}()
-			Eventually(func() error {
-				return testClient.RuntimeClient.Get(ctx, podKey, dnsPod)
-			}, timeout, interval).Should(BeNil())
+			pod := createDNSPodSpec(&runOps, testNameSuffix)
 
-			container, found, err := unstructured.NestedFieldNoCopy(dnsPod.Object, "spec", "containers")
-			Expect(found).To(BeTrue())
-			Expect(err).To(BeNil())
-			container = container.([]interface{})[0]
+			Expect(len(pod.Spec.Containers)).ShouldNot(BeZero())
+			container := pod.Spec.Containers[0]
+			Expect(container.Image).Should(Equal(strings.Join([]string{GcrRegistryPath, DNSUtilsImage}, "/")))
+			Expect(container.Name).Should(Equal(dnsContainerName))
 
-			verifyTVKResourceLabels(dnsPod, testNameSuffix)
-
-			val, ok := container.(map[string]interface{})["image"]
-			Expect(ok).To(BeTrue())
-			Expect(val).To(Equal(strings.Join([]string{GcrRegistryPath, DNSUtilsImage}, "/")))
-
-			val, ok = container.(map[string]interface{})["name"]
-			Expect(ok).To(BeTrue())
-			Expect(val).To(Equal(dnsContainerName))
-
-			val, ok = container.(map[string]interface{})["resources"]
-			Expect(ok).To(BeTrue())
-
+			resreq := container.Resources
+			Expect(resreq).ShouldNot(BeNil())
 			Expect(func() bool {
-				limits := val.(map[string]interface{})["limits"]
-				requests := val.(map[string]interface{})["requests"]
-				return runOps.Limits.Cpu().String() == limits.(map[string]interface{})["cpu"] &&
-					runOps.Limits.Memory().String() == limits.(map[string]interface{})["memory"] &&
-					runOps.Requests.Cpu().String() == requests.(map[string]interface{})["cpu"] &&
-					runOps.Requests.Memory().String() == requests.(map[string]interface{})["memory"]
-			}()).To(BeTrue())
+				limits := resreq.Limits
+				requests := resreq.Requests
+				return runOps.Limits.Cpu().String() == limits.Cpu().String() &&
+					runOps.Limits.Memory().String() == limits.Memory().String() &&
+					runOps.Requests.Cpu().String() == requests.Cpu().String() &&
+					runOps.Requests.Memory().String() == requests.Memory().String()
+			}()).Should(BeTrue())
+
+			verifyTVKResourceLabels(pod, testNameSuffix)
 		})
 
 		It("DNS pod should be created without any error after reaching into ready state", func() {
@@ -643,6 +537,9 @@ func preflightFuncsTestcases() {
 			}, timeout, interval).Should(BeTrue())
 
 			Expect(<-resultChan).To(BeNil())
+
+			// delete dns pod
+			deleteTestPod(podKey)
 		})
 	})
 

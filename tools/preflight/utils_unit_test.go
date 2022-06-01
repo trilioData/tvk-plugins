@@ -74,32 +74,9 @@ func createTestPVC(pvcKey types.NamespacedName) error {
 	return testClient.RuntimeClient.Create(ctx, pvc)
 }
 
-func createTestVolumeSnapsot(volSnapKey types.NamespacedName, pvcName, snapVer string) error {
-	vs := &unstructured.Unstructured{}
-	vs.Object = map[string]interface{}{
-		"spec": map[string]interface{}{
-			"volumeSnapshotClassName": testSnapshotClass,
-			"source": map[string]string{
-				"persistentVolumeClaimName": pvcName,
-			},
-		},
-	}
-
-	vs.SetName(volSnapKey.Name)
-	vs.SetNamespace(volSnapKey.Namespace)
-	vs.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   StorageSnapshotGroup,
-		Version: snapVer,
-		Kind:    internal.VolumeSnapshotKind,
-	})
-
-	return testClient.RuntimeClient.Create(ctx, vs)
-}
-
-func verifyTVKResourceLabels(obj *unstructured.Unstructured, nameSuffix string) {
-	labelsMap, found, err := unstructured.NestedMap(obj.Object, "metadata", "labels")
-	Expect(found).To(BeTrue())
-	Expect(err).To(BeNil())
+//func verifyTVKResourceLabels(obj *unstructured.Unstructured, nameSuffix string) {
+func verifyTVKResourceLabels(obj client.Object, nameSuffix string) {
+	labelsMap := obj.GetLabels()
 
 	val, ok := labelsMap[LabelPreflightRunKey]
 	Expect(ok).To(BeTrue())
@@ -118,17 +95,6 @@ func verifyTVKResourceLabels(obj *unstructured.Unstructured, nameSuffix string) 
 	Expect(val).To(Equal(LabelK8sPartOfValue))
 }
 
-func deletePod(podKey types.NamespacedName) {
-	pod := &unstructured.Unstructured{}
-	pod.SetGroupVersionKind(corev1.SchemeGroupVersion.WithKind(internal.PodKind))
-	Expect(testClient.RuntimeClient.Get(ctx, podKey, pod)).To(BeNil())
-	Expect(testClient.RuntimeClient.Delete(ctx, pod)).To(BeNil())
-	Eventually(func() bool {
-		err := testClient.RuntimeClient.Get(ctx, podKey, pod)
-		return k8serrors.IsNotFound(err)
-	}, timeout, interval).Should(BeTrue())
-}
-
 func deleteVolumeSnapshot(volSnapKey types.NamespacedName, volSnapGVK schema.GroupVersionKind) {
 	volSnap := &unstructured.Unstructured{}
 	volSnap.SetGroupVersionKind(volSnapGVK)
@@ -136,6 +102,16 @@ func deleteVolumeSnapshot(volSnapKey types.NamespacedName, volSnapGVK schema.Gro
 	Expect(testClient.RuntimeClient.Delete(ctx, volSnap))
 	Eventually(func() bool {
 		err := testClient.RuntimeClient.Get(ctx, volSnapKey, volSnap)
+		return k8serrors.IsNotFound(err)
+	}, timeout, interval).Should(BeTrue())
+}
+
+func deleteTestPod(podKey types.NamespacedName) {
+	pod := &corev1.Pod{}
+	Expect(testClient.RuntimeClient.Get(ctx, podKey, pod)).To(BeNil())
+	Expect(testClient.RuntimeClient.Delete(ctx, pod)).To(BeNil())
+	Eventually(func() bool {
+		err := testClient.RuntimeClient.Get(ctx, podKey, pod)
 		return k8serrors.IsNotFound(err)
 	}, timeout, interval).Should(BeTrue())
 }

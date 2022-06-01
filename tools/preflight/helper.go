@@ -419,10 +419,11 @@ func createVolumeSnapshotPodSpec(pvcName string, op *Run, nameSuffix string) *co
 // createVolumeSnapsotSpec creates pvc for volume snapshot
 func createVolumeSnapsotSpec(name, snapshotClass, namespace, snapVer, pvcName, uid string) *unstructured.Unstructured {
 	volSnap := &unstructured.Unstructured{}
+
 	volSnap.Object = map[string]interface{}{
 		"spec": map[string]interface{}{
 			"volumeSnapshotClassName": snapshotClass,
-			"source": map[string]string{
+			"source": map[string]interface{}{
 				"persistentVolumeClaimName": pvcName,
 			},
 		},

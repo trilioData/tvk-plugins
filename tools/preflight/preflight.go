@@ -575,7 +575,7 @@ func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context, serverVersio
 func (o *Run) validateDNSResolution(ctx context.Context, execCommand []string, podNameSuffix string, clients ServerClients) error {
 	pod, err := o.createDNSPodOnCluster(ctx, podNameSuffix, clients.ClientSet)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	op := exec.Options{
