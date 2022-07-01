@@ -500,20 +500,14 @@ func (o *Run) createVolumeSnapshotClass(ctx context.Context, driver, prefVersion
 		return "", cErr
 	}
 
-	jsonOut, mErr := vscUnstrObj.MarshalJSON()
-	if mErr != nil {
-		return "", fmt.Errorf("error marshaling created volume snapshot class :: %s", mErr.Error())
-	}
-
-	yamlOut, jErr := yaml.JSONToYAML(jsonOut)
-	if jErr != nil {
-		return "", fmt.Errorf("error converting json object to yaml :: %s", jErr.Error())
-	}
-
 	o.Logger.Infof("%s Volume snapshot class with driver as - %s for version - %s successfully created",
 		check, driver, prefVersion)
+	vscYAML, yErr := toYAML(vscUnstrObj)
+	if yErr != nil {
+		return vscName, yErr
+	}
 	o.Logger.Warnf("Volume snapshot class object created with the following spec."+
-		" User can edit fields later, if required.. \n::::::::\n%s::::::::", string(yamlOut))
+		" User can edit fields later, if required.. \n::::::::\n%s::::::::", string(vscYAML))
 
 	return vscName, nil
 }
@@ -607,6 +601,8 @@ func (o *Run) createDNSPodOnCluster(ctx context.Context, podNameSuffix string, c
 	pod := createDNSPodSpec(o, podNameSuffix)
 	_, err := clientSet.CoreV1().Pods(o.Namespace).Create(ctx, pod, metav1.CreateOptions{})
 	if err != nil {
+		dnsPodYaml := objToYAML(pod)
+		o.Logger.Warnf("DNS pod created with the following yaml:\n%v", string(dnsPodYaml))
 		return nil, err
 	}
 	o.Logger.Infof("Pod %s created in cluster\n", pod.GetName())
@@ -622,6 +618,8 @@ func (o *Run) createDNSPodOnCluster(ctx context.Context, podNameSuffix string, c
 	err = waitUntilPodCondition(ctx, waitOptions)
 	if err != nil {
 		o.Logger.Errorf("DNS pod - %s hasn't reached into ready state", pod.GetName())
+		dnsPodYaml := objToYAML(pod)
+		o.Logger.Warnf("DNS pod created with the following yaml:\n%v", string(dnsPodYaml))
 		return nil, err
 	}
 
@@ -728,6 +726,8 @@ func (o *Run) createSourcePVC(ctx context.Context, nameSuffix string,
 	pvc = createVolumeSnapshotPVCSpec(o, SourcePvcNamePrefix+nameSuffix, nameSuffix)
 	pvc, err = k8sClient.CoreV1().PersistentVolumeClaims(o.Namespace).Create(ctx, pvc, metav1.CreateOptions{})
 	if err != nil {
+		srcPVCYaml := objToYAML(pvc)
+		o.Logger.Warnf("failed to create source PVC. PVC YAML: %s\n", string(srcPVCYaml))
 		return nil, err
 	}
 
@@ -742,6 +742,8 @@ func (o *Run) createSourcePodFromPVC(ctx context.Context, nameSuffix, pvcName st
 	srcPod, err = k8sClient.CoreV1().Pods(o.Namespace).Create(ctx, srcPod, metav1.CreateOptions{})
 	if err != nil {
 		o.Logger.Errorln(err.Error())
+		srcPodYaml := objToYAML(srcPod)
+		o.Logger.Warnf("failed to create source pod from pvc. pod yaml: \n%s", string(srcPodYaml))
 		return nil, err
 	}
 	o.Logger.Infof("Created source pod - %s", srcPod.GetName())
@@ -757,6 +759,8 @@ func (o *Run) createSourcePodFromPVC(ctx context.Context, nameSuffix, pvcName st
 	o.Logger.Infof("Waiting for source pod - %s to become ready\n", srcPod.GetName())
 	err = waitUntilPodCondition(ctx, waitOptions)
 	if err != nil {
+		srcPodYaml := objToYAML(srcPod)
+		o.Logger.Warnf("pod yaml: \n%s", string(srcPodYaml))
 		return srcPod, fmt.Errorf("pod %s hasn't reached into ready state", srcPod.GetName())
 	}
 	o.Logger.Infof("Source pod - %s has reached into ready state\n", srcPod.GetName())
@@ -774,6 +778,11 @@ func (o *Run) createSnapshotFromPVC(ctx context.Context, volSnapName, volSnapCla
 	pvcName, uid string, clients ServerClients) (*unstructured.Unstructured, error) {
 	volSnap := createVolumeSnapsotSpec(volSnapName, volSnapClass, o.Namespace, snapshotVer, pvcName, uid)
 	if err := clients.RuntimeClient.Create(ctx, volSnap); err != nil {
+		volSnapYAML, yErr := toYAML(volSnap)
+		if yErr != nil {
+			return nil, yErr
+		}
+		o.Logger.Warnf("volume snapshot YAML: \n%s", string(volSnapYAML))
 		return nil, fmt.Errorf("%s error creating volume snapshot from pvc :: %s", cross, err.Error())
 	}
 	o.Logger.Infof("Created volume snapshot - %s from pvc", volSnap.GetName())
@@ -782,6 +791,11 @@ func (o *Run) createSnapshotFromPVC(ctx context.Context, volSnapName, volSnapCla
 	err := waitUntilVolSnapReadyToUse(volSnap, snapshotVer, getDefaultRetryBackoffParams(), clients.RuntimeClient)
 	if err != nil {
 		if err == k8swait.ErrWaitTimeout {
+			volSnapYAML, yErr := toYAML(volSnap)
+			if yErr != nil {
+				return nil, yErr
+			}
+			o.Logger.Warnf("PVC YAML: \n%s", string(volSnapYAML))
 			return nil, fmt.Errorf("volume snapshot - %s not readyToUse (waited 600 sec) :: %s",
 				volSnap.GetName(), err.Error())
 		}
@@ -800,6 +814,8 @@ func (o *Run) createRestorePodFromSnapshot(ctx context.Context, volSnapshot *uns
 		Create(ctx, restorePVC, metav1.CreateOptions{})
 	if err != nil {
 		o.Logger.Errorln(err.Error())
+		restorePVCYaml := objToYAML(restorePVC)
+		o.Logger.Warnf("restore PVC Creation Failed:\nRestore PVC yaml:\n%s", string(restorePVCYaml))
 		return nil, err
 	}
 	o.Logger.Infof("Created restore pvc - %s from volume snapshot - %s\n", restorePVC.GetName(), volSnapshot.GetName())
@@ -808,6 +824,8 @@ func (o *Run) createRestorePodFromSnapshot(ctx context.Context, volSnapshot *uns
 		Create(ctx, restorePod, metav1.CreateOptions{})
 	if err != nil {
 		o.Logger.Errorln(err.Error())
+		restorePodYaml := objToYAML(restorePod)
+		o.Logger.Warnf("restore Pod Creation Failed:\nRestore Pod yaml:\n%s", string(restorePodYaml))
 		return nil, err
 	}
 	o.Logger.Infof("Created restore pod - %s\n", restorePod.GetName())
@@ -824,6 +842,8 @@ func (o *Run) createRestorePodFromSnapshot(ctx context.Context, volSnapshot *uns
 	waitOptions.Name = restorePod.GetName()
 	err = waitUntilPodCondition(ctx, waitOptions)
 	if err != nil {
+		restorePodYaml := objToYAML(restorePod)
+		o.Logger.Warnf("restore Pod didn't reached ready state:\nRestore Pod yaml:\n%s", string(restorePodYaml))
 		return nil, err
 	}
 	o.Logger.Infof("%s Restore pod - %s has reached into ready state\n", check, restorePod.GetName())
@@ -835,4 +855,27 @@ func (o *Run) createRestorePodFromSnapshot(ctx context.Context, volSnapshot *uns
 	logPodScheduleStmt(restorePod, o.Logger)
 
 	return restorePod, nil
+}
+
+// function to convert Unstructured Object to YAML
+func toYAML(obj *unstructured.Unstructured) ([]byte, error) {
+	jsonOut, mErr := obj.MarshalJSON()
+	if mErr != nil {
+		return nil, fmt.Errorf("error marshaling object :: %s", mErr.Error())
+	}
+	yamlOut, jErr := yaml.JSONToYAML(jsonOut)
+	if jErr != nil {
+		return nil, fmt.Errorf("error converting json object to yaml :: %s", jErr.Error())
+	}
+	return yamlOut, nil
+}
+
+// function to convert Structured Object to YAML
+func objToYAML(o interface{}) []byte {
+	objYAML, yErr := yaml.Marshal(o)
+	if yErr != nil {
+		fmt.Printf("error converting strucuted object to yaml :: %s", yErr.Error())
+		return nil
+	}
+	return objYAML
 }
