@@ -31,6 +31,7 @@ import (
 	"github.com/trilioData/tvk-plugins/internal/utils/shell"
 	"github.com/trilioData/tvk-plugins/tools/preflight/exec"
 	"github.com/trilioData/tvk-plugins/tools/preflight/wait"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -679,4 +680,13 @@ func getDefaultRetryBackoffParams() k8swait.Backoff {
 
 func logPodScheduleStmt(pod *corev1.Pod, logger *logrus.Logger) {
 	logger.Debugf("Pod - '%s' scheduled on node - '%s'", pod.GetName(), pod.Spec.NodeName)
+}
+
+// function to convert Object to YAML
+func objToYAML(o interface{}) ([]byte, error) {
+	objYAML, yErr := yaml.Marshal(o)
+	if yErr != nil {
+		return nil, yErr
+	}
+	return objYAML, nil
 }
