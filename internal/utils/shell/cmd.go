@@ -73,7 +73,8 @@ func ExecuteArgs(env []string, combinedOutput bool, name string, args ...string)
 // params:
 // input=>cmd: formatted command string which needs to be executed.
 // output=>*cmdOut: command output struct returned after command execution.
-//			error: non-nil error if command execution failed.
+//
+//	error: non-nil error if command execution failed.
 func RunCmd(cmd string, env ...string) (*CmdOut, error) {
 	outStruct, err := Execute(env, true, "%s", cmd)
 	if err != nil {
@@ -85,9 +86,12 @@ func RunCmd(cmd string, env ...string) (*CmdOut, error) {
 // ChmodR changes permission of a file
 // params:
 // input=> path: filepath to change file permission
-// 		   mode: permissions
+//
+//	mode: permissions
+//
 // output=> outStruct.out:stdout string
-// 			err: non-nil error if command execution failed.
+//
+//	err: non-nil error if command execution failed.
 func ChmodR(dirPath, mode string) (string, error) {
 	// Recursive chmod
 	cmd := fmt.Sprintf("chmod -R %s %s", mode, dirPath)
@@ -103,8 +107,9 @@ func ChmodR(dirPath, mode string) (string, error) {
 // param:
 // input=> path: filePath to remove
 // output=> err.Error(): returns error string if command execution fails.
-// 			outStr: returns stdout
-// 			err: non-nil error if command execution failed.
+//
+//	outStr: returns stdout
+//	err: non-nil error if command execution failed.
 func RmRf(dirPath string) (string, error) {
 	// Recursively removes files/directory
 	fi, err := os.Lstat(dirPath)
@@ -158,7 +163,8 @@ func ReadChildDir(dirPath string) (dirNames []string, err error) {
 // params:
 // input=> directory: directory path to create.
 // output=> err.Error(): returns error string if command execution fails
-// 			err: non-nil error if command execution failed.
+//
+//	err: non-nil error if command execution failed.
 func Mkdir(directory string) (string, error) {
 	_, err := os.Stat(directory)
 	if err != nil {

@@ -74,7 +74,7 @@ func createTestPVC(pvcKey types.NamespacedName) error {
 	return testClient.RuntimeClient.Create(ctx, pvc)
 }
 
-//func verifyTVKResourceLabels(obj *unstructured.Unstructured, nameSuffix string) {
+// func verifyTVKResourceLabels(obj *unstructured.Unstructured, nameSuffix string) {
 func verifyTVKResourceLabels(obj client.Object, nameSuffix string) {
 	labelsMap := obj.GetLabels()
 

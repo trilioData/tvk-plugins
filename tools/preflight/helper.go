@@ -301,7 +301,7 @@ func getSemverVersion(ver string) (*semVersion.Version, error) {
 	return semVer, err
 }
 
-//  clusterHasVolumeSnapshotClass checks and returns volume snapshot class if present on cluster.
+// clusterHasVolumeSnapshotClass checks and returns volume snapshot class if present on cluster.
 func clusterHasVolumeSnapshotClass(ctx context.Context, snapshotClass string,
 	kubeClient *goclient.Clientset, runtClient client.Client) (*unstructured.Unstructured, error) {
 	var (
@@ -331,7 +331,7 @@ func clusterHasVolumeSnapshotClass(ctx context.Context, snapshotClass string,
 	return u, nil
 }
 
-//  createDNSPodSpec returns a corev1.Pod instance.
+// createDNSPodSpec returns a corev1.Pod instance.
 func createDNSPodSpec(op *Run, podNameSuffix string) *corev1.Pod {
 	var imagePath string
 	if op.LocalRegistry != "" {
