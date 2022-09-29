@@ -33,7 +33,7 @@ func Execute() {
 	}
 }
 
-//  initializes flags and logger for the application
+// initializes flags and logger for the application
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&kubeconfig, internal.KubeconfigFlag,
 		internal.KubeconfigShorthandFlag, "", internal.KubeconfigUsage)

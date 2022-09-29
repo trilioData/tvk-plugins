@@ -80,8 +80,9 @@ func (o *Run) logPreflightOptions() {
 	o.Logger.Infof("====PREFLIGHT RUN OPTIONS END====")
 }
 
-//nolint:gocyclo // for future ref
 // PerformPreflightChecks performs all preflight checks.
+//
+//nolint:gocyclo // for future ref
 func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 	o.logPreflightOptions()
 	var err error
@@ -427,7 +428,7 @@ func (o *Run) validateStorageSnapshotClass(ctx context.Context, provisioner, pre
 	return nil
 }
 
-//  checkAndCreateSnapshotClassForProvisioner checks whether snapshot-class exist for a provisioner, and creates if not present
+// checkAndCreateSnapshotClassForProvisioner checks whether snapshot-class exist for a provisioner, and creates if not present
 func (o *Run) checkAndCreateSnapshotClassForProvisioner(ctx context.Context, prefVersion,
 	provisioner string, cl client.Client) (string, error) {
 	var err error
@@ -513,7 +514,7 @@ func (o *Run) createVolumeSnapshotClass(ctx context.Context, driver, prefVersion
 	return vscName, nil
 }
 
-//  checkAndCreateVolumeSnapshotCRDs checks and creates volumesnapshot and related CRDs if not present on cluster.
+// checkAndCreateVolumeSnapshotCRDs checks and creates volumesnapshot and related CRDs if not present on cluster.
 func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context, serverVersion string, cl client.Client) error {
 
 	prefCRDVersion, gErr := getPrefSnapshotClassVersion(serverVersion)
@@ -566,7 +567,7 @@ func (o *Run) checkAndCreateVolumeSnapshotCRDs(ctx context.Context, serverVersio
 	return nil
 }
 
-//  validateDNSResolution checks whether DNS resolution is working on k8s cluster
+// validateDNSResolution checks whether DNS resolution is working on k8s cluster
 func (o *Run) validateDNSResolution(ctx context.Context, execCommand []string, podNameSuffix string, clients ServerClients) error {
 	pod, err := o.createDNSPodOnCluster(ctx, podNameSuffix, clients.ClientSet)
 	if err != nil {

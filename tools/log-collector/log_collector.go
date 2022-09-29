@@ -454,8 +454,9 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 				resObjects.Items = append(resObjects.Items, gvkObjs.Items...)
 			}
 
-			if internal.CheckIsOpenshift(l.DisClient, ocpAPIVersion) {
-				ocpObj, oErr := l.getOcpResourcesByOwnerRef(getAPIGroupVersionResourcePath(groupVersion), &resources[index])
+			if internal.CheckIsOpenshift(l.DisClient, internal.OcpAPIVersion) {
+				ocpObj, oErr := l.getOcpRelatedResources(getAPIGroupVersionResourcePath(groupVersion),
+					&resources[index], groupVersion)
 				if oErr != nil {
 					return oErr
 				}
@@ -579,14 +580,18 @@ func (l *LogCollector) getAPIResourceList() (map[string][]apiv1.APIResource, err
 	return resourceMapList, nil
 }
 
-// getOcpResourcesByOwnerRef return all the objects which has ownerRef of CSV
-func (l *LogCollector) getOcpResourcesByOwnerRef(resourcePath string,
-	resource *apiv1.APIResource) (objects unstructured.UnstructuredList, err error) {
+// getOcpRelatedResources return all the objects which has ownerRef of CSV
+func (l *LogCollector) getOcpRelatedResources(resourcePath string,
+	resource *apiv1.APIResource, groupVersion string) (objects unstructured.UnstructuredList, err error) {
+
+	//  This is the default ingress-controller
+	if resource.Kind == internal.IngressController && groupVersion == OCPOperatorAPIVersion {
+		l.Namespaces = append(l.Namespaces, OCPConfigNs)
+	}
 
 	allObjects := l.getResourceObjects(resourcePath, resource)
 
 	for _, object := range allObjects.Items {
-
 		if object.GetKind() == SubscriptionKind {
 			startingCSV, _, err := unstructured.NestedString(object.Object, "spec", "startingCSV")
 			if err != nil {
@@ -626,6 +631,16 @@ func (l *LogCollector) getOcpResourcesByOwnerRef(resourcePath string,
 					objects.Items = append(objects.Items, object)
 				}
 			}
+		}
+
+		// This contains cluster wide configuration for ingress
+		if groupVersion == OCPConfigAPIVersion && object.GetKind() == internal.IngressKind && object.GetName() == OCPIngress {
+			objects.Items = append(objects.Items, object)
+		}
+
+		if groupVersion == OCPOperatorAPIVersion && object.GetKind() == internal.IngressController &&
+			object.GetName() == OCPConfig {
+			objects.Items = append(objects.Items, object)
 		}
 	}
 	return objects, nil
