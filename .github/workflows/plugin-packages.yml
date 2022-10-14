@@ -59,6 +59,15 @@ jobs:
       - name: Verify code patterns
         run: make verify-code-patterns
 
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'table'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+
       - name: Detect File Changes
         uses: dorny/paths-filter@v2
         id: filter
@@ -256,6 +265,15 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Trivy image scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.meta.outputs.tags }}
+          ignore-unfixed: true
+          format: 'table'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
 
   # build_test_cleanup job build cleanup packages, runs integration tests and tests packages for plugin creation(install, uninstall)
   # upload cleanup packages to github artifacts if tags('/ref/tags') are pushed
