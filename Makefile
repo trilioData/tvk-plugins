@@ -34,7 +34,6 @@ install: install-required-utilities
 	curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh
 
 build-preflight:
-	find . -name .goreleaser.yml -exec sed -i '/binary: target-browser/a \ \ skip: true' {} +
 	find . -name .goreleaser.yml -exec sed -i '/binary: log-collector/a \ \ skip: true' {} +
 	goreleaser release --snapshot --skip-publish --rm-dist
 	find . -name .goreleaser.yml -exec sed -i '/skip: true/d' {} +
@@ -43,13 +42,6 @@ build-cleanup:
 	./hack/build-cleanup-artifacts.sh
 
 build-log-collector:
-	find . -name .goreleaser.yml -exec sed -i '/binary: target-browser/a \ \ skip: true' {} +
-	find . -name .goreleaser.yml -exec sed -i '/binary: preflight/a \ \ skip: true' {} +
-	goreleaser release --snapshot --skip-publish --rm-dist
-	find . -name .goreleaser.yml -exec sed -i '/skip: true/d' {} +
-
-build-target-browser:
-	find . -name .goreleaser.yml -exec sed -i '/binary: log-collector/a \ \ skip: true' {} +
 	find . -name .goreleaser.yml -exec sed -i '/binary: preflight/a \ \ skip: true' {} +
 	goreleaser release --snapshot --skip-publish --rm-dist
 	find . -name .goreleaser.yml -exec sed -i '/skip: true/d' {} +
@@ -73,9 +65,6 @@ test-log-collector-plugin-locally:
 	./hack/generate-test-log-collector-plugin-manifest.sh
 	./hack/test-log-collector-plugin-locally.sh
 
-test-target-browser-plugin-locally:
-	./hack/generate-test-target-browser-plugin-manifest.sh
-	./hack/test-target-browser-plugin-locally.sh
 
 test-preflight-unit:
 	./hack/run-unit-tests.sh cmd/preflight/cmd/...
@@ -87,10 +76,7 @@ test-preflight-integration:
 test-cleanup-integration:
 	./tests/cleanup/cleanup_test.sh
 
-test-target-browser-integration:
-	./hack/run-integration-tests.sh tests/target-browser/...
-
-test: test-preflight-integration test-target-browser-integration test-cleanup-integration
+test: test-preflight-integration  test-cleanup-integration
 
 test-preflight: clean build-preflight test-preflight-plugin-locally
 
@@ -98,11 +84,9 @@ test-cleanup: clean build-cleanup test-cleanup-integration test-cleanup-plugin-l
 
 test-log-collector: clean build-log-collector test-log-collector-plugin-locally
 
-test-target-browser: clean build-target-browser test-target-browser-integration test-target-browser-plugin-locally
+test-plugins-locally: test-preflight-plugin-locally test-log-collector-plugin-locally test-cleanup-plugin-locally
 
-test-plugins-locally: test-preflight-plugin-locally test-log-collector-plugin-locally test-target-browser-plugin-locally test-cleanup-plugin-locally
-
-test-plugins-packages: test-preflight test-log-collector test-target-browser test-cleanup
+test-plugins-packages: test-preflight test-log-collector test-cleanup
 
 validate-plugin-manifests:
 	./hack/validate-plugin-manifests.sh
@@ -119,10 +103,8 @@ update-cleanup-manifest:
 update-log-collector-manifest:
 	./hack/update-log-collector-manifest.sh
 
-update-target-browser-manifest:
-	./hack/update-target-browser-manifest.sh
 
-update-plugin-manifests: update-preflight-manifest update-log-collector-manifest update-target-browser-manifest update-cleanup-manifest
+update-plugin-manifests: update-preflight-manifest update-log-collector-manifest update-cleanup-manifest
 
 ready: fmt vet lint verify-code-patterns
 

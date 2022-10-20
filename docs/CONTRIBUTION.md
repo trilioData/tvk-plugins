@@ -20,18 +20,15 @@ tvk-plugins
  ├── plugins : Krew plugin manifests
  │   ├── tvk-log-collector.yaml 
  │   └── tvk-preflight.yaml
- │   ├── tvk-cleanup.yaml 
- │   ├── tvk-target-browser.yaml 
+ │   └── tvk-cleanup.yaml 
  ├── tests : Integration Test
- │   ├── target-browser : target-browser test suite
  │   └── preflight : preflight test files
  │   ├── cleanup : cleanup test suite
  ├── tools : business logic of plugins
  │   ├── log-collector : business logic of log-collector
  │   └── preflight : business logic of preflight
- │   └── target-browser : business logic of target-browser CLI
  │   └── cleanup : business logic for cleanup
- ├── .goreleaser.yml : goreleaser conf file(to build & release plugin packages)   
+ └── .goreleaser.yml : goreleaser conf file(to build & release plugin packages)   
 ```
 
 ## Setup Local Environment
@@ -93,23 +90,6 @@ make ready
      ```
      make test-log-collector
      ```
-2. **Target-Browser**:
-     
-     Build: 
-     ```
-     make build-target-browser
-     ```
-
-     Test:
-     ```
-     make test-target-browser-integration
-     ```   
-    
-     Build and Test together:
-     ```
-     make test-target-browser
-     ```
-
 
 3. **All Preflight, Log-collector and Target-Browser together**:
 
@@ -141,7 +121,6 @@ make ready
     ```
     export PREFLIGHT_VERSION=<preflight-release-tag>
     export LOG_COLLECTOR_VERSION=<log-collector-release-tag>
-    export TARGET_BROWSER_VERSION=<target-browser-release-tag>
     export CLEANUP_VERSION=<cleanup-release-tag>
     ```
    
@@ -154,13 +133,8 @@ make ready
     ```
     make update-log-collector-manifest
     ```
-   
-    Target-Browser:
-    ```
-    make update-target-browser-manifest
-    ```
-   
-    All Preflight, Log-collector and Target-Browser together:
+
+    All Preflight and Log-collector together:
     ```
     make update-plugin-manifests
     ```
@@ -175,7 +149,7 @@ make ready
 
 #### Run Integration Tests:
    
-   For both preflight & target-browser:
+   For preflight:
    ```
    make test
    ```
