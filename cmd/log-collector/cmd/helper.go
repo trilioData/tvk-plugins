@@ -3,7 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -18,7 +18,7 @@ import (
 
 func manageFileInputs() error {
 	if inputFileName != "" {
-		data, err := ioutil.ReadFile(inputFileName)
+		data, err := os.ReadFile(inputFileName)
 		if err != nil {
 			log.Infof("Unable to read file %s : %s", inputFileName, err.Error())
 			return err

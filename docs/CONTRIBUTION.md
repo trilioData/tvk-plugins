@@ -10,7 +10,7 @@ tvk-plugins
  |    └── workflows : github actions workflow files
  |        ├── plugin-manifests.yml : CI workflow for plugin manifest validation
  |        └── plugin-packages.yml : CI workflow for plugin packages(build, test, release)
- ├── cmd : Log-collector, Preflight, Target-Browser executable packages
+ ├── cmd : Log-collector, Preflight executable packages
  ├── .krew : template yamls of plugin manifests(used for update of actual krew manifest and local testing)
  ├── docs : docs of tvk-plugins, contribution and release guidelines
  ├── hack : dir contains helper files for github actions CI workflows
@@ -91,7 +91,7 @@ make ready
      make test-log-collector
      ```
 
-3. **All Preflight, Log-collector and Target-Browser together**:
+3. **All Preflight and Log-collector together**:
 
     Build:
     ```

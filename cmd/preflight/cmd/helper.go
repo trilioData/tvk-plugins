@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -61,7 +60,7 @@ func generateLogFileName(logFilePrefix string) string {
 // override the flag inputs of file if given through CLI
 func readFileInputOptions(filename string) error {
 	var data []byte
-	data, err = ioutil.ReadFile(filename)
+	data, err = os.ReadFile(filename)
 	if err != nil {
 		return err
 	}

@@ -2,7 +2,6 @@ package shell
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -146,7 +145,7 @@ func ReadChildDir(dirPath string) (dirNames []string, err error) {
 	//		dirNames: Directory name list
 	//		err: Error
 
-	files, err := ioutil.ReadDir(dirPath)
+	files, err := os.ReadDir(dirPath)
 	if err != nil {
 		return dirNames, err
 	}

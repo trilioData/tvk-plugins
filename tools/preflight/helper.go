@@ -115,7 +115,7 @@ var (
 	execRestoreDataCheckCommand = []string{
 		"/bin/sh",
 		"-c",
-		fmt.Sprintf("dat=$(cat \"%s\"); echo \"${dat}\"; if [[ \"${dat}\" == \"%s\" ]]; then exit 0; else exit 1; fi",
+		fmt.Sprintf("dat=$(cat %q); echo \"${dat}\"; if [[ \"${dat}\" == %q ]]; then exit 0; else exit 1; fi",
 			VolSnapPodFilePath, VolSnapPodFileData),
 	}
 
@@ -343,7 +343,7 @@ func createDNSPodSpec(op *Run, podNameSuffix string) *corev1.Pod {
 	pod.Spec.Containers = []corev1.Container{
 		{
 			Name:            dnsContainerName,
-			Image:           strings.Join([]string{imagePath, DNSUtilsImage}, "/"),
+			Image:           imagePath + "/" + DNSUtilsImage,
 			Command:         CommandSleep3600,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Resources:       op.ResourceRequirements,
@@ -373,7 +373,7 @@ func createVolumeSnapshotPVCSpec(o *Run, pvcName, uid string) *corev1.Persistent
 func createVolumeSnapshotPodSpec(pvcName string, op *Run, nameSuffix string) *corev1.Pod {
 	var containerImage string
 	if op.LocalRegistry != "" {
-		containerImage = strings.Join([]string{op.LocalRegistry, "/", BusyboxImageName}, "")
+		containerImage = op.LocalRegistry + "/" + BusyboxImageName
 	} else {
 		containerImage = BusyboxImageName
 	}
@@ -472,7 +472,7 @@ func createRestorePVCSpec(pvcName, dsName, uid string, o *Run) *corev1.Persisten
 func createRestorePodSpec(podName, pvcName, uid string, op *Run) *corev1.Pod {
 	var containerImage string
 	if op.LocalRegistry != "" {
-		containerImage = strings.Join([]string{op.LocalRegistry, "/", BusyboxImageName}, "")
+		containerImage = op.LocalRegistry + "/" + BusyboxImageName
 	} else {
 		containerImage = BusyboxImageName
 	}

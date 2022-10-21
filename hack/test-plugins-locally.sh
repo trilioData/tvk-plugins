@@ -11,4 +11,3 @@ SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 "$SCRIPT_PATH"/test-preflight-plugin-locally.sh
 "$SCRIPT_PATH"/test-log-collector-plugin-locally.sh
-"$SCRIPT_PATH"/test-target-browser-plugin-locally.sh
