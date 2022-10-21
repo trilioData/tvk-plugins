@@ -99,22 +99,12 @@ run_tests() {
   ginkgo -r --junit-report junit-test-report.xml --timeout 7h --keep-going --flake-attempts 2 "${components[@]}"
 }
 
-if [[ "${job_name}" == "target-browser" ]]; then
-  trap "cleanup" EXIT
-else
-  trap "cleanup_namespace" EXIT
-fi
-
 # change permission of kubeconfig file to suppress it's warning
 sudo chmod 600 "${KUBECONFIG}" || true
 
 # creates ns to run test suite
 prepare_namespaces
 
-# install TVK helm chart for target-browser test job
-if [[ "${job_name}" == "target-browser" ]]; then
-  helm_install
-fi
 
 # run test suite
 run_tests "${COMPONENTS[@]}"

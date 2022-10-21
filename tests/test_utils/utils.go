@@ -1,7 +1,6 @@
 package testutils
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -50,7 +49,7 @@ func UpdateYAMLs(kv map[string]string, fileOrDirPath string) error {
 	}
 
 	for _, yamlPath := range files {
-		read, readErr := ioutil.ReadFile(yamlPath)
+		read, readErr := os.ReadFile(yamlPath)
 		if readErr != nil {
 			return readErr
 		}
@@ -65,7 +64,7 @@ func UpdateYAMLs(kv map[string]string, fileOrDirPath string) error {
 			}
 		}
 
-		if writeErr := ioutil.WriteFile(yamlPath, []byte(updatedFile), 0); writeErr != nil {
+		if writeErr := os.WriteFile(yamlPath, []byte(updatedFile), 0); writeErr != nil {
 			return writeErr
 		}
 	}

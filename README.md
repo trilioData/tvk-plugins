@@ -4,7 +4,7 @@
 [![LICENSE](https://img.shields.io/github/license/trilioData/tvk-plugins.svg)](https://github.com/trilioData/tvk-plugins/blob/master/LICENSE.md)
 [![Releases](https://img.shields.io/github/v/release/trilioData/tvk-plugins.svg?include_prereleases)](https://github.com/trilioData/tvk-plugins/releases)
 
-kubectl-plugins for log-collector, preflight and target-browser CLI.
+kubectl-plugins for log-collector and preflight CLI.
 
 ## Pre-requisites:
 
@@ -30,7 +30,7 @@ unlink /usr/local/bin/kubectl
 Refer [`docs`](docs) for the documentation of all available plugins.
 Also, steps to install, uninstall, upgrade and uninstall respective plugin are mentioned in docs.
 
-`Quick Links`: [`preflight`](docs/preflight/README.md)  [`log-collector`](docs/log-collector/README.md) [`target-browser`](docs/target-browser/README.md)
+`Quick Links`: [`preflight`](docs/preflight/README.md)  [`log-collector`](docs/log-collector/README.md)
 [`cleanup`](docs/cleanup/README.md)
 
 

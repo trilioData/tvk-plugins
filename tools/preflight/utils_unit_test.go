@@ -95,17 +95,6 @@ func verifyTVKResourceLabels(obj client.Object, nameSuffix string) {
 	Expect(val).To(Equal(LabelK8sPartOfValue))
 }
 
-func deleteVolumeSnapshot(volSnapKey types.NamespacedName, volSnapGVK schema.GroupVersionKind) {
-	volSnap := &unstructured.Unstructured{}
-	volSnap.SetGroupVersionKind(volSnapGVK)
-	Expect(testClient.RuntimeClient.Get(ctx, volSnapKey, volSnap)).To(BeNil())
-	Expect(testClient.RuntimeClient.Delete(ctx, volSnap))
-	Eventually(func() bool {
-		err := testClient.RuntimeClient.Get(ctx, volSnapKey, volSnap)
-		return k8serrors.IsNotFound(err)
-	}, timeout, interval).Should(BeTrue())
-}
-
 func deleteTestPod(podKey types.NamespacedName) {
 	pod := &corev1.Pod{}
 	Expect(testClient.RuntimeClient.Get(ctx, podKey, pod)).To(BeNil())

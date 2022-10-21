@@ -14,20 +14,6 @@ builds:
     - arm64
     - arm
 
-- id: target-browser
-  main: ./cmd/target-browser/
-  binary: target-browser
-  env:
-    - CGO_ENABLED=0
-  goos:
-    - linux
-    - darwin
-    - windows
-  goarch:
-    - amd64
-    - arm64
-    - arm
-
 - id: preflight
   main: ./cmd/preflight/
   binary: preflight
@@ -48,16 +34,6 @@ archives:
     log-collector_{{ .Tag }}_{{ .Os }}_{{ .Arch -}}
   builds:
     - log-collector
-  format_overrides:
-    - goos: windows
-      format: zip
-  files: ["LICENSE.md"]
-
-- id: target-browser-archive
-  name_template: |-
-    target-browser_{{ .Tag }}_{{ .Os }}_{{ .Arch -}}
-  builds:
-    - target-browser
   format_overrides:
     - goos: windows
       format: zip

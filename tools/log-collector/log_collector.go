@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -288,7 +287,7 @@ func (l *LogCollector) writeLog(resourceDir, objNs, objName, container string, i
 	}
 	defer podLogs.Close()
 
-	buf, err := ioutil.ReadAll(podLogs)
+	buf, err := io.ReadAll(podLogs)
 	if err != nil {
 		log.Errorf("Error in copy information from podLogs to buffer : %s", err.Error())
 		return err
@@ -495,6 +494,7 @@ func (l *LogCollector) writeObjectsAndLogs(objects unstructured.UnstructuredList
 		nsName = append(nsName, types.NamespacedName{Name: oName, Namespace: oNs})
 		resourceMap[kind] = nsName
 
+		// nolint:gocritic // Creating a file path
 		resourceDir := filepath.Join(kind)
 		if kind == Pod {
 			eLrr := l.writeLogs(resourceDir, obj)
@@ -516,6 +516,7 @@ func (l *LogCollector) getTrilioGroupResources(trilioGVResources []apiv1.APIReso
 	log.Info("Checking Trilio Group")
 	for index := range trilioGVResources {
 		objectList := l.getResourceObjects(getAPIGroupVersionResourcePath(groupVersion), &trilioGVResources[index])
+		// nolint:gocritic // Creating a file path
 		resourceDir := filepath.Join(trilioGVResources[index].Kind)
 		for _, obj := range objectList.Items {
 			if obj.GetKind() == LicenseKind {
@@ -580,6 +581,7 @@ func (l *LogCollector) getAPIResourceList() (map[string][]apiv1.APIResource, err
 	return resourceMapList, nil
 }
 
+// nolint:gocyclo // all OCP related resources' logic
 // getOcpRelatedResources return all the objects which has ownerRef of CSV
 func (l *LogCollector) getOcpRelatedResources(resourcePath string,
 	resource *apiv1.APIResource, groupVersion string) (objects unstructured.UnstructuredList, err error) {
