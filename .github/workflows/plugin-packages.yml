@@ -226,7 +226,6 @@ jobs:
 
       # This step is run when push is for a tag
       - name: Sets image tag env to public registry for release
-        if: (needs.pre-build.outputs.preflight == 'true') && startsWith(github.ref, 'refs/tags/')
         run: echo "DOCKER_REGISTRY=$GCR_PUBLIC_DOCKER_REGISTRY" >> $GITHUB_ENV
 
       - name: Docker meta
