@@ -25,7 +25,7 @@ mkdir -p "${build_dir}"
 cp "$cleanup_template_manifest" $build_dir/$cleanup_yaml
 cleanup_template_manifest=$build_dir/$cleanup_yaml
 
-repoURL=$(git config --get remote.origin.url)
+repoURL="https://github.com/trilioData/tvk-plugins"
 cleanupSha256File="cleanup-sha256.txt"
 
 cleanupSha256URI="$repoURL/releases/download/${CLEANUP_VERSION}/$cleanupSha256File"
