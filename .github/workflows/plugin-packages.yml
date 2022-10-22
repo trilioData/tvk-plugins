@@ -267,7 +267,7 @@ jobs:
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REGISTRY_ALIAS: trilio
-          IMAGE_TAG: ${{ github.ref_name }}
+          IMAGE_TAG: 1.2.2
           REPOSITORY: preflight
           DOCKER_REGISTRY: eu.gcr.io
           GCR_PROJECT: ${{ secrets.GCS_PROJECT_ID }}
