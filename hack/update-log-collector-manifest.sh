@@ -25,7 +25,7 @@ mkdir -p "${build_dir}"
 cp "$log_collector_template_manifest" $build_dir/$log_collector_yaml
 log_collector_template_manifest=$build_dir/$log_collector_yaml
 
-repoURL=$(git config --get remote.origin.url)
+repoURL="https://github.com/trilioData/tvk-plugins"
 log_collector_sha256_file="tvk-plugins-sha256.txt"
 log_collector_sha256_filePath=$build_dir/$log_collector_sha256_file
 

@@ -25,7 +25,7 @@ mkdir -p "${build_dir}"
 cp "$preflight_template_manifest" $build_dir/$preflight_yaml
 preflight_template_manifest=$build_dir/$preflight_yaml
 
-repoURL=$(git config --get remote.origin.url)
+repoURL="https://github.com/trilioData/tvk-plugins"
 preflightSha256File="tvk-plugins-sha256.txt"
 
 preflightSha256URI="$repoURL/releases/download/${PREFLIGHT_VERSION}/$preflightSha256File"
