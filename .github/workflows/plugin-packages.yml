@@ -252,8 +252,10 @@ jobs:
 
       - name: Trivy image scan
         uses: aquasecurity/trivy-action@master
+        env:
+          IMAGE_TAG: ${{ github.ref_name }}
         with:
-          image-ref: ${{ version }}
+          image-ref: $IMAGE_TAG
           ignore-unfixed: true
           format: 'table'
           severity: 'HIGH,CRITICAL'
