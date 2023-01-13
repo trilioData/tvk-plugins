@@ -55,6 +55,19 @@ var _ = Describe("Preflight Tests", func() {
 				_, err = shell.RunCmd(cmd)
 				Expect(err).ToNot(BeNil())
 			})
+
+			Context("Pod Security Policy is present", func() {
+				BeforeEach(func() {
+					createPSP(preflightRestrictedPSP)
+				})
+				AfterEach(func() {
+					deletePSP(preflightRestrictedPSP)
+				})
+				It("should fail the preflight", func() {
+					cmdOut, err = runPreflightChecks(flagsMap)
+					Expect(err).ToNot(BeNil())
+				})
+			})
 		})
 
 		Context("Preflight run command local registry flag test cases", func() {

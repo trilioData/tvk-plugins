@@ -150,6 +150,9 @@ var (
 	k8sClient     *client.Clientset
 	runtimeClient ctrlRuntime.Client
 	discClient    *discovery.DiscoveryClient
+
+	preflightRestrictedPSP = "preflight-psp"
+	pspRunAsAny            = "RunAsAny"
 )
 
 func TestPreflight(t *testing.T) {
