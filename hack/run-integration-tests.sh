@@ -21,6 +21,13 @@ export INSTALL_NAMESPACE="${install_ns}"
 export BACKUP_NAMESPACE="${install_ns}"
 export HELM_RELEASE_NAME="${helm_release_name}"
 
+generate_token() {
+  TOKEN=$(kubectl --kubeconfig "$1" create token -n kube-system default --duration=100h)
+  yq -i 'del(.users[0].user.exec)' "$1"
+  yq -i ".users[0].user.token=\"$TOKEN\"" "$1"
+  kubectl --kubeconfig "$1" get ns
+}
+
 cleanup_namespace() {
   local rc=$?
   kubectl delete ns "${INSTALL_NAMESPACE}" --request-timeout 2m || true
@@ -99,12 +106,14 @@ run_tests() {
   ginkgo -r --junit-report junit-test-report.xml --timeout 7h --keep-going --flake-attempts 2 "${components[@]}"
 }
 
+# generate token and update kubeconfig file
+generate_token "${KUBECONFIG}"
+
 # change permission of kubeconfig file to suppress it's warning
 sudo chmod 600 "${KUBECONFIG}" || true
 
 # creates ns to run test suite
 prepare_namespaces
-
 
 # run test suite
 run_tests "${COMPONENTS[@]}"
