@@ -75,7 +75,7 @@ while IFS= read -r file; do
 
 done <files.txt
 
-if [[ $preflight_changed == true || $log_collector_changed == true  || $cleanup_changed ]]; then
+if [[ $preflight_changed == true || $log_collector_changed == true || $cleanup_changed ]]; then
   echo "Creating Release as files related to preflight, log-collector or cleanup have been changed"
   echo "::set-output name=create_release::true"
 fi

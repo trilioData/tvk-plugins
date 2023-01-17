@@ -21,6 +21,7 @@ on:
 env:
   GKE_CLUSTER: ci-cluster
   GKE_REGION: us-east1
+  USE_GKE_GCLOUD_AUTH_PLUGIN: True
 
 jobs:
   # pre-build job runs yaml lint, shell lint, golangci-lint and detects file changes to sets job variables which will be used to
@@ -134,22 +135,25 @@ jobs:
         version: latest
         args: release --snapshot --skip-publish --rm-dist
 
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: '${{ secrets.GKE_SA_KEY }}'
+
     - name: Set up Cloud SDK
       if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
-      uses: google-github-actions/setup-gcloud@v0
+      uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GCS_PROJECT_ID }}
-        service_account_key: ${{ secrets.GKE_SA_KEY }}
-        export_default_credentials: true
+        install_components: 'gke-gcloud-auth-plugin'
 
-    - name: Authenticate and Connect to GKE cluster
+    - name: Connect to GKE cluster
       if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
-      uses: google-github-actions/get-gke-credentials@main
+      uses: google-github-actions/get-gke-credentials@v1
       with:
         cluster_name: ${{ env.GKE_CLUSTER }}
         location: ${{ env.GKE_REGION }}
-        use_auth_provider: true
-        credentials: ${{ secrets.GKE_SA_KEY }}
+        project_id: ${{ secrets.GCS_PROJECT_ID }}
 
     - name: Run Preflight Unit Tests
       if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
@@ -199,20 +203,23 @@ jobs:
 
       # provide emulated environments for building on architecture other than the host arch
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v2
         with:
           platforms: linux/amd64,linux/arm64,linux/ppc64le
 
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: '${{ secrets.GKE_SA_KEY }}'
 
       # Setup gcloud CLI
-      - uses: google-github-actions/setup-gcloud@v0
+      - uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCS_PROJECT_ID }}
-          service_account_key: ${{ secrets.GKE_SA_KEY }}
-          export_default_credentials: true
 
       # Configure docker to use the gcloud command-line tool as a credential helper
       - name: Set up docker auth
@@ -241,7 +248,7 @@ jobs:
             type=raw,value=latest,enable=${{startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'rc') && !contains(github.ref, 'alpha') && !contains(github.ref, 'beta')}}
 
       - name: Build and push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           file: docker-images/preflight/Dockerfile
@@ -376,20 +383,23 @@ jobs:
       - name: Test Log-Collector Plugin Locally
         run: make test-log-collector-plugin-locally
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: '${{ secrets.GKE_SA_KEY }}'
+
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v0
+        uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCS_PROJECT_ID }}
-          service_account_key: ${{ secrets.GKE_SA_KEY }}
-          export_default_credentials: true
+          install_components: 'gke-gcloud-auth-plugin'
 
-      - name: Authenticate and Connect to GKE cluster
-        uses: google-github-actions/get-gke-credentials@main
+      - name: Connect to GKE cluster
+        uses: google-github-actions/get-gke-credentials@v1
         with:
           cluster_name: ${{ env.GKE_CLUSTER }}
           location: ${{ env.GKE_REGION }}
-          use_auth_provider: true
-          credentials: ${{ secrets.GKE_SA_KEY }}
+          project_id: ${{ secrets.GCS_PROJECT_ID }}
 
       - name: Run Log Collector Unit Tests
         if: (needs.pre-build.outputs.logCollector == 'true') || startsWith(github.ref, 'refs/tags/')
@@ -399,7 +409,7 @@ jobs:
           build_id: lc-${{ github.run_id }}
 
       - name: Set up GCS
-        uses: google-github-actions/setup-gcloud@v0
+        uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCS_PROJECT_ID }}
           service_account_key: ${{ secrets.GCS_ARTIFACTS_CREDENTIALS }}
