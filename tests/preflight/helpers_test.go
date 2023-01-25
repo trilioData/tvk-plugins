@@ -8,7 +8,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -551,35 +550,6 @@ func deleteAffineBusyboxPod(podName, namespace string) {
 
 	Eventually(func() error {
 		_, err = k8sClient.CoreV1().Pods(defaultTestNs).Get(ctx, podName, metav1.GetOptions{})
-		return err
-	}, timeout, interval).ShouldNot(BeNil())
-}
-
-func createPSP(name string) {
-	psp := &v1beta1.PodSecurityPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-		Spec: v1beta1.PodSecurityPolicySpec{
-			Privileged:             false,
-			AllowedCapabilities:    []corev1.Capability{"KILL"},
-			SELinux:                v1beta1.SELinuxStrategyOptions{Rule: v1beta1.SELinuxStrategy(pspRunAsAny)},
-			RunAsUser:              v1beta1.RunAsUserStrategyOptions{Rule: "MustRunAsNonRoot"},
-			SupplementalGroups:     v1beta1.SupplementalGroupsStrategyOptions{Rule: v1beta1.SupplementalGroupsStrategyType(pspRunAsAny)},
-			FSGroup:                v1beta1.FSGroupStrategyOptions{Rule: v1beta1.FSGroupStrategyType(pspRunAsAny)},
-			ReadOnlyRootFilesystem: true,
-		},
-	}
-	_, err = k8sClient.PolicyV1beta1().PodSecurityPolicies().Create(ctx, psp, metav1.CreateOptions{})
-	Expect(err).To(BeNil())
-}
-
-func deletePSP(name string) {
-	err = k8sClient.PolicyV1beta1().PodSecurityPolicies().Delete(ctx, name, metav1.DeleteOptions{})
-	Expect(err).To(BeNil())
-
-	Eventually(func() error {
-		_, err = k8sClient.PolicyV1beta1().PodSecurityPolicies().Get(ctx, name, metav1.GetOptions{})
 		return err
 	}, timeout, interval).ShouldNot(BeNil())
 }

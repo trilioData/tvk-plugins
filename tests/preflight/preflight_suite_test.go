@@ -16,7 +16,9 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
@@ -151,8 +153,50 @@ var (
 	runtimeClient ctrlRuntime.Client
 	discClient    *discovery.DiscoveryClient
 
-	preflightRestrictedPSP = "preflight-psp"
-	pspRunAsAny            = "RunAsAny"
+	privilegedPSP = &v1beta1.PodSecurityPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "privileged",
+		},
+		Spec: v1beta1.PodSecurityPolicySpec{
+			Privileged:          true,
+			AllowedCapabilities: []corev1.Capability{"*"},
+			Volumes:             []v1beta1.FSType{"*"},
+			HostNetwork:         true,
+			HostPorts:           []v1beta1.HostPortRange{{Min: 0, Max: 65535}},
+			HostPID:             true,
+			HostIPC:             true,
+			SELinux: v1beta1.SELinuxStrategyOptions{
+				Rule: v1beta1.SELinuxStrategyRunAsAny,
+			},
+			RunAsUser: v1beta1.RunAsUserStrategyOptions{
+				Rule: v1beta1.RunAsUserStrategyRunAsAny,
+			},
+			RunAsGroup: &v1beta1.RunAsGroupStrategyOptions{
+				Rule: v1beta1.RunAsGroupStrategyRunAsAny,
+			},
+			SupplementalGroups: v1beta1.SupplementalGroupsStrategyOptions{
+				Rule: v1beta1.SupplementalGroupsStrategyRunAsAny,
+			},
+			FSGroup: v1beta1.FSGroupStrategyOptions{
+				Rule: v1beta1.FSGroupStrategyRunAsAny,
+			},
+			ReadOnlyRootFilesystem: false,
+		},
+	}
+	restrictedPSP = &v1beta1.PodSecurityPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "restricted",
+		},
+		Spec: v1beta1.PodSecurityPolicySpec{
+			Privileged:             false,
+			AllowedCapabilities:    []corev1.Capability{"KILL"},
+			SELinux:                v1beta1.SELinuxStrategyOptions{Rule: v1beta1.SELinuxStrategyRunAsAny},
+			RunAsUser:              v1beta1.RunAsUserStrategyOptions{Rule: v1beta1.RunAsUserStrategyMustRunAsNonRoot},
+			SupplementalGroups:     v1beta1.SupplementalGroupsStrategyOptions{Rule: v1beta1.SupplementalGroupsStrategyRunAsAny},
+			FSGroup:                v1beta1.FSGroupStrategyOptions{Rule: v1beta1.FSGroupStrategyRunAsAny},
+			ReadOnlyRootFilesystem: true,
+		},
+	}
 )
 
 func TestPreflight(t *testing.T) {
@@ -176,6 +220,9 @@ var _ = BeforeSuite(func() {
 	runtimeClient = kubeAccessor.GetRuntimeClient()
 	discClient = kubeAccessor.GetDiscoveryClient()
 
+	_, err = k8sClient.PolicyV1beta1().PodSecurityPolicies().Create(ctx, privilegedPSP, metav1.CreateOptions{})
+	Expect(err).To(BeNil())
+
 	snapshotGVK = getVolSnapshotGVK()
 
 	assignPlaceholderValues()
@@ -185,6 +232,8 @@ var _ = AfterSuite(func() {
 	cmdOut, err = runCleanupForAllPreflightResources()
 	Expect(err).To(BeNil())
 	revertPlaceholderValues()
+	err = k8sClient.PolicyV1beta1().PodSecurityPolicies().Delete(ctx, privilegedPSP.Name, metav1.DeleteOptions{})
+	Expect(err).To(BeNil())
 	cleanDirForFiles(preflightLogFilePrefix)
 	cleanDirForFiles(cleanupLogFilePrefix)
 })
