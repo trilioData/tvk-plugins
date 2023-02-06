@@ -17,6 +17,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/policy/v1beta1"
+	v1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -162,7 +163,7 @@ var (
 			AllowedCapabilities: []corev1.Capability{"*"},
 			Volumes:             []v1beta1.FSType{"*"},
 			HostNetwork:         true,
-			HostPorts:           []v1beta1.HostPortRange{{Min: 0, Max: 65535}},
+			HostPorts:           []v1beta1.HostPortRange{{Min: 0, Max: 65536}},
 			HostPID:             true,
 			HostIPC:             true,
 			SELinux: v1beta1.SELinuxStrategyOptions{
@@ -197,6 +198,41 @@ var (
 			ReadOnlyRootFilesystem: true,
 		},
 	}
+	pspClusterRole = &v1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "host-networking-pods",
+		},
+		Rules: []v1.PolicyRule{
+			{
+				Verbs:         []string{"use"},
+				APIGroups:     []string{"extensions"},
+				Resources:     []string{"podsecuritypolicies"},
+				ResourceNames: []string{"privileged"},
+			},
+		},
+	}
+	pspClusterRoleBinding = &v1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "psp-default",
+		},
+		Subjects: []v1.Subject{
+			{
+				Kind:      v1.GroupKind,
+				Name:      "system:serviceaccounts",
+				Namespace: "kube-system",
+			},
+			{
+				Kind:     v1.UserKind,
+				Name:     "replicaset-controller",
+				APIGroup: v1.GroupName,
+			},
+		},
+		RoleRef: v1.RoleRef{
+			Kind:     "ClusterRole",
+			Name:     "host-networking-pods",
+			APIGroup: v1.GroupName,
+		},
+	}
 )
 
 func TestPreflight(t *testing.T) {
@@ -222,6 +258,10 @@ var _ = BeforeSuite(func() {
 
 	_, err = k8sClient.PolicyV1beta1().PodSecurityPolicies().Create(ctx, privilegedPSP, metav1.CreateOptions{})
 	Expect(err).To(BeNil())
+	_, err = k8sClient.RbacV1().ClusterRoles().Create(ctx, pspClusterRole, metav1.CreateOptions{})
+	Expect(err).To(BeNil())
+	_, err = k8sClient.RbacV1().ClusterRoleBindings().Create(ctx, pspClusterRoleBinding, metav1.CreateOptions{})
+	Expect(err).To(BeNil())
 
 	snapshotGVK = getVolSnapshotGVK()
 
@@ -232,8 +272,14 @@ var _ = AfterSuite(func() {
 	cmdOut, err = runCleanupForAllPreflightResources()
 	Expect(err).To(BeNil())
 	revertPlaceholderValues()
+
+	err = k8sClient.RbacV1().ClusterRoleBindings().Delete(ctx, pspClusterRoleBinding.Name, metav1.DeleteOptions{})
+	Expect(err).To(BeNil())
+	err = k8sClient.RbacV1().ClusterRoles().Delete(ctx, pspClusterRole.Name, metav1.DeleteOptions{})
+	Expect(err).To(BeNil())
 	err = k8sClient.PolicyV1beta1().PodSecurityPolicies().Delete(ctx, privilegedPSP.Name, metav1.DeleteOptions{})
 	Expect(err).To(BeNil())
+
 	cleanDirForFiles(preflightLogFilePrefix)
 	cleanDirForFiles(cleanupLogFilePrefix)
 })
