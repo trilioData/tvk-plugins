@@ -8,6 +8,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
@@ -17,7 +19,7 @@ import (
 
 var _ = Describe("Preflight cmd helper unit tests", func() {
 
-	Context("When creating a multi-write logger", func() {
+	Context("setupLogger func test-cases", func() {
 
 		It("Should create logging file and initialize logger", func() {
 			var fi os.FileInfo
@@ -36,13 +38,14 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 			Expect(terr).ToNot(BeNil())
 		})
 
-		It("Should not return error if invalid log-level is provided", func() {
+		It("Should not return error if invalid log-level is provided and log level should be set to INFO", func() {
 			_, terr := setupLogger(testLogFilePrefix, internal.InvalidLogLevel)
 			Expect(terr).To(BeNil())
+			Expect(logger.Level).To(Equal(log.InfoLevel))
 		})
 	})
 
-	Context("When reading file inputs in yaml format", func() {
+	Context("readFileInputOptions func test-cases", func() {
 
 		It("Should read inputs from file if data is present in correct yaml format", func() {
 			terr := readFileInputOptions(filepath.Join(testDataDir, testInputFile))
@@ -69,9 +72,36 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 			terr := readFileInputOptions(filepath.Join(testDataDir, invalidTestInputFile))
 			Expect(terr).ToNot(BeNil())
 		})
+
+		It("Should return error if file does not exist on given path", func() {
+			var nonExistentFile = filepath.Join(testDataDir, "nonExistentFile.yaml")
+
+			terr := readFileInputOptions(nonExistentFile)
+			Expect(terr).ShouldNot(BeNil())
+			Expect(terr.Error()).Should(Equal(fmt.Sprintf("open %s: no such file or directory", nonExistentFile)))
+		})
+
+		It("Should return error if file is not read permissible", func() {
+			var (
+				file             *os.File
+				permYamlFilePath = filepath.Join(testDataDir, "file_permission.yaml")
+			)
+
+			By("Create non-read permission file")
+			file, err = os.OpenFile(permYamlFilePath, os.O_CREATE, 0000)
+			Expect(err).Should(BeNil())
+			Expect(file.Close()).Should(BeNil())
+
+			terr := readFileInputOptions(permYamlFilePath)
+			Expect(terr).ShouldNot(BeNil())
+			Expect(terr.Error()).Should(Equal(fmt.Sprintf("open %s: permission denied", permYamlFilePath)))
+
+			By("Delete non-read permission file")
+			Expect(os.Remove(permYamlFilePath)).Should(BeNil())
+		})
 	})
 
-	Context("When updating resource requirements file inputs from CLI", Ordered, func() {
+	Context("updateResReqFromCLI func test-cases", Ordered, func() {
 
 		BeforeAll(func() {
 			cmdOps = &preflightCmdOps{
@@ -84,6 +114,11 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 					},
 				},
 			}
+		})
+
+		AfterAll(func() {
+			podRequests = ""
+			podLimits = ""
 		})
 
 		It("Should update resource requirements when provided in correct format", func() {
@@ -119,7 +154,7 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 		})
 	})
 
-	Context("When creating resource list from comma separated <key>=<value> strings provided through CLI", func() {
+	Context("populateResourceList func test-cases", func() {
 
 		It("Should return list of resources with values when correct comma separated string is provided", func() {
 			var (
@@ -169,7 +204,7 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 		})
 	})
 
-	Context("When parsing node selector labels provided as CLI inputs", func() {
+	Context("parseNodeSelectorLabels func test-cases", func() {
 
 		It("Should parse node selector labels string when provided in correct format", func() {
 			var (
@@ -200,7 +235,41 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 		})
 	})
 
-	Context("When validating run options struct variable", func() {
+	Context("managePreflightInputs func test-cases", func() {
+
+		It("Should set namespace as default when namespace is not explicitly provided", func() {
+			inputFileName = ""
+			cmdOps.Run.Namespace = ""
+			Expect(managePreflightInputs(&cobra.Command{})).Should(BeNil())
+			Expect(cmdOps.Run.Namespace).To(Equal(internal.DefaultNs))
+		})
+
+		It("Should set default PVC size when pvc-storage request is not explicitly provided", func() {
+			cmdOps.Run.PVCStorageRequest = resource.Quantity{}
+			Expect(managePreflightInputs(&cobra.Command{})).Should(BeNil())
+			Expect(cmdOps.Run.PVCStorageRequest).To(Equal(resource.MustParse(DefaultPVCStorage)))
+		})
+
+		It("Should set default pod resources requests and limits when explicitly not provided", func() {
+			cmdOps.Run.Requests = map[corev1.ResourceName]resource.Quantity{}
+			cmdOps.Run.Limits = map[corev1.ResourceName]resource.Quantity{}
+			Expect(managePreflightInputs(&cobra.Command{})).Should(BeNil())
+
+			Expect(cmdOps.Run.Requests.Cpu().String()).To(Equal(DefaultPodRequestCPU))
+			Expect(cmdOps.Run.Requests.Memory().String()).To(Equal(DefaultPodRequestMemory))
+			Expect(cmdOps.Run.Limits.Cpu().String()).To(Equal(DefaultPodLimitCPU))
+			Expect(cmdOps.Run.Limits.Memory().String()).To(Equal(DefaultPodLimitMemory))
+		})
+
+		It("Should set logLevel as INFO when log level is not explicitly provided", func() {
+			cmdOps.Run.LogLevel = ""
+			Expect(managePreflightInputs(&cobra.Command{})).Should(BeNil())
+			Expect(cmdOps.Run.LogLevel).Should(Equal(internal.DefaultLogLevel))
+		})
+
+	})
+
+	Context("validateRunOptions func test-cases", func() {
 		BeforeEach(func() {
 			cmdOps.Run = preflight.Run{
 				RunOptions: preflight.RunOptions{
@@ -257,7 +326,7 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 		})
 	})
 
-	Context("When validating cleanup options struct variable", func() {
+	Context("validateCleanupFields func test-cases", func() {
 		BeforeEach(func() {
 			cmdOps.Cleanup = preflight.Cleanup{
 				CleanupOptions: preflight.CleanupOptions{
@@ -293,4 +362,15 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 			Expect(terr.Error()).To(ContainSubstring("valid 6-length preflight UID must be specified"))
 		})
 	})
+
+	Context("manageCleanupInputs func test-cases", func() {
+
+		It("Should set namespace as default when namespace is not explicitly provided", func() {
+			inputFileName = ""
+			cmdOps.Cleanup.Namespace = ""
+			Expect(manageCleanupInputs(&cobra.Command{})).Should(BeNil())
+			Expect(cmdOps.Cleanup.Namespace).To(Equal(internal.DefaultNs))
+		})
+	})
+
 })

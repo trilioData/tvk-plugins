@@ -8,6 +8,7 @@ import (
 	"github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
 	"github.com/trilioData/tvk-plugins/tools/preflight"
 )
 
@@ -50,20 +51,16 @@ var runCmd = &cobra.Command{
   kubectl tvk-preflight run --storage-class <storage-class-name> --pvc-storage-request <storage request value>
 `,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		var preflightLogFilename string
 		err = managePreflightInputs(cmd)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
+
+		var preflightLogFilename string
 		preflightLogFilename, err = setupLogger(preflightLogFilePrefix, cmdOps.Run.LogLevel)
 		if err != nil {
 			log.Fatalf("Failed to setup a logger :: %s", err.Error())
 		}
-		err = preflight.InitKubeEnv(cmdOps.Run.Kubeconfig)
-		if err != nil {
-			log.Fatalf("Error initializing kubernetes clients :: %s", err.Error())
-		}
-
 		logFile, err = os.OpenFile(preflightLogFilename, os.O_APPEND|os.O_WRONLY, filePermission)
 		if err != nil {
 			log.Fatalf("Failed to open preflight log file :: %s", err.Error())
@@ -72,6 +69,10 @@ var runCmd = &cobra.Command{
 		logger.SetOutput(io.MultiWriter(colorable.NewColorableStdout(), logFile))
 		cmdOps.Run.Logger = logger
 
+		err = preflight.InitKubeEnv(cmdOps.Run.Kubeconfig)
+		if err != nil {
+			logger.Fatalf("Error initializing kubernetes clients :: %s", err.Error())
+		}
 		err = validateRunOptions()
 		if err != nil {
 			logger.Fatalf(err.Error())
