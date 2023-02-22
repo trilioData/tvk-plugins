@@ -89,6 +89,8 @@ const (
 	snapshotClassVersionV1Beta1 = "v1beta1"
 	minServerVerForV1CrdVersion = "v1.20.0"
 	defaultVSCNamePrefix        = "preflight-generated-snapshot-class-"
+
+	podCapability = "pod-capability-"
 )
 
 var (
@@ -143,6 +145,12 @@ type CommonOptions struct {
 	LogLevel   string `yaml:"logLevel,omitempty"`
 	InCluster  bool   `yaml:"inCluster,omitempty"`
 	Logger     *logrus.Logger
+}
+
+type capability struct {
+	userID                   int64
+	allowPrivilegeEscalation bool
+	privileged               bool
 }
 
 func (co *CommonOptions) logCommonOptions() {
@@ -689,4 +697,55 @@ func objToYAML(o interface{}) ([]byte, error) {
 		return nil, yErr
 	}
 	return objYAML, nil
+}
+
+func createPodSpecWithCapability(op *Run, podName string, capability capability) *corev1.Pod {
+	var containerImage string
+	if op.LocalRegistry != "" {
+		containerImage = op.LocalRegistry + "/" + BusyboxImageName
+	} else {
+		containerImage = BusyboxImageName
+	}
+	pod := getPodTemplate(podCapability+podName, podName, op)
+	readOnlyRootFSFlag := false
+	pod.Spec.Containers = []corev1.Container{
+		{
+			Name:            BusyboxContainerName,
+			Image:           containerImage,
+			Command:         CommandSleep3600,
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Resources:       op.ResourceRequirements,
+			SecurityContext: &corev1.SecurityContext{
+				Capabilities: &corev1.Capabilities{
+					Add: []corev1.Capability{
+						"KILL",
+						"AUDIT_WRITE",
+						"NET_BIND_SERVICE",
+						"CHOWN",
+						"FOWNER",
+						"DAC_OVERRIDE",
+						"SETGID",
+						"SETUID",
+						"SYS_ADMIN",
+					},
+				},
+				AllowPrivilegeEscalation: &capability.allowPrivilegeEscalation,
+				ReadOnlyRootFilesystem:   &readOnlyRootFSFlag,
+				Privileged:               &capability.privileged,
+			},
+		},
+	}
+	if capability.userID == 0 {
+		runAsNonRootFlag := false
+		pod.Spec.SecurityContext = &corev1.PodSecurityContext{
+			RunAsNonRoot: &runAsNonRootFlag,
+		}
+	} else {
+		runAsNonRootFlag := true
+		pod.Spec.SecurityContext = &corev1.PodSecurityContext{
+			RunAsNonRoot: &runAsNonRootFlag,
+			RunAsUser:    &capability.userID,
+		}
+	}
+	return pod
 }

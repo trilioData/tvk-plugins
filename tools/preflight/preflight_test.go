@@ -541,6 +541,80 @@ func preflightFuncsTestcases() {
 		})
 	})
 
+	Describe("Preflight pod capability test scenarios", func() {
+		var (
+			podKey         types.NamespacedName
+			resultChan     = make(chan error)
+			testCapability capability
+		)
+
+		BeforeEach(func() {
+			podKey = types.NamespacedName{
+				Name:      podCapability + testNameSuffix,
+				Namespace: installNs,
+			}
+			testCapability = capability{
+				userID:                   1001,
+				allowPrivilegeEscalation: false,
+				privileged:               false,
+			}
+		})
+
+		It("Should create capability validator pod with appropriate spec values", func() {
+			pod := createPodSpecWithCapability(&runOps, testNameSuffix, testCapability)
+
+			Expect(len(pod.Spec.Containers)).ShouldNot(BeZero())
+			containerSecurityContext := pod.Spec.Containers[0].SecurityContext
+
+			podSecurityContext := pod.Spec.SecurityContext
+			Expect(func() bool {
+				return *podSecurityContext.RunAsUser == testCapability.userID &&
+					*podSecurityContext.RunAsNonRoot == (testCapability.userID != 0)
+			}()).Should(BeTrue())
+			Expect(func() bool {
+				return testCapability.allowPrivilegeEscalation == *containerSecurityContext.AllowPrivilegeEscalation &&
+					testCapability.privileged == *containerSecurityContext.Privileged &&
+					*containerSecurityContext.ReadOnlyRootFilesystem == false &&
+					len(containerSecurityContext.Capabilities.Add) != 0
+			}()).Should(BeTrue())
+
+			verifyTVKResourceLabels(pod, testNameSuffix)
+		})
+
+		It("capability validator pod should be created without any error and should be in ready state", func() {
+			go func() {
+				testErr := runOps.validatePodCapability(ctx, testNameSuffix, testClient, testCapability)
+				resultChan <- testErr
+			}()
+			structPod := &corev1.Pod{}
+			Eventually(func() error {
+				return testClient.RuntimeClient.Get(ctx, podKey, structPod)
+			}, timeout, interval).Should(BeNil())
+
+			// udpate pod to ready condition
+			structPod.Status.Conditions = append(structPod.Status.Conditions, corev1.PodCondition{
+				Type:               corev1.PodReady,
+				Status:             corev1.ConditionTrue,
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+			})
+			Expect(testClient.RuntimeClient.Status().Update(ctx, structPod)).To(BeNil())
+
+			Eventually(func() bool {
+				Expect(testClient.RuntimeClient.Get(ctx, podKey, structPod)).To(BeNil())
+				for _, cond := range structPod.Status.Conditions {
+					if cond.Type == corev1.PodReady && cond.Status == corev1.ConditionTrue {
+						return true
+					}
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			Expect(<-resultChan).To(BeNil())
+
+		})
+
+	})
+
 	Context("Check rbac-API group and version on the cluster", func() {
 
 		It("Should pass RBAC check when correct rbac-API group and version is provided", func() {

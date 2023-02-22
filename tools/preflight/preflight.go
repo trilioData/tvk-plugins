@@ -193,6 +193,14 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		preflightStatus = false
 	}
 
+	err = o.validateRequiredPodCapabilities(ctx, resNameSuffix, kubeClient)
+	if err != nil {
+		o.Logger.Errorf("%s Preflight check for pod capability failed :: %s\n", cross, err.Error())
+		preflightStatus = false
+	} else {
+		o.Logger.Infof("%s Preflight check for pod capability is successful\n", check)
+	}
+
 	if !skipSnapshotClassCheck {
 		prefVersion, err = GetServerPreferredVersionForGroup(StorageSnapshotGroup, kubeClient.ClientSet)
 		if err != nil {
@@ -891,4 +899,86 @@ func (o *Run) createRestorePodFromSnapshot(ctx context.Context, volSnapshot *uns
 	logPodScheduleStmt(restorePod, o.Logger)
 
 	return restorePod, nil
+}
+
+func (o *Run) validateRequiredPodCapabilities(ctx context.Context, podNameSuffix string, clients ServerClients) error {
+	validationCases := []capability{
+		{
+			userID:                   0,
+			allowPrivilegeEscalation: true,
+			privileged:               true,
+		},
+		{
+			userID:                   1001,
+			allowPrivilegeEscalation: false,
+			privileged:               false,
+		},
+		{
+			userID:                   101,
+			allowPrivilegeEscalation: true,
+			privileged:               false,
+		},
+	}
+	for index, validationCase := range validationCases {
+		o.Logger.Infof("Checking pod capability validation case %d/3", index+1)
+		err := o.validatePodCapability(ctx, fmt.Sprintf("%d-%s", index, podNameSuffix), clients, validationCase)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (o *Run) validatePodCapability(ctx context.Context, podNameSuffix string, clients ServerClients, validationCase capability) error {
+	capabilityValidatorPod := createPodSpecWithCapability(o, podNameSuffix, validationCase)
+	_, err := clients.ClientSet.CoreV1().Pods(o.Namespace).Create(ctx, capabilityValidatorPod, metav1.CreateOptions{})
+	if err != nil {
+		podYaml, yErr := objToYAML(capabilityValidatorPod)
+		if yErr != nil {
+			o.Logger.Errorf("error converting object to yaml :: %s", yErr.Error())
+		} else {
+			o.Logger.Warnf("Failed to create capability validator pod. Pod yaml:\n%v", string(podYaml))
+		}
+		return err
+	}
+	o.Logger.Infof("Pod %s created in cluster\n", capabilityValidatorPod.GetName())
+
+	waitOptions := &wait.PodWaitOptions{
+		Name:               capabilityValidatorPod.GetName(),
+		Namespace:          o.Namespace,
+		RetryBackoffParams: getDefaultRetryBackoffParams(),
+		PodCondition:       corev1.PodReady,
+		ClientSet:          clients.ClientSet,
+	}
+	o.Logger.Infoln("Waiting for capability validator pod to become ready")
+	err = waitUntilPodCondition(ctx, waitOptions)
+	if err != nil {
+		o.Logger.Errorf("capability validator pod - %s hasn't reached into ready state", capabilityValidatorPod.GetName())
+		podYaml, yErr := objToYAML(capabilityValidatorPod)
+		if yErr != nil {
+			o.Logger.Errorf("error converting object to yaml :: %s", yErr.Error())
+		} else {
+			o.Logger.Warnf("capability validator pod failed to reach into ready state. Pod yaml:\n%v", string(podYaml))
+		}
+		return err
+	}
+
+	capabilityValidatorPod, err = clients.ClientSet.CoreV1().Pods(o.Namespace).Get(
+		ctx,
+		capabilityValidatorPod.GetName(),
+		metav1.GetOptions{},
+	)
+	if err != nil {
+		return err
+	}
+	logPodScheduleStmt(capabilityValidatorPod, o.Logger)
+	// Delete capability validator pod when validation is successful
+	err = deleteK8sResource(ctx, capabilityValidatorPod, clients.RuntimeClient)
+	if err != nil {
+		o.Logger.Warnf("Problem occurred deleting capability validator pod - '%s' :: %s", capabilityValidatorPod.GetName(), err.Error())
+	} else {
+		o.Logger.Infof("Deleted capability validator pod - '%s' successfully", capabilityValidatorPod.GetName())
+	}
+	return nil
+
 }
