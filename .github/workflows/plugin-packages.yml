@@ -111,10 +111,6 @@ jobs:
   # upload preflight packages to github artifacts if tags('/ref/tags') are pushed
   build_test_preflight:
     runs-on: ubuntu-latest
-    needs: pre-build
-    # for tags('ref/tags/'), 'needs.pre-build.outputs.preflight' will be 'false' so to run 'build_test_preflight' job on tags as well,
-    # added condition 'startsWith(github.ref, 'refs/tags/')'
-    if: (needs.pre-build.outputs.preflight == 'true') || startsWith(github.ref, 'refs/tags/')
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -141,14 +137,12 @@ jobs:
         credentials_json: '${{ secrets.GKE_SA_KEY }}'
 
     - name: Set up Cloud SDK
-      if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GCS_PROJECT_ID }}
         install_components: 'gke-gcloud-auth-plugin'
 
     - name: Connect to GKE cluster
-      if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
       uses: google-github-actions/get-gke-credentials@v1
       with:
         cluster_name: ${{ env.GKE_CLUSTER }}
@@ -156,14 +150,12 @@ jobs:
         project_id: ${{ secrets.GCS_PROJECT_ID }}
 
     - name: Run Preflight Unit Tests
-      if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
       run: make test-preflight-unit
       env:
         job_name: preflight
         build_id: pf-${{ github.run_id }}
 
     - name: Run Preflight Integration Tests
-      if: (needs.pre-build.outputs.testPreflight == 'true') || startsWith(github.ref, 'refs/tags/')
       run: make test-preflight-integration
       env:
         job_name: preflight
@@ -353,10 +345,8 @@ jobs:
   # build_test_log-collector job builds log-collector package and tests package for plugin creation(install, uninstall)
   build_test_log-collector:
     runs-on: ubuntu-latest
-    needs: pre-build
     # for tags('ref/tags/'), 'needs.pre-build.outputs.logCollector' is 'false' so to run 'build_test_log-collector' job on tags as well,
     # added condition 'startsWith(github.ref, 'refs/tags/')'
-    if: (needs.pre-build.outputs.logCollector == 'true') || startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -402,7 +392,6 @@ jobs:
           project_id: ${{ secrets.GCS_PROJECT_ID }}
 
       - name: Run Log Collector Unit Tests
-        if: (needs.pre-build.outputs.logCollector == 'true') || startsWith(github.ref, 'refs/tags/')
         run: make test-logcollector-unit
         env:
           job_name: logcollector

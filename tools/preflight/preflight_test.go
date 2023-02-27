@@ -379,8 +379,8 @@ func preflightFuncsTestcases() {
 			It("Should not return error when volume-snapshot becomes readyToUse", func() {
 				Skip("TODO - working as expected in local. Will be handled in suite refactoring.")
 				go func() {
-					_, testErr := runOps.createSnapshotFromPVC(ctx, volSnapKey.Name, testSnapshotClass, internal.V1Version,
-						testPVC, testNameSuffix, testClient)
+					_, testErr := runOps.createSnapshotFromPVC(ctx, volSnapKey.Name, testSnapshotClass,
+						internal.V1Version, testPVC, testNameSuffix, testClient)
 					resultChan <- testErr
 				}()
 				Eventually(func() error {
