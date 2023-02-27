@@ -92,10 +92,8 @@ var (
 	cleanupLogFilePrefix    = "preflight_cleanup-"
 	invalidKubeConfFilename = path.Join([]string{".", "invalid_kc_file"}...)
 	invalidKubeConfFileData = "invalid data"
-	invalidYamlFilePath     = "invalid_path.yaml"
 	invalidKeyYamlFileName  = "invalid_key_file.yaml"
 	defaultTestNs           = testutils.GetInstallNamespace()
-	permYamlFile            = "file_permission.yaml"
 	cleanupUIDInputYamlFile = "cleanup_uid_input.yaml"
 	cleanupFileInputData    = strings.Join([]string{"cleanup:",
 		fmt.Sprintf("  namespace: %s", defaultTestNs), "  logLevel: info"}, "\n")
