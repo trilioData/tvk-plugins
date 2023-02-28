@@ -66,7 +66,8 @@ func (co *Cleanup) CleanupPreflightResources(ctx context.Context) error {
 		}
 		for _, res := range resList.Items {
 			res := res
-			err = co.cleanResource(ctx, &res, kubeClient.RuntimeClient)
+			co.Logger.Infof("Cleaning %s - %s", res.GetKind(), res.GetName())
+			err = deleteK8sResource(ctx, &res, kubeClient.RuntimeClient)
 			if err != nil {
 				if !k8serrors.IsNotFound(err) {
 					allSuccess = false
@@ -81,24 +82,6 @@ func (co *Cleanup) CleanupPreflightResources(ctx context.Context) error {
 	}
 
 	return errors.New("deletion of some resources failed in cleanup process")
-}
-
-func (co *Cleanup) cleanResource(ctx context.Context, resource *unstructured.Unstructured, cl client.Client) error {
-	var err error
-	co.Logger.Infof("Cleaning %s - %s", resource.GetKind(), resource.GetName())
-	updatedRes := &unstructured.Unstructured{}
-	updatedRes.SetGroupVersionKind(resource.GroupVersionKind())
-	// fetch updated resource from the cluster
-	err = cl.Get(ctx, client.ObjectKey{
-		Name:      resource.GetName(),
-		Namespace: resource.GetNamespace(),
-	}, updatedRes)
-	if err != nil {
-		co.Logger.Warnf("%s error fetching %s - %s from cluster to cleanup :: %s",
-			cross, resource.GetKind(), resource.GetName(), err.Error())
-	}
-
-	return deleteK8sResource(ctx, updatedRes, cl)
 }
 
 func getCleanupResourceGVKList(cl *kubernetes.Clientset) ([]schema.GroupVersionKind, error) {

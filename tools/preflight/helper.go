@@ -3,6 +3,7 @@ package preflight
 import (
 	"context"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	gort "runtime"
@@ -19,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	k8swait "k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/discovery"
@@ -625,19 +627,21 @@ func execInPod(execOp *exec.Options, logger *logrus.Logger) error {
 }
 
 func removeFinalizer(ctx context.Context, obj client.Object, cl client.Client) error {
-	var err error
-	obj.SetFinalizers([]string{})
-	err = cl.Update(ctx, obj)
-	if err != nil {
-		return err
+	var (
+		payload      []internal.PatchOperation
+		payloadBytes []byte
+		err          error
+	)
+
+	if obj.GetFinalizers() == nil {
+		return nil
 	}
-	return nil
-}
 
-func deleteK8sResource(ctx context.Context, obj client.Object, cl client.Client) error {
-	var err error
-
-	err = cl.Delete(ctx, obj, client.DeleteOption(client.GracePeriodSeconds(deletionGracePeriod)))
+	payload = []internal.PatchOperation{{
+		Op:   "remove",
+		Path: "/metadata/finalizers",
+	}}
+	payloadBytes, err = json.Marshal(payload)
 	if err != nil {
 		return err
 	}
@@ -648,20 +652,27 @@ func deleteK8sResource(ctx context.Context, obj client.Object, cl client.Client)
 	}
 	updatedRes := &unstructured.Unstructured{}
 	updatedRes.SetGroupVersionKind(gvk)
-	err = cl.Get(ctx, client.ObjectKey{
+	// fetch the latest object
+	if gErr := cl.Get(ctx, client.ObjectKey{
 		Name:      obj.GetName(),
 		Namespace: obj.GetNamespace(),
-	}, updatedRes)
-	if err != nil {
-		return err
+	}, updatedRes); gErr != nil {
+		return gErr
 	}
 
-	err = removeFinalizer(ctx, updatedRes, cl)
-	if err != nil {
-		return err
+	if pErr := cl.Status().Patch(ctx, updatedRes, client.RawPatch(types.JSONPatchType, payloadBytes)); pErr != nil {
+		return pErr
 	}
 
 	return nil
+}
+
+func deleteK8sResource(ctx context.Context, obj client.Object, cl client.Client) error {
+	if dErr := cl.Delete(ctx, obj, client.DeleteOption(client.GracePeriodSeconds(deletionGracePeriod))); dErr != nil {
+		return dErr
+	}
+
+	return removeFinalizer(ctx, obj, cl)
 }
 
 // GetObjGVKFromStructuredType returns gvk for structured object kind

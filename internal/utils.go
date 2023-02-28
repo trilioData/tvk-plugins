@@ -17,6 +17,12 @@ var (
 	AllowedOutputFormats = sets.NewString(FormatJSON, FormatYAML, FormatWIDE)
 )
 
+type PatchOperation struct {
+	Op    string      `json:"op"`
+	Path  string      `json:"path"`
+	Value interface{} `json:"value,omitempty"`
+}
+
 func CheckIfAPIVersionKindAvailable(discoveryClient *discovery.DiscoveryClient, gvk schema.GroupVersionKind) (found bool) {
 	resources, err := discoveryClient.ServerResourcesForGroupVersion(gvk.GroupVersion().String())
 	if err != nil {
