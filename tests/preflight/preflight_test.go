@@ -55,34 +55,35 @@ var _ = Describe("Preflight Tests", func() {
 				_, err = shell.RunCmd(cmd)
 				Expect(err).ToNot(BeNil())
 			})
-
-			Context("Restricted Pod Security Policy is present", func() {
-				BeforeEach(func() {
-					// delete privileged PSP
-					err = k8sClient.PolicyV1beta1().PodSecurityPolicies().Delete(ctx, privilegedPSP.Name, metav1.DeleteOptions{})
-					Expect(err).To(BeNil())
-
-					// create restricted PSP
-					_, err = k8sClient.PolicyV1beta1().PodSecurityPolicies().Create(ctx, restrictedPSP, metav1.CreateOptions{})
-					Expect(err).To(BeNil())
-				})
-				AfterEach(func() {
-					// create privileged PSP
-					_, err = k8sClient.PolicyV1beta1().PodSecurityPolicies().Create(ctx, privilegedPSP, metav1.CreateOptions{})
-					Expect(err).To(BeNil())
-
-					// delete restricted PSP
-					err = k8sClient.PolicyV1beta1().PodSecurityPolicies().Delete(ctx, restrictedPSP.Name, metav1.DeleteOptions{})
-					Expect(err).To(BeNil())
-				})
-				It("should fail the preflight", func() {
-					cmdOut, err = runPreflightChecks(flagsMap)
-					Expect(err).ToNot(BeNil())
-					Expect(cmdOut.Out).To(ContainSubstring("Failed to create capability validator pod"))
-					Expect(cmdOut.Out).To(ContainSubstring("Some preflight checks failed"))
-				})
-			})
 		})
+
+		// TODO - Uncomment the tests when suite will be run on prow.
+		//Context("Restricted Pod Security Policy is present", func() {
+		//	BeforeEach(func() {
+		//		// delete privileged PSP
+		//		err = k8sClient.PolicyV1beta1().PodSecurityPolicies().Delete(ctx, privilegedPSP.Name, metav1.DeleteOptions{})
+		//		Expect(err).To(BeNil())
+		//
+		//		// create restricted PSP
+		//		_, err = k8sClient.PolicyV1beta1().PodSecurityPolicies().Create(ctx, restrictedPSP, metav1.CreateOptions{})
+		//		Expect(err).To(BeNil())
+		//	})
+		//	AfterEach(func() {
+		//		// create privileged PSP
+		//		_, err = k8sClient.PolicyV1beta1().PodSecurityPolicies().Create(ctx, privilegedPSP, metav1.CreateOptions{})
+		//		Expect(err).To(BeNil())
+		//
+		//		// delete restricted PSP
+		//		err = k8sClient.PolicyV1beta1().PodSecurityPolicies().Delete(ctx, restrictedPSP.Name, metav1.DeleteOptions{})
+		//		Expect(err).To(BeNil())
+		//	})
+		//	It("should fail the preflight", func() {
+		//		cmdOut, err = runPreflightChecks(flagsMap)
+		//		Expect(err).ToNot(BeNil())
+		//		Expect(cmdOut.Out).To(ContainSubstring("Failed to create capability validator pod"))
+		//		Expect(cmdOut.Out).To(ContainSubstring("Some preflight checks failed"))
+		//	})
+		//})
 
 		Context("Preflight run command local registry flag test cases", func() {
 
