@@ -181,7 +181,7 @@ jobs:
     needs: pre-build
     # for tags('ref/tags/'), 'needs.pre-build.outputs.preflight' will be 'false' so to run 'build_test_preflight' job on tags as well,
     # added condition 'startsWith(github.ref, 'refs/tags/')'
-    if: (needs.pre-build.outputs.preflight == 'true') || startsWith(github.ref, 'refs/tags/')
+    if: (needs.pre-build.outputs.preflight == 'true')
     env:
       GCR_PRIVATE_DOCKER_REGISTRY: "gcr.io"
       GCR_PUBLIC_DOCKER_REGISTRY: "eu.gcr.io"
@@ -225,7 +225,7 @@ jobs:
 
       # This step is run when push is for a tag
       - name: Sets image tag env to public registry for release
-        if: (needs.pre-build.outputs.preflight == 'true') && startsWith(github.ref, 'refs/tags/')
+        if: (needs.pre-build.outputs.preflight == 'true')
         run: echo "DOCKER_REGISTRY=$GCR_PUBLIC_DOCKER_REGISTRY" >> $GITHUB_ENV
 
       - name: Docker meta
