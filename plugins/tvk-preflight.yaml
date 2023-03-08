@@ -5,7 +5,7 @@ metadata:
 spec:
   homepage: https://github.com/trilioData/tvk-plugins/blob/main/docs/preflight/README.md
   shortDescription: TVK application preflight check for k8s cluster
-  version: v1.2.2
+  version: v1.2.3-rc.1
   caveats: |
     Curl and Git neeed to be installed on system for Krew index update to work properly
   platforms:
@@ -13,8 +13,8 @@ spec:
       matchLabels:
         os: linux
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.2/preflight_v1.2.2_linux_amd64.tar.gz
-    sha256: 35abc6df88e60c660b14e43775bfdef7c515012ac4db6d8c0366be297a8ddcbf
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.3-rc.1/preflight_v1.2.3-rc.1_linux_amd64.tar.gz
+    sha256: ba21e29fea65bb24055b5dec9fce5d86533e1ffba2464b2567a131ff2cca813f
     bin: preflight
     files:
     - from: '*'
@@ -23,8 +23,8 @@ spec:
       matchLabels:
         os: linux
         arch: arm64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.2/preflight_v1.2.2_linux_arm64.tar.gz
-    sha256: 613a5e3a4d7c6e3efbc3c05fdb9e3d17aaa4e82bab3864656683f2e450cd1b71
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.3-rc.1/preflight_v1.2.3-rc.1_linux_arm64.tar.gz
+    sha256: 86d3aeae5e3d3b71e0e3799f58aa6dfc6204ecc361dabcb258f2a3013fbaa8ff
     bin: preflight
     files:
     - from: '*'
@@ -33,8 +33,8 @@ spec:
       matchLabels:
         os: linux
         arch: arm
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.2/preflight_v1.2.2_linux_arm.tar.gz
-    sha256: a8b8ade2e971929724dd66984462b2030346f03cf9cd82770d372ef75dcf36e6
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.3-rc.1/preflight_v1.2.3-rc.1_linux_arm.tar.gz
+    sha256: b10287797657bb3b6328e8fb4547a51b325d2162a3ddfc4ade5e84beb6fb6b22
     bin: preflight
     files:
       - from: '*'
@@ -43,8 +43,8 @@ spec:
       matchLabels:
         os: darwin
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.2/preflight_v1.2.2_darwin_amd64.tar.gz
-    sha256: 53bad2509de33a8c818b845c9600b070688ecf21a6aa881505b670b64acc5b0c
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.3-rc.1/preflight_v1.2.3-rc.1_darwin_amd64.tar.gz
+    sha256: a4160a42a1c87ac3112a3a9f4cc1c5a9aa0044913caa6c8873e50b003325828c
     bin: preflight
     files:
     - from: '*'
@@ -53,8 +53,8 @@ spec:
       matchLabels:
         os: darwin
         arch: arm64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.2/preflight_v1.2.2_darwin_arm64.tar.gz
-    sha256: de67523eb2dde0adda980620e748950c7b37c39d518a83d2fd5be8db92358396
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.3-rc.1/preflight_v1.2.3-rc.1_darwin_arm64.tar.gz
+    sha256: bae402d042e5cf124fa92aa86c7649e42c05f28f1a9c25e649fd0b77da614c83
     bin: preflight
     files:
     - from: '*'
@@ -64,8 +64,8 @@ spec:
       matchLabels:
         os: windows
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.2/preflight_v1.2.2_windows_amd64.zip
-    sha256: 9d813442455a0ba1678e15fed1252ce4ac2cdc25c0f231d10281b0b0db8b81b3
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.2.3-rc.1/preflight_v1.2.3-rc.1_windows_amd64.zip
+    sha256: 6a0848cd0071a7c77bebb5e3755df04f6e11aea27d8ed7c5890056cf92f82d41
     bin: preflight.exe
     files:
     - from: '*'
