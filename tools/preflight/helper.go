@@ -660,7 +660,7 @@ func removeFinalizer(ctx context.Context, obj client.Object, cl client.Client) e
 		return gErr
 	}
 
-	if pErr := cl.Status().Patch(ctx, updatedRes, client.RawPatch(types.JSONPatchType, payloadBytes)); pErr != nil {
+	if pErr := cl.Patch(ctx, updatedRes, client.RawPatch(types.JSONPatchType, payloadBytes)); pErr != nil {
 		return pErr
 	}
 
