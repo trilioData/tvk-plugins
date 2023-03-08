@@ -67,26 +67,31 @@ The following checks are included in preflight:
        - "volumesnapshots.snapshot.storage.k8s.io"
    2. If not present, creates the missing CSI apis as per the k8s server version. If k8s server version is 1.19, installs the above CSI apis that support v1beta1 version. If k8s server version is 1.20+, installs the above CSI apis that support both v1 and v1beta1 version. Also, if volumesnapshot CRDs don't exist, any provided volume snapshot class will be overridden with default value.
 
-7. `check-storage-snapshot-class` -
+7. `check-pod capability` -
+    1. Ensures pods with the TVK capabilities can be provisioned in the cluster.
+       - The capability matrix for TVK described in the [documentation](https://docs.trilio.io/kubernetes/getting-started-3/getting-started/tvk-pod-job-capabilities)
+          is used to generate three pods, each identified as **pod-capability-${INDEX}-${UID}**.
+
+8. `check-storage-snapshot-class` -
     1. Ensures provided storageClass is present in cluster
         1. Provided storageClass's `provisioner` [JSON Path: `storageclass.provisioner`] should match with provided volumeSnapshotClass's `driver`[JSON Path: `volumesnapshotclass.driver`]
         2. If volumeSnapshotClass is not provided then, volumeSnapshotClass which satisfies condition `[i]` will be selected. If there's are multiple volumeSnapshotClasses satisfying condition `[i]`, default volumeSnapshotClass[which has annotation `snapshot.storage.kubernetes.io/is-default-class: "true"` set] will be used for further pre-flight checks. If no volumeSnapshotClass matching with the storage class's provisioner is found, then a volumeSnapshotClass with `driver` as storageClass's `provisioner` and `deletionPolicy` as `Delete` will be created with a name that starts with `preflight-generated-snapshot-class` and has a random suffix.
         3. If volumeSnapshotClass is provided and matches with storage class provisioner, only then that volumeSnapshotClass will be used for further operations, otherwise preflight will fail with not found error.
     2. Ensures at least one volumeSnapshotClass is marked as *default* in cluster if user has not provided volumeSnapshotClass as input.
 
-8. `check-dns-resolution` -
+9. `check-dns-resolution` -
     1. Ensure DNS resolution works as expected in the cluster
         - Creates a new pod (**dnsutils-${UID}**) then resolves **kubernetes.default** service from inside the pod
 
-9. `check_volume_snapshot` - 
-   1. Ensure Volume Snapshot functionality works as expected for both mounted and unmounted PVCs
+10. `check_volume_snapshot` - 
+    1. Ensure Volume Snapshot functionality works as expected for both mounted and unmounted PVCs
        1. Creates a Pod and PVC (**source-pod-${UID}** and **source-pvc-${UID}**).
        2. Creates Volume snapshot (**snapshot-source-pvc-${UID}**) from the mounted PVC(**source-pvc-${UID}**).
        3. Creates volume snapshot of unmounted PVC(**source-pvc-${UID}** [deletes the source pod before snapshotting].
        4. Restores PVC(**restored-pvc-${UID}**) from volume snapshot of mounted PVC and creates a Pod(**restored-pod-${UID}**) and attaches to restored PVC.
        5. Restores PVC(**unmounted-restored-pvc-${UID}**) from volume snapshot from unmounted PVC and creates a Pod(**unmounted-restored-pod-${UID}**) and attaches to restored PVC.
        6. Ensure data in restored PVCs is correct[checks for a file[/demo/data/sample-file.txt] which was present at the time of snapshotting].
-   2. If `check-storage-snapshot-class` fails then, `check_volume_snapshot` check is skipped.
+    2. If `check-storage-snapshot-class` fails then, `check_volume_snapshot` check is skipped.
 
 After all above checks are performed, cleanup of all the intermediate resources created during preflight checks' execution is done.
 
