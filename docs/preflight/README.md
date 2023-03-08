@@ -196,11 +196,9 @@ cleanup:
   namespace: <clean preflight in a particular namespace>
   kubeconfig: <kubeconfig file path>
   logLevel: <specify logging level for cleanup>
-  cleanupMode: <specify the cleanup mode as 'all' or 'uid'>
-  uid: <This field is used when the cleanup mode is 'uid'>
+  uid: <specify this field to clean preflight resources of a particular run>
 ```
-- The **cleanupMode** field can have two values - *all* and *uid*. *all* mode will clean all the preflight resources present in the given namespace.
-*uid* mode will clean resources of preflight with the given *uid* in the given namespace.
+- The **uid** field, if specified, will clean the preflight resources with the given *uid* in the given namespace. Otherwise, all the preflight resources present on the system in the given namespace will be cleaned.
 - User can override the values given in file using CLI flags.
 - The input fields should be present in the correct hierarchical order. An incorrect key or input field will result in an error and preflight checks will not performed.
 
