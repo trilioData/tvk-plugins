@@ -464,7 +464,7 @@ func (o *Run) checkAndCreateSnapshotClassForProvisioner(ctx context.Context, pre
 	sscName := ""
 	for _, vssc := range vsscList.Items {
 		if vssc.Object["driver"] == provisioner {
-			if vssc.Object["snapshot.storage.kubernetes.io/is-default-class"] == "true" {
+			if vssc.Object["metadata"]["annotations"][SnapshotClassIsDefaultAnnotation] == "true" {
 				return vssc.GetName(), nil
 			}
 			sscName = vssc.GetName()
