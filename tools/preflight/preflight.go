@@ -464,7 +464,7 @@ func (o *Run) checkAndCreateSnapshotClassForProvisioner(ctx context.Context, pre
 	sscName := ""
 	for _, vssc := range vsscList.Items {
 		if vssc.Object["driver"] == provisioner {
-			if vssc.Object["metadata"]["annotations"][SnapshotClassIsDefaultAnnotation] == "true" {
+			if v, ok, err := unstructured.NestedString(vssc.Object, "metadata", "annotations", SnapshotClassIsDefaultAnnotation); err == nil && ok && v == "true" {
 				return vssc.GetName(), nil
 			}
 			sscName = vssc.GetName()
