@@ -86,11 +86,12 @@ const (
 	execTimeoutDuration       = 3 * time.Minute
 	deletionGracePeriod int64 = 5
 
-	volumeSnapshotCRDYamlDir    = "volumesnapshotcrdyamls"
-	snapshotClassVersionV1      = "v1"
-	snapshotClassVersionV1Beta1 = "v1beta1"
-	minServerVerForV1CrdVersion = "v1.20.0"
-	defaultVSCNamePrefix        = "preflight-generated-snapshot-class-"
+	volumeSnapshotCRDYamlDir         = "volumesnapshotcrdyamls"
+	snapshotClassVersionV1           = "v1"
+	snapshotClassVersionV1Beta1      = "v1beta1"
+	SnapshotClassIsDefaultAnnotation = "snapshot.storage.kubernetes.io/is-default-class"
+	minServerVerForV1CrdVersion      = "v1.20.0"
+	defaultVSCNamePrefix             = "preflight-generated-snapshot-class-"
 
 	podCapability = "pod-capability-"
 )
