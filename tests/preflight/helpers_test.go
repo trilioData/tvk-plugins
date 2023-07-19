@@ -58,7 +58,7 @@ func assertVolSnapClassCheckSuccess(snapshotClass, outputLog string) {
 				snapshotClass)))
 	} else {
 		Expect(outputLog).
-			To(MatchRegexp("(Extracted volume snapshot class -)(.*)(found in cluster)"))
+			To(MatchRegexp("(volume snapshot class -)(.*)(found in cluster)"))
 		Expect(outputLog).To(MatchRegexp("(Volume snapshot class -)(.*)(driver matches with given StorageClass's provisioner=)"))
 	}
 }
