@@ -466,6 +466,9 @@ func (o *Run) checkAndCreateSnapshotClassForProvisioner(ctx context.Context, pre
 		if vssc.Object["driver"] == provisioner {
 			if v, ok, err := unstructured.NestedString(
 				vssc.Object, "metadata", "annotations", SnapshotClassIsDefaultAnnotation); err == nil && ok && v == "true" {
+				o.Logger.Infof("%s Default volume snapshot class - %s found in cluster", check, vssc.GetName())
+				o.Logger.Infof("%s Volume snapshot class - %s driver matches with given StorageClass's provisioner=%s\n",
+					check, vssc.GetName(), provisioner)
 				return vssc.GetName(), nil
 			}
 			sscName = vssc.GetName()
