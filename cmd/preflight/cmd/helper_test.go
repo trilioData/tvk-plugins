@@ -326,6 +326,13 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 		})
 	})
 
+	Context("validateInitKubeEnv func test-case", func() {
+		It("Should perform preflight check using kubeconfig file mentioned in KUBECONFIG env", func() {
+			preflight.InitKubeEnv("")
+			Expect(kubeconfig).Should(Equal(os.Getenv(internal.KubeconfigEnv)))
+		})
+	})
+
 	Context("validateCleanupFields func test-cases", func() {
 		BeforeEach(func() {
 			cmdOps.Cleanup = preflight.Cleanup{

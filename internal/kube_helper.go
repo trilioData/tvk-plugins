@@ -127,6 +127,14 @@ func NewConfigFromCommandline(kubeConfig string) (string, error) {
 	return "", nil
 }
 
+func GetKubeconfigPath() string {
+	kubeConf, exist := os.LookupEnv(KubeconfigEnv)
+	if !exist {
+		kubeConf = KubeConfigDefault
+	}
+	return kubeConf
+}
+
 func normalizeFile(path *string) error {
 	// If the path uses the homedir ~, expand the path.
 	var err error

@@ -28,6 +28,7 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 			err := command.PersistentPreRunE(command, []string{})
 			Expect(err).Should(BeNil())
 			Expect(logCollector.KubeConfig).ShouldNot(BeEmpty())
+			Expect(logCollector.KubeConfig).Should(Equal(os.Getenv(internal.KubeconfigEnv)))
 			Expect(logCollector.Clustered).Should(BeFalse())
 			Expect(logCollector.Namespaces).ShouldNot(BeEmpty())
 			Expect(inputFileName).Should(BeEmpty())

@@ -24,7 +24,7 @@ func logCollectorCommand() *cobra.Command {
 	cmd.Flags().StringSliceVarP(&namespaces, namespacesFlag, namespacesShort, namespacesDefault, namespacesUsage)
 	cmd.Flags().BoolVarP(&clustered, clusteredFlag, clusteredShort, clusteredDefault, clusteredUsage)
 	cmd.Flags().StringVarP(&kubeConfig, internal.KubeconfigFlag,
-		internal.KubeconfigShorthandFlag, internal.KubeConfigDefault, internal.KubeconfigUsage)
+		internal.KubeconfigShorthandFlag, internal.GetKubeconfigPath(), internal.KubeconfigUsage)
 	cmd.Flags().BoolVarP(&keepSource, keepSourceFlag, keepSourceShort, keepSourceDefault, keepSourceUsage)
 	cmd.Flags().StringVarP(&logLevel, internal.LogLevelFlag, internal.LogLevelFlagShorthand, internal.DefaultLogLevel, internal.LogLevelUsage)
 	cmd.Flags().StringVarP(&inputFileName, configFileFlag, configFlagShorthand, "", configFileUsage)
