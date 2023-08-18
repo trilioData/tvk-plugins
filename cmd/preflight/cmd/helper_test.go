@@ -237,6 +237,10 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 
 	Context("managePreflightInputs func test-cases", func() {
 
+		BeforeEach(func() {
+			internal.KubeConfigDefault = os.Getenv(internal.KubeconfigEnv)
+		})
+
 		It("Should set namespace as default when namespace is not explicitly provided", func() {
 			inputFileName = ""
 			cmdOps.Run.Namespace = ""
@@ -265,6 +269,19 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 			cmdOps.Run.LogLevel = ""
 			Expect(managePreflightInputs(&cobra.Command{})).Should(BeNil())
 			Expect(cmdOps.Run.LogLevel).Should(Equal(internal.DefaultLogLevel))
+		})
+
+		It("Should perform preflight check using kubeconfig file mentioned in KUBECONFIG env", func() {
+			err = os.Setenv(internal.KubeconfigEnv, internal.KubeConfigDefault)
+			Expect(err).Should(BeNil())
+			Expect(cmdOps.Run.Kubeconfig).Should(Equal(internal.KubeConfigDefault))
+		})
+
+		It("Should perform preflight check by prioritize the flag value of KUBECONFIG", func() {
+			cmdOps.Run.Kubeconfig = internal.KubeConfigDefault
+			err = os.Setenv(internal.KubeconfigEnv, "")
+			Expect(err).Should(BeNil())
+			Expect(cmdOps.Run.Kubeconfig).Should(Equal(internal.KubeConfigDefault))
 		})
 
 	})
@@ -323,13 +340,6 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 			terr := validateRunOptions()
 			Expect(terr).ToNot(BeNil())
 			Expect(terr.Error()).To(ContainSubstring("request CPU cannot be greater than limit CPU"))
-		})
-	})
-
-	Context("validateInitKubeEnv func test-case", func() {
-		It("Should perform preflight check using kubeconfig file mentioned in KUBECONFIG env", func() {
-			preflight.InitKubeEnv("")
-			Expect(kubeconfig).Should(Equal(os.Getenv(internal.KubeconfigEnv)))
 		})
 	})
 

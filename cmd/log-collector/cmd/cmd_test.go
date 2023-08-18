@@ -23,12 +23,13 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 		})
 
 		It("Should initialize log collector objects when valid kubeconfig file path is provided", func() {
-
+			err := os.Setenv(internal.KubeconfigEnv, internal.KubeConfigDefault)
+			Expect(err).Should(BeNil())
 			command := logCollectorCommand()
-			err := command.PersistentPreRunE(command, []string{})
+			err = command.PersistentPreRunE(command, []string{})
 			Expect(err).Should(BeNil())
 			Expect(logCollector.KubeConfig).ShouldNot(BeEmpty())
-			Expect(logCollector.KubeConfig).Should(Equal(os.Getenv(internal.KubeconfigEnv)))
+			Expect(logCollector.KubeConfig).Should(Equal(internal.KubeConfigDefault))
 			Expect(logCollector.Clustered).Should(BeFalse())
 			Expect(logCollector.Namespaces).ShouldNot(BeEmpty())
 			Expect(inputFileName).Should(BeEmpty())
@@ -117,5 +118,15 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 			err := logCollector.InitializeKubeClients()
 			Expect(err).ShouldNot(BeNil())
 		})
+
+		It("Should prioritize log collector KUBECONFIG flag value", func() {
+			logCollector.KubeConfig = internal.KubeConfigDefault
+			err := os.Setenv(internal.KubeconfigEnv, "")
+			Expect(err).Should(BeNil())
+			err = logCollector.InitializeKubeClients()
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(logCollector.KubeConfig).Should(Equal(internal.KubeConfigDefault))
+		})
+
 	})
 })
