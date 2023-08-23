@@ -41,6 +41,7 @@ const (
 
 	LicenseKind = "License"
 	Verblist    = "list"
+	VerbGet     = "get"
 
 	TrilioPrefix   = "k8s-triliovault"
 	TrilioOpPrefix = "k8s-triliovault-operator"

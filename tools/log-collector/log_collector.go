@@ -81,6 +81,8 @@ func (l *LogCollector) InitializeKubeClients() error {
 // CollectLogsAndDump collects call all the related resources of triliovault
 func (l *LogCollector) CollectLogsAndDump() error {
 
+	log.Warn("warn log is working fine")
+
 	nsErr := l.checkIfNamespacesExist()
 	if nsErr != nil {
 		return nsErr
@@ -567,12 +569,31 @@ func (l *LogCollector) getAPIResourceList() (map[string][]apiv1.APIResource, err
 		log.Warn("To fix this, kubectl delete apiservice <service-name>")
 	}
 
+	allowedResource := make(map[string]bool)
+
 	for _, resources := range resourceList {
 		for idx := range resources.APIResources {
 			for _, verb := range resources.APIResources[idx].Verbs {
 				if verb == Verblist {
 					resourceMapList[resources.GroupVersion] = append(resourceMapList[resources.GroupVersion],
 						resources.APIResources[idx])
+				}
+				if verb == VerbGet {
+					allowedResource[resources.APIResources[idx].Kind] = true
+				}
+			}
+		}
+	}
+
+	for groupVersion, resources := range resourceMapList {
+		for index := range resources {
+			objects := l.getResourceObjects(getAPIGroupVersionResourcePath(groupVersion), &resources[index])
+			l.filterTvkResourcesByLabel(&objects)
+
+			for index2 := range objects.Items {
+				kind := objects.Items[index2].GetKind()
+				if !allowedResource[kind] {
+					log.Warnf("%s has not permission to get resource", kind)
 				}
 			}
 		}

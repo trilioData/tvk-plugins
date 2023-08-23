@@ -13,6 +13,7 @@ const (
 	gvkFlag          = "gvks"
 	configFileFlag   = "config-file"
 	labelsFlag       = "labels"
+	warnLog          = "warn"
 	defaultNamespace = "default"
 
 	shortUsage = "log-collector collects the information of resources such as yaml configuration and logs from k8s cluster."
