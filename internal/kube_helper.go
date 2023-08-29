@@ -3,16 +3,17 @@ package internal
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
-
-	ctrlRuntime "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"path/filepath"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/discovery"
 	client "k8s.io/client-go/kubernetes"
+	ctrlRuntime "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	// To authenticate kubeEnv for fcp, azure, etc. cluster
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -187,4 +188,31 @@ func (a *Accessor) GetClientset() *client.Clientset {
 
 func (a *Accessor) GetDiscoveryClient() *discovery.DiscoveryClient {
 	return a.discoveryClient
+}
+
+func CopyFile(sourcePath, destinationPath string) error {
+	sourceFile, err := os.Open(sourcePath)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+
+	// Create the destination directory if it doesn't exist
+	destinationDir := filepath.Dir(destinationPath)
+	if mkDirErr := os.MkdirAll(destinationDir, os.ModePerm); mkDirErr != nil {
+		return mkDirErr
+	}
+
+	destinationFile, err := os.Create(destinationPath)
+	if err != nil {
+		return err
+	}
+	defer destinationFile.Close()
+
+	_, err = io.Copy(destinationFile, sourceFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
