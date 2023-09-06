@@ -7,13 +7,14 @@ import (
 	"os"
 	"path/filepath"
 
+	ctrlRuntime "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/discovery"
 	client "k8s.io/client-go/kubernetes"
-	ctrlRuntime "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	// To authenticate kubeEnv for fcp, azure, etc. cluster
 	_ "k8s.io/client-go/plugin/pkg/client/auth"

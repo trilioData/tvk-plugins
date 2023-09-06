@@ -117,11 +117,14 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 			Expect(err).ShouldNot(BeNil())
 		})
 
-		It("Should run using kubeconfig file mentioned in KUBECONFIG env", func() {
+		It("Should run using kubeconfig file mentioned in KUBECONFIG env when no "+
+			"explicit kubeconfig file is provided", func() {
 			testConfigPath := filepath.Join(projectRoot, "manual", "path", "to", "kubeconfig")
-			Expect(internal.CopyFile(internal.KubeConfigDefault, testConfigPath))
-			logCollector.KubeConfig = testConfigPath
-			Expect(logCollector.InitializeKubeClients()).Should(Succeed())
+			Expect(internal.CopyFile(internal.KubeConfigDefault, testConfigPath)).Should(Succeed())
+			Expect(os.Setenv(internal.KubeconfigEnv, testConfigPath)).Should(Succeed())
+			logCollector.KubeConfig = ""
+			command := logCollectorCommand()
+			Expect(command.PersistentPreRunE(command, []string{})).Should(Succeed())
 			Expect(logCollector.KubeConfig).Should(Equal(testConfigPath))
 		})
 
