@@ -267,6 +267,15 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 			Expect(cmdOps.Run.LogLevel).Should(Equal(internal.DefaultLogLevel))
 		})
 
+		It("Should perform preflight check using kubeconfig file mentioned in KUBECONFIG env when no explicit"+
+			" kubeconfig file is provided", func() {
+			testConfigPath := filepath.Join(projectRoot, "manual", "path", "to", "kubeconfig")
+			cmdOps.Run.Kubeconfig = ""
+			kubeconfig = testConfigPath
+			Expect(managePreflightInputs(&cobra.Command{})).Should(BeNil())
+			Expect(cmdOps.Run.Kubeconfig).Should(Equal(testConfigPath))
+		})
+
 	})
 
 	Context("validateRunOptions func test-cases", func() {
