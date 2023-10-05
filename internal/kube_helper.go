@@ -129,10 +129,14 @@ func NewConfigFromCommandline(kubeConfig string) (string, error) {
 	return "", nil
 }
 
-func GetKubeconfigPath() string {
+func GetKubeconfigPath(useDefaultIfNotPresentInEnv bool) string {
 	kubeConf, exist := os.LookupEnv(KubeconfigEnv)
 	if !exist {
-		kubeConf = KubeConfigDefault
+		if useDefaultIfNotPresentInEnv {
+			kubeConf = KubeConfigDefault
+		} else {
+			kubeConf = ""
+		}
 	}
 	return kubeConf
 }
