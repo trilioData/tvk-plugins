@@ -138,11 +138,14 @@ After all above checks are performed, cleanup of all the intermediate resources 
 ```bash
 (
   set -ex; cd "$(mktemp -d)" &&
-  if [[ -z ${version} ]]; then version=$(curl -s https://api.github.com/repos/trilioData/tvk-plugins/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")'); fi &&
+  OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
+  ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
+  if [[ -z ${version} ]]; then version=$(curl -s https://api.github.com/repos/trilioData/tvk-plugins/releases/latest | grep 'tag_name'| awk '{print $2}' | tr -d '",'); fi &&
   echo "Installing version=${version}" &&
-  curl -fsSLO "https://github.com/trilioData/tvk-plugins/releases/download/"${version}"/preflight.tar.gz" &&
-  tar zxvf preflight.tar.gz && sudo mv preflight/preflight /usr/local/bin/kubectl-tvk_preflight
-)
+  package_name="preflight_${version}_${OS}_${ARCH}.tar.gz" &&
+  curl -fsSLO "https://github.com/trilioData/tvk-plugins/releases/download/"${version}"/${package_name}" &&
+  tar zxvf ${package_name} && sudo mv preflight /usr/local/bin/kubectl-tvk_preflight
+)  
 ```
 Verify installation with `kubectl tvk-preflight --help`
 
