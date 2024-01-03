@@ -62,7 +62,7 @@ tvk-log-collector collects the logs, config and events of resources. Pod Logs ca
   set -ex; cd "$(mktemp -d)" &&
   OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
   ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
-  if [[ -z ${version} ]]; then version=$(curl -s https://api.github.com/repos/trilioData/tvk-plugins/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")'); fi &&
+  if [[ -z ${version} ]]; then version=$(curl -s https://api.github.com/repos/trilioData/tvk-plugins/releases/latest | grep 'tag_name' | awk '{print $2}' | tr -d '",'); fi &&
   echo "Installing version=${version}" &&
   package_name="log-collector_${version}_${OS}_${ARCH}.tar.gz" &&
   curl -fsSLO "https://github.com/trilioData/tvk-plugins/releases/download/"${version}"/${package_name}" &&
