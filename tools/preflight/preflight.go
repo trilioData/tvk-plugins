@@ -130,8 +130,6 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		if err != nil {
 			o.Logger.Errorf("%s Preflight check for helm version failed :: %s\n", cross, err.Error())
 			preflightStatus = false
-		} else {
-			o.Logger.Infof("%s Preflight check for helm version is successful\n", check)
 		}
 	}
 
@@ -300,7 +298,14 @@ func (o *Run) validateClusterAccess(ctx context.Context, namespace string, kubeC
 
 // validateSystemHelmVersion checks whether minimum helm version is present.
 func (o *Run) validateSystemHelmVersion(binaryName string, cl *discovery.DiscoveryClient) error {
-	err := o.validateHelmBinary(binaryName, cl)
+	if internal.CheckIsOpenshift(cl, internal.OcpAPIVersion) {
+		o.Logger.Infof("%s Running an Openshift cluster. Helm check is not needed for Openshift clusters\n", check)
+		return nil
+	}
+
+	o.Logger.Infof("APIVersion - %s not found on cluster, not an OCP cluster\n", internal.OcpAPIVersion)
+
+	err := o.validateHelmBinary(binaryName)
 	if err != nil {
 		return err
 	}
@@ -309,14 +314,17 @@ func (o *Run) validateSystemHelmVersion(binaryName string, cl *discovery.Discove
 	if err != nil {
 		return err
 	}
-	return o.validateHelmVersion(curVersion)
+
+	if err := o.validateHelmVersion(curVersion); err != nil {
+		return err
+	}
+
+	o.Logger.Infof("%s Preflight check for helm version is successful\n", check)
+
+	return nil
 }
 
 func (o *Run) validateHelmVersion(curVersion string) error {
-	helmVersion, err := GetHelmVersion(HelmBinaryName)
-	if err != nil {
-		return err
-	}
 	v1, err := version.NewVersion(minHelmVersion)
 	if err != nil {
 		return err
@@ -329,17 +337,12 @@ func (o *Run) validateHelmVersion(curVersion string) error {
 		return fmt.Errorf("helm does not meet minimum version requirement.\nUpgrade helm to minimum version - %s", minHelmVersion)
 	}
 
-	o.Logger.Infof("%s Helm version %s meets required version\n", check, helmVersion)
+	o.Logger.Infof("%s Helm version %s meets required version\n", check, curVersion)
 
 	return nil
 }
 
-func (o *Run) validateHelmBinary(binaryName string, cl *discovery.DiscoveryClient) error {
-	if internal.CheckIsOpenshift(cl, internal.OcpAPIVersion) {
-		o.Logger.Infof("%s Running OCP cluster. Helm not needed for OCP clusters\n", check)
-		return nil
-	}
-	o.Logger.Infof("APIVersion - %s not found on cluster, not an OCP cluster\n", internal.OcpAPIVersion)
+func (o *Run) validateHelmBinary(binaryName string) error {
 	// check whether helm exists
 	path, err := goexec.LookPath(binaryName)
 	if err != nil {
