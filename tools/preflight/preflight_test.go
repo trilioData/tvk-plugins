@@ -179,7 +179,7 @@ func preflightFuncsTestcases() {
 
 			Context("When helm binary does not satisfy minimum version requirement", func() {
 
-				It("Should return error when helm version does not satisfy the minimum required helm version", func() {
+				It("Should return error when the current helm version does not satisfy the minimum required helm version", func() {
 					err := runOps.validateHelmVersion(invalidHelmVersion)
 					Expect(err).ToNot(BeNil())
 					Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(
