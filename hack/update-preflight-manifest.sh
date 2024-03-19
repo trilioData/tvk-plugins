@@ -55,6 +55,8 @@ preflight_windows_amd64_sha=$(awk '/preflight/ && /windows_amd64/ { print $1 }' 
 preflight_windows_arm64_sha=$(awk '/preflight/ && /windows_arm64/ { print $1 }' $preflightSha256FilePath)
 # shellcheck disable=SC2086
 preflight_windows_arm_sha=$(awk '/preflight/ && /windows_arm.zip/ { print $1 }' $preflightSha256FilePath)
+# shellcheck disable=SC2086
+preflight_linux_ppc64le_sha=$(awk '/preflight/ && /linux_ppc64le/ { print $1 }' $preflightSha256FilePath)
 
 sed -i "s/PREFLIGHT_VERSION/$PREFLIGHT_VERSION/g" "$preflight_template_manifest"
 
@@ -66,6 +68,7 @@ sed -i "s/PREFLIGHT_DARWIN_ARM64_TAR_CHECKSUM/$preflight_darwin_arm64_sha/g" "$p
 sed -i "s/PREFLIGHT_WINDOWS_AMD64_TAR_CHECKSUM/$preflight_windows_amd64_sha/g" "$preflight_template_manifest"
 sed -i "s/PREFLIGHT_WINDOWS_ARM64_TAR_CHECKSUM/$preflight_windows_arm64_sha/g" "$preflight_template_manifest"
 sed -i "s/PREFLIGHT_WINDOWS_ARM_TAR_CHECKSUM/$preflight_windows_arm_sha/g" "$preflight_template_manifest"
+sed -i "s/PREFLIGHT_LINUX_PPC64LE_TAR_CHECKSUM/$preflight_linux_ppc64le_sha/g" "$preflight_template_manifest"
 
 cp "$build_dir"/$preflight_yaml "$plugins_dir"/$preflight_yaml
 echo >&2 "Updated preflight plugin manifest '$preflight_yaml' with 'version=$PREFLIGHT_VERSION' and new sha256sum"

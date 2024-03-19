@@ -41,6 +41,16 @@ spec:
         to: .
   - selector:
       matchLabels:
+        os: linux
+        arch: ppc64le
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/PREFLIGHT_VERSION/preflight_PREFLIGHT_VERSION_linux_ppc64le.tar.gz
+    sha256: PREFLIGHT_LINUX_PPC64LE_TAR_CHECKSUM
+    bin: preflight
+    files:
+      - from: '*'
+        to: .
+  - selector:
+      matchLabels:
         os: darwin
         arch: amd64
     uri: https://github.com/trilioData/tvk-plugins/releases/download/PREFLIGHT_VERSION/preflight_PREFLIGHT_VERSION_darwin_amd64.tar.gz
