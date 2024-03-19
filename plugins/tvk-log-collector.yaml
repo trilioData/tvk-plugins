@@ -82,28 +82,6 @@ spec:
     - from: '*'
       to: .
 
-  # TODO: remove/comment following two selectors 'windows/arm64' & 'windows/arm' while adding it to 'plugins' dir, as these are not supported by krew as of now.
-  - selector:
-      matchLabels:
-        os: windows
-        arch: arm64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/log-collector_v1.3.1_windows_arm64.zip
-    sha256: d25407140abd0e19ae9a8a40a8ef623f099f51cdeb47e3c45be8e5fa4a5582f2
-    bin: log-collector.exe
-    files:
-    - from: '*'
-      to: .
-  - selector:
-      matchLabels:
-        os: windows
-        arch: arm
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/log-collector_v1.3.1_windows_arm.zip
-    sha256: 4634c149c8c318bafe809de760f17328989b014d60119596488cfdee48c7176a
-    bin: log-collector.exe
-    files:
-    - from: '*'
-      to: .
-
   description: |
     tvk-log-collector is a kubectl plugin which collects the information mainly yaml configuration and logs from k8s cluster for
     debugging TVK application.

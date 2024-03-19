@@ -81,29 +81,6 @@ spec:
     - from: '*'
       to: .
 
-  # TODO: remove/comment following two selectors 'windows/arm64' & 'windows/arm' while adding it to 'plugins' dir, as these are not supported by krew as of now.
-  - selector:
-      matchLabels:
-        os: windows
-        arch: arm64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/preflight_v1.3.1_windows_arm64.zip
-    sha256: f64bdc3fbde41f63e77b0c3d5ce171aec479fe17cbbe3ce7af44772a56886dfa
-    bin: preflight.exe
-    files:
-    - from: '*'
-      to: .
-  - selector:
-      matchLabels:
-        os: windows
-        arch: arm
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/preflight_v1.3.1_windows_arm.zip
-    sha256: 9ff48ee16790e84dcb3bf5cbd9510c02e9481e29279c8bf6743e5b57404e3264
-    bin: preflight.exe
-    files:
-    - from: '*'
-      to: .
-
-
   description: |
     tvk-preflight is a kubectl plugin which checks whether all the pre-requisites are met before installing Triliovault
     for Kubernetes(TVK) application in a Kubernetes cluster.
