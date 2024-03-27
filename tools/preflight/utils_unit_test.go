@@ -42,7 +42,7 @@ func createTestPod(name string) {
 			"containers": []map[string]interface{}{
 				{
 					"name":            BusyboxContainerName,
-					"image":           BusyboxImageName,
+					"image":           BusyBoxRegistry + "/" + BusyboxImageName,
 					"command":         CommandSleep3600,
 					"imagePullPolicy": corev1.PullIfNotPresent,
 				},

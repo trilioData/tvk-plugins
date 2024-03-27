@@ -297,7 +297,7 @@ func createSourcePodSpec(pvcName, preflightUID string) *corev1.Pod {
 	pod.Spec.Containers = []corev1.Container{
 		{
 			Name:      preflight.BusyboxContainerName,
-			Image:     preflight.BusyboxImageName,
+			Image:     preflight.BusyBoxRegistry + "/" + preflight.BusyboxImageName,
 			Command:   preflight.CommandBinSh,
 			Args:      preflight.ArgsTouchDataFileSleep,
 			Resources: resourceReqs,
@@ -531,7 +531,7 @@ func createAffineBusyboxPod(podName, affinity, namespace string) {
 		Containers: []corev1.Container{
 			{
 				Name:    preflight.BusyboxContainerName,
-				Image:   preflight.BusyboxImageName,
+				Image:   preflight.BusyBoxRegistry + "/" + preflight.BusyboxImageName,
 				Command: preflight.CommandBinSh,
 			},
 		},

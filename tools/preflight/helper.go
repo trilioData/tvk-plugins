@@ -65,6 +65,7 @@ const (
 	RestorePvcNamePrefix             = "restored-pvc-"
 	RestorePodNamePrefix             = "restored-pod-"
 	BusyboxContainerName             = "busybox"
+	BusyBoxRegistry                  = "quay.io/triliodata"
 	BusyboxImageName                 = "busybox"
 	UnmountedRestorePodNamePrefix    = "unmounted-restored-pod-"
 	UnmountedRestorePvcNamePrefix    = "unmounted-restored-pvc-"
@@ -386,7 +387,7 @@ func createVolumeSnapshotPodSpec(pvcName string, op *Run, nameSuffix string) *co
 	if op.LocalRegistry != "" {
 		containerImage = op.LocalRegistry + "/" + BusyboxImageName
 	} else {
-		containerImage = BusyboxImageName
+		containerImage = BusyBoxRegistry + "/" + BusyboxImageName
 	}
 	pod := getPodTemplate(SourcePodNamePrefix+nameSuffix, nameSuffix, op)
 	pod.Spec.Containers = []corev1.Container{
@@ -485,7 +486,7 @@ func createRestorePodSpec(podName, pvcName, uid string, op *Run) *corev1.Pod {
 	if op.LocalRegistry != "" {
 		containerImage = op.LocalRegistry + "/" + BusyboxImageName
 	} else {
-		containerImage = BusyboxImageName
+		containerImage = BusyBoxRegistry + "/" + BusyboxImageName
 	}
 	pod := getPodTemplate(podName, uid, op)
 	pod.Spec.Containers = []corev1.Container{
@@ -716,7 +717,7 @@ func createPodSpecWithCapability(op *Run, podName string, capability capability)
 	if op.LocalRegistry != "" {
 		containerImage = op.LocalRegistry + "/" + BusyboxImageName
 	} else {
-		containerImage = BusyboxImageName
+		containerImage = BusyBoxRegistry + "/" + BusyboxImageName
 	}
 	pod := getPodTemplate(podCapability+podName, podName, op)
 	readOnlyRootFSFlag := false
