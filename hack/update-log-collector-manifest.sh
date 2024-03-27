@@ -42,6 +42,8 @@ fi
 
 log_collector_linux_amd64_sha=$(awk '/log-collector/ && /linux_amd64/ { print $1 }' "$log_collector_sha256_filePath")
 # shellcheck disable=SC2086
+log_collector_linux_ppc64le_sha=$(awk '/log-collector/ && /linux_ppc64le/ { print $1 }' "$log_collector_sha256_filePath")
+# shellcheck disable=SC2086
 log_collector_linux_arm64_sha=$(awk '/log-collector/ && /linux_arm64/ { print $1 }' $log_collector_sha256_filePath)
 # shellcheck disable=SC2086
 log_collector_linux_arm_sha=$(awk '/log-collector/ && /linux_arm.tar.gz/ { print $1 }' $log_collector_sha256_filePath)
@@ -66,6 +68,7 @@ sed -i "s/LOG_COLLECTOR_DARWIN_ARM64_TAR_CHECKSUM/$log_collector_darwin_arm64_sh
 sed -i "s/LOG_COLLECTOR_WINDOWS_AMD64_TAR_CHECKSUM/$log_collector_windows_amd64_sha/g" "$log_collector_template_manifest"
 sed -i "s/LOG_COLLECTOR_WINDOWS_ARM64_TAR_CHECKSUM/$log_collector_windows_arm64_sha/g" "$log_collector_template_manifest"
 sed -i "s/LOG_COLLECTOR_WINDOWS_ARM_TAR_CHECKSUM/$log_collector_windows_arm_sha/g" "$log_collector_template_manifest"
+sed -i "s/LOG_COLLECTOR_LINUX_PPC64LE_TAR_CHECKSUM/$log_collector_linux_ppc64le_sha/g" "$log_collector_template_manifest"
 
 cp "$build_dir"/$log_collector_yaml "$plugins_dir"/$log_collector_yaml
 echo >&2 "Updated log-collector plugin manifest '$log_collector_yaml' with 'version=$LOG_COLLECTOR_VERSION' and new sha256sum"

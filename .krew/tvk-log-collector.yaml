@@ -19,7 +19,16 @@ spec:
     files:
     - from: '*'
       to: .
-
+  - selector:
+      matchLabels:
+        os: linux
+        arch: ppc64le
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/LOG_COLLECTOR_VERSION/log-collector_LOG_COLLECTOR_VERSION_linux_ppc64le.tar.gz
+    sha256: LOG_COLLECTOR_LINUX_PPC64LE_TAR_CHECKSUM
+    bin: log-collector
+    files:
+      - from: '*'
+        to: .
   - selector:
       matchLabels:
         os: linux
