@@ -63,6 +63,11 @@ preflight_tar_archive="preflight_${git_version}_windows_arm.zip"
 tar_checksum="$(eval "${checksum_cmd[@]}" "$build_dir/${preflight_tar_archive}" | awk '{print $1;}')"
 sed -i "s/PREFLIGHT_WINDOWS_ARM_TAR_CHECKSUM/${tar_checksum}/g" $tvk_preflight_yaml
 
+preflight_tar_archive="preflight_${git_version}_linux_ppc64le.tar.gz"
+tar_checksum="$(eval "${checksum_cmd[@]}" "$build_dir/${preflight_tar_archive}" | awk '{print $1;}')"
+sed -i "s/PREFLIGHT_LINUX_PPC64LE_TAR_CHECKSUM/${tar_checksum}/g" $tvk_preflight_yaml
+
+
 sed -i "s/PREFLIGHT_VERSION/$git_version/g" $tvk_preflight_yaml
 
 echo >&2 "Written out $tvk_preflight_yaml"

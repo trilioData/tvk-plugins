@@ -63,6 +63,10 @@ log_collector_tar_archive="log-collector_${git_version}_windows_arm.zip"
 tar_checksum="$(eval "${checksum_cmd[@]}" "$build_dir/${log_collector_tar_archive}" | awk '{print $1;}')"
 sed -i "s/LOG_COLLECTOR_WINDOWS_ARM_TAR_CHECKSUM/${tar_checksum}/g" $tvk_log_collector_yaml
 
+log_collector_tar_archive="log-collector_${git_version}_linux_ppc64le.tar.gz"
+tar_checksum="$(eval "${checksum_cmd[@]}" "$build_dir/${log_collector_tar_archive}" | awk '{print $1;}')"
+sed -i "s/LOG_COLLECTOR_LINUX_PPC64LE_TAR_CHECKSUM/${tar_checksum}/g" $tvk_log_collector_yaml
+
 sed -i "s/LOG_COLLECTOR_VERSION/$git_version/g" $tvk_log_collector_yaml
 
 echo >&2 "Written out $tvk_log_collector_yaml"

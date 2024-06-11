@@ -129,7 +129,7 @@ jobs:
       uses: goreleaser/goreleaser-action@v2
       with:
         version: latest
-        args: release --snapshot --skip-publish --rm-dist
+        args: release --snapshot --skip publish --clean
 
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v1
@@ -365,7 +365,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v2
         with:
           version: latest
-          args: release --snapshot --skip-publish --rm-dist
+          args: release --snapshot --skip publish --clean
 
       - name: Ensure Required Utilities Installed for Plugin Testing
         run: make install-required-utilities
