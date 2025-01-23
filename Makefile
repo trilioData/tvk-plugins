@@ -38,10 +38,23 @@ else
 endif
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.30.0
 
-build-preflight:
+build-preflight-mac:
+ifeq ($(shell uname), Darwin)
+	./hack/skip-log-collector-mac.sh
+	goreleaser release --snapshot --skip=publish --clean
+	find . -name .goreleaser.yml -exec sed -i '' '/skip: true/d' {} +
+endif
+
+build-preflight-linux:
+ifeq ($(shell uname), Linux)
 	find . -name .goreleaser.yml -exec sed -i '/binary: log-collector/a \ \ skip: true' {} +
 	goreleaser release --snapshot --skip=publish --clean
 	find . -name .goreleaser.yml -exec sed -i '/skip: true/d' {} +
+endif
+
+build-preflight: build-preflight-mac build-preflight-linux
+
+
 
 build-cleanup:
 	./hack/build-cleanup-artifacts.sh
