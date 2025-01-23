@@ -29,9 +29,14 @@ install-required-utilities:
 	./hack/install-required-utilities.sh
 
 install: install-required-utilities
-	sudo apt-get install curl yamllint
+ifeq ($(shell uname), Darwin)
+	brew install curl yamllint goreleaser
+else
+	echo "deb [trusted=yes] https://repo.goreleaser.com/apt/ /" | sudo tee /etc/apt/sources.list.d/goreleaser.list
+	sudo apt-get update
+	sudo apt-get install curl yamllint goreleaser
+endif
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.30.0
-	curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh
 
 build-preflight:
 	find . -name .goreleaser.yml -exec sed -i '/binary: log-collector/a \ \ skip: true' {} +
