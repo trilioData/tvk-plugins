@@ -40,7 +40,7 @@ endif
 
 build-preflight:
 	find . -name .goreleaser.yml -exec sed -i '/binary: log-collector/a \ \ skip: true' {} +
-	goreleaser release --snapshot --skip-publish --rm-dist
+	goreleaser release --snapshot --skip=publish --clean
 	find . -name .goreleaser.yml -exec sed -i '/skip: true/d' {} +
 
 build-cleanup:
@@ -48,7 +48,7 @@ build-cleanup:
 
 build-log-collector:
 	find . -name .goreleaser.yml -exec sed -i '/binary: preflight/a \ \ skip: true' {} +
-	goreleaser release --snapshot --skip publish --clean
+	goreleaser release --snapshot --skip=publish --clean
 	find . -name .goreleaser.yml -exec sed -i '/skip: true/d' {} +
 
 build: build-preflight build-cleanup
