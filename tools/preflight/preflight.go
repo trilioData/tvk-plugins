@@ -246,6 +246,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		o.Logger.Errorf("Skipping volume snapshot and restore check as preflight check for SnapshotClass failed")
 	}
 
+	// Add the install namespace to perform cleanup of the cloned snapshot and pvc
 	co := &Cleanup{
 		CommonOptions: CommonOptions{
 			Kubeconfig: o.Kubeconfig,
@@ -682,11 +683,18 @@ func (o *Run) validateVolumeSnapshot(ctx context.Context, nameSuffix string, cli
 	if err != nil {
 		return err
 	}
+
 	volSnap, err := o.createSnapshotFromPVC(ctx, VolumeSnapSrcNamePrefix+nameSuffix,
 		storageVolSnapClass, prefSnapshotVer, pvc.GetName(), nameSuffix, clients)
 	if err != nil {
 		return err
 	}
+
+	//clone this snapshot to install namespace
+
+	// Create a PVC out of that snapshot
+
+	// rest of the steps run in install namespace
 
 	// create restore pod, pvc from source snapshot
 	restorePod, err := o.createRestorePodFromSnapshot(ctx, volSnap, RestorePvcNamePrefix+nameSuffix,
