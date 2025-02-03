@@ -238,7 +238,7 @@ func preflightFuncsTestcases() {
 	})
 
 	Describe("Preflight volume snapshot resources test scenarios", func() {
-
+		// TODO: shiwam Add before each to create backup and restore namespace
 		Context("When creating source pod from pvc", func() {
 			var (
 				nameSuffix string
@@ -266,7 +266,7 @@ func preflightFuncsTestcases() {
 			})
 
 			It("Should create source pod with appropriate spec fields", func() {
-				structPod := createVolumeSnapshotPodSpec(pvcKey.Name, &runOps, nameSuffix)
+				structPod := createVolumeSnapshotPodSpec(pvcKey, &runOps, nameSuffix)
 
 				// check volume fields
 				val := structPod.Spec.Volumes[0].Name
@@ -294,11 +294,11 @@ func preflightFuncsTestcases() {
 				})
 
 				// create pod from pvc
-				go func(pvcName string) {
+				go func(pvcKey types.NamespacedName) {
 					var testErr error
-					pod, testErr = runOps.createSourcePodFromPVC(ctx, nameSuffix, pvcName, testClient.ClientSet)
+					pod, testErr = runOps.createPodFromPVC(ctx, nameSuffix, pvcKey, testClient.ClientSet)
 					resultChan <- testErr
-				}(pvc.GetName())
+				}(pvcKey)
 
 				// Get the source pod from cache
 				Eventually(func() error {
@@ -324,6 +324,7 @@ func preflightFuncsTestcases() {
 		Context("When creating volume snapshot from pvc", Ordered, func() {
 
 			var (
+				//TODO: shiwam fix the tests containing volSnapKey
 				volSnapKey types.NamespacedName
 				volSnap    = &unstructured.Unstructured{}
 				vsCRDsMap  = map[string]bool{vsClassCRD: true, vsContentCRD: true, vsCRD: true}
@@ -335,10 +336,11 @@ func preflightFuncsTestcases() {
 				installVolumeSnapshotCRD(v1K8sVersion, vsCRDsMap)
 				checkVolumeSnapshotCRDExists()
 
+				// TODO: shiwam verify if this is correct
 				// create volume-snapshot on cluster
 				volSnapKey = types.NamespacedName{
 					Name:      testVolumeSnapshot,
-					Namespace: runOps.Namespace,
+					Namespace: ,
 				}
 
 				volSnap.SetGroupVersionKind(schema.GroupVersionKind{
@@ -346,14 +348,17 @@ func preflightFuncsTestcases() {
 					Version: internal.V1Version,
 					Kind:    internal.VolumeSnapshotKind,
 				})
+
+				// TODO: shiwam create backup namespace
 			})
 
 			AfterAll(func() {
 				deleteAllVolumeSnapshotCRD()
+				// TODO: shiwam delete backup namespace
 			})
 
 			It("Should have correct spec fields and metadata labels for volume-snapshot created from PVC", func() {
-				volSnap = createVolumeSnapsotSpec(volSnapKey.Name, testSnapshotClass, runOps.Namespace, internal.V1Version, testPVC, testNameSuffix)
+				volSnap = createVolumeSnapsotSpec(volSnapKey, testSnapshotClass, internal.V1Version, testPVC, testNameSuffix)
 
 				// check namespace
 				Expect(volSnap.GetNamespace()).To(Equal(runOps.Namespace))
@@ -379,7 +384,7 @@ func preflightFuncsTestcases() {
 			It("Should not return error when volume-snapshot becomes readyToUse", func() {
 				Skip("TODO - working as expected in local. Will be handled in suite refactoring.")
 				go func() {
-					_, testErr := runOps.createSnapshotFromPVC(ctx, volSnapKey.Name, testSnapshotClass,
+					_, testErr := runOps.createSnapshotFromPVC(ctx, volSnapKey.Name, volSnapKey.Namespace, testSnapshotClass,
 						internal.V1Version, testPVC, testNameSuffix, testClient)
 					resultChan <- testErr
 				}()

@@ -50,19 +50,26 @@ const (
 
 	letterBytes = "abcdefghijklmnopqrstuvwxyz"
 
-	LabelK8sPartOf                 = "app.kubernetes.io/part-of"
-	LabelK8sPartOfValue            = "k8s-triliovault"
-	LabelTrilioKey                 = "trilio"
-	LabelTvkPreflightValue         = "tvk-preflight"
-	LabelPreflightRunKey           = "preflight-run"
-	LabelK8sName                   = "app.kubernetes.io/name"
-	LabelK8sNameValue              = "k8s-triliovault"
-	SourcePodNamePrefix            = "source-pod-"
-	SourcePvcNamePrefix     string = "source-pvc-"
-	VolumeSnapSrcNamePrefix        = "snapshot-source-pvc-"
+	LabelK8sPartOf         = "app.kubernetes.io/part-of"
+	LabelK8sPartOfValue    = "k8s-triliovault"
+	LabelTrilioKey         = "trilio"
+	LabelTvkPreflightValue = "tvk-preflight"
+	LabelPreflightRunKey   = "preflight-run"
+	LabelK8sName           = "app.kubernetes.io/name"
+	LabelK8sNameValue      = "k8s-triliovault"
+
+	TestNamespacePrefix                = "preflight-test-ns-"
+	BackupNamespacePrefix              = "preflight-backup-ns-"
+	RestoreNamespacePrefix             = "preflight-restore-ns-"
+	SourcePodNamePrefix                = "source-pod-"
+	SourcePvcNamePrefix         string = "source-pvc-"
+	BackupPvcNamePrefix                = "backup-pvc-"
+	RestorePvcNamePrefix               = "restored-pvc-"
+	VolumeSnapSrcNamePrefix            = "snapshot-source-pvc-"
+	VolumeSnapBackupNamePrefix         = "snapshot-backup-pvc-"
+	VolumeSnapRestoreNamePrefix        = "snapshot-restore-pvc-"
 
 	StorageSnapshotGroup             = "snapshot.storage.k8s.io"
-	RestorePvcNamePrefix             = "restored-pvc-"
 	RestorePodNamePrefix             = "restored-pod-"
 	BusyboxContainerName             = "busybox"
 	BusyBoxRegistry                  = "quay.io/triliodata"
@@ -351,7 +358,11 @@ func createDNSPodSpec(op *Run, podNameSuffix string) *corev1.Pod {
 	} else {
 		imagePath = GcrRegistryPath
 	}
-	pod := getPodTemplate(dnsUtils+podNameSuffix, podNameSuffix, op)
+	nsName := types.NamespacedName{
+		Name:      dnsUtils + podNameSuffix,
+		Namespace: op.Namespace,
+	}
+	pod := getPodTemplate(nsName, podNameSuffix, op)
 	pod.Spec.Containers = []corev1.Container{
 		{
 			Name:            dnsContainerName,
@@ -365,9 +376,9 @@ func createDNSPodSpec(op *Run, podNameSuffix string) *corev1.Pod {
 	return pod
 }
 
-func createVolumeSnapshotPVCSpec(o *Run, pvcName, uid string) *corev1.PersistentVolumeClaim {
+func createVolumeSnapshotPVCSpec(o *Run, pvcNsName types.NamespacedName, uid string) *corev1.PersistentVolumeClaim {
 	pvc := &corev1.PersistentVolumeClaim{
-		ObjectMeta: getObjectMetaTemplate(pvcName, o.Namespace, uid),
+		ObjectMeta: getObjectMetaTemplate(pvcNsName.Name, pvcNsName.Namespace, uid),
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 			StorageClassName: &o.StorageClass,
@@ -382,14 +393,18 @@ func createVolumeSnapshotPVCSpec(o *Run, pvcName, uid string) *corev1.Persistent
 	return pvc
 }
 
-func createVolumeSnapshotPodSpec(pvcName string, op *Run, nameSuffix string) *corev1.Pod {
+func createVolumeSnapshotPodSpec(pvcNsName types.NamespacedName, op *Run, nameSuffix string) *corev1.Pod {
 	var containerImage string
 	if op.LocalRegistry != "" {
 		containerImage = op.LocalRegistry + "/" + BusyboxImageName
 	} else {
 		containerImage = BusyBoxRegistry + "/" + BusyboxImageName
 	}
-	pod := getPodTemplate(SourcePodNamePrefix+nameSuffix, nameSuffix, op)
+	nsName := types.NamespacedName{
+		Name:      SourcePodNamePrefix + nameSuffix,
+		Namespace: pvcNsName.Namespace,
+	}
+	pod := getPodTemplate(nsName, nameSuffix, op)
 	pod.Spec.Containers = []corev1.Container{
 		{
 			Name:      BusyboxContainerName,
@@ -419,7 +434,7 @@ func createVolumeSnapshotPodSpec(pvcName string, op *Run, nameSuffix string) *co
 			Name: VolMountName,
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: pvcName,
+					ClaimName: pvcNsName.Name,
 					ReadOnly:  false,
 				},
 			},
@@ -430,7 +445,7 @@ func createVolumeSnapshotPodSpec(pvcName string, op *Run, nameSuffix string) *co
 }
 
 // createVolumeSnapsotSpec creates pvc for volume snapshot
-func createVolumeSnapsotSpec(name, snapshotClass, namespace, snapVer, pvcName, uid string) *unstructured.Unstructured {
+func createVolumeSnapsotSpec(nsName types.NamespacedName, snapshotClass, snapVer, pvcName, uid string) *unstructured.Unstructured {
 	volSnap := &unstructured.Unstructured{}
 
 	volSnap.Object = map[string]interface{}{
@@ -441,8 +456,8 @@ func createVolumeSnapsotSpec(name, snapshotClass, namespace, snapVer, pvcName, u
 			},
 		},
 	}
-	volSnap.SetName(name)
-	volSnap.SetNamespace(namespace)
+	volSnap.SetName(nsName.Name)
+	volSnap.SetNamespace(nsName.Namespace)
 	volSnap.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   StorageSnapshotGroup,
 		Version: snapVer,
@@ -481,14 +496,15 @@ func createRestorePVCSpec(pvcName, dsName, uid string, o *Run) *corev1.Persisten
 }
 
 // createRestorePodSpec creates a restore pod
-func createRestorePodSpec(podName, pvcName, uid string, op *Run) *corev1.Pod {
+func createRestorePodSpec(podNameNs types.NamespacedName, pvcName, uid string, op *Run) *corev1.Pod {
 	var containerImage string
 	if op.LocalRegistry != "" {
 		containerImage = op.LocalRegistry + "/" + BusyboxImageName
 	} else {
 		containerImage = BusyBoxRegistry + "/" + BusyboxImageName
 	}
-	pod := getPodTemplate(podName, uid, op)
+
+	pod := getPodTemplate(podNameNs, uid, op)
 	pod.Spec.Containers = []corev1.Container{
 		{
 			Name:            BusyboxContainerName,
@@ -520,9 +536,9 @@ func createRestorePodSpec(podName, pvcName, uid string, op *Run) *corev1.Pod {
 	return pod
 }
 
-func getPodTemplate(name, uid string, op *Run) *corev1.Pod {
+func getPodTemplate(nsName types.NamespacedName, uid string, op *Run) *corev1.Pod {
 	pod := &corev1.Pod{
-		ObjectMeta: getObjectMetaTemplate(name, op.Namespace, uid),
+		ObjectMeta: getObjectMetaTemplate(nsName.Name, nsName.Namespace, uid),
 		Spec: corev1.PodSpec{
 			ServiceAccountName: op.ServiceAccountName,
 			NodeSelector:       op.PodSchedOps.NodeSelector,
@@ -719,7 +735,11 @@ func createPodSpecWithCapability(op *Run, podName string, capability capability)
 	} else {
 		containerImage = BusyBoxRegistry + "/" + BusyboxImageName
 	}
-	pod := getPodTemplate(podCapability+podName, podName, op)
+	nsName := types.NamespacedName{
+		Name:      podCapability + podName,
+		Namespace: op.Namespace,
+	}
+	pod := getPodTemplate(nsName, podName, op)
 	readOnlyRootFSFlag := false
 	pod.Spec.Containers = []corev1.Container{
 		{
