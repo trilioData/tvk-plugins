@@ -248,12 +248,24 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		}
 
 		o.Logger.Infoln("Checking if volume snapshot and restore is enabled in cluster")
-		err = o.validateVolumeSnapshot(ctx, resNameSuffix, kubeClient)
-		if err != nil {
-			o.Logger.Errorf("%s Preflight check for volume snapshot and restore failed :: %s\n", cross, err.Error())
-			preflightStatus = false
-		} else {
-			o.Logger.Infof("%s Preflight check for volume snapshot and restore is successful\n", check)
+
+		if o.VolSnapshotValidationScope == internal.VolSnapshotClusterScope || o.VolSnapshotValidationScope == internal.VolSnapshotAllScope {
+			err = o.validateClusterScopeVolumeSnapshot(ctx, resNameSuffix, kubeClient)
+			if err != nil {
+				o.Logger.Errorf("%s Preflight check for cluster scope volume snapshot and restore failed :: %s\n", cross, err.Error())
+				preflightStatus = false
+			} else {
+				o.Logger.Infof("%s Preflight check for cluster scope volume snapshot and restore is successful\n", check)
+			}
+		}
+		if o.VolSnapshotValidationScope == internal.VolSnapshotNamespaceScope || o.VolSnapshotValidationScope == internal.VolSnapshotAllScope {
+			err = o.validateNamespaceScopeVolumeSnapshot(ctx, resNameSuffix, kubeClient)
+			if err != nil {
+				o.Logger.Errorf("%s Preflight check for namespace scope volume snapshot and restore failed :: %s\n", cross, err.Error())
+				preflightStatus = false
+			} else {
+				o.Logger.Infof("%s Preflight check for namespace scope volume snapshot and restore is successful\n", check)
+			}
 		}
 	} else {
 		o.Logger.Errorf("Skipping volume snapshot and restore check as preflight check for SnapshotClass failed")
@@ -685,8 +697,8 @@ func (o *Run) createDNSPodOnCluster(ctx context.Context, podNameSuffix string, c
 	return pod, nil
 }
 
-// validateVolumeSnapshot checks if volume snapshot and restore is enabled in the cluster
-func (o *Run) validateVolumeSnapshot(ctx context.Context, nameSuffix string, clients ServerClients) error {
+// validateClusterScopeVolumeSnapshot checks if volume snapshot and restore is enabled in the cluster
+func (o *Run) validateClusterScopeVolumeSnapshot(ctx context.Context, nameSuffix string, clients ServerClients) error {
 	var (
 		execOp          exec.Options
 		err             error
@@ -719,6 +731,7 @@ func (o *Run) validateVolumeSnapshot(ctx context.Context, nameSuffix string, cli
 		Namespace: backupNamespace,
 		Name:      SourcePvcNamePrefix + nameSuffix,
 	}
+
 	pvc, err = o.createPVC(ctx, sourcePvcNsName, nameSuffix, clients.ClientSet)
 	if err != nil {
 		return err
@@ -741,49 +754,22 @@ func (o *Run) validateVolumeSnapshot(ctx context.Context, nameSuffix string, cli
 	}
 
 	// clone pvc in install namespace from the snapshot in backup namespace
+	dataMoverNameNs := types.NamespacedName{Name: BackupPvcNamePrefix + nameSuffix, Namespace: o.Namespace}
 	dataMoverPVCMeta := metav1.ObjectMeta{
-		Name:      BackupPvcNamePrefix + nameSuffix,
-		Namespace: o.Namespace,
+		Name:      dataMoverNameNs.Name,
+		Namespace: dataMoverNameNs.Namespace,
 		Labels:    pvc.Labels,
 	}
 
 	dataMoverSnapshotCloneName := VolumeSnapBackupNamePrefix + nameSuffix
 
-	dataMoverSnapshot, dataMoverPVC, err := o.cloneSnapshotAndPVCFromSource(ctx, snapshotNameNs, pvc.Spec, dataMoverPVCMeta, dataMoverSnapshotCloneName, clients.RuntimeClient)
+	_, dataMoverPVC, err := o.cloneSnapshotAndPVCFromSource(ctx, snapshotNameNs, pvc.Spec, dataMoverPVCMeta, dataMoverSnapshotCloneName, clients.RuntimeClient)
 	if err != nil {
 		return err
 	}
 
-	// do we need to create datamover pod in install namespace - TODO ask Himanshu
-
-	// create restore pvc and pod from the cloned snapshot in restore namespace refactor the following func
-	// create restore pod, pvc from source snapshot
-
-	// Restore pvc is in restore ns from the snapshot that exists in install namespace
-	restoreVolSnapName := VolumeSnapRestoreNamePrefix + nameSuffix
-	restorePvcMeta := metav1.ObjectMeta{
-		Name:      RestorePvcNamePrefix + nameSuffix,
-		Namespace: restoreNamespace,
-		Labels:    dataMoverPVC.Labels,
-	}
-	dataMoverSnapNsNm := types.NamespacedName{
-		Name:      dataMoverSnapshot.GetName(),
-		Namespace: dataMoverSnapshot.GetNamespace(),
-	}
-
-	// restore pvc will be created with target qcow2 file in actual tvk.
-	_, restorePVC, err := o.cloneSnapshotAndPVCFromSource(ctx, dataMoverSnapNsNm, dataMoverPVC.Spec, restorePvcMeta, restoreVolSnapName, clients.RuntimeClient)
-	if err != nil {
-		return err
-	}
-
-	// attach the restore pvc with the restore pod
-	restorePodNameNs := types.NamespacedName{
-		Namespace: restoreNamespace,
-		Name:      RestorePodNamePrefix + nameSuffix,
-	}
-
-	restorePod, err := o.createRestorePodFromPVC(ctx, restorePVC, restorePodNameNs, nameSuffix, clients.ClientSet)
+	// create a pod and attach to cloned pvc
+	podAttachedToPVC, err := o.createPodForPVC(ctx, dataMoverPVC, dataMoverNameNs, nameSuffix, clients.ClientSet)
 	if err != nil {
 		return err
 	}
@@ -794,11 +780,12 @@ func (o *Run) validateVolumeSnapshot(ctx context.Context, nameSuffix string, cli
 	//	return err
 	//}
 
+	// execInPod to verify data in cloned pvc
 	execOp = exec.Options{
-		Namespace:     restorePod.GetNamespace(),
-		Command:       execRestoreDataCheckCommand,
-		PodName:       restorePod.GetName(),
-		ContainerName: restorePod.Spec.Containers[0].Name,
+		Namespace:     podAttachedToPVC.GetNamespace(),
+		Command:       execDataCheckCommand,
+		PodName:       podAttachedToPVC.GetName(),
+		ContainerName: podAttachedToPVC.Spec.Containers[0].Name,
 		Executor:      &exec.DefaultRemoteExecutor{},
 		Config:        clients.RestConfig,
 		ClientSet:     clients.ClientSet,
@@ -807,7 +794,7 @@ func (o *Run) validateVolumeSnapshot(ctx context.Context, nameSuffix string, cli
 	if err != nil {
 		return err
 	}
-	o.Logger.Infof("Restored pod - %s has expected data\n", restorePod.GetName())
+	o.Logger.Infof("Pod attached to PVC - %s has expected data\n", podAttachedToPVC.GetName())
 
 	// remove source pod
 	//srcPodName := srcPod.GetName()
@@ -843,6 +830,10 @@ func (o *Run) validateVolumeSnapshot(ctx context.Context, nameSuffix string, cli
 	//}
 	//o.Logger.Infof("%s restored pod from volume snapshot of unmounted pv has expected data\n", check)
 
+	return nil
+}
+
+func (o *Run) validateNamespaceScopeVolumeSnapshot(ctx context.Context, nameSuffix string, kubeClient ServerClients) error {
 	return nil
 }
 
@@ -1091,8 +1082,8 @@ func (o *Run) createSnapshotFromPVC(ctx context.Context, volSnapNameNs types.Nam
 	return volSnap, err
 }
 
-func (o *Run) createRestorePodFromPVC(ctx context.Context, restorePVC *corev1.PersistentVolumeClaim, podNameNs types.NamespacedName, uid string, k8sClient *kubernetes.Clientset) (*corev1.Pod, error) {
-	restorePod := createRestorePodSpec(podNameNs, restorePVC.GetName(), uid, o)
+func (o *Run) createPodForPVC(ctx context.Context, pvc *corev1.PersistentVolumeClaim, podNameNs types.NamespacedName, uid string, k8sClient *kubernetes.Clientset) (*corev1.Pod, error) {
+	restorePod := createPodForPVCSpec(podNameNs, pvc.GetName(), uid, o)
 	return o.createPod(ctx, restorePod, k8sClient)
 
 	//restorePod, err = k8sclient.CoreV1().Pods(o.Namespace).
@@ -1157,7 +1148,7 @@ func (o *Run) createRestorePodFromPVC(ctx context.Context, restorePVC *corev1.Pe
 //		return nil, err
 //	}
 //	o.Logger.Infof("Created restore pvc - %s from volume snapshot - %s\n", restorePVC.GetName(), volSnapshot.GetName())
-//	restorePod := createRestorePodSpec(podName, restorePVC.GetName(), uid, o)
+//	restorePod := createPodForPVCSpec(podName, restorePVC.GetName(), uid, o)
 //	restorePod, err = k8slient.CoreV1().Pods(o.Namespace).
 //		Create(ctx, restorePod, metav1.CreateOptions{})
 //	if err != nil {

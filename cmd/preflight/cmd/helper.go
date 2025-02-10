@@ -131,6 +131,9 @@ func updateCommonInputsFromCLI(cmd *cobra.Command, comnOps *preflight.CommonOpti
 	if cmd.Flags().Changed(InClusterFlag) || comnOps.InCluster {
 		comnOps.InCluster = inCluster
 	}
+	if cmd.Flags().Changed(VolSnapshotValidationScopeFlag) || comnOps.VolSnapshotValidationScope == "" {
+		comnOps.VolSnapshotValidationScope = volSnapshotScope
+	}
 }
 
 // updateResReqFromCLI update the pod resource requirements from CLI

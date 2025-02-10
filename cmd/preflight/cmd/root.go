@@ -42,6 +42,7 @@ func init() {
 		internal.LogLevelFlagShorthand, internal.DefaultLogLevel, internal.LogLevelUsage)
 	rootCmd.PersistentFlags().StringVarP(&inputFileName, ConfigFileFlag, configFlagShorthand, "", configFileUsage)
 	rootCmd.PersistentFlags().BoolVarP(&inCluster, InClusterFlag, inClusterFlagShorthand, false, inClusterUsage)
+	rootCmd.PersistentFlags().StringVarP(&volSnapshotScope, VolSnapshotValidationScopeFlag, volSnapshotValidationScopeShorthand, internal.VolSnapshotNamespaceScope, volSnapshotValidationScopeUsage)
 
 	logger = logrus.New()
 	logger.SetFormatter(&logrus.TextFormatter{ForceColors: true})

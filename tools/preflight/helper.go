@@ -125,7 +125,7 @@ var (
 		fmt.Sprintf("echo '%s' > %s && sync %s && sleep 3000",
 			VolSnapPodFileData, VolSnapPodFilePath, VolSnapPodFilePath),
 	}
-	execRestoreDataCheckCommand = []string{
+	execDataCheckCommand = []string{
 		"/bin/sh",
 		"-c",
 		fmt.Sprintf("dat=$(cat %q); echo \"${dat}\"; if [[ \"${dat}\" == %q ]]; then exit 0; else exit 1; fi",
@@ -151,11 +151,12 @@ type ServerClients struct {
 }
 
 type CommonOptions struct {
-	Kubeconfig string `yaml:"kubeconfig,omitempty"`
-	Namespace  string `yaml:"namespace,omitempty"`
-	LogLevel   string `yaml:"logLevel,omitempty"`
-	InCluster  bool   `yaml:"inCluster,omitempty"`
-	Logger     *logrus.Logger
+	Kubeconfig                 string `yaml:"kubeconfig,omitempty"`
+	Namespace                  string `yaml:"namespace,omitempty"`
+	LogLevel                   string `yaml:"logLevel,omitempty"`
+	InCluster                  bool   `yaml:"inCluster,omitempty"`
+	VolSnapshotValidationScope string `yaml:"volSnapshotValidationScope,omitempty"`
+	Logger                     *logrus.Logger
 }
 
 type capability struct {
@@ -169,6 +170,7 @@ func (co *CommonOptions) logCommonOptions() {
 	co.Logger.Infof("KUBECONFIG-PATH=\"%s\"", co.Kubeconfig)
 	co.Logger.Infof("NAMESPACE=\"%s\"", co.Namespace)
 	co.Logger.Infof("INCLUSTER=\"%t\"", co.InCluster)
+	co.Logger.Infof("VOLUME-SNAPSHOT-VALIDATION-SCOPE=\"%s\"", co.VolSnapshotValidationScope)
 }
 
 type podSchedulingOptions struct {
@@ -422,7 +424,7 @@ func createVolumeSnapshotPodSpec(pvcNsName types.NamespacedName, op *Run, nameSu
 				InitialDelaySeconds: 30,
 				ProbeHandler: corev1.ProbeHandler{
 					Exec: &corev1.ExecAction{
-						Command: execRestoreDataCheckCommand,
+						Command: execDataCheckCommand,
 					},
 				},
 			},
@@ -495,8 +497,8 @@ func createRestorePVCSpec(pvcName, dsName, uid string, o *Run) *corev1.Persisten
 	return pvc
 }
 
-// createRestorePodSpec creates a restore pod
-func createRestorePodSpec(podNameNs types.NamespacedName, pvcName, uid string, op *Run) *corev1.Pod {
+// createPodForPVCSpec creates a pod which is attached to given PVC
+func createPodForPVCSpec(podNameNs types.NamespacedName, pvcName, uid string, op *Run) *corev1.Pod {
 	var containerImage string
 	if op.LocalRegistry != "" {
 		containerImage = op.LocalRegistry + "/" + BusyboxImageName

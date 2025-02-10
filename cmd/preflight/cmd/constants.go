@@ -35,6 +35,10 @@ const (
 	inClusterUsage         = "Skip kubectl and helm binary check if running inside a container. By-default it is false"
 	inClusterFlagShorthand = "i"
 
+	VolSnapshotValidationScopeFlag      = "vol-snapshot-scope"
+	volSnapshotValidationScopeUsage     = "Specify the scope of volume snapshot validation. Possible values are 'cluster' / 'namespace' / 'all'"
+	volSnapshotValidationScopeShorthand = "s"
+
 	PodLimitFlag  = "limits"
 	podLimitUsage = "Pod memory and cpu resource limits for DNS and volume snapshot preflight check"
 
@@ -80,4 +84,5 @@ var (
 	nodeSelector      string
 	cleanupUID        string
 	inCluster         bool
+	volSnapshotScope  string
 )
