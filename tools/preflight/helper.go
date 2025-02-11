@@ -151,12 +151,12 @@ type ServerClients struct {
 }
 
 type CommonOptions struct {
-	Kubeconfig                 string `yaml:"kubeconfig,omitempty"`
-	Namespace                  string `yaml:"namespace,omitempty"`
-	LogLevel                   string `yaml:"logLevel,omitempty"`
-	InCluster                  bool   `yaml:"inCluster,omitempty"`
-	VolSnapshotValidationScope string `yaml:"volSnapshotValidationScope,omitempty"`
-	Logger                     *logrus.Logger
+	Kubeconfig string `yaml:"kubeconfig,omitempty"`
+	Namespace  string `yaml:"namespace,omitempty"`
+	LogLevel   string `yaml:"logLevel,omitempty"`
+	InCluster  bool   `yaml:"inCluster,omitempty"`
+	Scope      string `yaml:"scope,omitempty"`
+	Logger     *logrus.Logger
 }
 
 type capability struct {
@@ -170,7 +170,7 @@ func (co *CommonOptions) logCommonOptions() {
 	co.Logger.Infof("KUBECONFIG-PATH=\"%s\"", co.Kubeconfig)
 	co.Logger.Infof("NAMESPACE=\"%s\"", co.Namespace)
 	co.Logger.Infof("INCLUSTER=\"%t\"", co.InCluster)
-	co.Logger.Infof("VOLUME-SNAPSHOT-VALIDATION-SCOPE=\"%s\"", co.VolSnapshotValidationScope)
+	co.Logger.Infof("SCOPE=\"%s\"", co.Scope)
 }
 
 type podSchedulingOptions struct {

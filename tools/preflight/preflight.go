@@ -249,7 +249,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 
 		o.Logger.Infoln("Checking if volume snapshot and restore is enabled in cluster")
 
-		if o.VolSnapshotValidationScope == internal.VolSnapshotClusterScope || o.VolSnapshotValidationScope == internal.VolSnapshotAllScope {
+		if o.Scope == internal.ClusterScope {
 			err = o.validateClusterScopeVolumeSnapshot(ctx, resNameSuffix, kubeClient)
 			if err != nil {
 				o.Logger.Errorf("%s Preflight check for cluster scope volume snapshot and restore failed :: %s\n", cross, err.Error())
@@ -258,7 +258,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 				o.Logger.Infof("%s Preflight check for cluster scope volume snapshot and restore is successful\n", check)
 			}
 		}
-		if o.VolSnapshotValidationScope == internal.VolSnapshotNamespaceScope || o.VolSnapshotValidationScope == internal.VolSnapshotAllScope {
+		if o.Scope == internal.NamespaceScope {
 			err = o.validateNamespaceScopeVolumeSnapshot(ctx, resNameSuffix, kubeClient)
 			if err != nil {
 				o.Logger.Errorf("%s Preflight check for namespace scope volume snapshot and restore failed :: %s\n", cross, err.Error())

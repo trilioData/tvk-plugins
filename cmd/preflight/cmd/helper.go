@@ -131,8 +131,8 @@ func updateCommonInputsFromCLI(cmd *cobra.Command, comnOps *preflight.CommonOpti
 	if cmd.Flags().Changed(InClusterFlag) || comnOps.InCluster {
 		comnOps.InCluster = inCluster
 	}
-	if cmd.Flags().Changed(VolSnapshotValidationScopeFlag) || comnOps.VolSnapshotValidationScope == "" {
-		comnOps.VolSnapshotValidationScope = volSnapshotScope
+	if cmd.Flags().Changed(ScopeFlag) || comnOps.Scope == "" {
+		comnOps.Scope = scope
 	}
 }
 
