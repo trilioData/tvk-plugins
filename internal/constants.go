@@ -48,7 +48,6 @@ const (
 	DefaultNs                    = "default"
 	NamespaceScope               = "namespace"
 	ClusterScope                 = "cluster"
-	VolSnapshotAllScope          = "all"
 	InstallNamespace             = "INSTALL_NAMESPACE"
 	OcpAPIVersion                = "security.openshift.io/v1"
 	StorageClassKind             = "StorageClass"

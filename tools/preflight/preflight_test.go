@@ -265,7 +265,7 @@ func preflightFuncsTestcases() {
 			})
 
 			It("Should create source pod with appropriate spec fields", func() {
-				structPod := createVolumeSnapshotPodSpec(pvcKey, &runOps, nameSuffix)
+				structPod := createPodWithPVCSpec(pvcKey, &runOps, nameSuffix)
 
 				// check volume fields
 				val := structPod.Spec.Volumes[0].Name
@@ -295,7 +295,7 @@ func preflightFuncsTestcases() {
 				// create pod from pvc
 				go func(pvcKey types.NamespacedName) {
 					var testErr error
-					pod, testErr = runOps.createPodFromPVC(ctx, nameSuffix, pvcKey, testClient.ClientSet)
+					pod, testErr = runOps.createPodAttachedWithPVC(ctx, nameSuffix, pvcKey, testClient.ClientSet)
 					resultChan <- testErr
 				}(pvcKey)
 
@@ -323,7 +323,6 @@ func preflightFuncsTestcases() {
 		Context("When creating volume snapshot from pvc", Ordered, func() {
 
 			var (
-				//TODO: shiwam fix the tests containing volSnapKey
 				volSnapKey types.NamespacedName
 				volSnap    = &unstructured.Unstructured{}
 				vsCRDsMap  = map[string]bool{vsClassCRD: true, vsContentCRD: true, vsCRD: true}

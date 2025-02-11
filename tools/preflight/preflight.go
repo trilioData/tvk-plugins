@@ -737,7 +737,7 @@ func (o *Run) validateClusterScopeVolumeSnapshot(ctx context.Context, nameSuffix
 		return err
 	}
 	o.Logger.Infof("Created source pvc - %s", pvc.GetName())
-	_, err = o.createPodFromPVC(ctx, nameSuffix, sourcePvcNsName, clients.ClientSet)
+	_, err = o.createPodAttachedWithPVC(ctx, nameSuffix, sourcePvcNsName, clients.ClientSet)
 	if err != nil {
 		return err
 	}
@@ -795,40 +795,6 @@ func (o *Run) validateClusterScopeVolumeSnapshot(ctx context.Context, nameSuffix
 		return err
 	}
 	o.Logger.Infof("Pod attached to PVC - %s has expected data\n", podAttachedToPVC.GetName())
-
-	// remove source pod
-	//srcPodName := srcPod.GetName()
-	//srcPod, err = clients.ClientSet.CoreV1().Pods(srcPod.GetNamespace()).Get(ctx, srcPod.GetName(), metav1.GetOptions{})
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//o.Logger.Infof("Deleting source pod - %s\n", srcPod.GetName())
-	//err = deleteK8sResource(ctx, srcPod, clients.RuntimeClient)
-	//if err != nil {
-	//	return err
-	//}
-	//o.Logger.Infof("Deleted source pod - %s\n", srcPodName)
-	//
-	//// create unmounted pod, pvc and  snapshot from source pvc
-	//unmountedVolSnapSrc, err := o.createSnapshotFromPVC(ctx, UnmountedVolumeSnapSrcNamePrefix+nameSuffix,
-	//	o.BackupNamespace, storageVolSnapClass, prefSnapshotVer, pvc.GetName(), nameSuffix, clients)
-	//if err != nil {
-	//	return err
-	//}
-	//unmountedPodSpec, err := o.createRestorePodFromSnapshot(
-	//	ctx, unmountedVolSnapSrc, UnmountedRestorePvcNamePrefix+nameSuffix,
-	//	UnmountedRestorePodNamePrefix+nameSuffix, nameSuffix, clients.ClientSet)
-	//if err != nil {
-	//	return err
-	//}
-	//execOp.PodName = unmountedPodSpec.GetName()
-	//execOp.ContainerName = unmountedPodSpec.Spec.Containers[0].Name
-	//err = execInPod(&execOp, o.Logger)
-	//if err != nil {
-	//	return err
-	//}
-	//o.Logger.Infof("%s restored pod from volume snapshot of unmounted pv has expected data\n", check)
 
 	return nil
 }
@@ -1000,10 +966,10 @@ func (o *Run) createPVC(ctx context.Context, nsName types.NamespacedName,
 	return pvc, nil
 }
 
-// createPodFromPVC creates pod from pvc for volume snapshot checks
-func (o *Run) createPodFromPVC(ctx context.Context, nameSuffix string, pvcNsName types.NamespacedName,
+// createPodAttachedWithPVC creates pod from pvc for volume snapshot checks
+func (o *Run) createPodAttachedWithPVC(ctx context.Context, nameSuffix string, pvcNsName types.NamespacedName,
 	k8sClient *kubernetes.Clientset) (pod *corev1.Pod, err error) {
-	pod = createVolumeSnapshotPodSpec(pvcNsName, o, nameSuffix)
+	pod = createPodWithPVCSpec(pvcNsName, o, nameSuffix)
 	return o.createPod(ctx, pod, k8sClient)
 	//pod, err = k8sClient.CoreV1().Pods(pvcNsName.Namespace).Create(ctx, pod, metav1.CreateOptions{})
 	//if err != nil {
