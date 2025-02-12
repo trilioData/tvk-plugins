@@ -831,7 +831,7 @@ func (o *Run) cloneSnapshotAndPVCFromSource(ctx context.Context, sourceSnapshotN
 	}
 
 	//clone this snapshot to destination namespace
-	clonedSnapshot, err := o.cloneSnapshotAndContent(ctx, vs, vsc, cloneVolSnapMeta, client)
+	clonedSnapshot, err := o.cloneSnapshotAndContent(ctx, vsc, cloneVolSnapMeta, client)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -852,7 +852,7 @@ func (o *Run) cloneSnapshotAndPVCFromSource(ctx context.Context, sourceSnapshotN
 	return clonedSnapshot, clonePvc, nil
 }
 
-func (o *Run) cloneSnapshotAndContent(ctx context.Context, srcVolSnap *v1.VolumeSnapshot, srcVolSnapContent *v1.VolumeSnapshotContent, cloneVolSnapMeta metav1.ObjectMeta,
+func (o *Run) cloneSnapshotAndContent(ctx context.Context, srcVolSnapContent *v1.VolumeSnapshotContent, cloneVolSnapMeta metav1.ObjectMeta,
 	client client.Client) (*v1.VolumeSnapshot, error) {
 
 	tempVolSnapCont := v1.VolumeSnapshotContent{
@@ -969,7 +969,7 @@ func (o *Run) createPVC(ctx context.Context, nsName types.NamespacedName,
 // createPodAttachedWithPVC creates pod from pvc for volume snapshot checks
 func (o *Run) createPodAttachedWithPVC(ctx context.Context, nameSuffix string, pvcNsName types.NamespacedName,
 	k8sClient *kubernetes.Clientset) (pod *corev1.Pod, err error) {
-	pod = createPodWithPVCSpec(pvcNsName, o, nameSuffix)
+	pod = createPodSpecWithPVC(pvcNsName, o, nameSuffix)
 	return o.createPod(ctx, pod, k8sClient)
 	//pod, err = k8sClient.CoreV1().Pods(pvcNsName.Namespace).Create(ctx, pod, metav1.CreateOptions{})
 	//if err != nil {

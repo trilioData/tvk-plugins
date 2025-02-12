@@ -2,10 +2,10 @@ package preflight
 
 import (
 	"fmt"
+	v1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -237,35 +237,63 @@ func preflightFuncsTestcases() {
 		})
 	})
 
-	Describe("Preflight volume snapshot resources test scenarios", func() {
-		Context("When creating source pod from pvc", func() {
+	Describe("Preflight volume snapshot resources test scenarios in namespace scope", Ordered, func() {
+		var (
+			err       error
+			pvc       = &corev1.PersistentVolumeClaim{}
+			pvcKey    types.NamespacedName
+			vsCRDsMap = map[string]bool{vsClassCRD: true, vsContentCRD: true, vsCRD: true}
+		)
+
+		BeforeAll(func() {
+			// Install the volume snapshot CRDs
+			installVolumeSnapshotCRD(v1K8sVersion, vsCRDsMap)
+			checkVolumeSnapshotCRDExists()
+
+			pvcKey = types.NamespacedName{
+				Name:      testPVC + "-" + internal.GenerateRandomString(6, false),
+				Namespace: installNs,
+			}
+
+			// create pvc in bound state
+			err = createTestPVC(pvcKey)
+			Expect(err).To(BeNil())
+			Eventually(func() error {
+				return testClient.RuntimeClient.Get(ctx, pvcKey, pvc)
+			}, timeout, interval).Should(BeNil())
+
+			// Bind the PVC
+			pvc.Status.Phase = corev1.ClaimBound
+			Expect(testClient.RuntimeClient.Status().Update(ctx, pvc)).To(BeNil())
+			Eventually(func() bool {
+				Expect(testClient.RuntimeClient.Get(ctx, pvcKey, pvc)).To(BeNil())
+				return pvc.Status.Phase == corev1.ClaimBound
+			})
+		})
+
+		AfterAll(func() {
+			deleteTestPVC(pvcKey)
+			deleteAllVolumeSnapshotCRD()
+		})
+
+		Context("When creating source pod from pvc", Ordered, func() {
 			var (
 				nameSuffix string
-				err        error
-				pvc        = &corev1.PersistentVolumeClaim{}
 				pod        = &corev1.Pod{}
-				pvcKey     types.NamespacedName
 				podKey     types.NamespacedName
 				resultChan = make(chan error, 1)
-				once       sync.Once
 			)
 
-			BeforeEach(func() {
-				once.Do(func() {
-					nameSuffix, err = CreateResourceNameSuffix()
-					pvcKey = types.NamespacedName{
-						Name:      testPVC + "-" + internal.GenerateRandomString(6, false),
-						Namespace: installNs,
-					}
-					podKey = types.NamespacedName{
-						Name:      SourcePodNamePrefix + nameSuffix,
-						Namespace: installNs,
-					}
-				})
+			BeforeAll(func() {
+				nameSuffix, err = CreateResourceNameSuffix()
+				podKey = types.NamespacedName{
+					Name:      SourcePodNamePrefix + nameSuffix,
+					Namespace: installNs,
+				}
 			})
 
 			It("Should create source pod with appropriate spec fields", func() {
-				structPod := createPodWithPVCSpec(pvcKey, &runOps, nameSuffix)
+				structPod := createPodSpecWithPVC(pvcKey, &runOps, nameSuffix)
 
 				// check volume fields
 				val := structPod.Spec.Volumes[0].Name
@@ -277,20 +305,6 @@ func preflightFuncsTestcases() {
 			})
 
 			It("Should create source pod from pvc in bound state", func() {
-				// create pvc in bound state
-				err = createTestPVC(pvcKey)
-				Expect(err).To(BeNil())
-				Eventually(func() error {
-					return testClient.RuntimeClient.Get(ctx, pvcKey, pvc)
-				}, timeout, interval).Should(BeNil())
-
-				// Bind the PVC
-				pvc.Status.Phase = corev1.ClaimBound
-				Expect(testClient.RuntimeClient.Status().Update(ctx, pvc)).To(BeNil())
-				Eventually(func() bool {
-					Expect(testClient.RuntimeClient.Get(ctx, pvcKey, pvc)).To(BeNil())
-					return pvc.Status.Phase == corev1.ClaimBound
-				})
 
 				// create pod from pvc
 				go func(pvcKey types.NamespacedName) {
@@ -325,21 +339,20 @@ func preflightFuncsTestcases() {
 			var (
 				volSnapKey types.NamespacedName
 				volSnap    = &unstructured.Unstructured{}
-				vsCRDsMap  = map[string]bool{vsClassCRD: true, vsContentCRD: true, vsCRD: true}
+				//vsCRDsMap  = map[string]bool{vsClassCRD: true, vsContentCRD: true, vsCRD: true}
 				resultChan = make(chan error, 1)
-				namespace  = BackupNamespacePrefix + testNameSuffix
 			)
 
 			BeforeAll(func() {
 				// Install the volume snapshot CRDs
-				installVolumeSnapshotCRD(v1K8sVersion, vsCRDsMap)
-				checkVolumeSnapshotCRDExists()
+				//installVolumeSnapshotCRD(v1K8sVersion, vsCRDsMap)
+				//checkVolumeSnapshotCRDExists()
 
 				// TODO: shiwam verify if this is correct
 				// create volume-snapshot on cluster
 				volSnapKey = types.NamespacedName{
 					Name:      testVolumeSnapshot,
-					Namespace: namespace,
+					Namespace: installNs,
 				}
 
 				volSnap.SetGroupVersionKind(schema.GroupVersionKind{
@@ -348,12 +361,13 @@ func preflightFuncsTestcases() {
 					Kind:    internal.VolumeSnapshotKind,
 				})
 
-				Expect(runOps.createNamespace(ctx, namespace, testNameSuffix, testClient.ClientSet)).To(BeNil())
+				//Expect(runOps.createNamespace(ctx, namespace, testNameSuffix, testClient.ClientSet)).To(BeNil())
 			})
 
 			AfterAll(func() {
-				deleteAllVolumeSnapshotCRD()
-				Expect(runOps.cleanupNamespace(ctx, namespace, testClient.ClientSet)).To(BeNil())
+				Expect(deleteK8sResource(ctx, volSnap, testClient.RuntimeClient)).To(BeNil())
+				// deleteAllVolumeSnapshotCRD()
+				//Expect(runOps.cleanupNamespace(ctx, namespace, testClient.ClientSet)).To(BeNil())
 			})
 
 			It("Should have correct spec fields and metadata labels for volume-snapshot created from PVC", func() {
@@ -414,28 +428,15 @@ func preflightFuncsTestcases() {
 
 		Context("When creating restore pod from volume snapshot", Ordered, func() {
 			var (
-				volSnapKey    types.NamespacedName
 				restorePVCKey types.NamespacedName
 				podKey        types.NamespacedName
-				volSnap       = &unstructured.Unstructured{}
 				pvc           = &corev1.PersistentVolumeClaim{}
-				vsCRDsMap     = map[string]bool{vsClassCRD: true, vsContentCRD: true, vsCRD: true}
-			)
 
-			BeforeAll(func() {
-				installVolumeSnapshotCRD(v1K8sVersion, vsCRDsMap)
-				checkVolumeSnapshotCRDExists()
-
-				volSnap.SetGroupVersionKind(schema.GroupVersionKind{
-					Group:   StorageSnapshotGroup,
-					Version: internal.V1Version,
-					Kind:    internal.VolumeSnapshotKind,
-				})
 				volSnapKey = types.NamespacedName{
 					Name:      testVolumeSnapshot,
 					Namespace: installNs,
 				}
-			})
+			)
 
 			BeforeEach(func() {
 				restorePVCKey = types.NamespacedName{
@@ -446,10 +447,6 @@ func preflightFuncsTestcases() {
 					Name:      testPodName + "-" + internal.GenerateRandomString(6, false),
 					Namespace: installNs,
 				}
-			})
-
-			AfterAll(func() {
-				deleteAllVolumeSnapshotCRD()
 			})
 
 			It("Should create pvc for pod with volume snapshot as its data-source", func() {
@@ -471,6 +468,166 @@ func preflightFuncsTestcases() {
 				Expect(pod.Spec.Volumes[0].PersistentVolumeClaim.ClaimName).Should(Equal(restorePVCKey.Name))
 
 				verifyTVKResourceLabels(pod, testNameSuffix)
+			})
+		})
+	})
+
+	Describe("Preflight volume snapshot resources test scenarios in cluster scope", Ordered, func() {
+		var (
+			vsCRDsMap       = map[string]bool{vsClassCRD: true, vsContentCRD: true, vsCRD: true}
+			backupNamespace = BackupNamespacePrefix + testNameSuffix
+			pvcName         = testPVC + "-" + testNameSuffix
+			pvcKey          = types.NamespacedName{
+				Name:      pvcName,
+				Namespace: backupNamespace,
+			}
+			pvc           = &corev1.PersistentVolumeClaim{}
+			sourcePodName = SourcePodNamePrefix + testNameSuffix
+			sourcePodKey  = types.NamespacedName{
+				Name:      sourcePodName,
+				Namespace: backupNamespace,
+			}
+			pod        = &corev1.Pod{}
+			resultChan = make(chan error, 1)
+			err        error
+			volSnap    = &unstructured.Unstructured{}
+			volSnapKey = types.NamespacedName{
+				Name:      testVolumeSnapshot,
+				Namespace: backupNamespace,
+			}
+
+			volSnapContentKey = types.NamespacedName{
+				Name:      testVolumeSnapshot + "-content",
+				Namespace: backupNamespace,
+			}
+			volSnapContent = &unstructured.Unstructured{}
+			cloneVolSnap   = &v1.VolumeSnapshot{}
+			clonePvc       = &corev1.PersistentVolumeClaim{}
+		)
+
+		BeforeAll(func() {
+			installVolumeSnapshotCRD(v1K8sVersion, vsCRDsMap)
+			checkVolumeSnapshotCRDExists()
+			Expect(runOps.createNamespace(ctx, backupNamespace, testNameSuffix, testClient.ClientSet)).To(BeNil())
+
+			// create pvc in bound state
+			err = createTestPVC(pvcKey)
+			Expect(err).To(BeNil())
+			Eventually(func() error {
+				return testClient.RuntimeClient.Get(ctx, pvcKey, pvc)
+			}, timeout, interval).Should(BeNil())
+
+			// Bind the PVC
+			pvc.Status.Phase = corev1.ClaimBound
+			Expect(testClient.RuntimeClient.Status().Update(ctx, pvc)).To(BeNil())
+			Eventually(func() bool {
+				Expect(testClient.RuntimeClient.Get(ctx, pvcKey, pvc)).To(BeNil())
+				return pvc.Status.Phase == corev1.ClaimBound
+			})
+
+			go func(pvcKey types.NamespacedName) {
+				var testErr error
+				pod, testErr = runOps.createPodAttachedWithPVC(ctx, testNameSuffix, pvcKey, testClient.ClientSet)
+				resultChan <- testErr
+			}(pvcKey)
+
+			// Get the source pod from cache
+			Eventually(func() error {
+				return testClient.RuntimeClient.Get(ctx, sourcePodKey, pod)
+			}, timeout, interval).Should(BeNil())
+
+			// Update the status of pod to ready
+			Expect(testClient.RuntimeClient.Get(ctx, sourcePodKey, pod)).To(BeNil())
+			pod.Status.Conditions = append(pod.Status.Conditions, corev1.PodCondition{
+				Type:               corev1.PodReady,
+				Status:             corev1.ConditionTrue,
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+			})
+			Expect(testClient.RuntimeClient.Status().Update(ctx, pod)).To(BeNil())
+
+			Expect(<-resultChan).To(BeNil())
+
+			volSnap.SetGroupVersionKind(schema.GroupVersionKind{
+				Group:   StorageSnapshotGroup,
+				Version: internal.V1Version,
+				Kind:    internal.VolumeSnapshotKind,
+			})
+			volSnap.SetNamespace(volSnapKey.Namespace)
+			volSnap.SetName(volSnapKey.Name)
+
+			volSnapContent.SetGroupVersionKind(schema.GroupVersionKind{
+				Group:   StorageSnapshotGroup,
+				Version: internal.V1Version,
+				Kind:    internal.VolumeSnapshotContentKind,
+			})
+
+			// create volume-snapshot on cluster
+			go func() {
+				_, testErr := runOps.createSnapshotFromPVC(ctx, volSnapKey, testSnapshotClass,
+					internal.V1Version, testPVC, testNameSuffix, testClient)
+				resultChan <- testErr
+			}()
+			Eventually(func() error {
+				return testClient.RuntimeClient.Get(ctx, volSnapKey, volSnap)
+			}, timeout, interval).Should(BeNil())
+
+			// create vol snap content
+			Expect(createTestVolSnapContent(volSnapContentKey, volSnapKey)).To(BeNil())
+			Expect(testClient.RuntimeClient.Get(ctx, volSnapContentKey, volSnapContent)).To(BeNil())
+
+			Expect(unstructured.SetNestedField(volSnapContent.Object, testSnapshotHandle, "status", "snapshotHandle")).To(BeNil())
+			Expect(testClient.RuntimeClient.Status().Update(ctx, volSnapContent)).To(BeNil())
+
+			Expect(func() string {
+				Expect(testClient.RuntimeClient.Get(ctx, volSnapContentKey, volSnapContent)).To(BeNil())
+				snapshotHandle, found, err := unstructured.NestedString(volSnapContent.Object, "status", "snapshotHandle")
+				Expect(found).To(BeTrue())
+				Expect(err).To(BeNil())
+				return snapshotHandle
+			}()).Should(Equal(testSnapshotHandle))
+
+			Expect(unstructured.SetNestedField(volSnap.Object, true, "status", "readyToUse")).To(BeNil())
+			Expect(unstructured.SetNestedField(volSnap.Object, volSnapContentKey.Name, "status", "boundVolumeSnapshotContentName")).To(BeNil())
+
+			Expect(testClient.RuntimeClient.Status().Update(ctx, volSnap)).To(BeNil())
+
+			// volume-snapshot should be ready-to-use
+			Eventually(func() bool {
+				Expect(testClient.RuntimeClient.Get(ctx, volSnapKey, volSnap)).To(BeNil())
+				ready, found, err := unstructured.NestedBool(volSnap.Object, "status", "readyToUse")
+				Expect(found).To(BeTrue())
+				Expect(err).To(BeNil())
+				return ready
+			}, timeout, interval).Should(BeTrue())
+
+			// successfully complete execution of func
+			Expect(<-resultChan).To(BeNil())
+
+		})
+
+		AfterAll(func() {
+			Expect(deleteK8sResource(ctx, volSnap, testClient.RuntimeClient)).To(BeNil())
+			Expect(deleteK8sResource(ctx, volSnapContent, testClient.RuntimeClient)).To(BeNil())
+			Expect(deleteK8sResource(ctx, pvc, testClient.RuntimeClient)).To(BeNil())
+			deleteTestPod(sourcePodKey)
+			Expect(runOps.cleanupNamespace(ctx, backupNamespace, testClient.ClientSet)).To(BeNil())
+			deleteAllVolumeSnapshotCRD()
+		})
+
+		Context("When cloning volume snapshot and pvc from source volume snapshot", func() {
+			It("Should successfully clone snapshot and PVC from source", func() {
+				// create volume snapshot
+
+				// create volume snapshot content
+				clonePvcMeta := metav1.ObjectMeta{
+					Name:      pvcName + "-clone",
+					Namespace: installNs,
+				}
+				cloneVolSnapName := testVolumeSnapshot + "-clone"
+				cloneVolSnap, clonePvc, err = runOps.cloneSnapshotAndPVCFromSource(ctx, volSnapKey, pvc.Spec, clonePvcMeta, cloneVolSnapName, testClient.RuntimeClient)
+				Expect(err).To(BeNil())
+				Expect(deleteK8sResource(ctx, cloneVolSnap, testClient.RuntimeClient)).To(BeNil())
+				Expect(deleteK8sResource(ctx, clonePvc, testClient.RuntimeClient)).To(BeNil())
 			})
 		})
 	})

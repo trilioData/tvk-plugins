@@ -74,6 +74,45 @@ func createTestPVC(pvcKey types.NamespacedName) error {
 	return testClient.RuntimeClient.Create(ctx, pvc)
 }
 
+func createTestVolSnapContent(volSnapContentKey, volSnapKey types.NamespacedName) error {
+	vsc := &unstructured.Unstructured{}
+	vsc.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   StorageSnapshotGroup,
+		Version: internal.V1Version,
+		Kind:    internal.VolumeSnapshotContentKind,
+	})
+	vsc.SetName(volSnapContentKey.Name)
+	vsc.SetNamespace(volSnapContentKey.Namespace)
+	Expect(unstructured.SetNestedField(vsc.Object, testSnapshotClass, "spec", "volumeSnapshotClassName")).To(BeNil())
+	Expect(unstructured.SetNestedField(vsc.Object, internal.VolumeSnapshotContentRetainDeletionPolicy, "spec", "deletionPolicy")).To(BeNil())
+	Expect(unstructured.SetNestedField(vsc.Object, "csi.example.com", "spec", "driver")).To(BeNil())
+	Expect(unstructured.SetNestedMap(vsc.Object, map[string]interface{}{
+		"name":      volSnapKey.Name,
+		"namespace": volSnapKey.Namespace,
+	}, "spec", "volumeSnapshotRef")).To(BeNil())
+	Expect(unstructured.SetNestedField(vsc.Object, testVolumeHandle, "spec", "source", "volumeHandle")).To(BeNil())
+	//vsc := &vs1.VolumeSnapshotContent{
+	//	ObjectMeta: metav1.ObjectMeta{
+	//		Name:      volSnapContentKey.Name,
+	//		Namespace: volSnapContentKey.Namespace,
+	//	},
+	//	Spec: vs1.VolumeSnapshotContentSpec{
+	//		VolumeSnapshotClassName: pointer.String(testSnapshotClass),
+	//		DeletionPolicy:          vs1.VolumeSnapshotContentRetain,
+	//		Source: vs1.VolumeSnapshotContentSource{
+	//			SnapshotHandle: pointer.String(testSnapshotHandle),
+	//		},
+	//	},
+	//}
+	return testClient.RuntimeClient.Create(ctx, vsc)
+}
+
+func deleteTestPVC(pvcKey types.NamespacedName) {
+	pvc := &corev1.PersistentVolumeClaim{}
+	Expect(testClient.RuntimeClient.Get(ctx, pvcKey, pvc)).To(BeNil())
+	Expect(testClient.RuntimeClient.Delete(ctx, pvc)).To(BeNil())
+}
+
 // func verifyTVKResourceLabels(obj *unstructured.Unstructured, nameSuffix string) {
 func verifyTVKResourceLabels(obj client.Object, nameSuffix string) {
 	labelsMap := obj.GetLabels()

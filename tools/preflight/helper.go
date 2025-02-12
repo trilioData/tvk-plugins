@@ -395,7 +395,7 @@ func createVolumeSnapshotPVCSpec(o *Run, pvcNsName types.NamespacedName, uid str
 	return pvc
 }
 
-func createPodWithPVCSpec(pvcNsName types.NamespacedName, op *Run, nameSuffix string) *corev1.Pod {
+func createPodSpecWithPVC(pvcNsName types.NamespacedName, op *Run, nameSuffix string) *corev1.Pod {
 	var containerImage string
 	if op.LocalRegistry != "" {
 		containerImage = op.LocalRegistry + "/" + BusyboxImageName
