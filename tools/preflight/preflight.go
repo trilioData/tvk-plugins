@@ -798,8 +798,13 @@ func (o *Run) validateNamespaceScopeVolumeSnapshot(_ context.Context, _ string, 
 	return nil
 }
 
-func (o *Run) cloneSnapshotAndPVCFromSource(ctx context.Context, sourceSnapshotNsNm types.NamespacedName,
-	sourcePVCSpec *corev1.PersistentVolumeClaimSpec, clonePvcMeta *metav1.ObjectMeta, cloneVolSnapName string, k8sClient client.Client) (*snapshotv1.VolumeSnapshot, *corev1.PersistentVolumeClaim, error) {
+func (o *Run) cloneSnapshotAndPVCFromSource(
+	ctx context.Context,
+	sourceSnapshotNsNm types.NamespacedName,
+	sourcePVCSpec *corev1.PersistentVolumeClaimSpec,
+	clonePvcMeta *metav1.ObjectMeta,
+	cloneVolSnapName string,
+	k8sClient client.Client) (*snapshotv1.VolumeSnapshot, *corev1.PersistentVolumeClaim, error) {
 	// Get the snapshot and snapshot content
 	vs, vsc, err := o.getVolumeSnapshotAndContent(ctx, sourceSnapshotNsNm, k8sClient)
 	if err != nil {
@@ -850,7 +855,9 @@ func (o *Run) cloneSnapshotAndPVCFromSource(ctx context.Context, sourceSnapshotN
 	return clonedSnapshot, clonePvc, nil
 }
 
-func (o *Run) cloneSnapshotAndContent(ctx context.Context, srcVolSnapContent *snapshotv1.VolumeSnapshotContent, cloneVolSnapMeta *metav1.ObjectMeta,
+func (o *Run) cloneSnapshotAndContent(ctx context.Context,
+	srcVolSnapContent *snapshotv1.VolumeSnapshotContent,
+	cloneVolSnapMeta *metav1.ObjectMeta,
 	k8sClient client.Client) (*snapshotv1.VolumeSnapshot, error) {
 
 	tempVolSnapCont := snapshotv1.VolumeSnapshotContent{
