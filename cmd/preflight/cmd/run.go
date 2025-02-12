@@ -75,7 +75,7 @@ var runCmd = &cobra.Command{
 		}
 		err = validateRunOptions()
 		if err != nil {
-			logger.Fatalf(err.Error())
+			logger.Fatal(err.Error())
 		}
 
 		return cmdOps.Run.PerformPreflightChecks(context.Background())

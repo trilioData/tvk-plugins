@@ -104,7 +104,6 @@ var (
 	kubeConfPath             = os.Getenv(kubeconfigEnv)
 
 	distDir         = "dist"
-	preflightDir    = "preflight_linux_amd64_v1"
 	preflightDirMap = map[string]string{
 		"darwin": "preflight_darwin_arm64_v8.0",
 		"linux":  "preflight_linux_amd64_v1",

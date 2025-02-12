@@ -1,9 +1,10 @@
 package internal
 
 import (
-	vs1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	"os"
 	"path"
+
+	vs1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 )
 
 const (

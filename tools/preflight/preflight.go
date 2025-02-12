@@ -5,17 +5,12 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	v1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"math/big"
 	goexec "os/exec"
 	"path/filepath"
 
-	"github.com/trilioData/tvk-plugins/internal"
-	"github.com/trilioData/tvk-plugins/tools/preflight/exec"
-	"github.com/trilioData/tvk-plugins/tools/preflight/wait"
-
 	version "github.com/hashicorp/go-version"
+	v1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -23,12 +18,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	k8swait "k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
+
+	"github.com/trilioData/tvk-plugins/internal"
+	"github.com/trilioData/tvk-plugins/tools/preflight/exec"
+	"github.com/trilioData/tvk-plugins/tools/preflight/wait"
 )
 
 // RunOptions input options required for running preflight.
@@ -748,7 +748,7 @@ func (o *Run) validateClusterScopeVolumeSnapshot(ctx context.Context, nameSuffix
 		Name:      VolumeSnapSrcNamePrefix + nameSuffix,
 	}
 
-	_, err = o.createSnapshotFromPVC(ctx, snapshotNameNs, storageVolSnapClass, prefSnapshotVer, pvc.GetName(), nameSuffix, clients)
+	err = o.createSnapshotFromPVC(ctx, snapshotNameNs, storageVolSnapClass, prefSnapshotVer, pvc.GetName(), nameSuffix, clients)
 	if err != nil {
 		return err
 	}
@@ -763,7 +763,8 @@ func (o *Run) validateClusterScopeVolumeSnapshot(ctx context.Context, nameSuffix
 
 	dataMoverSnapshotCloneName := VolumeSnapBackupNamePrefix + nameSuffix
 
-	_, dataMoverPVC, err := o.cloneSnapshotAndPVCFromSource(ctx, snapshotNameNs, pvc.Spec, dataMoverPVCMeta, dataMoverSnapshotCloneName, clients.RuntimeClient)
+	_, dataMoverPVC, err := o.cloneSnapshotAndPVCFromSource(ctx, snapshotNameNs, &pvc.Spec,
+		dataMoverPVCMeta, dataMoverSnapshotCloneName, clients.RuntimeClient)
 	if err != nil {
 		return err
 	}
@@ -773,12 +774,6 @@ func (o *Run) validateClusterScopeVolumeSnapshot(ctx context.Context, nameSuffix
 	if err != nil {
 		return err
 	}
-
-	//restorePod, err := o.createRestorePodFromSnapshot(ctx, clonedSnapshot, RestorePvcNamePrefix+nameSuffix,
-	//	RestorePodNamePrefix+nameSuffix, nameSuffix, clients.ClientSet)
-	//if err != nil {
-	//	return err
-	//}
 
 	// execInPod to verify data in cloned pvc
 	execOp = exec.Options{
@@ -799,14 +794,17 @@ func (o *Run) validateClusterScopeVolumeSnapshot(ctx context.Context, nameSuffix
 	return nil
 }
 
-func (o *Run) validateNamespaceScopeVolumeSnapshot(ctx context.Context, nameSuffix string, kubeClient ServerClients) error {
+func (o *Run) validateNamespaceScopeVolumeSnapshot(_ context.Context, _ string, _ ServerClients) error {
 	return nil
 }
 
 func (o *Run) cloneSnapshotAndPVCFromSource(ctx context.Context, sourceSnapshotNsNm types.NamespacedName,
-	sourcePVCSpec corev1.PersistentVolumeClaimSpec, clonePvcMeta metav1.ObjectMeta, cloneVolSnapName string, client client.Client) (*v1.VolumeSnapshot, *corev1.PersistentVolumeClaim, error) {
+	sourcePVCSpec *corev1.PersistentVolumeClaimSpec, clonePvcMeta metav1.ObjectMeta, cloneVolSnapName string, client client.Client) (*v1.VolumeSnapshot, *corev1.PersistentVolumeClaim, error) {
 	// Get the snapshot and snapshot content
 	vs, vsc, err := o.getVolumeSnapshotAndContent(ctx, sourceSnapshotNsNm, client)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// PVC to be used in destination namespace
 	clonePvc := &corev1.PersistentVolumeClaim{
@@ -824,7 +822,7 @@ func (o *Run) cloneSnapshotAndPVCFromSource(ctx context.Context, sourceSnapshotN
 		},
 	}
 
-	cloneVolSnapMeta := metav1.ObjectMeta{
+	cloneVolSnapMeta := &metav1.ObjectMeta{
 		Name:      cloneVolSnapName,
 		Namespace: clonePvcMeta.GetNamespace(),
 		Labels:    vs.GetLabels(),
@@ -852,7 +850,7 @@ func (o *Run) cloneSnapshotAndPVCFromSource(ctx context.Context, sourceSnapshotN
 	return clonedSnapshot, clonePvc, nil
 }
 
-func (o *Run) cloneSnapshotAndContent(ctx context.Context, srcVolSnapContent *v1.VolumeSnapshotContent, cloneVolSnapMeta metav1.ObjectMeta,
+func (o *Run) cloneSnapshotAndContent(ctx context.Context, srcVolSnapContent *v1.VolumeSnapshotContent, cloneVolSnapMeta *metav1.ObjectMeta,
 	client client.Client) (*v1.VolumeSnapshot, error) {
 
 	tempVolSnapCont := v1.VolumeSnapshotContent{
@@ -927,7 +925,10 @@ func (o *Run) cleanupNamespace(ctx context.Context, nsName string, k8sClient *ku
 	return nil
 }
 
-func (o *Run) getVolumeSnapshotAndContent(ctx context.Context, snapshotNameNs types.NamespacedName, client client.Client) (*v1.VolumeSnapshot, *v1.VolumeSnapshotContent, error) {
+func (o *Run) getVolumeSnapshotAndContent(
+	ctx context.Context,
+	snapshotNameNs types.NamespacedName,
+	client client.Client) (*v1.VolumeSnapshot, *v1.VolumeSnapshotContent, error) {
 	var (
 		vs  v1.VolumeSnapshot
 		vsc v1.VolumeSnapshotContent
@@ -1015,7 +1016,7 @@ func (o *Run) createPodAttachedWithPVC(ctx context.Context, nameSuffix string, p
 }
 
 func (o *Run) createSnapshotFromPVC(ctx context.Context, volSnapNameNs types.NamespacedName, volSnapClass, snapshotVer,
-	pvcName, uid string, clients ServerClients) (*unstructured.Unstructured, error) {
+	pvcName, uid string, clients ServerClients) error {
 	volSnap := createVolumeSnapsotSpec(volSnapNameNs, volSnapClass, snapshotVer, pvcName, uid)
 	if err := clients.RuntimeClient.Create(ctx, volSnap); err != nil {
 		volSnapYAML, yErr := objToYAML(volSnap)
@@ -1024,7 +1025,7 @@ func (o *Run) createSnapshotFromPVC(ctx context.Context, volSnapNameNs types.Nam
 		} else {
 			o.Logger.Warnf("Failed to create volume snapshot. Volume snapshot yaml: \n%s", string(volSnapYAML))
 		}
-		return nil, fmt.Errorf("%s error creating volume snapshot from pvc :: %s", cross, err.Error())
+		return fmt.Errorf("%s error creating volume snapshot from pvc :: %s", cross, err.Error())
 	}
 	o.Logger.Infof("Created volume snapshot - %s from pvc", volSnap.GetName())
 
@@ -1038,127 +1039,25 @@ func (o *Run) createSnapshotFromPVC(ctx context.Context, volSnapNameNs types.Nam
 			} else {
 				o.Logger.Warnf("Volume snapshot failed to reach into ready state. Volume snapshot yaml: \n%s", string(volSnapYAML))
 			}
-			return nil, fmt.Errorf("volume snapshot - %s not readyToUse (waited 600 sec) :: %s",
+			return fmt.Errorf("volume snapshot - %s not readyToUse (waited 600 sec) :: %s",
 				volSnap.GetName(), err.Error())
 		}
-		return nil, err
+		return err
 	}
 	o.Logger.Infof("%s volume snapshot - %s is ready-to-use", check, volSnap.GetName())
 
-	return volSnap, err
+	return err
 }
 
-func (o *Run) createPodForPVC(ctx context.Context, pvc *corev1.PersistentVolumeClaim, podNameNs types.NamespacedName, uid string, k8sClient *kubernetes.Clientset) (*corev1.Pod, error) {
+func (o *Run) createPodForPVC(ctx context.Context,
+	pvc *corev1.PersistentVolumeClaim,
+	podNameNs types.NamespacedName,
+	uid string,
+	k8sClient *kubernetes.Clientset) (*corev1.Pod, error) {
+
 	restorePod := createPodForPVCSpec(podNameNs, pvc.GetName(), uid, o)
 	return o.createPod(ctx, restorePod, k8sClient)
-
-	//restorePod, err = k8sclient.CoreV1().Pods(o.Namespace).
-	//	Create(ctx, restorePod, metav1.CreateOptions{})
-	//if err != nil {
-	//	o.Logger.Errorln(err.Error())
-	//	restorePodYaml, yErr := objToYAML(restorePod)
-	//	if yErr != nil {
-	//		o.Logger.Errorf("error converting object to yaml :: %s", yErr.Error())
-	//	} else {
-	//		o.Logger.Warnf("Failed to create Restore pod. Pod yaml:\n%s", string(restorePodYaml))
-	//	}
-	//	return nil, err
-	//}
-	//o.Logger.Infof("Created restore pod - %s\n", restorePod.GetName())
-	//
-	////  Wait for snapshot pod to become ready.
-	//waitOptions := &wait.PodWaitOptions{
-	//	Name:               restorePod.GetName(),
-	//	Namespace:          o.Namespace,
-	//	RetryBackoffParams: getDefaultRetryBackoffParams(),
-	//	PodCondition:       corev1.PodReady,
-	//	ClientSet:          k8slient,
-	//}
-	//o.Logger.Infof("Waiting for restore pod - %s to become ready\n", restorePod.GetName())
-	//waitOptions.Name = restorePod.GetName()
-	//err = waitUntilPodCondition(ctx, waitOptions)
-	//if err != nil {
-	//	restorePodYaml, yErr := objToYAML(restorePod)
-	//	if yErr != nil {
-	//		o.Logger.Errorf("error converting object to yaml :: %s", yErr.Error())
-	//	} else {
-	//		o.Logger.Warnf("Restore Pod failed to reach into ready state. Pod yaml:\n%s", string(restorePodYaml))
-	//	}
-	//	return nil, err
-	//}
-	//o.Logger.Infof("%s Restore pod - %s has reached into ready state\n", check, restorePod.GetName())
-	//
-	//restorePod, err = k8slient.CoreV1().Pods(o.Namespace).Get(ctx, restorePod.GetName(), metav1.GetOptions{})
-	//if err != nil {
-	//	return nil, err
-	//}
-	//logPodScheduleStmt(restorePod, o.Logger)
-	//
-	//return restorePod, nil
 }
-
-//func (o *Run) createRestorePodFromSnapshot(ctx context.Context, volSnapshot *unstructured.Unstructured,
-//	pvcName, podName, uid string, k8slient *kubernetes.Clientset) (*corev1.Pod, error) {
-//	var err error
-//	restorePVC := createRestorePVCSpec(pvcName, volSnapshot.GetName(), uid, o)
-//	restorePVC, err = k8slient.CoreV1().PersistentVolumeClaims(o.Namespace).
-//		Create(ctx, restorePVC, metav1.CreateOptions{})
-//	if err != nil {
-//		o.Logger.Errorln(err.Error())
-//		restorePVCYaml, yErr := objToYAML(restorePVC)
-//		if yErr != nil {
-//			o.Logger.Errorf("error converting object to yaml :: %s", yErr.Error())
-//		} else {
-//			o.Logger.Warnf("Failed to create restore PVC. Restore PVC yaml:\n%s", string(restorePVCYaml))
-//		}
-//		return nil, err
-//	}
-//	o.Logger.Infof("Created restore pvc - %s from volume snapshot - %s\n", restorePVC.GetName(), volSnapshot.GetName())
-//	restorePod := createPodForPVCSpec(podName, restorePVC.GetName(), uid, o)
-//	restorePod, err = k8slient.CoreV1().Pods(o.Namespace).
-//		Create(ctx, restorePod, metav1.CreateOptions{})
-//	if err != nil {
-//		o.Logger.Errorln(err.Error())
-//		restorePodYaml, yErr := objToYAML(restorePod)
-//		if yErr != nil {
-//			o.Logger.Errorf("error converting object to yaml :: %s", yErr.Error())
-//		} else {
-//			o.Logger.Warnf("Failed to create Restore pod. Pod yaml:\n%s", string(restorePodYaml))
-//		}
-//		return nil, err
-//	}
-//	o.Logger.Infof("Created restore pod - %s\n", restorePod.GetName())
-//
-//	//  Wait for snapshot pod to become ready.
-//	waitOptions := &wait.PodWaitOptions{
-//		Name:               restorePod.GetName(),
-//		Namespace:          o.Namespace,
-//		RetryBackoffParams: getDefaultRetryBackoffParams(),
-//		PodCondition:       corev1.PodReady,
-//		ClientSet:          k8slient,
-//	}
-//	o.Logger.Infof("Waiting for restore pod - %s to become ready\n", restorePod.GetName())
-//	waitOptions.Name = restorePod.GetName()
-//	err = waitUntilPodCondition(ctx, waitOptions)
-//	if err != nil {
-//		restorePodYaml, yErr := objToYAML(restorePod)
-//		if yErr != nil {
-//			o.Logger.Errorf("error converting object to yaml :: %s", yErr.Error())
-//		} else {
-//			o.Logger.Warnf("Restore Pod failed to reach into ready state. Pod yaml:\n%s", string(restorePodYaml))
-//		}
-//		return nil, err
-//	}
-//	o.Logger.Infof("%s Restore pod - %s has reached into ready state\n", check, restorePod.GetName())
-//
-//	restorePod, err = k8slient.CoreV1().Pods(o.Namespace).Get(ctx, restorePod.GetName(), metav1.GetOptions{})
-//	if err != nil {
-//		return nil, err
-//	}
-//	logPodScheduleStmt(restorePod, o.Logger)
-//
-//	return restorePod, nil
-//}
 
 func (o *Run) createPod(ctx context.Context, pod *corev1.Pod, k8sClient *kubernetes.Clientset) (*corev1.Pod, error) {
 	podNameNs := types.NamespacedName{Namespace: pod.GetNamespace(), Name: pod.GetName()}

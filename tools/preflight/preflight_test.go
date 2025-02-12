@@ -2,12 +2,12 @@ package preflight
 
 import (
 	"fmt"
-	v1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
 	"time"
 
+	v1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -397,7 +397,7 @@ func preflightFuncsTestcases() {
 			It("Should not return error when volume-snapshot becomes readyToUse", func() {
 				Skip("TODO - working as expected in local. Will be handled in suite refactoring.")
 				go func() {
-					_, testErr := runOps.createSnapshotFromPVC(ctx, volSnapKey, testSnapshotClass,
+					testErr := runOps.createSnapshotFromPVC(ctx, volSnapKey, testSnapshotClass,
 						internal.V1Version, testPVC, testNameSuffix, testClient)
 					resultChan <- testErr
 				}()
@@ -563,7 +563,7 @@ func preflightFuncsTestcases() {
 
 			// create volume-snapshot on cluster
 			go func() {
-				_, testErr := runOps.createSnapshotFromPVC(ctx, volSnapKey, testSnapshotClass,
+				testErr := runOps.createSnapshotFromPVC(ctx, volSnapKey, testSnapshotClass,
 					internal.V1Version, testPVC, testNameSuffix, testClient)
 				resultChan <- testErr
 			}()
@@ -580,9 +580,9 @@ func preflightFuncsTestcases() {
 
 			Expect(func() string {
 				Expect(testClient.RuntimeClient.Get(ctx, volSnapContentKey, volSnapContent)).To(BeNil())
-				snapshotHandle, found, err := unstructured.NestedString(volSnapContent.Object, "status", "snapshotHandle")
+				snapshotHandle, found, getErr := unstructured.NestedString(volSnapContent.Object, "status", "snapshotHandle")
 				Expect(found).To(BeTrue())
-				Expect(err).To(BeNil())
+				Expect(getErr).To(BeNil())
 				return snapshotHandle
 			}()).Should(Equal(testSnapshotHandle))
 
@@ -594,9 +594,9 @@ func preflightFuncsTestcases() {
 			// volume-snapshot should be ready-to-use
 			Eventually(func() bool {
 				Expect(testClient.RuntimeClient.Get(ctx, volSnapKey, volSnap)).To(BeNil())
-				ready, found, err := unstructured.NestedBool(volSnap.Object, "status", "readyToUse")
+				ready, found, getErr := unstructured.NestedBool(volSnap.Object, "status", "readyToUse")
 				Expect(found).To(BeTrue())
-				Expect(err).To(BeNil())
+				Expect(getErr).To(BeNil())
 				return ready
 			}, timeout, interval).Should(BeTrue())
 
@@ -624,7 +624,8 @@ func preflightFuncsTestcases() {
 					Namespace: installNs,
 				}
 				cloneVolSnapName := testVolumeSnapshot + "-clone"
-				cloneVolSnap, clonePvc, err = runOps.cloneSnapshotAndPVCFromSource(ctx, volSnapKey, pvc.Spec, clonePvcMeta, cloneVolSnapName, testClient.RuntimeClient)
+				cloneVolSnap, clonePvc, err = runOps.cloneSnapshotAndPVCFromSource(ctx, volSnapKey, &pvc.Spec,
+					clonePvcMeta, cloneVolSnapName, testClient.RuntimeClient)
 				Expect(err).To(BeNil())
 				Expect(deleteK8sResource(ctx, cloneVolSnap, testClient.RuntimeClient)).To(BeNil())
 				Expect(deleteK8sResource(ctx, clonePvc, testClient.RuntimeClient)).To(BeNil())
