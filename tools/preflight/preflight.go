@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 
 	version "github.com/hashicorp/go-version"
-	v1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
+	snapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -755,7 +755,7 @@ func (o *Run) validateClusterScopeVolumeSnapshot(ctx context.Context, nameSuffix
 
 	// clone pvc in install namespace from the snapshot in backup namespace
 	dataMoverNameNs := types.NamespacedName{Name: BackupPvcNamePrefix + nameSuffix, Namespace: o.Namespace}
-	dataMoverPVCMeta := metav1.ObjectMeta{
+	dataMoverPVCMeta := &metav1.ObjectMeta{
 		Name:      dataMoverNameNs.Name,
 		Namespace: dataMoverNameNs.Namespace,
 		Labels:    pvc.Labels,
@@ -799,9 +799,9 @@ func (o *Run) validateNamespaceScopeVolumeSnapshot(_ context.Context, _ string, 
 }
 
 func (o *Run) cloneSnapshotAndPVCFromSource(ctx context.Context, sourceSnapshotNsNm types.NamespacedName,
-	sourcePVCSpec *corev1.PersistentVolumeClaimSpec, clonePvcMeta metav1.ObjectMeta, cloneVolSnapName string, client client.Client) (*v1.VolumeSnapshot, *corev1.PersistentVolumeClaim, error) {
+	sourcePVCSpec *corev1.PersistentVolumeClaimSpec, clonePvcMeta *metav1.ObjectMeta, cloneVolSnapName string, k8sClient client.Client) (*snapshotv1.VolumeSnapshot, *corev1.PersistentVolumeClaim, error) {
 	// Get the snapshot and snapshot content
-	vs, vsc, err := o.getVolumeSnapshotAndContent(ctx, sourceSnapshotNsNm, client)
+	vs, vsc, err := o.getVolumeSnapshotAndContent(ctx, sourceSnapshotNsNm, k8sClient)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -828,14 +828,14 @@ func (o *Run) cloneSnapshotAndPVCFromSource(ctx context.Context, sourceSnapshotN
 		Labels:    vs.GetLabels(),
 	}
 
-	//clone this snapshot to destination namespace
-	clonedSnapshot, err := o.cloneSnapshotAndContent(ctx, vsc, cloneVolSnapMeta, client)
+	// clone this snapshot to destination namespace
+	clonedSnapshot, err := o.cloneSnapshotAndContent(ctx, vsc, cloneVolSnapMeta, k8sClient)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// refer the cloned snapshot in cloned pvc
-	snapshotGroup := v1.GroupName
+	snapshotGroup := snapshotv1.GroupName
 	clonePvc.Spec.DataSource = &corev1.TypedLocalObjectReference{
 		APIGroup: &snapshotGroup,
 		Kind:     internal.VolumeSnapshotKind,
@@ -843,55 +843,55 @@ func (o *Run) cloneSnapshotAndPVCFromSource(ctx context.Context, sourceSnapshotN
 	}
 
 	// create pvc in destination namespace
-	err = client.Create(ctx, clonePvc)
+	err = k8sClient.Create(ctx, clonePvc)
 	if err != nil {
 		return nil, nil, err
 	}
 	return clonedSnapshot, clonePvc, nil
 }
 
-func (o *Run) cloneSnapshotAndContent(ctx context.Context, srcVolSnapContent *v1.VolumeSnapshotContent, cloneVolSnapMeta *metav1.ObjectMeta,
-	client client.Client) (*v1.VolumeSnapshot, error) {
+func (o *Run) cloneSnapshotAndContent(ctx context.Context, srcVolSnapContent *snapshotv1.VolumeSnapshotContent, cloneVolSnapMeta *metav1.ObjectMeta,
+	k8sClient client.Client) (*snapshotv1.VolumeSnapshot, error) {
 
-	tempVolSnapCont := v1.VolumeSnapshotContent{
+	tempVolSnapCont := snapshotv1.VolumeSnapshotContent{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cloneVolSnapMeta.GetName(),
 			Namespace: cloneVolSnapMeta.GetNamespace(),
 			Labels:    cloneVolSnapMeta.GetLabels(),
 		},
-		Spec: v1.VolumeSnapshotContentSpec{
-			Source: v1.VolumeSnapshotContentSource{
+		Spec: snapshotv1.VolumeSnapshotContentSpec{
+			Source: snapshotv1.VolumeSnapshotContentSource{
 				SnapshotHandle: srcVolSnapContent.Status.SnapshotHandle,
 			},
 			VolumeSnapshotRef: corev1.ObjectReference{
 				Name:      cloneVolSnapMeta.GetName(),
 				Namespace: cloneVolSnapMeta.GetNamespace(),
 			},
-			DeletionPolicy:          v1.VolumeSnapshotContentRetain,
+			DeletionPolicy:          snapshotv1.VolumeSnapshotContentRetain,
 			Driver:                  srcVolSnapContent.Spec.Driver,
 			VolumeSnapshotClassName: srcVolSnapContent.Spec.VolumeSnapshotClassName,
 		},
 	}
 
-	tempVolSnap := v1.VolumeSnapshot{
+	tempVolSnap := snapshotv1.VolumeSnapshot{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cloneVolSnapMeta.GetName(),
 			Namespace: cloneVolSnapMeta.GetNamespace(),
 			Labels:    cloneVolSnapMeta.GetLabels(),
 		},
-		Spec: v1.VolumeSnapshotSpec{
-			Source: v1.VolumeSnapshotSource{
+		Spec: snapshotv1.VolumeSnapshotSpec{
+			Source: snapshotv1.VolumeSnapshotSource{
 				VolumeSnapshotContentName: &tempVolSnapCont.Name,
 			},
 			VolumeSnapshotClassName: tempVolSnapCont.Spec.VolumeSnapshotClassName,
 		},
 	}
 
-	if err := client.Create(ctx, &tempVolSnapCont); err != nil {
+	if err := k8sClient.Create(ctx, &tempVolSnapCont); err != nil {
 		return nil, err
 	}
 
-	if err := client.Create(ctx, &tempVolSnap); err != nil {
+	if err := k8sClient.Create(ctx, &tempVolSnap); err != nil {
 		return nil, err
 	}
 	return &tempVolSnap, nil
@@ -928,19 +928,19 @@ func (o *Run) cleanupNamespace(ctx context.Context, nsName string, k8sClient *ku
 func (o *Run) getVolumeSnapshotAndContent(
 	ctx context.Context,
 	snapshotNameNs types.NamespacedName,
-	client client.Client) (*v1.VolumeSnapshot, *v1.VolumeSnapshotContent, error) {
+	k8sClient client.Client) (*snapshotv1.VolumeSnapshot, *snapshotv1.VolumeSnapshotContent, error) {
 	var (
-		vs  v1.VolumeSnapshot
-		vsc v1.VolumeSnapshotContent
+		vs  snapshotv1.VolumeSnapshot
+		vsc snapshotv1.VolumeSnapshotContent
 	)
 
-	if err := client.Get(ctx, snapshotNameNs, &vs); err != nil {
+	if err := k8sClient.Get(ctx, snapshotNameNs, &vs); err != nil {
 		return nil, nil, err
 	}
 
 	if vs.Status != nil && vs.Status.BoundVolumeSnapshotContentName != nil {
 		vscName := *vs.Status.BoundVolumeSnapshotContentName
-		if err := client.Get(ctx, types.NamespacedName{Name: vscName}, &vsc); err != nil {
+		if err := k8sClient.Get(ctx, types.NamespacedName{Name: vscName}, &vsc); err != nil {
 			return nil, nil, err
 		}
 		return &vs, &vsc, nil
@@ -972,47 +972,6 @@ func (o *Run) createPodAttachedWithPVC(ctx context.Context, nameSuffix string, p
 	k8sClient *kubernetes.Clientset) (pod *corev1.Pod, err error) {
 	pod = createPodSpecWithPVC(pvcNsName, o, nameSuffix)
 	return o.createPod(ctx, pod, k8sClient)
-	//pod, err = k8sClient.CoreV1().Pods(pvcNsName.Namespace).Create(ctx, pod, metav1.CreateOptions{})
-	//if err != nil {
-	//	o.Logger.Errorln(err.Error())
-	//	podYaml, yErr := objToYAML(pod)
-	//	if yErr != nil {
-	//		o.Logger.Errorf("error converting object to yaml :: %s", yErr.Error())
-	//	} else {
-	//		o.Logger.Warnf("Failed to create pod %s. Pod yaml: \n%s", pod.GetName(), string(podYaml))
-	//	}
-	//	return nil, err
-	//}
-	//o.Logger.Infof("Created pod - %s", pod.GetName())
-	//
-	////  Wait for snapshot pod to become ready.
-	//waitOptions := &wait.PodWaitOptions{
-	//	Name:               pod.GetName(),
-	//	Namespace:          pod.GetNamespace(),
-	//	RetryBackoffParams: getDefaultRetryBackoffParams(),
-	//	PodCondition:       corev1.PodReady,
-	//	ClientSet:          k8sClient,
-	//}
-	//o.Logger.Infof("Waiting for pod - %s to become ready\n", pod.GetName())
-	//err = waitUntilPodCondition(ctx, waitOptions)
-	//if err != nil {
-	//	podYaml, yErr := objToYAML(pod)
-	//	if yErr != nil {
-	//		o.Logger.Errorf("error converting object to yaml :: %s", yErr.Error())
-	//	} else {
-	//		o.Logger.Warnf("Pod: %s, failed to reach ready state. Pod yaml: \n%s", pod.GetName(), string(podYaml))
-	//	}
-	//	return pod, fmt.Errorf("Pod: %s, hasn't reached into ready state", pod.GetName())
-	//}
-	//o.Logger.Infof("Pod: %s, has reached into ready state\n", pod.GetName())
-	//
-	//pod, err = k8sClient.CoreV1().Pods(pod.GetNamespace()).Get(ctx, pod.GetName(), metav1.GetOptions{})
-	//if err != nil {
-	//	return pod, err
-	//}
-	//logPodScheduleStmt(pod, o.Logger)
-	//
-	//return pod, err
 }
 
 func (o *Run) createSnapshotFromPVC(ctx context.Context, volSnapNameNs types.NamespacedName, volSnapClass, snapshotVer,

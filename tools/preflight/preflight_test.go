@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	v1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
+	snapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -501,7 +501,7 @@ func preflightFuncsTestcases() {
 				Namespace: backupNamespace,
 			}
 			volSnapContent = &unstructured.Unstructured{}
-			cloneVolSnap   = &v1.VolumeSnapshot{}
+			cloneVolSnap   = &snapshotv1.VolumeSnapshot{}
 			clonePvc       = &corev1.PersistentVolumeClaim{}
 		)
 
@@ -619,7 +619,7 @@ func preflightFuncsTestcases() {
 				// create volume snapshot
 
 				// create volume snapshot content
-				clonePvcMeta := metav1.ObjectMeta{
+				clonePvcMeta := &metav1.ObjectMeta{
 					Name:      pvcName + "-clone",
 					Namespace: installNs,
 				}
