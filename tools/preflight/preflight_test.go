@@ -339,16 +339,10 @@ func preflightFuncsTestcases() {
 			var (
 				volSnapKey types.NamespacedName
 				volSnap    = &unstructured.Unstructured{}
-				//vsCRDsMap  = map[string]bool{vsClassCRD: true, vsContentCRD: true, vsCRD: true}
 				resultChan = make(chan error, 1)
 			)
 
 			BeforeAll(func() {
-				// Install the volume snapshot CRDs
-				//installVolumeSnapshotCRD(v1K8sVersion, vsCRDsMap)
-				//checkVolumeSnapshotCRDExists()
-
-				// TODO: shiwam verify if this is correct
 				// create volume-snapshot on cluster
 				volSnapKey = types.NamespacedName{
 					Name:      testVolumeSnapshot,
@@ -360,14 +354,10 @@ func preflightFuncsTestcases() {
 					Version: internal.V1Version,
 					Kind:    internal.VolumeSnapshotKind,
 				})
-
-				//Expect(runOps.createNamespace(ctx, namespace, testNameSuffix, testClient.ClientSet)).To(BeNil())
 			})
 
 			AfterAll(func() {
 				Expect(deleteK8sResource(ctx, volSnap, testClient.RuntimeClient)).To(BeNil())
-				// deleteAllVolumeSnapshotCRD()
-				//Expect(runOps.cleanupNamespace(ctx, namespace, testClient.ClientSet)).To(BeNil())
 			})
 
 			It("Should have correct spec fields and metadata labels for volume-snapshot created from PVC", func() {
