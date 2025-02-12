@@ -395,6 +395,118 @@ func createVolumeSnapshotPVCSpec(o *Run, pvcNsName types.NamespacedName, uid str
 	return pvc
 }
 
+//// createPodForPVCSpec creates a pod which is attached to given PVC
+//func createPodForPVCSpec(podNameNs types.NamespacedName, pvcName, uid string, op *Run) *corev1.Pod {
+//	var containerImage string
+//	if op.LocalRegistry != "" {
+//		containerImage = op.LocalRegistry + "/" + BusyboxImageName
+//	} else {
+//		containerImage = BusyBoxRegistry + "/" + BusyboxImageName
+//	}
+//
+//	pod := getPodTemplate(podNameNs, uid, op)
+//	pod.Spec.Containers = []corev1.Container{
+//		{
+//			Name:            BusyboxContainerName,
+//			Image:           containerImage,
+//			Command:         CommandSleep3600,
+//			ImagePullPolicy: corev1.PullIfNotPresent,
+//			Resources:       op.ResourceRequirements,
+//			VolumeMounts: []corev1.VolumeMount{
+//				{
+//					Name:      VolMountName,
+//					MountPath: VolMountPath,
+//				},
+//			},
+//		},
+//	}
+//
+//	pod.Spec.Volumes = []corev1.Volume{
+//		{
+//			Name: VolMountName,
+//			VolumeSource: corev1.VolumeSource{
+//				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+//					ClaimName: pvcName,
+//					ReadOnly:  false,
+//				},
+//			},
+//		},
+//	}
+//
+//	return pod
+//}
+
+func createPVCDataWriterPodSpec(podName string, pvcNsName types.NamespacedName, op *Run, nameSuffix string) *corev1.Pod {
+	podNsName := types.NamespacedName{
+		Name:      podName,
+		Namespace: pvcNsName.Namespace,
+	}
+
+	pod := getPodSpecWithPVC(podNsName, pvcNsName, op, nameSuffix)
+	pod.Spec.Containers[0].Command = CommandBinSh
+	pod.Spec.Containers[0].Args = ArgsTouchDataFileSleep
+	pod.Spec.Containers[0].ReadinessProbe = &corev1.Probe{
+		InitialDelaySeconds: 30,
+		ProbeHandler: corev1.ProbeHandler{
+			Exec: &corev1.ExecAction{
+				Command: execDataCheckCommand,
+			},
+		},
+	}
+
+	return pod
+}
+func createPVCDataReaderPodSpec(podName string, pvcNsName types.NamespacedName, op *Run, nameSuffix string) *corev1.Pod {
+	podNsName := types.NamespacedName{
+		Name:      podName + nameSuffix,
+		Namespace: pvcNsName.Namespace,
+	}
+
+	pod := getPodSpecWithPVC(podNsName, pvcNsName, op, nameSuffix)
+	pod.Spec.Containers[0].Command = CommandSleep3600
+	pod.Spec.Containers[0].ImagePullPolicy = corev1.PullIfNotPresent
+	// TODO: @shiwam, add a readiness probe to read data from the file, will have to change uts accordingly, skipping now.
+
+	return pod
+}
+
+func getPodSpecWithPVC(podNsName, pvcNsName types.NamespacedName, op *Run, nameSuffix string) *corev1.Pod {
+	var containerImage string
+	if op.LocalRegistry != "" {
+		containerImage = op.LocalRegistry + "/" + BusyboxImageName
+	} else {
+		containerImage = BusyBoxRegistry + "/" + BusyboxImageName
+	}
+	pod := getPodTemplate(podNsName, nameSuffix, op)
+	pod.Spec.Containers = []corev1.Container{
+		{
+			Name:      BusyboxContainerName,
+			Image:     containerImage,
+			Resources: op.ResourceRequirements,
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      VolMountName,
+					MountPath: VolMountPath,
+				},
+			},
+		},
+	}
+
+	pod.Spec.Volumes = []corev1.Volume{
+		{
+			Name: VolMountName,
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: pvcNsName.Name,
+					ReadOnly:  false,
+				},
+			},
+		},
+	}
+
+	return pod
+}
+
 func createPodSpecWithPVC(pvcNsName types.NamespacedName, op *Run, nameSuffix string) *corev1.Pod {
 	var containerImage string
 	if op.LocalRegistry != "" {
@@ -471,6 +583,7 @@ func createVolumeSnapsotSpec(nsName types.NamespacedName, snapshotClass, snapVer
 }
 
 // createRestorePVCSpec creates pvc for restore (unmounted pvc as well)
+// TODO: @shiwam remove this after finishing all the changes, this func should be redundant eventually.
 func createRestorePVCSpec(pvcName, dsName, uid string, o *Run) *corev1.PersistentVolumeClaim {
 	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
@@ -495,47 +608,6 @@ func createRestorePVCSpec(pvcName, dsName, uid string, o *Run) *corev1.Persisten
 	}
 
 	return pvc
-}
-
-// createPodForPVCSpec creates a pod which is attached to given PVC
-func createPodForPVCSpec(podNameNs types.NamespacedName, pvcName, uid string, op *Run) *corev1.Pod {
-	var containerImage string
-	if op.LocalRegistry != "" {
-		containerImage = op.LocalRegistry + "/" + BusyboxImageName
-	} else {
-		containerImage = BusyBoxRegistry + "/" + BusyboxImageName
-	}
-
-	pod := getPodTemplate(podNameNs, uid, op)
-	pod.Spec.Containers = []corev1.Container{
-		{
-			Name:            BusyboxContainerName,
-			Image:           containerImage,
-			Command:         CommandSleep3600,
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Resources:       op.ResourceRequirements,
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      VolMountName,
-					MountPath: VolMountPath,
-				},
-			},
-		},
-	}
-
-	pod.Spec.Volumes = []corev1.Volume{
-		{
-			Name: VolMountName,
-			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: pvcName,
-					ReadOnly:  false,
-				},
-			},
-		},
-	}
-
-	return pod
 }
 
 func getPodTemplate(nsName types.NamespacedName, uid string, op *Run) *corev1.Pod {

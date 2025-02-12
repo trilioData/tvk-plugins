@@ -737,7 +737,7 @@ func (o *Run) validateClusterScopeVolumeSnapshot(ctx context.Context, nameSuffix
 		return err
 	}
 	o.Logger.Infof("Created source pvc - %s", pvc.GetName())
-	_, err = o.createPodAttachedWithPVC(ctx, nameSuffix, sourcePvcNsName, clients.ClientSet)
+	_, err = o.createWriterPodAttachedWithPVC(ctx, SourcePodNamePrefix+nameSuffix, nameSuffix, sourcePvcNsName, clients.ClientSet)
 	if err != nil {
 		return err
 	}
@@ -763,24 +763,24 @@ func (o *Run) validateClusterScopeVolumeSnapshot(ctx context.Context, nameSuffix
 
 	dataMoverSnapshotCloneName := VolumeSnapBackupNamePrefix + nameSuffix
 
-	_, dataMoverPVC, err := o.cloneSnapshotAndPVCFromSource(ctx, snapshotNameNs, &pvc.Spec,
+	_, _, err = o.cloneSnapshotAndPVCFromSource(ctx, snapshotNameNs, &pvc.Spec,
 		dataMoverPVCMeta, dataMoverSnapshotCloneName, clients.RuntimeClient)
 	if err != nil {
 		return err
 	}
 
-	// create a pod and attach to cloned pvc
-	podAttachedToPVC, err := o.createPodForPVC(ctx, dataMoverPVC, dataMoverNameNs, nameSuffix, clients.ClientSet)
+	// create a reader pod and attach to cloned pvc
+	readerPod, err := o.createReaderPodAttachedWithPVC(ctx, dataMoverNameNs.Name, nameSuffix, dataMoverNameNs, clients.ClientSet)
 	if err != nil {
 		return err
 	}
 
 	// execInPod to verify data in cloned pvc
 	execOp = exec.Options{
-		Namespace:     podAttachedToPVC.GetNamespace(),
+		Namespace:     readerPod.GetNamespace(),
 		Command:       execDataCheckCommand,
-		PodName:       podAttachedToPVC.GetName(),
-		ContainerName: podAttachedToPVC.Spec.Containers[0].Name,
+		PodName:       readerPod.GetName(),
+		ContainerName: readerPod.Spec.Containers[0].Name,
 		Executor:      &exec.DefaultRemoteExecutor{},
 		Config:        clients.RestConfig,
 		ClientSet:     clients.ClientSet,
@@ -789,12 +789,92 @@ func (o *Run) validateClusterScopeVolumeSnapshot(ctx context.Context, nameSuffix
 	if err != nil {
 		return err
 	}
-	o.Logger.Infof("Pod attached to PVC - %s has expected data\n", podAttachedToPVC.GetName())
+	o.Logger.Infof("Pod attached to PVC - %s has expected data\n", readerPod.GetName())
 
 	return nil
 }
 
-func (o *Run) validateNamespaceScopeVolumeSnapshot(_ context.Context, _ string, _ ServerClients) error {
+func (o *Run) validateNamespaceScopeVolumeSnapshot(ctx context.Context, nameSuffix string, clients ServerClients) error {
+	var (
+		execOp          exec.Options
+		err             error
+		pvc             *corev1.PersistentVolumeClaim
+		prefSnapshotVer string
+	)
+
+	prefSnapshotVer, err = GetServerPreferredVersionForGroup(StorageSnapshotGroup, clients.ClientSet)
+	if err != nil {
+		return err
+	}
+
+	// create source pod, pvc and volume snapshot in Backup namespace
+	sourcePvcNsName := types.NamespacedName{
+		Namespace: o.Namespace,
+		Name:      SourcePvcNamePrefix + nameSuffix,
+	}
+
+	pvc, err = o.createPVC(ctx, sourcePvcNsName, nameSuffix, clients.ClientSet)
+	if err != nil {
+		return err
+	}
+	o.Logger.Infof("Created source pvc - %s", pvc.GetName())
+	_, err = o.createWriterPodAttachedWithPVC(ctx, SourcePodNamePrefix+nameSuffix, nameSuffix, sourcePvcNsName, clients.ClientSet)
+	if err != nil {
+		return err
+	}
+
+	// Take a snapshot in backupnamespace
+	snapshotNameNs := types.NamespacedName{
+		Namespace: o.Namespace,
+		Name:      VolumeSnapSrcNamePrefix + nameSuffix,
+	}
+
+	err = o.createSnapshotFromPVC(ctx, snapshotNameNs, storageVolSnapClass, prefSnapshotVer, pvc.GetName(), nameSuffix, clients)
+	if err != nil {
+		return err
+	}
+
+	//// clone pvc in install namespace from the snapshot in backup namespace
+	dataMoverNameNs := types.NamespacedName{Name: BackupPvcNamePrefix + nameSuffix, Namespace: o.Namespace}
+
+	// TODO: Create a new PVC in the same namespace with the snapshot created
+
+	//dataMoverPVCMeta := &metav1.ObjectMeta{
+	//	Name:      dataMoverNameNs.Name,
+	//	Namespace: dataMoverNameNs.Namespace,
+	//	Labels:    pvc.Labels,
+	//}
+
+	//dataMoverSnapshotCloneName := VolumeSnapBackupNamePrefix + nameSuffix
+
+	//_, dataMoverPVC, err := o.cloneSnapshotAndPVCFromSource(ctx, snapshotNameNs, &pvc.Spec,
+	//	dataMoverPVCMeta, dataMoverSnapshotCloneName, clients.RuntimeClient)
+	//if err != nil {
+	//	return err
+	//}
+
+	// create a pod and attach to cloned pvc
+	readerPod, err := o.createReaderPodAttachedWithPVC(ctx, dataMoverNameNs.Name, nameSuffix, dataMoverNameNs, clients.ClientSet)
+	if err != nil {
+		return err
+	}
+
+	// execInPod to verify data in cloned pvc
+	execOp = exec.Options{
+		Namespace:     readerPod.GetNamespace(),
+		Command:       execDataCheckCommand,
+		PodName:       readerPod.GetName(),
+		ContainerName: readerPod.Spec.Containers[0].Name,
+		Executor:      &exec.DefaultRemoteExecutor{},
+		Config:        clients.RestConfig,
+		ClientSet:     clients.ClientSet,
+	}
+	err = execInPod(&execOp, o.Logger)
+	if err != nil {
+		return err
+	}
+	o.Logger.Infof("Pod attached to PVC - %s has expected data\n", readerPod.GetName())
+
 	return nil
 }
 
@@ -974,13 +1054,6 @@ func (o *Run) createPVC(ctx context.Context, nsName types.NamespacedName,
 	return pvc, nil
 }
 
-// createPodAttachedWithPVC creates pod from pvc for volume snapshot checks
-func (o *Run) createPodAttachedWithPVC(ctx context.Context, nameSuffix string, pvcNsName types.NamespacedName,
-	k8sClient *kubernetes.Clientset) (pod *corev1.Pod, err error) {
-	pod = createPodSpecWithPVC(pvcNsName, o, nameSuffix)
-	return o.createPod(ctx, pod, k8sClient)
-}
-
 func (o *Run) createSnapshotFromPVC(ctx context.Context, volSnapNameNs types.NamespacedName, volSnapClass, snapshotVer,
 	pvcName, uid string, clients ServerClients) error {
 	volSnap := createVolumeSnapsotSpec(volSnapNameNs, volSnapClass, snapshotVer, pvcName, uid)
@@ -1015,15 +1088,29 @@ func (o *Run) createSnapshotFromPVC(ctx context.Context, volSnapNameNs types.Nam
 	return err
 }
 
-func (o *Run) createPodForPVC(ctx context.Context,
-	pvc *corev1.PersistentVolumeClaim,
-	podNameNs types.NamespacedName,
-	uid string,
-	k8sClient *kubernetes.Clientset) (*corev1.Pod, error) {
-
-	restorePod := createPodForPVCSpec(podNameNs, pvc.GetName(), uid, o)
-	return o.createPod(ctx, restorePod, k8sClient)
+// createWriterPodAttachedWithPVC creates data writer pod from pvc for volume snapshot checks
+func (o *Run) createWriterPodAttachedWithPVC(ctx context.Context, podName, nameSuffix string, pvcNsName types.NamespacedName,
+	k8sClient *kubernetes.Clientset) (pod *corev1.Pod, err error) {
+	pod = createPVCDataWriterPodSpec(podName, pvcNsName, o, nameSuffix)
+	return o.createPod(ctx, pod, k8sClient)
 }
+
+// createReaderPodAttachedWithPVC creates data reader pod from pvc for volume snapshot checks
+func (o *Run) createReaderPodAttachedWithPVC(ctx context.Context, podName, nameSuffix string, pvcNsName types.NamespacedName,
+	k8sClient *kubernetes.Clientset) (pod *corev1.Pod, err error) {
+	pod = createPVCDataReaderPodSpec(podName, pvcNsName, o, nameSuffix)
+	return o.createPod(ctx, pod, k8sClient)
+}
+
+//
+//func (o *Run) createPodForPVC(ctx context.Context,
+//	pvc *corev1.PersistentVolumeClaim,
+//	podNameNs types.NamespacedName,
+//	uid string,
+//	k8sClient *kubernetes.Clientset) (*corev1.Pod, error) {
+//	restorePod := createPodForPVCSpec(podNameNs, pvc.GetName(), uid, o)
+//	return o.createPod(ctx, restorePod, k8sClient)
+//}
 
 func (o *Run) createPod(ctx context.Context, pod *corev1.Pod, k8sClient *kubernetes.Clientset) (*corev1.Pod, error) {
 	podNameNs := types.NamespacedName{Namespace: pod.GetNamespace(), Name: pod.GetName()}

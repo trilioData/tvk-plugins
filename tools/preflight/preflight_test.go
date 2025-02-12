@@ -309,7 +309,7 @@ func preflightFuncsTestcases() {
 				// create pod from pvc
 				go func(pvcKey types.NamespacedName) {
 					var testErr error
-					pod, testErr = runOps.createPodAttachedWithPVC(ctx, nameSuffix, pvcKey, testClient.ClientSet)
+					pod, testErr = runOps.createWriterPodAttachedWithPVC(ctx, SourcePodNamePrefix+nameSuffix, nameSuffix, pvcKey, testClient.ClientSet)
 					resultChan <- testErr
 				}(pvcKey)
 
@@ -449,7 +449,7 @@ func preflightFuncsTestcases() {
 			})
 
 			It("Should create pod using backed up PVC", func() {
-				pod := createPodForPVCSpec(podKey, restorePVCKey.Name, testNameSuffix, &runOps)
+				pod := createPVCDataReaderPodSpec(podKey.Name, restorePVCKey, &runOps, testNameSuffix)
 
 				Expect(pod.Spec.Volumes).ShouldNot(BeNil())
 				Expect(len(pod.Spec.Volumes)).ShouldNot(BeZero())
@@ -517,7 +517,7 @@ func preflightFuncsTestcases() {
 
 			go func(pvcKey types.NamespacedName) {
 				var testErr error
-				pod, testErr = runOps.createPodAttachedWithPVC(ctx, testNameSuffix, pvcKey, testClient.ClientSet)
+				pod, testErr = runOps.createWriterPodAttachedWithPVC(ctx, SourcePodNamePrefix+testNameSuffix, testNameSuffix, pvcKey, testClient.ClientSet)
 				resultChan <- testErr
 			}(pvcKey)
 
@@ -606,8 +606,6 @@ func preflightFuncsTestcases() {
 
 		Context("When cloning volume snapshot and pvc from source volume snapshot", func() {
 			It("Should successfully clone snapshot and PVC from source", func() {
-				// create volume snapshot
-
 				// create volume snapshot content
 				clonePvcMeta := &metav1.ObjectMeta{
 					Name:      pvcName + "-clone",
