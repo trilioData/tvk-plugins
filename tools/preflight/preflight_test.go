@@ -420,12 +420,6 @@ func preflightFuncsTestcases() {
 			var (
 				restorePVCKey types.NamespacedName
 				podKey        types.NamespacedName
-				pvc           = &corev1.PersistentVolumeClaim{}
-
-				volSnapKey = types.NamespacedName{
-					Name:      testVolumeSnapshot,
-					Namespace: installNs,
-				}
 			)
 
 			BeforeEach(func() {
@@ -437,15 +431,6 @@ func preflightFuncsTestcases() {
 					Name:      testPodName + "-" + internal.GenerateRandomString(6, false),
 					Namespace: installNs,
 				}
-			})
-
-			It("Should create pvc for pod with volume snapshot as its data-source", func() {
-				pvc = createRestorePVCSpec(restorePVCKey.Name, volSnapKey.Name, testNameSuffix, &runOps)
-
-				Expect(pvc.Namespace).Should(Equal(runOps.Namespace))
-				Expect(*pvc.Spec.StorageClassName).Should(Equal(runOps.StorageClass))
-
-				verifyTVKResourceLabels(pvc, testNameSuffix)
 			})
 
 			It("Should create pod using backed up PVC", func() {
@@ -517,7 +502,9 @@ func preflightFuncsTestcases() {
 
 			go func(pvcKey types.NamespacedName) {
 				var testErr error
-				pod, testErr = runOps.createWriterPodAttachedWithPVC(ctx, SourcePodNamePrefix+testNameSuffix, testNameSuffix, pvcKey, testClient.ClientSet)
+				pod, testErr = runOps.createWriterPodAttachedWithPVC(ctx,
+					SourcePodNamePrefix+testNameSuffix,
+					testNameSuffix, pvcKey, testClient.ClientSet)
 				resultChan <- testErr
 			}(pvcKey)
 

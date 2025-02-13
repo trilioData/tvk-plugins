@@ -11,6 +11,7 @@ import (
 	"time"
 
 	semVersion "github.com/hashicorp/go-version"
+	snapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -58,25 +59,17 @@ const (
 	LabelK8sName           = "app.kubernetes.io/name"
 	LabelK8sNameValue      = "k8s-triliovault"
 
-	TestNamespacePrefix                = "preflight-test-ns-"
-	BackupNamespacePrefix              = "preflight-backup-ns-"
-	RestoreNamespacePrefix             = "preflight-restore-ns-"
-	SourcePodNamePrefix                = "source-pod-"
-	SourcePvcNamePrefix         string = "source-pvc-"
-	BackupPvcNamePrefix                = "backup-pvc-"
-	RestorePvcNamePrefix               = "restored-pvc-"
-	VolumeSnapSrcNamePrefix            = "snapshot-source-pvc-"
-	VolumeSnapBackupNamePrefix         = "snapshot-backup-pvc-"
-	VolumeSnapRestoreNamePrefix        = "snapshot-restore-pvc-"
+	BackupNamespacePrefix             = "preflight-backup-ns-"
+	SourcePodNamePrefix               = "source-pod-"
+	SourcePvcNamePrefix        string = "source-pvc-"
+	BackupPvcNamePrefix               = "backup-pvc-"
+	VolumeSnapSrcNamePrefix           = "snapshot-source-pvc-"
+	VolumeSnapBackupNamePrefix        = "snapshot-backup-pvc-"
 
-	StorageSnapshotGroup             = "snapshot.storage.k8s.io"
-	RestorePodNamePrefix             = "restored-pod-"
-	BusyboxContainerName             = "busybox"
-	BusyBoxRegistry                  = "quay.io/triliodata"
-	BusyboxImageName                 = "busybox"
-	UnmountedRestorePodNamePrefix    = "unmounted-restored-pod-"
-	UnmountedRestorePvcNamePrefix    = "unmounted-restored-pvc-"
-	UnmountedVolumeSnapSrcNamePrefix = "unmounted-source-pvc-"
+	StorageSnapshotGroup = "snapshot.storage.k8s.io"
+	BusyboxContainerName = "busybox"
+	BusyBoxRegistry      = "quay.io/triliodata"
+	BusyboxImageName     = "busybox"
 
 	dnsUtils         = "dnsutils-"
 	dnsContainerName = "dnsutils"
@@ -187,6 +180,7 @@ func InitKubeEnv(kubeconfig string) error {
 
 	utilruntime.Must(corev1.AddToScheme(scheme))
 	utilruntime.Must(apiextensions.AddToScheme(scheme))
+	utilruntime.Must(snapshotv1.AddToScheme(scheme))
 	var config *rest.Config
 	if kubeconfig == "" {
 		config = ctrl.GetConfigOrDie()
@@ -395,47 +389,6 @@ func createVolumeSnapshotPVCSpec(o *Run, pvcNsName types.NamespacedName, uid str
 	return pvc
 }
 
-//// createPodForPVCSpec creates a pod which is attached to given PVC
-//func createPodForPVCSpec(podNameNs types.NamespacedName, pvcName, uid string, op *Run) *corev1.Pod {
-//	var containerImage string
-//	if op.LocalRegistry != "" {
-//		containerImage = op.LocalRegistry + "/" + BusyboxImageName
-//	} else {
-//		containerImage = BusyBoxRegistry + "/" + BusyboxImageName
-//	}
-//
-//	pod := getPodTemplate(podNameNs, uid, op)
-//	pod.Spec.Containers = []corev1.Container{
-//		{
-//			Name:            BusyboxContainerName,
-//			Image:           containerImage,
-//			Command:         CommandSleep3600,
-//			ImagePullPolicy: corev1.PullIfNotPresent,
-//			Resources:       op.ResourceRequirements,
-//			VolumeMounts: []corev1.VolumeMount{
-//				{
-//					Name:      VolMountName,
-//					MountPath: VolMountPath,
-//				},
-//			},
-//		},
-//	}
-//
-//	pod.Spec.Volumes = []corev1.Volume{
-//		{
-//			Name: VolMountName,
-//			VolumeSource: corev1.VolumeSource{
-//				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-//					ClaimName: pvcName,
-//					ReadOnly:  false,
-//				},
-//			},
-//		},
-//	}
-//
-//	return pod
-//}
-
 func createPVCDataWriterPodSpec(podName string, pvcNsName types.NamespacedName, op *Run, nameSuffix string) *corev1.Pod {
 	podNsName := types.NamespacedName{
 		Name:      podName,
@@ -456,6 +409,7 @@ func createPVCDataWriterPodSpec(podName string, pvcNsName types.NamespacedName, 
 
 	return pod
 }
+
 func createPVCDataReaderPodSpec(podName string, pvcNsName types.NamespacedName, op *Run, nameSuffix string) *corev1.Pod {
 	podNsName := types.NamespacedName{
 		Name:      podName + nameSuffix,
@@ -580,34 +534,6 @@ func createVolumeSnapsotSpec(nsName types.NamespacedName, snapshotClass, snapVer
 	volSnap.SetLabels(getPreflightResourceLabels(uid))
 
 	return volSnap
-}
-
-// createRestorePVCSpec creates pvc for restore (unmounted pvc as well)
-// TODO: @shiwam remove this after finishing all the changes, this func should be redundant eventually.
-func createRestorePVCSpec(pvcName, dsName, uid string, o *Run) *corev1.PersistentVolumeClaim {
-	pvc := &corev1.PersistentVolumeClaim{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      pvcName,
-			Namespace: o.Namespace,
-			Labels:    getPreflightResourceLabels(uid),
-		},
-		Spec: corev1.PersistentVolumeClaimSpec{
-			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-			StorageClassName: &o.StorageClass,
-			Resources: corev1.ResourceRequirements{
-				Requests: map[corev1.ResourceName]resource.Quantity{
-					"storage": o.PVCStorageRequest,
-				},
-			},
-			DataSource: &corev1.TypedLocalObjectReference{
-				Kind:     internal.VolumeSnapshotKind,
-				Name:     dsName,
-				APIGroup: func() *string { str := StorageSnapshotGroup; return &str }(),
-			},
-		},
-	}
-
-	return pvc
 }
 
 func getPodTemplate(nsName types.NamespacedName, uid string, op *Run) *corev1.Pod {

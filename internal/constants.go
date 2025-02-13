@@ -67,6 +67,9 @@ const (
 	LogLevelUsage                             = "Set the logging level of the application in the level of" +
 		" FATAL, ERROR, WARN, INFO, DEBUG"
 	DefaultLogLevel = "INFO"
+
+	CreateVerb = "create"
+	DeleteVerb = "delete"
 )
 
 var (
