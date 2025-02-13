@@ -82,11 +82,11 @@ func (co *Cleanup) CleanupPreflightResources(ctx context.Context) error {
 		allSuccess = false
 	}
 
-	for _, ns := range namespaceList.Items {
+	for i := range namespaceList.Items {
+		ns := &namespaceList.Items[i] // ns is now a pointer to the struct
 		if strings.HasPrefix(ns.Name, BackupNamespacePrefix) {
-			backupNs := ns
 			co.Logger.Infof("Cleaning namespace - %s", ns.GetName())
-			err = deleteK8sResource(ctx, &backupNs, kubeClient.RuntimeClient)
+			err = deleteK8sResource(ctx, ns, kubeClient.RuntimeClient)
 			if err != nil {
 				if !k8serrors.IsNotFound(err) {
 					allSuccess = false

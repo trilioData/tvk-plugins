@@ -355,7 +355,7 @@ func (o *Run) validateNamespacePermissions(ctx context.Context, kubeClient *kube
 func (o *Run) checkPermission(ctx context.Context,
 	clientSet *kubernetes.Clientset,
 	gvr metav1.GroupVersionResource,
-	verb, namespace string) (bool, string, error) {
+	verb, namespace string) (allowed bool, reason string, err error) {
 
 	ssar := &authorizationv1.SelfSubjectAccessReview{
 		Spec: authorizationv1.SelfSubjectAccessReviewSpec{
@@ -1142,6 +1142,7 @@ func (o *Run) createSnapshotFromPVC(ctx context.Context, volSnapNameNs types.Nam
 	}
 	o.Logger.Infof("Created volume snapshot - %s from pvc - %s",
 		volSnapNameNs.String(),
+		internal.GetNamespacedName(volSnapNameNs.Namespace, pvcName).String(),
 	)
 
 	o.Logger.Infof("Waiting for volume snapshot - %s created from pvc to become 'readyToUse:true'", volSnapNameNs.String())
