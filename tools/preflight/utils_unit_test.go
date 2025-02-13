@@ -91,19 +91,7 @@ func createTestVolSnapContent(volSnapContentKey, volSnapKey types.NamespacedName
 		"namespace": volSnapKey.Namespace,
 	}, "spec", "volumeSnapshotRef")).To(BeNil())
 	Expect(unstructured.SetNestedField(vsc.Object, testVolumeHandle, "spec", "source", "volumeHandle")).To(BeNil())
-	//vsc := &vs1.VolumeSnapshotContent{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      volSnapContentKey.Name,
-	//		Namespace: volSnapContentKey.Namespace,
-	//	},
-	//	Spec: vs1.VolumeSnapshotContentSpec{
-	//		VolumeSnapshotClassName: pointer.String(testSnapshotClass),
-	//		DeletionPolicy:          vs1.VolumeSnapshotContentRetain,
-	//		Source: vs1.VolumeSnapshotContentSource{
-	//			SnapshotHandle: pointer.String(testSnapshotHandle),
-	//		},
-	//	},
-	//}
+
 	return testClient.RuntimeClient.Create(ctx, vsc)
 }
 

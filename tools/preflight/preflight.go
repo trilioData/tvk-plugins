@@ -883,7 +883,7 @@ func (o *Run) validateNamespaceScopeVolumeSnapshot(ctx context.Context, nameSuff
 		return err
 	}
 
-	//// clone pvc in install namespace from the snapshot in backup namespace
+	// clone pvc in install namespace from the snapshot in backup namespace
 	backupPvcNameNs := types.NamespacedName{Name: BackupPvcNamePrefix + nameSuffix, Namespace: o.Namespace}
 	backupPvcMeta := &metav1.ObjectMeta{
 		Name:      backupPvcNameNs.Name,

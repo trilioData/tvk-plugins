@@ -419,7 +419,7 @@ func createPVCDataReaderPodSpec(podName string, pvcNsName types.NamespacedName, 
 	pod := getPodSpecWithPVC(podNsName, pvcNsName, op, nameSuffix)
 	pod.Spec.Containers[0].Command = CommandSleep3600
 	pod.Spec.Containers[0].ImagePullPolicy = corev1.PullIfNotPresent
-	// TODO: @shiwam, add a readiness probe to read data from the file, will have to change uts accordingly, skipping now.
+	// TODO: should we add a readiness probe to read data from the file, will have to change uts accordingly, skipping now.
 
 	return pod
 }

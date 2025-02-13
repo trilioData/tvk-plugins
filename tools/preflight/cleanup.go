@@ -83,7 +83,7 @@ func (co *Cleanup) CleanupPreflightResources(ctx context.Context) error {
 	}
 
 	for i := range namespaceList.Items {
-		ns := &namespaceList.Items[i] // ns is now a pointer to the struct
+		ns := &namespaceList.Items[i]
 		if strings.HasPrefix(ns.Name, BackupNamespacePrefix) {
 			co.Logger.Infof("Cleaning namespace - %s", ns.GetName())
 			err = deleteK8sResource(ctx, ns, kubeClient.RuntimeClient)
@@ -118,7 +118,7 @@ func getCleanupResourceGVKList(cl *kubernetes.Clientset) ([]schema.GroupVersionK
 			Kind:    internal.VolumeSnapshotKind,
 		})
 	}
-	// i need namespace kind as
+
 	cleanupResourceList = append(cleanupResourceList,
 		corev1.SchemeGroupVersion.WithKind(internal.PersistentVolumeClaimKind),
 		corev1.SchemeGroupVersion.WithKind(internal.PodKind))
