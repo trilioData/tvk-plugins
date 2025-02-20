@@ -774,7 +774,8 @@ func (o *Run) validateClusterScopeVolumeSnapshot(ctx context.Context, nameSuffix
 		return err
 	}
 
-	pod, err := o.createWriterPodAttachedWithPVC(ctx, SourcePodNamePrefix+nameSuffix, nameSuffix, sourcePvcNsName, clients.ClientSet)
+	writerPodName := fmt.Sprintf("%s%s-%s", SourcePvcNamePrefix, "writer", nameSuffix)
+	pod, err := o.createWriterPodAttachedWithPVC(ctx, writerPodName, nameSuffix, sourcePvcNsName, clients.ClientSet)
 	if err != nil {
 		return err
 	}
@@ -814,7 +815,8 @@ func (o *Run) validateClusterScopeVolumeSnapshot(ctx context.Context, nameSuffix
 	}
 
 	// create a reader pod and attach to cloned pvc
-	readerPod, err := o.createReaderPodAttachedWithPVC(ctx, backupPvcNameNs.Name, nameSuffix, backupPvcNameNs, clients.ClientSet)
+	readerPodName := fmt.Sprintf("%s%s-%s", BackupPvcNamePrefix, "reader", nameSuffix)
+	readerPod, err := o.createReaderPodAttachedWithPVC(ctx, readerPodName, nameSuffix, backupPvcNameNs, clients.ClientSet)
 	if err != nil {
 		return err
 	}
@@ -863,8 +865,8 @@ func (o *Run) validateNamespaceScopeVolumeSnapshot(ctx context.Context, nameSuff
 	if err != nil {
 		return err
 	}
-
-	pod, err := o.createWriterPodAttachedWithPVC(ctx, SourcePodNamePrefix+nameSuffix, nameSuffix, sourcePvcNsName, clients.ClientSet)
+	writerPodName := fmt.Sprintf("%s%s-%s", SourcePvcNamePrefix, "writer", nameSuffix)
+	pod, err := o.createWriterPodAttachedWithPVC(ctx, writerPodName, nameSuffix, sourcePvcNsName, clients.ClientSet)
 	if err != nil {
 		return err
 	}
@@ -897,7 +899,8 @@ func (o *Run) validateNamespaceScopeVolumeSnapshot(ctx context.Context, nameSuff
 	}
 
 	// create a pod and attach to cloned pvc
-	readerPod, err := o.createReaderPodAttachedWithPVC(ctx, backupPvcNameNs.Name, nameSuffix, backupPvcNameNs, clients.ClientSet)
+	readerPodName := fmt.Sprintf("%s%s-%s", BackupPvcNamePrefix, "reader", nameSuffix)
+	readerPod, err := o.createReaderPodAttachedWithPVC(ctx, readerPodName, nameSuffix, backupPvcNameNs, clients.ClientSet)
 	if err != nil {
 		return err
 	}
@@ -976,7 +979,7 @@ func (o *Run) cloneSnapshotAndContent(ctx context.Context,
 				Name:      cloneVolSnapMeta.GetName(),
 				Namespace: cloneVolSnapMeta.GetNamespace(),
 			},
-			DeletionPolicy:          snapshotv1.VolumeSnapshotContentRetain,
+			DeletionPolicy:          snapshotv1.VolumeSnapshotContentDelete,
 			Driver:                  srcVolSnapContent.Spec.Driver,
 			VolumeSnapshotClassName: srcVolSnapContent.Spec.VolumeSnapshotClassName,
 		},
@@ -1000,12 +1003,13 @@ func (o *Run) cloneSnapshotAndContent(ctx context.Context,
 		return nil, err
 	}
 
+	o.Logger.Infof("Snapshot content: %s cloned to Snapshot Content: %s", srcVolSnapContent.Name, tempVolSnapCont.Name)
+
 	if err := k8sClient.Create(ctx, &tempVolSnap); err != nil {
 		return nil, err
 	}
 
-	o.Logger.Infof("Cloned snapshot content and snapshot from %s namespace to %s namespace\n",
-		srcVolSnapContent.GetNamespace(),
+	o.Logger.Infof("Cloned snapshot to %s namespace",
 		cloneVolSnapMeta.GetNamespace())
 
 	return &tempVolSnap, nil

@@ -85,6 +85,7 @@ var (
 	requestsFlag          = flagPrefix + cmd.PodRequestFlag
 	nodeSelectorFlag      = flagPrefix + cmd.NodeSelectorFlag
 	inClusterFlag         = flagPrefix + cmd.InClusterFlag
+	scopeFlag             = flagPrefix + cmd.ScopeFlag
 
 	preflightLogFilePrefix  = "preflight-"
 	cleanupLogFilePrefix    = "preflight_cleanup-"
@@ -133,6 +134,7 @@ var (
 		namespaceFlag:        defaultTestNs,
 		cleanupOnFailureFlag: "",
 		kubeconfigFlag:       kubeConfPath,
+		scopeFlag:            internal.NamespaceScope,
 	}
 
 	podGVK = schema.GroupVersionKind{
