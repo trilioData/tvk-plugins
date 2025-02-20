@@ -143,7 +143,8 @@ var _ = Describe("Preflight Tests", func() {
 						defaultTestNs, internal.InvalidServiceAccountName, internal.InvalidServiceAccountName)))
 
 				Expect(cmdOut.Out).To(MatchRegexp(
-					fmt.Sprintf("pods \"source-pvc-writer([a-z]{6})\" is forbidden: error looking up service account %s/%s: serviceaccount \"%s\" not found",
+					fmt.Sprintf("pods \"source-pvc-writer([a-z]{6})\" is forbidden: "+
+						"error looking up service account %s/%s: serviceaccount \"%s\" not found",
 						defaultTestNs, internal.InvalidServiceAccountName, internal.InvalidServiceAccountName)))
 
 				Expect(cmdOut.Out).To(MatchRegexp(
@@ -429,8 +430,8 @@ var _ = Describe("Preflight Tests", func() {
 					nodeLabels := node.GetLabels()
 					nodeLabels[preflightNodeAffinityKey] = highAffinity
 					node.SetLabels(nodeLabels)
-					highAffinityNode, err := k8sClient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
-					Expect(err).To(BeNil())
+					highAffinityNode, hErr := k8sClient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
+					Expect(hErr).To(BeNil())
 					Expect(highAffinityNode.GetLabels()[preflightNodeAffinityKey]).To(Equal(highAffinity))
 
 					if len(nodeList.Items) > 1 {
@@ -439,8 +440,8 @@ var _ = Describe("Preflight Tests", func() {
 						nodeLabels = node.GetLabels()
 						nodeLabels[preflightNodeAffinityKey] = lowAffinity
 						node.SetLabels(nodeLabels)
-						lowAffinityNode, err := k8sClient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
-						Expect(err).To(BeNil())
+						lowAffinityNode, lErr := k8sClient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
+						Expect(lErr).To(BeNil())
 						Expect(lowAffinityNode.GetLabels()[preflightNodeAffinityKey]).To(Equal(lowAffinity))
 					}
 				})
@@ -761,7 +762,8 @@ var _ = Describe("Preflight Tests", func() {
 			})
 		})
 
-		Context("cleanup all preflight resources in a particular namespace along with other namespaces created as a part of cluster scope checks", func() {
+		Context("cleanup all preflight resources in a particular namespace"+
+			" along with other namespaces created as a part of cluster scope checks", func() {
 
 			It("Should clean all preflight resources with the same uid", func() {
 				uid := createPreflightResourcesForCleanup()
@@ -777,8 +779,8 @@ var _ = Describe("Preflight Tests", func() {
 				uid := createPreflightResourcesForCleanup()
 				createNamespace(preflight.BackupNamespacePrefix+uid, getPreflightResourceLabels(uid))
 
-				uid2, err := preflight.CreateResourceNameSuffix()
-				Expect(err).To(BeNil())
+				uid2, uid2Err := preflight.CreateResourceNameSuffix()
+				Expect(uid2Err).To(BeNil())
 
 				createNamespace(preflight.BackupNamespacePrefix+uid2, getPreflightResourceLabels(uid2))
 				cmdOut, err = runCleanupForAllPreflightResources()
