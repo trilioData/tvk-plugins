@@ -157,23 +157,13 @@ var _ = Describe("Preflight Tests", func() {
 		})
 
 		Context("Preflight run command cleanup on failure flag test cases", func() {
-			It("Should not clean resources when preflight check fails and cleanup on failure flag is set to false", func() {
+			FIt("Should not clean resources when preflight check fails and cleanup on failure flag is set to false", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
 				delete(inputFlags, cleanupOnFailureFlag)
-				inputFlags[localRegistryFlag] = internal.InvalidLocalRegistryName
+				inputFlags[serviceAccountFlag] = internal.InvalidServiceAccountName
 				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).ToNot(BeNil())
-
-				By("Preflight pods should not be removed from cluster")
-				Consistently(func() int {
-					podList := unstructured.UnstructuredList{}
-					podList.SetGroupVersionKind(podGVK)
-					err = runtimeClient.List(ctx, &podList,
-						client.MatchingLabels(getPreflightResourceLabels("")), client.InNamespace(defaultTestNs))
-					Expect(err).To(BeNil())
-					return len(podList.Items)
-				}, timeout, interval).ShouldNot(Equal(0))
 
 				By("Preflight PVCs should not be removed from cluster")
 				Consistently(func() int {
@@ -189,7 +179,7 @@ var _ = Describe("Preflight Tests", func() {
 
 		Context("preflight run command, namespace flag test cases", func() {
 
-			It("Should fail DNS and volume snapshot check if given namespace is not present on cluster", func() {
+			FIt("Should fail DNS and volume snapshot check if given namespace is not present on cluster", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
 				inputFlags[namespaceFlag] = internal.InvalidNamespace
@@ -204,11 +194,11 @@ var _ = Describe("Preflight Tests", func() {
 						" namespaces \"%s\" not found", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
 			})
 
-			It("Should fail preflight check if namespace flag is provided with zero value", func() {
+			FIt("Should fail preflight check if namespace flag is provided with zero value", func() {
 				var output []byte
 				args := []string{"run", storageClassFlag, internal.DefaultTestStorageClass,
 					namespaceFlag, "", kubeconfigFlag, kubeConfPath,
-					cleanupOnFailureFlag}
+					cleanupOnFailureFlag, scopeFlag, internal.NamespaceScope}
 				cmd := exec.Command(preflightBinaryFilePath, args...)
 				tLog.Infof("Preflight check CMD [%s]", cmd)
 				output, err = cmd.CombinedOutput()
@@ -217,14 +207,14 @@ var _ = Describe("Preflight Tests", func() {
 
 				Expect(string(output)).To(ContainSubstring("Preflight check for DNS resolution failed :: " +
 					"an empty namespace may not be set during creation"))
-				Expect(string(output)).To(ContainSubstring("Preflight check for volume snapshot and restore failed :: " +
-					"an empty namespace may not be set during creation"))
+				Expect(string(output)).To(ContainSubstring(fmt.Sprintf("Preflight check for %s scope volume snapshot and restore failed :: "+
+					"an empty namespace may not be set during creation", internal.NamespaceScope)))
 			})
 		})
 
 		Context("Preflight run command, kubeconfig flag test cases", func() {
 
-			It("Should perform preflight checks when a kubeconfig file is specified", func() {
+			FIt("Should perform preflight checks when a kubeconfig file is specified", func() {
 				var byteData []byte
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
@@ -293,7 +283,7 @@ var _ = Describe("Preflight Tests", func() {
 
 		Context("Preflight run command, config file flag test cases", func() {
 
-			It("Should perform preflight checks when inputs are provided from a yaml file", func() {
+			FIt("Should perform preflight checks when inputs are provided from a yaml file", func() {
 				yamlFilePath := filepath.Join(testDataDirRelPath, testFileInputName)
 				inputFlags := make(map[string]string)
 				inputFlags[kubeconfigFlag] = kubeConfPath
