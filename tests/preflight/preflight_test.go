@@ -130,7 +130,7 @@ var _ = Describe("Preflight Tests", func() {
 				assertSuccessfulPreflightChecks(inputFlags, cmdOut.Out)
 			})
 
-			FIt("Should fail DNS resolution and volume snapshot check if invalid service account is provided", func() {
+			It("Should fail DNS resolution and volume snapshot check if invalid service account is provided", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
 				inputFlags[serviceAccountFlag] = internal.InvalidServiceAccountName
