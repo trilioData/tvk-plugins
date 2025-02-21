@@ -157,7 +157,7 @@ var _ = Describe("Preflight Tests", func() {
 		})
 
 		Context("Preflight run command cleanup on failure flag test cases", func() {
-			FIt("Should not clean resources when preflight check fails and cleanup on failure flag is set to false", func() {
+			It("Should not clean resources when preflight check fails and cleanup on failure flag is set to false", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
 				delete(inputFlags, cleanupOnFailureFlag)
@@ -179,7 +179,7 @@ var _ = Describe("Preflight Tests", func() {
 
 		Context("preflight run command, namespace flag test cases", func() {
 
-			FIt("Should fail DNS and volume snapshot check if given namespace is not present on cluster", func() {
+			It("Should fail DNS and volume snapshot check if given namespace is not present on cluster", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
 				inputFlags[namespaceFlag] = internal.InvalidNamespace
@@ -194,7 +194,7 @@ var _ = Describe("Preflight Tests", func() {
 						" namespaces \"%s\" not found", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
 			})
 
-			FIt("Should fail preflight check if namespace flag is provided with zero value", func() {
+			It("Should fail preflight check if namespace flag is provided with zero value", func() {
 				var output []byte
 				args := []string{"run", storageClassFlag, internal.DefaultTestStorageClass,
 					namespaceFlag, "", kubeconfigFlag, kubeConfPath,
@@ -214,7 +214,7 @@ var _ = Describe("Preflight Tests", func() {
 
 		Context("Preflight run command, kubeconfig flag test cases", func() {
 
-			FIt("Should perform preflight checks when a kubeconfig file is specified", func() {
+			It("Should perform preflight checks when a kubeconfig file is specified", func() {
 				var byteData []byte
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
@@ -283,7 +283,7 @@ var _ = Describe("Preflight Tests", func() {
 
 		Context("Preflight run command, config file flag test cases", func() {
 
-			FIt("Should perform preflight checks when inputs are provided from a yaml file", func() {
+			It("Should perform preflight checks when inputs are provided from a yaml file", func() {
 				yamlFilePath := filepath.Join(testDataDirRelPath, testFileInputName)
 				inputFlags := make(map[string]string)
 				inputFlags[kubeconfigFlag] = kubeConfPath
@@ -293,7 +293,7 @@ var _ = Describe("Preflight Tests", func() {
 
 				nonCRUDPreflightCheckAssertion(internal.DefaultTestStorageClass, internal.DefaultTestSnapshotClass, cmdOut.Out)
 				assertDNSResolutionCheckSuccess(cmdOut.Out)
-				assertVolumeSnapshotCheckSuccess(cmdOut.Out, defaultTestNs, internal.NamespaceScope)
+				assertVolumeSnapshotCheckSuccess(cmdOut.Out, internal.DefaultNs, internal.NamespaceScope)
 				assertPVCStorageRequestCheckSuccess(cmdOut.Out, "")
 			})
 
