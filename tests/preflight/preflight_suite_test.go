@@ -66,14 +66,14 @@ const (
 )
 
 var (
-	err               error
-	cmdOut            *shell.CmdOut
-	kubeconfig        string
-	ctx               = context.Background()
-	flagPrefix        = "--"
-	storageClassFlag  = flagPrefix + cmd.StorageClassFlag
-	snapshotClassFlag = flagPrefix + cmd.SnapshotClassFlag
-	//localRegistryFlag     = flagPrefix + cmd.LocalRegistryFlag
+	err                   error
+	cmdOut                *shell.CmdOut
+	kubeconfig            string
+	ctx                   = context.Background()
+	flagPrefix            = "--"
+	storageClassFlag      = flagPrefix + cmd.StorageClassFlag
+	snapshotClassFlag     = flagPrefix + cmd.SnapshotClassFlag
+	localRegistryFlag     = flagPrefix + cmd.LocalRegistryFlag
 	serviceAccountFlag    = flagPrefix + cmd.ServiceAccountFlag
 	cleanupOnFailureFlag  = flagPrefix + cmd.CleanupOnFailureFlag
 	namespaceFlag         = flagPrefix + cmd.NamespaceFlag
@@ -96,13 +96,13 @@ var (
 	cleanupUIDInputYamlFile = "cleanup_uid_input.yaml"
 	cleanupFileInputData    = strings.Join([]string{"cleanup:",
 		fmt.Sprintf("  namespace: %s", defaultTestNs), "  logLevel: info"}, "\n")
-	cleanupAllInputYamlFile = "cleanup_all_input.yaml"
-	//invalidNodeSelectorKey   = "node-sel-key"
-	//invalidNodeSelectorValue = "node-sel-value"
-	nodeAffinityInputFile = "node_affinity_preflight.yaml"
-	podAffinityInputFile  = "pod_affinity_preflight.yaml"
-	taintsFileInputFile   = "taints_tolerations_preflight.yaml"
-	kubeConfPath          = os.Getenv(kubeconfigEnv)
+	cleanupAllInputYamlFile  = "cleanup_all_input.yaml"
+	invalidNodeSelectorKey   = "node-sel-key"
+	invalidNodeSelectorValue = "node-sel-value"
+	nodeAffinityInputFile    = "node_affinity_preflight.yaml"
+	podAffinityInputFile     = "pod_affinity_preflight.yaml"
+	taintsFileInputFile      = "taints_tolerations_preflight.yaml"
+	kubeConfPath             = os.Getenv(kubeconfigEnv)
 
 	distDir         = "dist"
 	preflightDirMap = map[string]string{
