@@ -66,14 +66,14 @@ const (
 )
 
 var (
-	err                   error
-	cmdOut                *shell.CmdOut
-	kubeconfig            string
-	ctx                   = context.Background()
-	flagPrefix            = "--"
-	storageClassFlag      = flagPrefix + cmd.StorageClassFlag
-	snapshotClassFlag     = flagPrefix + cmd.SnapshotClassFlag
-	localRegistryFlag     = flagPrefix + cmd.LocalRegistryFlag
+	err               error
+	cmdOut            *shell.CmdOut
+	kubeconfig        string
+	ctx               = context.Background()
+	flagPrefix        = "--"
+	storageClassFlag  = flagPrefix + cmd.StorageClassFlag
+	snapshotClassFlag = flagPrefix + cmd.SnapshotClassFlag
+	//localRegistryFlag     = flagPrefix + cmd.LocalRegistryFlag
 	serviceAccountFlag    = flagPrefix + cmd.ServiceAccountFlag
 	cleanupOnFailureFlag  = flagPrefix + cmd.CleanupOnFailureFlag
 	namespaceFlag         = flagPrefix + cmd.NamespaceFlag
