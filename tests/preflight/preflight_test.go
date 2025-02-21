@@ -200,7 +200,8 @@ var _ = Describe("Preflight Tests", func() {
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf(
 					" Preflight check for DNS resolution failed :: namespaces \"%s\" not found", inputFlags[namespaceFlag])))
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf(
-					"Preflight check for %s scope volume snapshot and restore failed :: namespaces \"%s\" not found", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
+					"Preflight check for %s scope volume snapshot and restore failed ::"+
+						" namespaces \"%s\" not found", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
 			})
 
 			It("Should fail preflight check if namespace flag is provided with zero value", func() {
