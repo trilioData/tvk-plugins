@@ -110,7 +110,7 @@ var _ = Describe("Preflight Tests", func() {
 					ContainSubstring("Preflight check for DNS resolution failed :: timed out waiting for the condition"))
 				Expect(cmdOut.Out).To(MatchRegexp(
 					fmt.Sprintf("Preflight check for %s scope volume snapshot and restore failed :: "+
-						"pod %s/source-pvc-writer-([a-z]{6}), hasn't reached into ready state", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
+						"pod: %s/source-pvc-writer-([a-z]{6}), hasn't reached into ready state", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
 
 				nonCRUDPreflightCheckAssertion(inputFlags[storageClassFlag], "", cmdOut.Out)
 			})
@@ -386,7 +386,7 @@ var _ = Describe("Preflight Tests", func() {
 						"Preflight check for DNS resolution failed :: timed out waiting for the condition"))
 
 					Expect(cmdOut.Out).To(MatchRegexp(
-						fmt.Sprintf("Preflight check for %s scope volume snapshot and restore failed :: pod %s/source-pvc-writer-([a-z]{6}),"+
+						fmt.Sprintf("Preflight check for %s scope volume snapshot and restore failed :: pod: %s/source-pvc-writer-([a-z]{6}),"+
 							" hasn't reached into ready state", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
 				})
 
@@ -502,7 +502,7 @@ var _ = Describe("Preflight Tests", func() {
 
 					Expect(cmdOut.Out).To(MatchRegexp(
 						fmt.Sprintf("Preflight check for %s scope volume snapshot and restore failed :: "+
-							"pod %s/source-pvc-writer-([a-z]{6}), hasn't reached into ready state", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
+							"pod: %s/source-pvc-writer-([a-z]{6}), hasn't reached into ready state", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
 				})
 
 				AfterEach(func() {
@@ -601,7 +601,7 @@ var _ = Describe("Preflight Tests", func() {
 
 					Expect(cmdOut.Out).To(MatchRegexp(
 						fmt.Sprintf("Preflight check for %s scope volume snapshot and restore failed :: "+
-							"pod %s/source-pvc-writer-([a-z]{6}), hasn't reached into ready state", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
+							"pod: %s/source-pvc-writer-([a-z]{6}), hasn't reached into ready state", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
 				})
 
 				AfterEach(func() {
