@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/discovery"
 )
@@ -65,4 +66,8 @@ func GenerateRandomString(n int, isOnlyAlphabetic bool) string {
 		b[i] = letterRunes[randNum.Int64()]
 	}
 	return string(b)
+}
+
+func GetNamespacedName(namespace, name string) types.NamespacedName {
+	return types.NamespacedName{Name: name, Namespace: namespace}
 }

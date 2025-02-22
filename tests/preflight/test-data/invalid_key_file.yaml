@@ -5,7 +5,7 @@ run:
   resources:
     requests:
       memory: 32Mi
-      cpu: 250m
+      cpu: 25m
     limits:
       memory: 96Mi
       cpu: 500m

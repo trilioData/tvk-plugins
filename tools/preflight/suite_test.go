@@ -47,6 +47,8 @@ const (
 	testPodName        = "test-ut-pod"
 	testSnapshotClass  = "ut-snapshot-class"
 	testVolumeSnapshot = "ut-volume-snapshot"
+	testSnapshotHandle = "ut-snapshot-handle"
+	testVolumeHandle   = "ut-volume-handle"
 	testPVC            = "test-pvc"
 	testDriver         = "test.snapshot.driver.io"
 	testNameSuffix     = "abcdef"
