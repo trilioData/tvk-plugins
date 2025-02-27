@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	runtime2 "runtime"
 	"strings"
 	"testing"
 	"time"
@@ -102,11 +103,14 @@ var (
 	taintsFileInputFile      = "taints_tolerations_preflight.yaml"
 	kubeConfPath             = os.Getenv(kubeconfigEnv)
 
-	distDir                 = "dist"
-	preflightDir            = "preflight_linux_amd64_v1"
+	distDir         = "dist"
+	preflightDirMap = map[string]string{
+		"darwin": "preflight_darwin_arm64_v8.0",
+		"linux":  "preflight_linux_amd64_v1",
+	}
 	currentDir, _           = os.Getwd()
 	projectRoot             = filepath.Dir(filepath.Dir(currentDir))
-	preflightBinaryDir      = filepath.Join(projectRoot, distDir, preflightDir)
+	preflightBinaryDir      = filepath.Join(projectRoot, distDir, preflightDirMap[runtime2.GOOS])
 	preflightBinaryName     = "preflight"
 	preflightBinaryFilePath = filepath.Join(preflightBinaryDir, preflightBinaryName)
 	testDataDirRelPath      = filepath.Join(projectRoot, "tests", "preflight", "test-data")

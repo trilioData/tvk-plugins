@@ -3,6 +3,7 @@ package preflight
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/trilioData/tvk-plugins/internal"
 
@@ -52,10 +53,6 @@ func (co *Cleanup) CleanupPreflightResources(ctx context.Context) error {
 		deleteNs = co.Namespace
 	}
 
-	if co.UID != "" {
-		resLabels[LabelPreflightRunKey] = co.UID
-	}
-
 	for _, gvk := range gvkList {
 		var resList = unstructured.UnstructuredList{}
 		resList.SetGroupVersionKind(gvk)
@@ -76,6 +73,29 @@ func (co *Cleanup) CleanupPreflightResources(ctx context.Context) error {
 			}
 		}
 	}
+
+	// Delete the backup namespace and all the resources in it, created by preflight tvk-plugin.
+	namespaceList := &corev1.NamespaceList{}
+	err = kubeClient.RuntimeClient.List(ctx, namespaceList, client.MatchingLabels(resLabels))
+	if err != nil {
+		co.Logger.Errorf("Error fetching namespaces with label %s :: %s\n", resLabels, err.Error())
+		allSuccess = false
+	}
+
+	for i := range namespaceList.Items {
+		ns := &namespaceList.Items[i]
+		if strings.HasPrefix(ns.Name, BackupNamespacePrefix) {
+			co.Logger.Infof("Cleaning namespace - %s", ns.GetName())
+			err = deleteK8sResource(ctx, ns, kubeClient.RuntimeClient)
+			if err != nil {
+				if !k8serrors.IsNotFound(err) {
+					allSuccess = false
+					co.Logger.Errorf("problem occurred deleting namespace - %s :: %s", ns.GetName(), err.Error())
+				}
+			}
+		}
+	}
+
 	if allSuccess {
 		co.Logger.Infoln("All preflight resources cleaned")
 		return nil
