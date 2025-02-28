@@ -29,11 +29,21 @@ var _ = Describe("Preflight Tests", func() {
 
 		Context("Preflight run command storage class flag test cases", func() {
 
-			It("All preflight checks should pass if correct storage class flag value is provided", func() {
+			It("All preflight checks should pass if correct storage class flag value is provided in namespace scope", func() {
 				cmdOut, err = runPreflightChecks(flagsMap)
 				Expect(err).To(BeNil())
 
 				assertSuccessfulPreflightChecks(flagsMap, cmdOut.Out)
+			})
+
+			It("All preflight checks should pass if correct storage class flag value is provided in cluster scope", func() {
+				clusterScopeInputs := make(map[string]string)
+				copyMap(flagsMap, clusterScopeInputs)
+				clusterScopeInputs[scopeFlag] = internal.ClusterScope
+				cmdOut, err = runPreflightChecks(clusterScopeInputs)
+				Expect(err).To(BeNil())
+
+				assertSuccessfulPreflightChecks(clusterScopeInputs, cmdOut.Out)
 			})
 
 			It("Should fail preflight checks if incorrect storage class flag value is provided", func() {
@@ -86,7 +96,7 @@ var _ = Describe("Preflight Tests", func() {
 		//})
 
 		Context("Preflight run command local registry flag test cases", func() {
-
+			// TODO: shiwam, long running test, either add timeout if possible or remove from IT and put in UT
 			It("Should fail DNS resolution and volume snapshot check if invalid local registry path is provided", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
@@ -98,9 +108,9 @@ var _ = Describe("Preflight Tests", func() {
 					MatchRegexp("(DNS pod - dnsutils-)([a-z]{6})( hasn't reached into ready state)"))
 				Expect(cmdOut.Out).To(
 					ContainSubstring("Preflight check for DNS resolution failed :: timed out waiting for the condition"))
-				Expect(cmdOut.Out).To(
-					MatchRegexp("(Preflight check for volume snapshot and restore failed :: pod source-pod-)" +
-						"([a-z]{6})( hasn't reached into ready state)"))
+				Expect(cmdOut.Out).To(MatchRegexp(
+					fmt.Sprintf("Preflight check for %s scope volume snapshot and restore failed :: "+
+						"pod: %s/source-pvc-writer-([a-z]{6}), hasn't reached into ready state", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
 
 				nonCRUDPreflightCheckAssertion(inputFlags[storageClassFlag], "", cmdOut.Out)
 			})
@@ -133,12 +143,13 @@ var _ = Describe("Preflight Tests", func() {
 						defaultTestNs, internal.InvalidServiceAccountName, internal.InvalidServiceAccountName)))
 
 				Expect(cmdOut.Out).To(MatchRegexp(
-					fmt.Sprintf("(pods \"source-pod-)([a-z]{6})\" is forbidden: error looking up service account %s/%s: serviceaccount \"%s\" not found",
+					fmt.Sprintf("pods \"source-pvc-writer-([a-z]{6})\" is forbidden: "+
+						"error looking up service account %s/%s: serviceaccount \"%s\" not found",
 						defaultTestNs, internal.InvalidServiceAccountName, internal.InvalidServiceAccountName)))
 
 				Expect(cmdOut.Out).To(MatchRegexp(
-					fmt.Sprintf("(Preflight check for volume snapshot and restore failed)(.*)"+
-						"(error looking up service account %s/%s: serviceaccount \"%s\" not found)",
+					fmt.Sprintf("(Preflight check for %s scope volume snapshot and restore failed)(.*)"+
+						"(error looking up service account %s/%s: serviceaccount \"%s\" not found)", inputFlags[scopeFlag],
 						defaultTestNs, internal.InvalidServiceAccountName, internal.InvalidServiceAccountName)))
 
 				nonCRUDPreflightCheckAssertion(inputFlags[storageClassFlag], "", cmdOut.Out)
@@ -150,19 +161,9 @@ var _ = Describe("Preflight Tests", func() {
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)
 				delete(inputFlags, cleanupOnFailureFlag)
-				inputFlags[localRegistryFlag] = internal.InvalidLocalRegistryName
+				inputFlags[serviceAccountFlag] = internal.InvalidServiceAccountName
 				cmdOut, err = runPreflightChecks(inputFlags)
 				Expect(err).ToNot(BeNil())
-
-				By("Preflight pods should not be removed from cluster")
-				Consistently(func() int {
-					podList := unstructured.UnstructuredList{}
-					podList.SetGroupVersionKind(podGVK)
-					err = runtimeClient.List(ctx, &podList,
-						client.MatchingLabels(getPreflightResourceLabels("")), client.InNamespace(defaultTestNs))
-					Expect(err).To(BeNil())
-					return len(podList.Items)
-				}, timeout, interval).ShouldNot(Equal(0))
 
 				By("Preflight PVCs should not be removed from cluster")
 				Consistently(func() int {
@@ -189,14 +190,15 @@ var _ = Describe("Preflight Tests", func() {
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf(
 					" Preflight check for DNS resolution failed :: namespaces \"%s\" not found", inputFlags[namespaceFlag])))
 				Expect(cmdOut.Out).To(ContainSubstring(fmt.Sprintf(
-					"Preflight check for volume snapshot and restore failed :: namespaces \"%s\" not found", inputFlags[namespaceFlag])))
+					"Preflight check for %s scope volume snapshot and restore failed ::"+
+						" namespaces \"%s\" not found", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
 			})
 
 			It("Should fail preflight check if namespace flag is provided with zero value", func() {
 				var output []byte
 				args := []string{"run", storageClassFlag, internal.DefaultTestStorageClass,
 					namespaceFlag, "", kubeconfigFlag, kubeConfPath,
-					cleanupOnFailureFlag}
+					cleanupOnFailureFlag, scopeFlag, internal.NamespaceScope}
 				cmd := exec.Command(preflightBinaryFilePath, args...)
 				tLog.Infof("Preflight check CMD [%s]", cmd)
 				output, err = cmd.CombinedOutput()
@@ -205,8 +207,8 @@ var _ = Describe("Preflight Tests", func() {
 
 				Expect(string(output)).To(ContainSubstring("Preflight check for DNS resolution failed :: " +
 					"an empty namespace may not be set during creation"))
-				Expect(string(output)).To(ContainSubstring("Preflight check for volume snapshot and restore failed :: " +
-					"an empty namespace may not be set during creation"))
+				Expect(string(output)).To(ContainSubstring(fmt.Sprintf("Preflight check for %s scope volume snapshot and restore failed :: "+
+					"an empty namespace may not be set during creation", internal.NamespaceScope)))
 			})
 		})
 
@@ -291,18 +293,19 @@ var _ = Describe("Preflight Tests", func() {
 
 				nonCRUDPreflightCheckAssertion(internal.DefaultTestStorageClass, internal.DefaultTestSnapshotClass, cmdOut.Out)
 				assertDNSResolutionCheckSuccess(cmdOut.Out)
-				assertVolumeSnapshotCheckSuccess(cmdOut.Out)
+				assertVolumeSnapshotCheckSuccess(cmdOut.Out, internal.DefaultNs, internal.NamespaceScope)
 				assertPVCStorageRequestCheckSuccess(cmdOut.Out, "")
 			})
 
 			It("Should perform preflight checks with with file inputs overridden by CLI flag inputs", func() {
 				yamlFilePath := filepath.Join(testDataDirRelPath, testFileInputName)
-				createNamespace(flagNamespace)
+				createNamespace(flagNamespace, nil)
 				defer deleteNamespace(flagNamespace)
 				inputFlags := make(map[string]string)
 				inputFlags[kubeconfigFlag] = kubeConfPath
 				inputFlags[configFileFlag] = yamlFilePath
 				inputFlags[namespaceFlag] = flagNamespace
+				inputFlags[scopeFlag] = internal.NamespaceScope
 				inputFlags[pvcStorageRequestFlag] = "2Gi"
 				inputFlags[requestsFlag] = strings.Join([]string{resourceCPUToken, internal.CPU400}, "=")
 				inputFlags[limitsFlag] = strings.Join([]string{resourceMemoryToken, internal.Memory256}, "=")
@@ -316,7 +319,7 @@ var _ = Describe("Preflight Tests", func() {
 
 				nonCRUDPreflightCheckAssertion(internal.DefaultTestStorageClass, internal.DefaultTestSnapshotClass, cmdOut.Out)
 				assertDNSResolutionCheckSuccess(cmdOut.Out)
-				assertVolumeSnapshotCheckSuccess(cmdOut.Out)
+				assertVolumeSnapshotCheckSuccess(cmdOut.Out, inputFlags[namespaceFlag], inputFlags[scopeFlag])
 				assertPVCStorageRequestCheckSuccess(cmdOut.Out, inputFlags[pvcStorageRequestFlag])
 			})
 
@@ -345,7 +348,6 @@ var _ = Describe("Preflight Tests", func() {
 					testNodeName string
 				)
 				BeforeAll(func() {
-
 					nodeList, err = k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 					Expect(err).To(BeNil())
 					Expect(len(nodeList.Items)).ToNot(Equal(0))
@@ -371,6 +373,7 @@ var _ = Describe("Preflight Tests", func() {
 					assertSuccessfulPreflightChecks(inputFlags, cmdOut.Out)
 				})
 
+				// TODO: shiwam, should we have this in IT, reduce the runtime if kept here otherwise it's not worth it?
 				It("Should not be able to schedule DNS and source pod when node selector does not match any node on the cluster", func() {
 					inputFlags := make(map[string]string)
 					copyMap(flagsMap, inputFlags)
@@ -383,7 +386,8 @@ var _ = Describe("Preflight Tests", func() {
 						"Preflight check for DNS resolution failed :: timed out waiting for the condition"))
 
 					Expect(cmdOut.Out).To(MatchRegexp(
-						"Preflight check for volume snapshot and restore failed :: pod source-pod-[a-z]{6} hasn't reached into ready state"))
+						fmt.Sprintf("Preflight check for %s scope volume snapshot and restore failed :: pod: %s/source-pvc-writer-([a-z]{6}),"+
+							" hasn't reached into ready state", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
 				})
 
 				AfterAll(func() {
@@ -417,8 +421,9 @@ var _ = Describe("Preflight Tests", func() {
 					nodeLabels := node.GetLabels()
 					nodeLabels[preflightNodeAffinityKey] = highAffinity
 					node.SetLabels(nodeLabels)
-					_, err = k8sClient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
-					Expect(err).To(BeNil())
+					highAffinityNode, hErr := k8sClient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
+					Expect(hErr).To(BeNil())
+					Expect(highAffinityNode.GetLabels()[preflightNodeAffinityKey]).To(Equal(highAffinity))
 
 					if len(nodeList.Items) > 1 {
 						node = &nodeList.Items[1]
@@ -426,8 +431,9 @@ var _ = Describe("Preflight Tests", func() {
 						nodeLabels = node.GetLabels()
 						nodeLabels[preflightNodeAffinityKey] = lowAffinity
 						node.SetLabels(nodeLabels)
-						_, err = k8sClient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
-						Expect(err).To(BeNil())
+						lowAffinityNode, lErr := k8sClient.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
+						Expect(lErr).To(BeNil())
+						Expect(lowAffinityNode.GetLabels()[preflightNodeAffinityKey]).To(Equal(lowAffinity))
 					}
 				})
 
@@ -443,7 +449,7 @@ var _ = Describe("Preflight Tests", func() {
 
 					nonCRUDPreflightCheckAssertion(internal.DefaultTestStorageClass, "", cmdOut.Out)
 					assertDNSResolutionCheckSuccess(cmdOut.Out)
-					assertVolumeSnapshotCheckSuccess(cmdOut.Out)
+					assertVolumeSnapshotCheckSuccess(cmdOut.Out, defaultTestNs, internal.NamespaceScope)
 				})
 
 				AfterEach(func() {
@@ -481,7 +487,7 @@ var _ = Describe("Preflight Tests", func() {
 						Expect(err).To(BeNil())
 					}
 				})
-
+				// TODO: shiwam, long running test, either add timeout if possible or remove from IT and put in UT
 				It("Should not be able to schedule DNS and source pod on cluster when pod affinity required rules do not satisfy", func() {
 					yamlFilePath := filepath.Join(testDataDirRelPath, nodeAffinityInputFile)
 					inputFlags := make(map[string]string)
@@ -495,7 +501,8 @@ var _ = Describe("Preflight Tests", func() {
 						"Preflight check for DNS resolution failed :: timed out waiting for the condition"))
 
 					Expect(cmdOut.Out).To(MatchRegexp(
-						"Preflight check for volume snapshot and restore failed :: pod source-pod-[a-z]{6} hasn't reached into ready state"))
+						fmt.Sprintf("Preflight check for %s scope volume snapshot and restore failed :: "+
+							"pod: %s/source-pvc-writer-([a-z]{6}), hasn't reached into ready state", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
 				})
 
 				AfterEach(func() {
@@ -544,7 +551,7 @@ var _ = Describe("Preflight Tests", func() {
 					assertPodScheduleSuccess(cmdOut.Out, testNodeName)
 					nonCRUDPreflightCheckAssertion(internal.DefaultTestStorageClass, "", cmdOut.Out)
 					assertDNSResolutionCheckSuccess(cmdOut.Out)
-					assertVolumeSnapshotCheckSuccess(cmdOut.Out)
+					assertVolumeSnapshotCheckSuccess(cmdOut.Out, inputFlags[namespaceFlag], internal.NamespaceScope)
 				})
 
 				AfterEach(func() {
@@ -579,6 +586,7 @@ var _ = Describe("Preflight Tests", func() {
 					createAffineBusyboxPod(preflightBusyboxPod, highAffinity, defaultTestNs)
 				})
 
+				// TODO: shiwam, long running test, either add timeout if possible or remove from IT and put in UT
 				It("Should not be able to schedule DNS and source pod on any node of the cluster", func() {
 					yamlFilePath := filepath.Join(testDataDirRelPath, podAffinityInputFile)
 					inputFlags := make(map[string]string)
@@ -592,7 +600,8 @@ var _ = Describe("Preflight Tests", func() {
 						"Preflight check for DNS resolution failed :: timed out waiting for the condition"))
 
 					Expect(cmdOut.Out).To(MatchRegexp(
-						"Preflight check for volume snapshot and restore failed :: pod source-pod-[a-z]{6} hasn't reached into ready state"))
+						fmt.Sprintf("Preflight check for %s scope volume snapshot and restore failed :: "+
+							"pod: %s/source-pvc-writer-([a-z]{6}), hasn't reached into ready state", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
 				})
 
 				AfterEach(func() {
@@ -738,6 +747,34 @@ var _ = Describe("Preflight Tests", func() {
 				_ = createPreflightResourcesForCleanup()
 				_ = createPreflightResourcesForCleanup()
 				_ = createPreflightResourcesForCleanup()
+				cmdOut, err = runCleanupForAllPreflightResources()
+				Expect(err).To(BeNil())
+
+				assertSuccessCleanupAll(cmdOut.Out)
+			})
+		})
+
+		Context("cleanup all preflight resources in a particular namespace"+
+			" along with other namespaces created as a part of cluster scope checks", func() {
+
+			It("Should clean all preflight resources with the same uid", func() {
+				uid := createPreflightResourcesForCleanup()
+				createNamespace(preflight.BackupNamespacePrefix+uid, getPreflightResourceLabels(uid))
+
+				cmdOut, err = runCleanupWithUID(uid)
+				Expect(err).To(BeNil())
+
+				assertSuccessCleanupAll(cmdOut.Out)
+			})
+
+			It("Should clean all preflight resources with the different uids spanning across different runs", func() {
+				uid := createPreflightResourcesForCleanup()
+				createNamespace(preflight.BackupNamespacePrefix+uid, getPreflightResourceLabels(uid))
+
+				uid2, uid2Err := preflight.CreateResourceNameSuffix()
+				Expect(uid2Err).To(BeNil())
+
+				createNamespace(preflight.BackupNamespacePrefix+uid2, getPreflightResourceLabels(uid2))
 				cmdOut, err = runCleanupForAllPreflightResources()
 				Expect(err).To(BeNil())
 

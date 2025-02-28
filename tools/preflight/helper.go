@@ -412,7 +412,7 @@ func createPVCDataWriterPodSpec(podName string, pvcNsName types.NamespacedName, 
 
 func createPVCDataReaderPodSpec(podName string, pvcNsName types.NamespacedName, op *Run, nameSuffix string) *corev1.Pod {
 	podNsName := types.NamespacedName{
-		Name:      podName + nameSuffix,
+		Name:      podName,
 		Namespace: pvcNsName.Namespace,
 	}
 

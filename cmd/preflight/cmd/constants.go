@@ -59,7 +59,7 @@ const (
 	cleanupLogFilePrefix   = "preflight_cleanup"
 	preflightUIDLength     = 6
 
-	DefaultPodRequestCPU    = "250m"
+	DefaultPodRequestCPU    = "25m"
 	DefaultPodRequestMemory = "64Mi"
 	DefaultPodLimitCPU      = "500m"
 	DefaultPodLimitMemory   = "128Mi"

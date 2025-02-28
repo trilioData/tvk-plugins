@@ -52,6 +52,9 @@ func (co *Cleanup) CleanupPreflightResources(ctx context.Context) error {
 	if co.Namespace != "" {
 		deleteNs = co.Namespace
 	}
+	if co.UID != "" {
+		resLabels[LabelPreflightRunKey] = co.UID
+	}
 
 	for _, gvk := range gvkList {
 		var resList = unstructured.UnstructuredList{}

@@ -46,7 +46,7 @@ func assertSuccessfulPreflightChecks(inputFlags map[string]string, outputLog str
 	pvcStorageRequest := inputFlags[pvcStorageRequestFlag]
 	nonCRUDPreflightCheckAssertion(storageClass, snapshotClass, outputLog)
 	assertDNSResolutionCheckSuccess(outputLog)
-	assertVolumeSnapshotCheckSuccess(outputLog)
+	assertVolumeSnapshotCheckSuccess(outputLog, inputFlags[namespaceFlag], inputFlags[scopeFlag])
 	assertPVCStorageRequestCheckSuccess(outputLog, pvcStorageRequest)
 }
 
@@ -121,23 +121,63 @@ func assertDNSResolutionCheckSuccess(outputLog string) {
 	Expect(outputLog).To(ContainSubstring("Preflight check for DNS resolution is successful"))
 }
 
-func assertVolumeSnapshotCheckSuccess(outputLog string) {
+func assertVolumeSnapshotCheckSuccess(outputLog, namespace, scope string) {
 	By("Check whether volume snapshot and restore is possible on cluster")
+	sourceNamespace := namespace
+	volSnapPrefix := preflight.VolumeSnapSrcNamePrefix
+	if scope == internal.ClusterScope {
+		sourceNamespace = fmt.Sprintf("%s([a-z]{6})", preflight.BackupNamespacePrefix)
+		volSnapPrefix = preflight.VolumeSnapBackupNamePrefix
+		// Cloned snapshot content and snapshot from  namespace to default namespace
+		Expect(outputLog).To(MatchRegexp(
+			fmt.Sprintf(
+				"Snapshot content: snapcontent-([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})"+
+					" cloned to Snapshot Content: %s([a-z]{6})", preflight.VolumeSnapBackupNamePrefix),
+		))
 
-	Expect(outputLog).
-		To(ContainSubstring("Command 'exec /bin/sh -c dat=$(cat \"/demo/data/sample-file.txt\"); " +
-			"echo \"${dat}\"; if [[ \"${dat}\" == \"pod preflight data\" ]]; then exit 0; else exit 1; fi' " +
-			"in container - 'busybox' of pod - 'restored-pod"))
+		Expect(outputLog).To(MatchRegexp(fmt.Sprintf("Cloned snapshot to %s namespace", namespace)))
+	}
 
-	Expect(outputLog).To(MatchRegexp("(Restored pod - restored-pod-)([a-z]{6})( has expected data)"))
+	// Check if PVC was created
+	Expect(outputLog).To(MatchRegexp(fmt.Sprintf("Created pvc - %s/source-pvc-([a-z]{6})", sourceNamespace)))
 
-	Expect(outputLog).
-		To(ContainSubstring("Command 'exec /bin/sh -c dat=$(cat \"/demo/data/sample-file.txt\"); " +
-			"echo \"${dat}\"; if [[ \"${dat}\" == \"pod preflight data\" ]]; " +
-			"then exit 0; else exit 1; fi' in container - 'busybox' of pod - 'unmounted-restored-pod"))
+	// Check if Pod was created
+	Expect(outputLog).To(MatchRegexp(fmt.Sprintf("Created pod - %s/source-pvc-writer-([a-z]{6})", sourceNamespace)))
 
-	Expect(outputLog).To(ContainSubstring("restored pod from volume snapshot of unmounted pv has expected data"))
-	Expect(outputLog).To(ContainSubstring("Preflight check for volume snapshot and restore is successful"))
+	// Check if data was successfully written to PVC
+	Expect(outputLog).To(MatchRegexp(
+		fmt.Sprintf("Successfully wrote data to PVC - %s/source-pvc-([a-z]{6}) by attaching data writer pod "+
+			"- %s/source-pvc-writer-([a-z]{6}) to it", sourceNamespace, sourceNamespace)))
+
+	// Check if VolumeSnapshot was created
+	Expect(outputLog).To(MatchRegexp(
+		fmt.Sprintf("Created volume snapshot - %s/snapshot-source-pvc-([a-z]{6}) from pvc", sourceNamespace)))
+
+	// Check if VolumeSnapshot is ready-to-use
+	Expect(outputLog).To(MatchRegexp(
+		fmt.Sprintf("volume snapshot - %s/snapshot-source-pvc-([a-z]{6}) is ready-to-use", sourceNamespace)))
+
+	// Check if PVC was created from snapshot
+	Expect(outputLog).To(MatchRegexp(
+		fmt.Sprintf("Created PVC %s/backup-pvc-([a-z]{6}) from snapshot %s/%s([a-z]{6})",
+			namespace, namespace, volSnapPrefix)))
+
+	// Check if Pod was created for the restored PVC
+	Expect(outputLog).To(MatchRegexp(fmt.Sprintf("Created pod - %s/backup-pvc-reader-([a-z]{6})", namespace)))
+
+	// Check if data was successfully read from the restored PVC
+	Expect(outputLog).To(MatchRegexp("(Command 'exec /bin/sh -c dat=\\$\\(cat \"/demo/data/sample-file.txt\"\\); " +
+		"echo \"\\${dat}\"; if \\[\\[ \"\\${dat}\" == \"pod preflight data\" \\]\\]; then exit 0; else exit 1; fi' " +
+		"in container - 'busybox' of pod - 'backup-pvc-reader-)([a-z]{6})(' executed successfully)"))
+
+	// Check if data was successfully read from PVC
+	Expect(outputLog).To(MatchRegexp(
+		fmt.Sprintf("Successfully read data from PVC - %s/backup-pvc-([a-z]{6})"+
+			" by attaching data reader pod - %s/backup-pvc-reader-([a-z]{6}) to it", namespace, namespace)))
+
+	// Check if preflight check was successful
+	Expect(outputLog).To(ContainSubstring(
+		fmt.Sprintf("Preflight check for %s scope volume snapshot and restore is successful", scope)))
 }
 
 func assertPVCStorageRequestCheckSuccess(outputLog, pvcStorageRequest string) {
@@ -235,13 +275,11 @@ func assertSuccessCleanupAll(outputLog string) {
 
 func assertPodScheduleSuccess(outputLog, nodeName string) {
 	Expect(outputLog).To(MatchRegexp(
-		fmt.Sprintf("Pod - 'dnsutils-[a-z]{6}' scheduled on node - '%s'", nodeName)))
+		fmt.Sprintf("Pod - 'dnsutils-([a-z]{6})' scheduled on node - '%s'", nodeName)))
 	Expect(outputLog).To(MatchRegexp(
-		fmt.Sprintf("Pod - 'source-pod-[a-z]{6}' scheduled on node - '%s'", nodeName)))
+		fmt.Sprintf("Pod - 'source-pvc-writer-([a-z]{6})' scheduled on node - '%s'", nodeName)))
 	Expect(outputLog).To(MatchRegexp(
-		fmt.Sprintf("Pod - 'restored-pod-[a-z]{6}' scheduled on node - '%s'", nodeName)))
-	Expect(outputLog).To(MatchRegexp(
-		fmt.Sprintf("Pod - 'unmounted-restored-pod-[a-z]{6}' scheduled on node - '%s'", nodeName)))
+		fmt.Sprintf("Pod - 'backup-pvc-reader-([a-z]{6})' scheduled on node - '%s'", nodeName)))
 }
 
 func createPreflightResourcesForCleanup() string {
@@ -440,10 +478,11 @@ func getPreflightResourceLabels(uid string) map[string]string {
 	return labels
 }
 
-func createNamespace(namespace string) {
+func createNamespace(namespace string, labels map[string]string) {
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: namespace,
+			Name:   namespace,
+			Labels: labels,
 		},
 	}
 	_, err = k8sClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
