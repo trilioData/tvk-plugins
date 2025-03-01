@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -50,7 +49,7 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 			Expect(err).Should(BeNil())
 			log.Debug(logCollector)
 
-			data, err := ioutil.ReadFile(inputFileName)
+			data, err := os.ReadFile(inputFileName)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(yaml.UnmarshalStrict(data, &newLogCollector)).ShouldNot(HaveOccurred())
 
@@ -69,7 +68,7 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 			inputFileName = filepath.Join(testDataDir, invalidTestInputFile)
 			pErr := manageFileInputs()
 
-			data, err := ioutil.ReadFile(inputFileName)
+			data, err := os.ReadFile(inputFileName)
 			Expect(err).ShouldNot(HaveOccurred())
 			newLCerr := yaml.UnmarshalStrict(data, &newLogCollector)
 			Expect(pErr).Should(Equal(newLCerr))
@@ -83,7 +82,7 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 			Expect(err).Should(BeNil())
 			log.Debug(logCollector)
 
-			data, err := ioutil.ReadFile(inputFileName)
+			data, err := os.ReadFile(inputFileName)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(yaml.UnmarshalStrict(data, &newLogCollector)).ShouldNot(HaveOccurred())
 
