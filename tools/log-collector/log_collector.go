@@ -287,18 +287,13 @@ func (l *LogCollector) writeLog(resourceDir, objNs, objName, container string, i
 	}
 	defer podLogs.Close()
 
-	buf, err := io.ReadAll(podLogs)
-	if err != nil {
-		log.Errorf("Error in copy information from podLogs to buffer : %s", err.Error())
-		return err
-	}
-
 	var subPath string
 	if isPrevious {
 		subPath = "previous"
 	} else {
 		subPath = "current"
 	}
+
 	objectFilepath := fmt.Sprintf("%s.%s.%s.log", filepath.Join(resourceDir, objName), container, subPath)
 	outFile, err := os.Create(objectFilepath)
 	if err != nil {
@@ -306,10 +301,24 @@ func (l *LogCollector) writeLog(resourceDir, objNs, objName, container string, i
 		return err
 	}
 	defer outFile.Close()
-	_, err = outFile.Write(buf)
-	if err != nil {
-		log.Errorf("Unable to Write Pod Logs to the File : %s", err.Error())
-		return err
+
+	buf := make([]byte, 1024*1024) // 1MB Buffer
+	for {
+		n, err := podLogs.Read(buf)
+		if err != nil && !errors.Is(err, io.EOF) {
+			log.Errorf("Error reading pod logs: %s", err.Error())
+			return err
+		}
+
+		if n == 0 {
+			break
+		}
+
+		_, err = outFile.Write(buf[:n])
+		if err != nil {
+			log.Errorf("Unable to write pod logs to the file: %s", err.Error())
+			return err
+		}
 	}
 
 	return nil
