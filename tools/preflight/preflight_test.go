@@ -564,6 +564,7 @@ func preflightFuncsTestcases() {
 			}()).Should(Equal(testSnapshotHandle))
 
 			Expect(unstructured.SetNestedField(volSnap.Object, true, "status", "readyToUse")).To(BeNil())
+			Expect(unstructured.SetNestedField(volSnap.Object, "1Gi", "status", "restoreSize")).To(BeNil())
 			Expect(unstructured.SetNestedField(volSnap.Object, volSnapContentKey.Name, "status", "boundVolumeSnapshotContentName")).To(BeNil())
 
 			Expect(testClient.RuntimeClient.Status().Update(ctx, volSnap)).To(BeNil())

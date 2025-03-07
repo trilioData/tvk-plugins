@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	gort "runtime"
@@ -603,13 +604,28 @@ func waitUntilVolSnapReadyToUse(volSnap *unstructured.Unstructured, snapshotVer 
 			return false, err
 		}
 
-		ready, found, err := unstructured.NestedBool(volSnapSrc.Object, "status", "readyToUse")
-		if found && err == nil && ready {
-			return true, nil
-		}
+		readyToUse, found, err := unstructured.NestedBool(volSnapSrc.Object, "status", "readyToUse")
 		if err != nil {
 			return false, err
 		}
+
+		if !found || !readyToUse {
+			return false, nil
+		}
+
+		restoreSize, restoreSizeFound, err := unstructured.NestedString(volSnapSrc.Object, "status", "restoreSize")
+		if err != nil {
+			return false, err
+		}
+
+		if readyToUse && (!restoreSizeFound) {
+			return false, errors.New("volumesnapshot has status 'readyToUse' but 'restoreSize' is not found")
+		} else if readyToUse && restoreSizeFound && restoreSize == "" {
+			return false, errors.New("volumesnapshot has status 'readyToUse', 'restoreSize' found but it's value is empty")
+		} else if readyToUse && (len(restoreSize) > 0) {
+			return true, nil
+		}
+
 		return false, nil
 	})
 	if retErr != nil {
