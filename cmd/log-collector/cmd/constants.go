@@ -24,7 +24,7 @@ const (
 	namespacesUsage     = "specifies all the namespaces separated by commas"
 	namespacesShort     = "n"
 	clusteredUsage      = "specifies clustered object"
-	clusteredDefault    = false
+	clusteredDefault    = true
 	clusteredShort      = "c"
 	keepSourceUsage     = "Keep source directory and Zip both"
 	keepSourceDefault   = false
