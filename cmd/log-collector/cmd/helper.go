@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -46,21 +45,14 @@ func overrideFileInputsFromCLI() error {
 		return err
 	}
 
-	if cmd.Flags().Changed(internal.LogLevelFlag) || logCollector.Loglevel == "" {
-		logCollector.Loglevel = logLevel
+	// By default log collector will always run in clustered mode.
+	logCollector.Clustered = true
+	if len(namespaces) > 0 {
+		logCollector.Clustered = false
 	}
 
-	// Determine if the log collector should operate in a clustered mode based on the command line flag.
-	// If the flag is explicitly set, use its value. Otherwise, parse the default value from the flag definition.
-	if cmd.Flags().Changed(clusteredFlag) {
-		logCollector.Clustered = clustered
-	} else {
-		// Parse the default value of the clustered flag as a boolean.
-		defaultValue := cmd.Flag(clusteredFlag).DefValue
-		logCollector.Clustered, err = strconv.ParseBool(defaultValue)
-		if err != nil {
-			return err
-		}
+	if cmd.Flags().Changed(internal.LogLevelFlag) || logCollector.Loglevel == "" {
+		logCollector.Loglevel = logLevel
 	}
 
 	if cmd.Flags().Changed(namespacesFlag) || !logCollector.Clustered {

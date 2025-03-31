@@ -23,9 +23,6 @@ const (
 
 	namespacesUsage     = "specifies all the namespaces separated by commas"
 	namespacesShort     = "n"
-	clusteredUsage      = "specifies clustered object"
-	clusteredDefault    = true
-	clusteredShort      = "c"
 	keepSourceUsage     = "Keep source directory and Zip both"
 	keepSourceDefault   = false
 	keepSourceShort     = "s"
@@ -39,7 +36,6 @@ const (
 
 var (
 	rootCmd           *cobra.Command
-	clustered         bool
 	namespaces        []string
 	kubeConfig        string
 	keepSource        bool
