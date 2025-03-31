@@ -73,10 +73,6 @@ func preRun(*cobra.Command, []string) error {
 		log.Fatalf("Cannot use flag %s and %s scope at the same time", namespacesFlag, clusteredFlag)
 	}
 
-	if !logCollector.Clustered && len(logCollector.Namespaces) == 0 {
-		logCollector.Namespaces = append(logCollector.Namespaces, defaultNamespace)
-	}
-
 	t := time.Now()
 	formatted := fmt.Sprintf("%d-%02d-%02dT%02d-%02d-%02d",
 		t.Year(), t.Month(), t.Day(),
