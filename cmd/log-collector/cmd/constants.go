@@ -6,14 +6,13 @@ import (
 )
 
 const (
-	binaryName       = "log-collector"
-	clusteredFlag    = "clustered"
-	namespacesFlag   = "namespaces"
-	keepSourceFlag   = "keep-source-folder"
-	gvkFlag          = "gvks"
-	configFileFlag   = "config-file"
-	labelsFlag       = "labels"
-	defaultNamespace = "default"
+	binaryName     = "log-collector"
+	clusteredFlag  = "clustered"
+	namespacesFlag = "namespaces"
+	keepSourceFlag = "keep-source-folder"
+	gvkFlag        = "gvks"
+	configFileFlag = "config-file"
+	labelsFlag     = "labels"
 
 	shortUsage = "log-collector collects the information of resources such as yaml configuration and logs from k8s cluster."
 	longUsage  = "log-collector let you define what you need to log and how to log it by collecting the the logs " +
