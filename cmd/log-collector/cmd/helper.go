@@ -37,7 +37,7 @@ func overrideFileInputsFromCLI() error {
 	var err error
 	// By default log collector will always run in clustered mode.
 	logCollector.Clustered = true
-	if len(namespaces) > 0 {
+	if len(namespaces) > 0 || len(logCollector.Namespaces) > 0 {
 		logCollector.Clustered = false
 	}
 
