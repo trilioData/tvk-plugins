@@ -114,7 +114,6 @@ spec:
     kubectl tvk-log-collector --help
 
     Parameter   	Default     	Description
-    --clustered 	false       	whether clustered installtion of trilio application
     --namespaces 	[]          	list of namespaces to look for resources
     --kube_config 	~/.kube/config 	path to the kubernetes config
     --keep-source-folder 	    false 	        Keep source directory and Zip both
@@ -122,4 +121,4 @@ spec:
 
     > Usage :-
 
-    kubectl tvk-log-collector --clustered --log-level INFO --kubeconfig /home/usr/kubeconfig
+    kubectl tvk-log-collector --log-level INFO --kubeconfig /home/usr/kubeconfig
