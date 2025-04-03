@@ -3,7 +3,7 @@ name: Plugin Packages CI
 on:
   push:
     branches:
-      - 'main'
+      - '*'
     tags:
       - 'v*.*.*'
   pull_request:
@@ -405,8 +405,8 @@ jobs:
           export_default_credentials: true
 
       - name: Upload Log-Collector binary to GCS artifact
-        if: ${{ github.ref == 'refs/heads/main' }}
-        run: gsutil cp dist/log-collector_linux_amd64/log-collector gs://trilio-artifacts/tvk-plugins/log-collector/main/log-collector
+        if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
+        run: gsutil cp dist/log-collector_linux_amd64_v1/log-collector gs://trilio-artifacts/tvk-plugins/log-collector/${{ startsWith(github.ref, 'refs/heads/') && github.ref_name || github.head_ref }}/log-collector
 
   # pre-release job determines whether to create release or not and sets job variables which will be used to decide
   # what packages(preflight, cleanup, log-collector) should be included in release
