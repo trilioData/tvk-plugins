@@ -1,5 +1,4 @@
 keep-source-folder: true
-clustered: false
 namespaces:
   - default
   - tvk

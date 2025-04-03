@@ -35,6 +35,11 @@ func manageFileInputs() error {
 // overrideFileInputsFromCLI checks if external flag is given. if yes then override
 func overrideFileInputsFromCLI() error {
 	var err error
+	// By default log collector will always run in clustered mode.
+	logCollector.Clustered = true
+	if len(namespaces) > 0 || len(logCollector.Namespaces) > 0 {
+		logCollector.Clustered = false
+	}
 
 	if cmd.Flags().Changed(internal.KubeconfigFlag) || logCollector.KubeConfig == "" {
 		logCollector.KubeConfig = kubeConfig
@@ -47,10 +52,6 @@ func overrideFileInputsFromCLI() error {
 
 	if cmd.Flags().Changed(internal.LogLevelFlag) || logCollector.Loglevel == "" {
 		logCollector.Loglevel = logLevel
-	}
-
-	if cmd.Flags().Changed(clusteredFlag) {
-		logCollector.Clustered = clustered
 	}
 
 	if cmd.Flags().Changed(namespacesFlag) || !logCollector.Clustered {

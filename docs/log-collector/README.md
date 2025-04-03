@@ -1,6 +1,6 @@
 # TVK Log Collector Plugin
 
-tvk-log-collector collects the logs, config and events of resources. Pod Logs can help you understand what is happening inside your application. The logs are particularly useful for debugging problems and monitoring cluster activity, alongside the metadata of all resources related to TrilioVault as either namespaced by providing namespaces name separated by comma or clustered from k8s cluster for debugging k8s-triliovault application. It also collects the CRDs yaml related to TVK and zip them.
+tvk-log-collector collects the logs, config and events of resources. Pod Logs can help you understand what is happening inside your application. The logs are particularly useful for debugging problems and monitoring cluster activity, alongside the metadata of all resources related to TrilioVault as either namespaced by providing namespaces name separated by comma or clustered if no namespace provided from k8s cluster for debugging k8s-triliovault application. It also collects the CRDs yaml related to TVK and zip them.
 
 ## Pre-requisites:
 
@@ -85,7 +85,6 @@ Verify installation with `kubectl tvk-log-collector --help`
 
 | Parameter                 | Default       | Description   |    
 | :------------------------ |:-------------:| :-------------|  
-| --clustered         |   false           |whether clustered installation of trilio application
 | --namespaces          | []           |list of namespaces to look for resources separated by commas
 | --kubeconfig            |   ~/.kube/config             |path to the kubernetes config
 | --keep-source-folder            | false            | Keep source directory and Zip both
@@ -102,19 +101,19 @@ Verify installation with `kubectl tvk-log-collector --help`
 
 - To collect logs & YAML from all over the cluster:
 
-        kubectl tvk-log-collector --clustered --log-level info
+        kubectl tvk-log-collector --log-level info
 
 - To collect logs with log level error and to keep the folder with & without zip:
 
-        kubectl tvk-log-collector --clustered --keep-source-folder --log-level error
+        kubectl tvk-log-collector --keep-source-folder --log-level error
 
 - To collect logs by providing object gvk which log collector doesn't collect by default :
 
-        kubectl tvk-log-collector --clustered --gvks "/v1/pod","apps//Deployment"
+        kubectl tvk-log-collector --gvks "/v1/pod","apps//Deployment"
 
 - To collect object logs by providing labels which log collector doesn't collect by default :
         
-        kubectl tvk-log-collector --clustered  --labels "app=frontend|custom=label","app=backend"
+        kubectl tvk-log-collector  --labels "app=frontend|custom=label","app=backend"
 
 - To collect logs by providing config file :
 
@@ -124,7 +123,6 @@ The format of data in a file should be according to the below example:
 
 ```yaml
 keep-source-folder: true
-clustered: false
 namespaces:
   - default
   - tvk
@@ -186,9 +184,6 @@ Role
 RoleBinding
 Namespaces
 Nodes
-```
-when clustered flag enabled
-```
 ClusterRole
 ClusterRoleBinding
 MutatingWebhookConfiguration
