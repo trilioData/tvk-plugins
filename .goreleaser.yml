@@ -1,4 +1,5 @@
 # goreleaser build and release config
+version: 2
 builds:
 - id: log-collector
   main: ./cmd/log-collector/
@@ -34,21 +35,21 @@ archives:
 - id: log-collector-archive
   name_template: |-
     log-collector_{{ .Tag }}_{{ .Os }}_{{ .Arch -}}
-  builds:
+  ids:
     - log-collector
   format_overrides:
     - goos: windows
-      format: zip
+      formats: zip
   files: ["LICENSE.md"]
 
 - id: preflight-archive
   name_template: |-
     preflight_{{ .Tag }}_{{ .Os }}_{{ .Arch -}}
-  builds:
+  ids:
     - preflight
   format_overrides:
     - goos: windows
-      format: zip
+      formats: zip
   files: ["LICENSE.md"]
 
 checksum:
