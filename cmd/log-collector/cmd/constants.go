@@ -6,14 +6,13 @@ import (
 )
 
 const (
-	binaryName       = "log-collector"
-	clusteredFlag    = "clustered"
-	namespacesFlag   = "namespaces"
-	keepSourceFlag   = "keep-source-folder"
-	gvkFlag          = "gvks"
-	configFileFlag   = "config-file"
-	labelsFlag       = "labels"
-	defaultNamespace = "default"
+	binaryName     = "log-collector"
+	clusteredFlag  = "clustered"
+	namespacesFlag = "namespaces"
+	keepSourceFlag = "keep-source-folder"
+	gvkFlag        = "gvks"
+	configFileFlag = "config-file"
+	labelsFlag     = "labels"
 
 	shortUsage = "log-collector collects the information of resources such as yaml configuration and logs from k8s cluster."
 	longUsage  = "log-collector let you define what you need to log and how to log it by collecting the the logs " +
@@ -23,9 +22,6 @@ const (
 
 	namespacesUsage     = "specifies all the namespaces separated by commas"
 	namespacesShort     = "n"
-	clusteredUsage      = "specifies clustered object"
-	clusteredDefault    = false
-	clusteredShort      = "c"
 	keepSourceUsage     = "Keep source directory and Zip both"
 	keepSourceDefault   = false
 	keepSourceShort     = "s"
@@ -39,7 +35,6 @@ const (
 
 var (
 	rootCmd           *cobra.Command
-	clustered         bool
 	namespaces        []string
 	kubeConfig        string
 	keepSource        bool
