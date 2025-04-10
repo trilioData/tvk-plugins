@@ -320,38 +320,38 @@ jobs:
           severity: 'HIGH,CRITICAL'
           exit-code: '1'
 
-      - name: Configure AWS Credentials
-        if: (needs.pre-build.outputs.releasePreflight == 'true') && startsWith(github.ref, 'refs/tags/')
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+      # - name: Configure AWS Credentials
+      #   if: (needs.pre-build.outputs.releasePreflight == 'true') && startsWith(github.ref, 'refs/tags/')
+      #   uses: aws-actions/configure-aws-credentials@v1
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: us-east-1
 
-      - name: Login to Amazon ECR Private
-        id: login-ecr
-        if: (needs.pre-build.outputs.releasePreflight == 'true') && startsWith(github.ref, 'refs/tags/')
-        uses: aws-actions/amazon-ecr-login@v1
-        with:
-          registries: ${{ secrets.AWS_ACCOUNT_ID }}
+      # - name: Login to Amazon ECR Private
+      #   id: login-ecr
+      #   if: (needs.pre-build.outputs.releasePreflight == 'true') && startsWith(github.ref, 'refs/tags/')
+      #   uses: aws-actions/amazon-ecr-login@v1
+      #   with:
+      #     registries: ${{ secrets.AWS_ACCOUNT_ID }}
 
-      - name: Tag, and push docker image to Amazon ECR
-        if: (needs.pre-build.outputs.releasePreflight == 'true') && startsWith(github.ref, 'refs/tags/')
-        env:
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REGISTRY_ALIAS: trilio
-          IMAGE_TAG: ${{ github.ref_name }}
-          REPOSITORY: preflight
-          DOCKER_REGISTRY: eu.gcr.io
-          GCR_PROJECT: ${{env.GCR_PROJECT}}
-        run: |
-          docker pull --platform linux/amd64 $DOCKER_REGISTRY/$GCR_PROJECT/$REPOSITORY:${{ github.sha }}
-          docker tag $DOCKER_REGISTRY/$GCR_PROJECT/$REPOSITORY:${{ github.sha }} $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
-          docker tag $DOCKER_REGISTRY/$GCR_PROJECT/$REPOSITORY:${{ github.sha }} $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY-payg:$IMAGE_TAG
-          docker tag $DOCKER_REGISTRY/$GCR_PROJECT/$REPOSITORY:${{ github.sha }} $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY-byol:$IMAGE_TAG
-          docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
-          docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY-payg:$IMAGE_TAG
-          docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY-byol:$IMAGE_TAG
+      # - name: Tag, and push docker image to Amazon ECR
+      #   if: (needs.pre-build.outputs.releasePreflight == 'true') && startsWith(github.ref, 'refs/tags/')
+      #   env:
+      #     REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      #     REGISTRY_ALIAS: trilio
+      #     IMAGE_TAG: ${{ github.ref_name }}
+      #     REPOSITORY: preflight
+      #     DOCKER_REGISTRY: eu.gcr.io
+      #     GCR_PROJECT: ${{env.GCR_PROJECT}}
+      #   run: |
+      #     docker pull --platform linux/amd64 $DOCKER_REGISTRY/$GCR_PROJECT/$REPOSITORY:${{ github.sha }}
+      #     docker tag $DOCKER_REGISTRY/$GCR_PROJECT/$REPOSITORY:${{ github.sha }} $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
+      #     docker tag $DOCKER_REGISTRY/$GCR_PROJECT/$REPOSITORY:${{ github.sha }} $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY-payg:$IMAGE_TAG
+      #     docker tag $DOCKER_REGISTRY/$GCR_PROJECT/$REPOSITORY:${{ github.sha }} $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY-byol:$IMAGE_TAG
+      #     docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
+      #     docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY-payg:$IMAGE_TAG
+      #     docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY-byol:$IMAGE_TAG
 
   # build_test_cleanup job build cleanup packages, runs integration tests and tests packages for plugin creation(install, uninstall)
   # upload cleanup packages to github artifacts if tags('/ref/tags') are pushed
