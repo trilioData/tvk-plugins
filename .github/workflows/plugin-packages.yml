@@ -501,7 +501,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Download All Plugin Packages from Artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         if: (needs.pre-release.outputs.release_cleanup == 'true')
         with:
           path: build
