@@ -5,7 +5,7 @@ metadata:
 spec:
   homepage: https://github.com/trilioData/tvk-plugins/blob/main/docs/preflight/README.md
   shortDescription: TVK application preflight check for k8s cluster
-  version: v1.3.1
+  version: v1.3.2
   caveats: |
     Curl and Git neeed to be installed on system for Krew index update to work properly
   platforms:
@@ -13,8 +13,8 @@ spec:
       matchLabels:
         os: linux
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/preflight_v1.3.1_linux_amd64.tar.gz
-    sha256: 7ee3a9d1054716843d9230269ca828ea4ed6eb0dd51a69e724d917584fbce860
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.2/preflight_v1.3.2_linux_amd64.tar.gz
+    sha256: f9a69accf6cd348eb09ab9e03e729b7fd48abfc8b6f27e6a3f0294222ccd37f1
     bin: preflight
     files:
     - from: '*'
@@ -23,8 +23,8 @@ spec:
       matchLabels:
         os: linux
         arch: arm64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/preflight_v1.3.1_linux_arm64.tar.gz
-    sha256: 0172903917da44cbdde1b3366a70655acd906d733ac4b030d3d934d399fafc81
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.2/preflight_v1.3.2_linux_arm64.tar.gz
+    sha256: dd8548fb02277814f9b358f5a5c6379bb3b23c3b5a5735e8b4652dea917066e5
     bin: preflight
     files:
     - from: '*'
@@ -33,8 +33,8 @@ spec:
       matchLabels:
         os: linux
         arch: arm
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/preflight_v1.3.1_linux_arm.tar.gz
-    sha256: 7f7c1578c330ceeebcd212c77ec6c8093f60435af721f1889dd0160023191ee6
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.2/preflight_v1.3.2_linux_arm.tar.gz
+    sha256: ae19dc8c07ad3065f384d22a1e3e6f016d01ffeb765945cf8120809a2d5547b3
     bin: preflight
     files:
       - from: '*'
@@ -43,8 +43,8 @@ spec:
       matchLabels:
         os: linux
         arch: ppc64le
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/preflight_v1.3.1_linux_ppc64le.tar.gz
-    sha256: e84d7b98e2481abce54267225ceb8ad43caa64679b2f7982e2b3faefa1ba7c94
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.2/preflight_v1.3.2_linux_ppc64le.tar.gz
+    sha256: 4fcb8dda842d8a411af29ac3e3f0b5dd22b93ab61ab85bae5007b3bd72f641a7
     bin: preflight
     files:
       - from: '*'
@@ -53,8 +53,8 @@ spec:
       matchLabels:
         os: darwin
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/preflight_v1.3.1_darwin_amd64.tar.gz
-    sha256: 9b02090f9f9c203bd845ac6d574c458bae0a04a5628be5c00d3414e903a8aafb
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.2/preflight_v1.3.2_darwin_amd64.tar.gz
+    sha256: ec83065cc38f70877057d8a25cb8e06ae050681c854f55c1eaa0e05d58f390ab
     bin: preflight
     files:
     - from: '*'
@@ -63,8 +63,8 @@ spec:
       matchLabels:
         os: darwin
         arch: arm64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/preflight_v1.3.1_darwin_arm64.tar.gz
-    sha256: c0d3e2786adf37bc2c7112e269aeb44d2475ad640a48b3b5fa5593836ff4ff5b
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.2/preflight_v1.3.2_darwin_arm64.tar.gz
+    sha256: 938efde892c6e6829a6d3fcb7b13cf37c65ddc623bb64a3d8d3892a9a526d7a1
     bin: preflight
     files:
     - from: '*'
@@ -74,12 +74,13 @@ spec:
       matchLabels:
         os: windows
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/preflight_v1.3.1_windows_amd64.zip
-    sha256: e04d4ab407aa4a2e3a5ee56abbb4ff011a744ee28ab5fda6ce37ff1ec97012bf
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.2/preflight_v1.3.2_windows_amd64.zip
+    sha256: 9b495e3cd8f74731f7b942aae8ce2f5bde582067b798a136b24773a4d4bce98b
     bin: preflight.exe
     files:
     - from: '*'
       to: .
+
 
   description: |
     tvk-preflight is a kubectl plugin which checks whether all the pre-requisites are met before installing Triliovault
