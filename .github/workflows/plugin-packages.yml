@@ -38,11 +38,14 @@ jobs:
       releasePreflight: ${{ steps.releasediff.outputs.preflight }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Fetch tags
         if: startsWith(github.ref, 'refs/tags/')
-        run: git fetch --prune --unshallow --tags
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Checkout
+        if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/checkout@v2
 
       - name: Fecth latest release sha
         id: get_sha
