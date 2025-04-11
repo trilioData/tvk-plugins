@@ -5,7 +5,7 @@ metadata:
 spec:
   homepage: https://github.com/trilioData/tvk-plugins/blob/master/docs/log-collector/README.md
   shortDescription: TVK Log-Collector to collect logs of TVK Resources
-  version: v1.3.1
+  version: v1.3.2
   caveats: |
     Curl and Git neeed to be installed on system for Krew index update to work properly
   platforms:
@@ -13,8 +13,8 @@ spec:
       matchLabels:
         os: linux
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/log-collector_v1.3.1_linux_amd64.tar.gz
-    sha256: 0631e6aa28fdfb9bb339735ddc1d3a41fea62a4ae37d1f4d6c6feb025661fb96
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.2/log-collector_v1.3.2_linux_amd64.tar.gz
+    sha256: 9eda08398afa256d617a689436c7d3a46e50b5c0ce8744baeebd546ac8151849
     bin: log-collector
     files:
     - from: '*'
@@ -23,8 +23,8 @@ spec:
       matchLabels:
         os: linux
         arch: ppc64le
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/log-collector_v1.3.1_linux_ppc64le.tar.gz
-    sha256: 0937ab48500dad26e17205d1c31d962b2c96caf12c0480d78d134c91e6250f80
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.2/log-collector_v1.3.2_linux_ppc64le.tar.gz
+    sha256: b63dab8e2c8df57e5cc4d77d6a19bd3699d510182c5bcff550e0da3f12eca4d0
     bin: log-collector
     files:
       - from: '*'
@@ -33,8 +33,8 @@ spec:
       matchLabels:
         os: linux
         arch: arm64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/log-collector_v1.3.1_linux_arm64.tar.gz
-    sha256: effd6cdb798c7899a201abf57f57cc4ca9c352882ad3eb9b4302d31b7986dc08
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.2/log-collector_v1.3.2_linux_arm64.tar.gz
+    sha256: 495c8b3368f9243b701684617e0d7decd282e3dda798254bbe0e585704f37fa3
     bin: log-collector
     files:
     - from: '*'
@@ -43,8 +43,8 @@ spec:
       matchLabels:
         os: linux
         arch: arm
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/log-collector_v1.3.1_linux_arm.tar.gz
-    sha256: af747727bd5da8064e05e556a213f1d878aea6402ae3fa50eec0219c7821d3b6
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.2/log-collector_v1.3.2_linux_arm.tar.gz
+    sha256: 1aac465dd0a1acf7befb4b22c62cde10b693fab2bc7e2d1ba0ae8e709a0a5abc
     bin: log-collector
     files:
     - from: '*'
@@ -54,8 +54,8 @@ spec:
       matchLabels:
         os: darwin
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/log-collector_v1.3.1_darwin_amd64.tar.gz
-    sha256: 79c733034ffc2ba63be9547b7711f82587943e423bbce96f27a8687df39260d6
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.2/log-collector_v1.3.2_darwin_amd64.tar.gz
+    sha256: d821d2d2f36164460973dc1a1b5f95116566e9ecb751c1000aead3d4a24d4a22
     bin: log-collector
     files:
     - from: '*'
@@ -64,8 +64,8 @@ spec:
       matchLabels:
         os: darwin
         arch: arm64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/log-collector_v1.3.1_darwin_arm64.tar.gz
-    sha256: cfddc0442425e2e86ce92bde396f7a1eef7a742d38f85c7bd069cedaa53c2660
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.2/log-collector_v1.3.2_darwin_arm64.tar.gz
+    sha256: b921ff7080d4c2df843c657746ff206ef09a1992eed3c33c23e18fc1746a1d5e
     bin: log-collector
     files:
     - from: '*'
@@ -75,8 +75,8 @@ spec:
       matchLabels:
         os: windows
         arch: amd64
-    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.1/log-collector_v1.3.1_windows_amd64.zip
-    sha256: e9a68103daab2752ae5222602b8cb8efcaea4fdfbc10c6a7c5c3a44d0bb37a26
+    uri: https://github.com/trilioData/tvk-plugins/releases/download/v1.3.2/log-collector_v1.3.2_windows_amd64.zip
+    sha256: 9ad07821fd8f4d77411b43264031e9ae93153d108996202857c6108f962fa1c9
     bin: log-collector.exe
     files:
     - from: '*'
@@ -92,7 +92,6 @@ spec:
     kubectl tvk-log-collector --help
 
     Parameter   	Default     	Description
-    --clustered 	false       	whether clustered installtion of trilio application
     --namespaces 	[]          	list of namespaces to look for resources
     --kube_config 	~/.kube/config 	path to the kubernetes config
     --keep-source-folder 	    false 	        Keep source directory and Zip both
@@ -100,4 +99,4 @@ spec:
 
     > Usage :-
 
-    kubectl tvk-log-collector --clustered --log-level INFO --kubeconfig /home/usr/kubeconfig
+    kubectl tvk-log-collector --log-level INFO --kubeconfig /home/usr/kubeconfig
