@@ -42,15 +42,17 @@ const (
 	LicenseKind = "License"
 	Verblist    = "list"
 
-	TrilioPrefix   = "k8s-triliovault"
-	TrilioOpPrefix = "k8s-triliovault-operator"
-	TrilioDomain   = "trilio.io"
+	TrilioPrefix              = "k8s-triliovault"
+	TrilioOpPrefix            = "k8s-triliovault-operator"
+	TrilioConsolePluginPrefix = "tvk-console-plugin"
+	TrilioDomain              = "trilio.io"
 )
 
 var (
-	K8STrilioVaultLabel   = map[string]string{"app.kubernetes.io/part-of": TrilioPrefix}
-	K8STrilioVaultOpLabel = map[string]string{"app.kubernetes.io/part-of": TrilioOpPrefix}
-	nonLabeledResources   = sets.NewString("ResourceQuota", "LimitRange", "VolumeSnapshot", "Node", "StorageClass",
+	K8STrilioVaultLabel              = map[string]string{"app.kubernetes.io/part-of": TrilioPrefix}
+	K8STrilioVaultOpLabel            = map[string]string{"app.kubernetes.io/part-of": TrilioOpPrefix}
+	K8STrilioVaultConsolePluginLabel = map[string]string{"app.kubernetes.io/part-of": TrilioConsolePluginPrefix}
+	nonLabeledResources              = sets.NewString("ResourceQuota", "LimitRange", "VolumeSnapshot", "Node", "StorageClass",
 		"VolumeSnapshotClass")
 	excludeResources = sets.NewString("Secret", "PackageManifest")
 )
@@ -243,6 +245,7 @@ func (l *LogCollector) filterTvkResourcesByLabel(allObjects *unstructured.Unstru
 		if len(objectLabel) != 0 {
 			if checkLabelExist(K8STrilioVaultLabel, objectLabel) ||
 				checkLabelExist(K8STrilioVaultOpLabel, objectLabel) ||
+				checkLabelExist(K8STrilioVaultConsolePluginLabel, objectLabel) ||
 				(len(l.LabelSelectors) != 0 && MatchLabelSelectors(objectLabel, l.LabelSelectors)) {
 				log.Infof(" Label Matched %s", object.GetKind())
 				objects.Items = append(objects.Items, object)
