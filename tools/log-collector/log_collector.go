@@ -471,6 +471,16 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 				resObjects.Items = append(resObjects.Items, ocpObj.Items...)
 			}
 
+			if resources[index].Kind == internal.NetworkPolicyKind {
+				gvkObjs := l.getResourceObjects(internal.NetworkPolicyAPIVersion, &resources[index])
+				for _, obj := range gvkObjs.Items {
+					labels, found, _ := unstructured.NestedStringMap(obj.Object, "spec", "podSelector", "matchLabels")
+					if found && labels[internal.K8sPartOfLabel] == internal.ManagedByTVK {
+						resObjects.Items = append(resObjects.Items, obj)
+					}
+				}
+			}
+
 			resourceMap, err := l.writeObjectsAndLogs(resObjects, resources[index].Kind)
 			if err != nil {
 				return err
