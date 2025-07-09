@@ -51,6 +51,7 @@ type LogCollector struct {
 	CleanOutput       bool                       `json:"keep-source-folder"`
 	Clustered         bool                       `json:"clustered"`
 	Namespaces        []string                   `json:"namespaces"`
+	InstallNamespace  string                     `json:"installNamespace"`
 	Loglevel          string                     `json:"logLevel"`
 	K8sClient         client.Client              `json:"-"`
 	DisClient         *discovery.DiscoveryClient `json:"-"`
@@ -471,6 +472,15 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 				resObjects.Items = append(resObjects.Items, ocpObj.Items...)
 			}
 
+			if resources[index].Kind == internal.NetworkPolicyKind {
+				gvkObjs := l.getResourceObjects(internal.NetworkPolicyAPIVersion, &resources[index])
+				for _, obj := range gvkObjs.Items {
+					if obj.GetNamespace() == l.InstallNamespace {
+						resObjects.Items = append(resObjects.Items, obj)
+					}
+				}
+			}
+
 			resourceMap, err := l.writeObjectsAndLogs(resObjects, resources[index].Kind)
 			if err != nil {
 				return err
@@ -673,6 +683,11 @@ func (l *LogCollector) checkIfNamespacesExist() (err error) {
 
 	for idx := range namespaces.Items {
 		set.Insert(namespaces.Items[idx].Name)
+		if namespaces.Items[idx].Labels != nil {
+			if _, hasTrilioLabel := namespaces.Items[idx].Labels[internal.TrilioLabelKey]; hasTrilioLabel {
+				l.InstallNamespace = namespaces.Items[idx].Name
+			}
+		}
 	}
 
 	for _, ns := range l.Namespaces {
