@@ -1,7 +1,10 @@
 package logcollector
 
 import (
+	"archive/tar"
 	"archive/zip"
+	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
@@ -22,6 +25,8 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/remotecommand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -59,6 +64,7 @@ type LogCollector struct {
 	KubeConfig        string                     `json:"kubeConfig"`
 	LabelSelectors    []apiv1.LabelSelector      `json:"labels,omitempty"`
 	GroupVersionKinds []GroupVersionKind         `json:"gvks"`
+	RestConfig        *restclient.Config         `json:"-"`
 }
 
 // InitializeKubeClients initialize clients for kubernetes environment
@@ -74,6 +80,7 @@ func (l *LogCollector) InitializeKubeClients() error {
 	}
 
 	l.K8sClient, l.DisClient, l.K8sClientSet = acc.GetRuntimeClient(), acc.GetDiscoveryClient(), acc.GetClientset()
+	l.RestConfig = acc.GetRestConfig()
 	l.DisClient.LegacyPrefix = "/api/"
 
 	return nil
@@ -254,6 +261,24 @@ func (l *LogCollector) writeLogs(resourceDir string, obj unstructured.Unstructur
 		return err
 	}
 	containers := getContainers(&podObj)
+
+	// Collect controller-plane logs directory if this is the control-plane pod
+	if l.isControlPlanePod(&podObj) {
+		if len(podObj.Spec.Containers) > 0 {
+			containerName := podObj.Spec.Containers[0].Name
+			// Extract directly under the namespace path (no extra pod subfolders)
+			destDir := resourcePath
+			cpErr := l.copyDirFromPod(objNs, objName, containerName, internal.TriliovaultLogDir, destDir)
+			if cpErr != nil {
+				log.Warnf("Unable to copy control-plane logs from pod %s/%s: %s", objNs, objName, cpErr.Error())
+			} else {
+				// Decompress any .gz files in-place under destDir
+				if dzErr := decompressGzInDir(destDir); dzErr != nil {
+					log.Warnf("Unable to decompress .gz files under %s: %s", destDir, dzErr.Error())
+				}
+			}
+		}
+	}
 
 	for name, statuses := range containers {
 		if statuses.curr {
@@ -738,4 +763,178 @@ func (l *LogCollector) filterInputNS(nsObjs unstructured.UnstructuredList) unstr
 		}
 	}
 	return filteredNSObjects
+}
+
+// isControlPlanePod checks if pod has the specific label identifying control-plane instance
+func (l *LogCollector) isControlPlanePod(pod *corev1.Pod) bool {
+	if pod == nil {
+		return false
+	}
+	labels := pod.GetLabels()
+	if labels == nil {
+		return false
+	}
+	val, ok := labels[internal.K8sInstanceLabel]
+	return ok && val == internal.ManagedByControlPlaneLabelValue
+}
+
+// copyDirFromPod tars a directory inside the container and extracts it to destDir
+func (l *LogCollector) copyDirFromPod(namespace, podName, containerName, srcDir, destDir string) error {
+	if l.RestConfig == nil || l.K8sClientSet == nil {
+		return fmt.Errorf("kubernetes clients are not initialized")
+	}
+
+	cmd := []string{"tar", "cf", "-", "-C", srcDir, "."}
+	req := l.K8sClientSet.CoreV1().RESTClient().Post().Resource("pods").Name(podName).Namespace(namespace).SubResource("exec")
+	req.VersionedParams(&corev1.PodExecOptions{
+		Container: containerName,
+		Command:   cmd,
+		Stdin:     false,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       false,
+	}, clientgoscheme.ParameterCodec)
+
+	exec, err := remotecommand.NewSPDYExecutor(l.RestConfig, "POST", req.URL())
+	if err != nil {
+		return err
+	}
+
+	// Stream tar to a temp file to avoid pipe races
+	if mkErr := os.MkdirAll(destDir, 0755); mkErr != nil {
+		return mkErr
+	}
+	tarFile, tErr := os.CreateTemp(destDir, "tvklog-*.tar")
+	if tErr != nil {
+		return tErr
+	}
+	defer func() { _ = os.Remove(tarFile.Name()) }()
+	var stderr bytes.Buffer
+	if err = exec.Stream(remotecommand.StreamOptions{
+		Stdin:  nil,
+		Stdout: tarFile,
+		Stderr: &stderr,
+		Tty:    false,
+	}); err != nil {
+		_ = tarFile.Close()
+		return fmt.Errorf("exec stream error: %w; stderr: %s", err, stderr.String())
+	}
+	if cErr := tarFile.Close(); cErr != nil {
+		return cErr
+	}
+
+	// Extract tar synchronously
+	in, oErr := os.Open(tarFile.Name())
+	if oErr != nil {
+		return oErr
+	}
+	defer in.Close()
+	tr := tar.NewReader(in)
+	for {
+		hdr, herr := tr.Next()
+		if herr == io.EOF {
+			break
+		}
+		if herr != nil {
+			return herr
+		}
+		cleanName := filepath.Clean(hdr.Name)
+		targetPath, jerr := ensureWithinDir(destDir, filepath.Join(destDir, cleanName))
+		if jerr != nil {
+			return jerr
+		}
+		switch hdr.Typeflag {
+		case tar.TypeDir:
+			if mkErr := os.MkdirAll(targetPath, os.FileMode(hdr.Mode)); mkErr != nil {
+				return mkErr
+			}
+		case tar.TypeReg:
+			if mkErr := os.MkdirAll(filepath.Dir(targetPath), 0755); mkErr != nil {
+				return mkErr
+			}
+			outFile, cErr := os.OpenFile(targetPath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(hdr.Mode))
+			if cErr != nil {
+				return cErr
+			}
+			if _, cErr = io.Copy(outFile, tr); cErr != nil {
+				_ = outFile.Close()
+				return cErr
+			}
+			_ = outFile.Close()
+		default:
+			// skip other types
+		}
+	}
+	return nil
+}
+
+// ensureWithinDir ensures the target path stays within base to avoid path traversal
+func ensureWithinDir(base, target string) (string, error) {
+	base = filepath.Clean(base)
+	target = filepath.Clean(target)
+	if !strings.HasPrefix(target+string(os.PathSeparator), base+string(os.PathSeparator)) {
+		return "", fmt.Errorf("illegal file path outside destination: %s", target)
+	}
+	return target, nil
+}
+
+// decompressGzInDir walks a directory and decompresses all .gz files in-place
+func decompressGzInDir(root string) error {
+	var firstErr error
+	_ = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			if firstErr == nil {
+				firstErr = err
+			}
+			return nil
+		}
+		if info.IsDir() {
+			return nil
+		}
+		if !strings.HasSuffix(info.Name(), ".gz") {
+			return nil
+		}
+		in, oErr := os.Open(path)
+		if oErr != nil {
+			if firstErr == nil {
+				firstErr = oErr
+			}
+			return nil
+		}
+		gzr, gErr := gzip.NewReader(in)
+		if gErr != nil {
+			// Not a valid gzip file; skip
+			_ = in.Close()
+			log.Debugf("Skipping gzip decompression for %s: %s", path, gErr.Error())
+			return nil
+		}
+		outPath := strings.TrimSuffix(path, ".gz")
+		outFile, cErr := os.Create(outPath)
+		if cErr != nil {
+			_ = gzr.Close()
+			_ = in.Close()
+			if firstErr == nil {
+				firstErr = cErr
+			}
+			return nil
+		}
+		if _, cErr = io.Copy(outFile, gzr); cErr != nil {
+			_ = outFile.Close()
+			_ = gzr.Close()
+			_ = in.Close()
+			if firstErr == nil {
+				firstErr = cErr
+			}
+			return nil
+		}
+		_ = outFile.Close()
+		_ = gzr.Close()
+		_ = in.Close()
+		// remove the source .gz after successful decompression
+		if rErr := os.Remove(path); rErr != nil && firstErr == nil {
+			firstErr = rErr
+		}
+		return nil
+	})
+	return firstErr
 }
