@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -65,6 +66,16 @@ type LogCollector struct {
 	LabelSelectors    []apiv1.LabelSelector      `json:"labels,omitempty"`
 	GroupVersionKinds []GroupVersionKind         `json:"gvks"`
 	RestConfig        *restclient.Config         `json:"-"`
+}
+
+// Executor abstracts the SPDY executor for testability
+type Executor interface {
+	Stream(options remotecommand.StreamOptions) error
+}
+
+// SpdyExecutorFactory creates a new SPDY executor. It is exported to enable test stubbing from external packages.
+var SpdyExecutorFactory = func(config *restclient.Config, method string, url *url.URL) (Executor, error) {
+	return remotecommand.NewSPDYExecutor(config, method, url)
 }
 
 // InitializeKubeClients initialize clients for kubernetes environment
@@ -268,12 +279,12 @@ func (l *LogCollector) writeLogs(resourceDir string, obj unstructured.Unstructur
 			containerName := podObj.Spec.Containers[0].Name
 			// Extract directly under the namespace path (no extra pod subfolders)
 			destDir := resourcePath
-			cpErr := l.copyDirFromPod(objNs, objName, containerName, internal.TriliovaultLogDir, destDir)
+			cpErr := l.CopyDirFromPod(objNs, objName, containerName, internal.TriliovaultLogDir, destDir)
 			if cpErr != nil {
 				log.Warnf("Unable to copy control-plane logs from pod %s/%s: %s", objNs, objName, cpErr.Error())
 			} else {
 				// Decompress any .gz files in-place under destDir
-				if dzErr := decompressGzInDir(destDir); dzErr != nil {
+				if dzErr := DecompressGzInDir(destDir); dzErr != nil {
 					log.Warnf("Unable to decompress .gz files under %s: %s", destDir, dzErr.Error())
 				}
 			}
@@ -778,8 +789,8 @@ func (l *LogCollector) isControlPlanePod(pod *corev1.Pod) bool {
 	return ok && val == internal.ManagedByControlPlaneLabelValue
 }
 
-// copyDirFromPod tars a directory inside the container and extracts it to destDir
-func (l *LogCollector) copyDirFromPod(namespace, podName, containerName, srcDir, destDir string) error {
+// CopyDirFromPod tars a directory inside the container and extracts it to destDir
+func (l *LogCollector) CopyDirFromPod(namespace, podName, containerName, srcDir, destDir string) error {
 	if l.RestConfig == nil || l.K8sClientSet == nil {
 		return fmt.Errorf("kubernetes clients are not initialized")
 	}
@@ -795,7 +806,7 @@ func (l *LogCollector) copyDirFromPod(namespace, podName, containerName, srcDir,
 		TTY:       false,
 	}, clientgoscheme.ParameterCodec)
 
-	exec, err := remotecommand.NewSPDYExecutor(l.RestConfig, "POST", req.URL())
+	exec, err := SpdyExecutorFactory(l.RestConfig, "POST", req.URL())
 	if err != nil {
 		return err
 	}
@@ -878,8 +889,8 @@ func ensureWithinDir(base, target string) (string, error) {
 	return target, nil
 }
 
-// decompressGzInDir walks a directory and decompresses all .gz files in-place
-func decompressGzInDir(root string) error {
+// DecompressGzInDir walks a directory and decompresses all .gz files in-place
+func DecompressGzInDir(root string) error {
 	var firstErr error
 	_ = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {

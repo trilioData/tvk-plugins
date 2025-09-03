@@ -1,19 +1,53 @@
 package cmd
 
 import (
+	"archive/tar"
+	"compress/gzip"
+	"context"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	log "github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	goclient "k8s.io/client-go/kubernetes"
+	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/remotecommand"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/yaml"
 
 	"github.com/trilioData/tvk-plugins/internal"
 	logcollector "github.com/trilioData/tvk-plugins/tools/log-collector"
 )
 
+type fakeExec struct{}
+
+func (f *fakeExec) Stream(opts remotecommand.StreamOptions) error {
+	// Write a small tar archive to opts.Stdout
+	tw := tar.NewWriter(opts.Stdout)
+	defer func() { _ = tw.Close() }()
+
+	// Directory and file: logs/a.txt
+	_ = tw.WriteHeader(&tar.Header{Name: "logs/", Mode: 0755, Typeflag: tar.TypeDir})
+	dataA := []byte("alpha")
+	_ = tw.WriteHeader(&tar.Header{Name: "logs/a.txt", Mode: 0644, Size: int64(len(dataA))})
+	_, _ = tw.Write(dataA)
+
+	// Directory and file: nested/b.log
+	_ = tw.WriteHeader(&tar.Header{Name: "nested/", Mode: 0755, Typeflag: tar.TypeDir})
+	dataB := []byte("bravo")
+	_ = tw.WriteHeader(&tar.Header{Name: "nested/b.log", Mode: 0644, Size: int64(len(dataB))})
+	_, _ = tw.Write(dataB)
+	return nil
+}
+
 var _ = Describe("log collector cmd helper unit tests", func() {
+
+	var cleanupFiles []string
 
 	Context("Initialization of log collector", func() {
 
@@ -125,6 +159,100 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 			Expect(command.PersistentPreRunE(command, []string{})).Should(Succeed())
 			Expect(logCollector.KubeConfig).Should(Equal(testConfigPath))
 		})
+	})
 
+	Context("Pod Log Collector helpers functions", func() {
+		It("Should decompress .gz files and remove after it", func() {
+			root := GinkgoT().TempDir()
+			nested := filepath.Join(root, "ns", "pod")
+			Expect(os.MkdirAll(nested, 0755)).To(Succeed())
+			cleanupFiles = append(cleanupFiles, root)
+
+			validGzPath := filepath.Join(nested, "sample.log.gz")
+			f, err := os.Create(validGzPath)
+			Expect(err).To(BeNil())
+			gw := gzip.NewWriter(f)
+			original := []byte("hello world\nthis is a test")
+			_, err = gw.Write(original)
+			Expect(err).To(BeNil())
+			Expect(gw.Close()).To(Succeed())
+			Expect(f.Close()).To(Succeed())
+
+			invalidGzPath := filepath.Join(nested, "corrupt.log.gz")
+			Expect(os.WriteFile(invalidGzPath, []byte("not a gzip stream"), 0644)).To(Succeed())
+
+			nonGzPath := filepath.Join(nested, "plain.txt")
+			Expect(os.WriteFile(nonGzPath, []byte("keep me"), 0644)).To(Succeed())
+
+			Expect(logcollector.DecompressGzInDir(root)).To(Succeed())
+
+			_, err = os.Stat(validGzPath)
+			Expect(os.IsNotExist(err)).To(BeTrue())
+			decompressedPath := strings.TrimSuffix(validGzPath, ".gz")
+			data, err := os.ReadFile(decompressedPath)
+			Expect(err).To(BeNil())
+			Expect(string(data)).To(Equal(string(original)))
+
+			_, err = os.Stat(invalidGzPath)
+			Expect(err).To(BeNil())
+
+			plain, err := os.ReadFile(nonGzPath)
+			Expect(err).To(BeNil())
+			Expect(string(plain)).To(Equal("keep me"))
+		})
+
+		It("Should copy directory from pod via exec tar stream and extract", func() {
+			// Start envtest to get a real API server and config
+			testEnv := &envtest.Environment{}
+			cfg, err := testEnv.Start()
+			Expect(err).To(BeNil())
+			Expect(cfg).NotTo(BeNil())
+			defer func() { _ = testEnv.Stop() }()
+
+			cs, err := goclient.NewForConfig(cfg)
+			Expect(err).To(BeNil())
+			Expect(cs).NotTo(BeNil())
+
+			// Create a namespace and a simple pod
+			ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "lc-test-ns"}}
+			_, err = cs.CoreV1().Namespaces().Create(context.Background(), ns, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+
+			pod := &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{Name: "lc-test-pod", Namespace: ns.Name},
+				Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "c0", Image: "busybox"}}},
+			}
+			_, err = cs.CoreV1().Pods(ns.Name).Create(context.Background(), pod, metav1.CreateOptions{})
+			Expect(err).To(BeNil())
+
+			// Destination for extraction
+			dest := GinkgoT().TempDir()
+			cleanupFiles = append(cleanupFiles, dest)
+
+			// Stub the SPDY executor factory
+			origFactory := logcollector.SpdyExecutorFactory
+			logcollector.SpdyExecutorFactory = func(_ *restclient.Config, _ string, _ *url.URL) (logcollector.Executor, error) {
+				return &fakeExec{}, nil
+			}
+			defer func() { logcollector.SpdyExecutorFactory = origFactory }()
+
+			lc := &logcollector.LogCollector{K8sClientSet: cs, RestConfig: cfg}
+			err = lc.CopyDirFromPod(ns.Name, pod.Name, "c0", internal.TriliovaultLogDir, dest)
+			Expect(err).To(BeNil())
+
+			b, err := os.ReadFile(filepath.Join(dest, "logs", "a.txt"))
+			Expect(err).To(BeNil())
+			Expect(string(b)).To(Equal("alpha"))
+			b, err = os.ReadFile(filepath.Join(dest, "nested", "b.log"))
+			Expect(err).To(BeNil())
+			Expect(string(b)).To(Equal("bravo"))
+		})
+
+		AfterEach(func() {
+			for _, p := range cleanupFiles {
+				_ = os.RemoveAll(p)
+			}
+			cleanupFiles = nil
+		})
 	})
 })
