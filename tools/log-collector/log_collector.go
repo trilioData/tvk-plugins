@@ -68,6 +68,13 @@ type LogCollector struct {
 	RestConfig        *restclient.Config         `json:"-"`
 }
 
+const (
+	// maxTarFileBytes caps extraction of any single file from a tar stream
+	maxTarFileBytes int64 = 100 * 1024 * 1024 // 100 MiB
+	// maxGzipFileBytes caps decompression size for any single .gz file
+	maxGzipFileBytes int64 = 200 * 1024 * 1024 // 200 MiB
+)
+
 // Executor abstracts the SPDY executor for testability
 type Executor interface {
 	Stream(options remotecommand.StreamOptions) error
@@ -273,7 +280,6 @@ func (l *LogCollector) writeLogs(resourceDir string, obj unstructured.Unstructur
 	}
 	containers := getContainers(&podObj)
 
-	// Collect controller-plane logs directory if this is the control-plane pod
 	if l.isControlPlanePod(&podObj) {
 		if len(podObj.Spec.Containers) > 0 {
 			containerName := podObj.Spec.Containers[0].Name
@@ -840,7 +846,7 @@ func (l *LogCollector) CopyDirFromPod(namespace, podName, containerName, srcDir,
 		return oErr
 	}
 	defer in.Close()
-	// #nosec G110 -- tar stream is sourced via in-cluster exec; extraction path is sanitized.
+	// #nosec G110 -- tar stream is sourced via in-cluster exec; extraction paths are sanitized before file/directory creation.
 	tr := tar.NewReader(in)
 	for {
 		hdr, herr := tr.Next()
@@ -861,6 +867,12 @@ func (l *LogCollector) CopyDirFromPod(namespace, podName, containerName, srcDir,
 				return mkErr
 			}
 		case tar.TypeReg:
+			if hdr.Size < 0 {
+				return fmt.Errorf("invalid negative file size for %s", hdr.Name)
+			}
+			if hdr.Size > maxTarFileBytes {
+				return fmt.Errorf("tar file %s exceeds  allowed size of %d bytes", hdr.Name, maxTarFileBytes)
+			}
 			if mkErr := os.MkdirAll(filepath.Dir(targetPath), 0755); mkErr != nil {
 				return mkErr
 			}
@@ -868,7 +880,8 @@ func (l *LogCollector) CopyDirFromPod(namespace, podName, containerName, srcDir,
 			if cErr != nil {
 				return cErr
 			}
-			if _, cErr = io.Copy(outFile, tr); cErr != nil {
+			// Copy exactly hdr.Size bytes to avoid unexpected growth
+			if _, cErr = io.CopyN(outFile, tr, hdr.Size); cErr != nil {
 				_ = outFile.Close()
 				return cErr
 			}
@@ -884,7 +897,11 @@ func (l *LogCollector) CopyDirFromPod(namespace, podName, containerName, srcDir,
 func ensureWithinDir(base, target string) (string, error) {
 	base = filepath.Clean(base)
 	target = filepath.Clean(target)
-	if !strings.HasPrefix(target+string(os.PathSeparator), base+string(os.PathSeparator)) {
+	rel, err := filepath.Rel(base, target)
+	if err != nil {
+		return "", fmt.Errorf("failed to compute relative path: %w", err)
+	}
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
 		return "", fmt.Errorf("illegal file path outside destination: %s", target)
 	}
 	return target, nil
@@ -913,7 +930,8 @@ func DecompressGzInDir(root string) error {
 			}
 			return nil
 		}
-		// #nosec G110 -- gzip inputs are cluster-generated log artifacts in a controlled directory
+		// The size limit enforcement happens below using io.LimitedReader.
+		// #nosec G110 -- inputs are cluster-generated logs; see bounded copy via LimitedReader below
 		gzr, gErr := gzip.NewReader(in)
 		if gErr != nil {
 			// Not a valid gzip file; skip
@@ -931,12 +949,26 @@ func DecompressGzInDir(root string) error {
 			}
 			return nil
 		}
-		if _, cErr = io.Copy(outFile, gzr); cErr != nil {
+		// Cap the number of decompressed bytes per file (decompression bomb protection)
+		lr := &io.LimitedReader{R: gzr, N: maxGzipFileBytes + 1}
+		written, cErr := io.Copy(outFile, lr)
+		if cErr != nil && !errors.Is(cErr, io.EOF) {
 			_ = outFile.Close()
 			_ = gzr.Close()
 			_ = in.Close()
 			if firstErr == nil {
 				firstErr = cErr
+			}
+			_ = os.Remove(outPath)
+			return nil
+		}
+		if written > maxGzipFileBytes {
+			_ = outFile.Close()
+			_ = gzr.Close()
+			_ = in.Close()
+			_ = os.Remove(outPath)
+			if firstErr == nil {
+				firstErr = fmt.Errorf("decompressed output exceeds limit of %d bytes: %s", maxGzipFileBytes, outPath)
 			}
 			return nil
 		}
