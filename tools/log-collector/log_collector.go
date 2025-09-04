@@ -840,6 +840,7 @@ func (l *LogCollector) CopyDirFromPod(namespace, podName, containerName, srcDir,
 		return oErr
 	}
 	defer in.Close()
+	// #nosec G110 -- tar stream is sourced via in-cluster exec; extraction path is sanitized.
 	tr := tar.NewReader(in)
 	for {
 		hdr, herr := tr.Next()
@@ -912,6 +913,7 @@ func DecompressGzInDir(root string) error {
 			}
 			return nil
 		}
+		// #nosec G110 -- gzip inputs are cluster-generated log artifacts in a controlled directory
 		gzr, gErr := gzip.NewReader(in)
 		if gErr != nil {
 			// Not a valid gzip file; skip
