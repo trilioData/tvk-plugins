@@ -74,9 +74,10 @@ const (
 	CreateVerb = "create"
 	DeleteVerb = "delete"
 
-	TriliovaultLogDir               = "/var/log/triliovault"
-	K8sInstanceLabel                = "app.kubernetes.io/instance"
-	ManagedByControlPlaneLabelValue = "k8s-triliovault-control-plane"
+	TriliovaultLogDir                = "/var/log/triliovault"
+	K8sInstanceLabel                 = "app.kubernetes.io/instance"
+	ManagedByControlPlaneLabelValue  = "k8s-triliovault-control-plane"
+	TriliovaultControlPlaneContainer = "triliovault-control-plane"
 )
 
 var (
