@@ -1,14 +1,20 @@
 package logcollector
 
 import (
+	"archive/tar"
 	"archive/zip"
+	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -22,11 +28,10 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/remotecommand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
-
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/trilioData/tvk-plugins/internal"
 )
@@ -59,6 +64,24 @@ type LogCollector struct {
 	KubeConfig        string                     `json:"kubeConfig"`
 	LabelSelectors    []apiv1.LabelSelector      `json:"labels,omitempty"`
 	GroupVersionKinds []GroupVersionKind         `json:"gvks"`
+	RestConfig        *restclient.Config         `json:"-"`
+}
+
+const (
+	// maxTarFileBytes caps extraction of any single file from a tar stream
+	maxTarFileBytes int64 = 100 * 1024 * 1024 // 100 MiB
+	// maxGzipFileBytes caps decompression size for any single .gz file
+	maxGzipFileBytes int64 = 50 * 1024 * 1024 // 50 MiB
+)
+
+// Executor abstracts the SPDY executor for testability
+type Executor interface {
+	Stream(options remotecommand.StreamOptions) error
+}
+
+// SpdyExecutorFactory creates a new SPDY executor. It is exported to enable test stubbing from external packages.
+var SpdyExecutorFactory = func(config *restclient.Config, method string, url *url.URL) (Executor, error) {
+	return remotecommand.NewSPDYExecutor(config, method, url)
 }
 
 // InitializeKubeClients initialize clients for kubernetes environment
@@ -74,6 +97,7 @@ func (l *LogCollector) InitializeKubeClients() error {
 	}
 
 	l.K8sClient, l.DisClient, l.K8sClientSet = acc.GetRuntimeClient(), acc.GetDiscoveryClient(), acc.GetClientset()
+	l.RestConfig = acc.GetRestConfig()
 	l.DisClient.LegacyPrefix = "/api/"
 
 	return nil
@@ -254,6 +278,26 @@ func (l *LogCollector) writeLogs(resourceDir string, obj unstructured.Unstructur
 		return err
 	}
 	containers := getContainers(&podObj)
+
+	if l.isControlPlanePod(&podObj) {
+		for i := range podObj.Spec.Containers {
+			container := &podObj.Spec.Containers[i]
+			// Only process logs from the triliovault-control-plane container
+			if container.Name == internal.TriliovaultControlPlaneContainer {
+				// Extract directly under the namespace path (no extra pod subfolders)
+				destDir := resourcePath
+				cpErr := l.CopyDirFromPod(objNs, objName, container.Name, internal.TriliovaultLogDir, destDir)
+				if cpErr != nil {
+					log.Warnf("Unable to copy control-plane logs from pod %s/%s: %s", objNs, objName, cpErr.Error())
+				} else {
+					// Decompress any .gz files in-place under destDir
+					if dzErr := DecompressGzInDir(destDir); dzErr != nil {
+						log.Warnf("Unable to decompress .gz files under %s: %s", destDir, dzErr.Error())
+					}
+				}
+			}
+		}
+	}
 
 	for name, statuses := range containers {
 		if statuses.curr {
@@ -738,4 +782,267 @@ func (l *LogCollector) filterInputNS(nsObjs unstructured.UnstructuredList) unstr
 		}
 	}
 	return filteredNSObjects
+}
+
+// isControlPlanePod checks if pod has the specific label identifying control-plane instance
+func (l *LogCollector) isControlPlanePod(pod *corev1.Pod) bool {
+	if pod == nil {
+		return false
+	}
+	labels := pod.GetLabels()
+	if labels == nil {
+		return false
+	}
+	val, ok := labels[internal.K8sInstanceLabel]
+	return ok && val == internal.ManagedByControlPlaneLabelValue
+}
+
+// execInPod executes a command in the specified pod container
+func (l *LogCollector) execInPod(namespace, podName, containerName string, cmd []string) (stdout, stderr string, err error) {
+	req := l.K8sClientSet.CoreV1().RESTClient().Post().Resource("pods").Name(podName).Namespace(namespace).SubResource("exec")
+	req.VersionedParams(&corev1.PodExecOptions{
+		Container: containerName,
+		Command:   cmd,
+		Stdin:     false,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       false,
+	}, clientgoscheme.ParameterCodec)
+
+	exec, err := SpdyExecutorFactory(l.RestConfig, "POST", req.URL())
+	if err != nil {
+		return "", "", err
+	}
+
+	var stdoutBuf, stderrBuf bytes.Buffer
+	if err := exec.Stream(remotecommand.StreamOptions{
+		Stdin:  nil,
+		Stdout: &stdoutBuf,
+		Stderr: &stderrBuf,
+		Tty:    false,
+	}); err != nil {
+		return stdoutBuf.String(), stderrBuf.String(), err
+	}
+
+	return stdoutBuf.String(), stderrBuf.String(), nil
+}
+
+// checkDirectoryHasFiles checks if a directory exists and has files to copy
+// Returns (hasFiles, error) where:
+// - hasFiles: true if directory exists and has files, false if no files found
+// - error: non-nil only for genuine errors (network issues, permission problems, etc.)
+func (l *LogCollector) checkDirectoryHasFiles(namespace, podName, containerName, srcDir string) (bool, error) {
+	_, stderr, err := l.execInPod(namespace, podName, containerName, []string{"ls", "-la", srcDir})
+	if err != nil {
+		// Check if this is a "no files found" case or a genuine error
+		if strings.Contains(stderr, "No such file or directory") || strings.Contains(stderr, "not found") {
+			// Directory doesn't exist or is empty - this is expected when file logging is disabled
+			log.Debugf("Source directory %s does not exist or is empty in pod %s/%s: %s", srcDir, namespace, podName, stderr)
+			return false, nil
+		}
+		// This is a genuine error (permission denied, network issues, etc.)
+		log.Errorf("Failed to check directory %s in pod %s/%s: %s", srcDir, namespace, podName, stderr)
+		return false, fmt.Errorf("failed to check directory: %w", err)
+	}
+
+	// Directory exists and is accessible
+	return true, nil
+}
+
+// CopyDirFromPod tars a directory inside the container and extracts it to destDir
+//
+// Directory structure in the log bundle:
+// The captured log files will be organized as follows:
+//   - destDir/
+//     ├── <log-file-1>          (e.g., tvk-manager.log, tvk-webhook.log)
+//     ├── <log-file-2.gz>       (compressed log files, will be decompressed later)
+//     └── <subdirectories>/     (any subdirectories from srcDir are preserved)
+//     └── <nested-files>
+//
+// This maintains the original directory structure from the pod's srcDir while placing
+// all files under the specified destDir in the log bundle.
+func (l *LogCollector) CopyDirFromPod(namespace, podName, containerName, srcDir, destDir string) error {
+	if l.RestConfig == nil || l.K8sClientSet == nil {
+		return fmt.Errorf("kubernetes clients are not initialized")
+	}
+
+	// Check if directory has files to copy
+	hasFiles, err := l.checkDirectoryHasFiles(namespace, podName, containerName, srcDir)
+	if err != nil {
+		return fmt.Errorf("failed to check directory %s in pod %s/%s: %w", srcDir, namespace, podName, err)
+	}
+	if !hasFiles {
+		log.Infof("Skipping copy from pod %q (container %q) in namespace %q: no files found in directory %q",
+			podName, containerName, namespace, srcDir)
+		return nil // No files to copy, skip
+	}
+
+	// Stream tar to a temp file to avoid pipe races
+	if mkErr := os.MkdirAll(destDir, 0755); mkErr != nil {
+		return mkErr
+	}
+	tarFile, tErr := os.CreateTemp(destDir, "tvklog-*.tar")
+	if tErr != nil {
+		return tErr
+	}
+	defer func() { _ = os.Remove(tarFile.Name()) }()
+
+	// Execute tar command and stream to file
+	cmd := []string{"tar", "cf", "-", "-C", srcDir, "."}
+	req := l.K8sClientSet.CoreV1().RESTClient().Post().Resource("pods").Name(podName).Namespace(namespace).SubResource("exec")
+	req.VersionedParams(&corev1.PodExecOptions{
+		Container: containerName,
+		Command:   cmd,
+		Stdin:     false,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       false,
+	}, clientgoscheme.ParameterCodec)
+
+	exec, err := SpdyExecutorFactory(l.RestConfig, "POST", req.URL())
+	if err != nil {
+		return err
+	}
+
+	var stderr bytes.Buffer
+	if err = exec.Stream(remotecommand.StreamOptions{
+		Stdin:  nil,
+		Stdout: tarFile,
+		Stderr: &stderr,
+		Tty:    false,
+	}); err != nil {
+		_ = tarFile.Close()
+		return fmt.Errorf("exec stream error: %w; stderr: %s", err, stderr.String())
+	}
+	if cErr := tarFile.Close(); cErr != nil {
+		return cErr
+	}
+
+	return l.extractTarFile(tarFile.Name(), destDir)
+}
+
+// extractTarFile extracts a tar file to the destination directory
+func (l *LogCollector) extractTarFile(tarPath, destDir string) error {
+	in, err := os.Open(tarPath)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	tr := tar.NewReader(in)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		cleanName := filepath.Clean(hdr.Name)
+		targetPath, err := ensureWithinDir(destDir, filepath.Join(destDir, cleanName))
+		if err != nil {
+			return err
+		}
+
+		switch hdr.Typeflag {
+		case tar.TypeDir:
+			if err := os.MkdirAll(targetPath, os.FileMode(hdr.Mode)); err != nil {
+				return err
+			}
+		case tar.TypeReg:
+			if hdr.Size < 0 {
+				return fmt.Errorf("invalid negative file size for %s", hdr.Name)
+			}
+			if hdr.Size > maxTarFileBytes {
+				return fmt.Errorf("tar file %s exceeds allowed size of %d bytes", hdr.Name, maxTarFileBytes)
+			}
+			if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+				return err
+			}
+			outFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(hdr.Mode))
+			if err != nil {
+				return err
+			}
+			if _, err = io.CopyN(outFile, tr, hdr.Size); err != nil {
+				_ = outFile.Close()
+				return err
+			}
+			_ = outFile.Close()
+		}
+	}
+	return nil
+}
+
+// ensureWithinDir ensures the target path stays within base to avoid path traversal
+func ensureWithinDir(base, target string) (string, error) {
+	base = filepath.Clean(base)
+	target = filepath.Clean(target)
+	rel, err := filepath.Rel(base, target)
+	if err != nil {
+		return "", fmt.Errorf("failed to compute relative path: %w", err)
+	}
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("illegal file path outside destination: %s", target)
+	}
+	return target, nil
+}
+
+// DecompressGzInDir walks a directory and decompresses all .gz files in-place
+func DecompressGzInDir(root string) error {
+	var walkFn = func(filePath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		if !strings.HasSuffix(info.Name(), ".gz") {
+			return nil
+		}
+		return decompressGzFile(filePath)
+	}
+
+	return filepath.Walk(root, walkFn)
+}
+
+// decompressGzFile decompresses a single .gz file
+func decompressGzFile(path string) error {
+	in, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	// The size limit enforcement happens below using io.LimitedReader.
+	// #nosec G110 -- inputs are cluster-generated logs; see bounded copy via LimitedReader below
+	gzr, err := gzip.NewReader(in)
+	if err != nil {
+		// Not a valid gzip file; skip
+		log.Debugf("Skipping gzip decompression for %s: %s", path, err.Error())
+		return nil
+	}
+	defer gzr.Close()
+
+	outPath := strings.TrimSuffix(path, ".gz")
+	outFile, err := os.Create(outPath)
+	if err != nil {
+		return err
+	}
+	defer os.Remove(path) // Remove source .gz file in all cases
+	defer outFile.Close()
+
+	// Cap the number of decompressed bytes per file (decompression bomb protection)
+	lr := &io.LimitedReader{R: gzr, N: maxGzipFileBytes + 1}
+	written, err := io.Copy(outFile, lr)
+	if err != nil && !errors.Is(err, io.EOF) {
+		_ = os.Remove(outPath) // Clean up on error
+		return err
+	}
+	if written > maxGzipFileBytes {
+		_ = os.Remove(outPath) // Clean up on error
+		return fmt.Errorf("decompressed output exceeds limit of %d bytes: %s", maxGzipFileBytes, outPath)
+	}
+
+	return nil
 }
