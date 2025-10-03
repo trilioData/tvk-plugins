@@ -859,10 +859,11 @@ func checkVolumeSnapshotClassExists(vscName, version string, expectedVscCount in
 		vscName = defaultVSCNamePrefix
 	}
 	var found bool
-	for _, vsc := range vscUnstrObjList.Items {
+	for idx := range vscUnstrObjList.Items {
+		vsc := &vscUnstrObjList.Items[idx]
 		if strings.Contains(vsc.GetName(), vscName) {
 			Eventually(func() error {
-				return testClient.RuntimeClient.Get(ctx, types.NamespacedName{Name: vsc.GetName()}, &vsc)
+				return testClient.RuntimeClient.Get(ctx, types.NamespacedName{Name: vsc.GetName()}, vsc)
 			}, timeout, interval).ShouldNot(HaveOccurred())
 			found = true
 			break
@@ -900,13 +901,14 @@ func deleteAllVolumeSnapshotClass(version string, vscCountToDelete int) {
 		return len(vscUnstrObjList.Items) == vscCountToDelete
 	}, timeout, interval).Should(BeTrue())
 
-	for _, vsc := range vscUnstrObjList.Items {
+	for idx := range vscUnstrObjList.Items {
+		vsc := &vscUnstrObjList.Items[idx]
 		Eventually(func() bool {
-			err := testClient.RuntimeClient.Get(ctx, types.NamespacedName{Name: vsc.GetName()}, &vsc)
+			err := testClient.RuntimeClient.Get(ctx, types.NamespacedName{Name: vsc.GetName()}, vsc)
 			if k8serrors.IsNotFound(err) {
 				return true
 			}
-			Expect(testClient.RuntimeClient.Delete(ctx, &vsc)).To(BeNil())
+			Expect(testClient.RuntimeClient.Delete(ctx, vsc)).To(BeNil())
 			return false
 		}, timeout, interval).Should(BeTrue())
 	}
