@@ -42,9 +42,9 @@ const (
 	windowsCheckSymbol = "\u2713"
 	windowsCrossSymbol = "[X]"
 
-	versionRegexpCompile = "v\\d+.\\d+.\\d+"
+	versionRegexpCompile = "v\\d+\\.\\d+(?:\\.\\d+)?"
 	minHelmVersion       = "3.0.0"
-	minK8sVersion        = "1.19.0"
+	minK8sVersion        = "1.29"
 
 	RBACAPIGroup   = "rbac.authorization.k8s.io"
 	RBACAPIVersion = "v1"
@@ -226,13 +226,31 @@ func GetHelmVersion(binaryName string) (string, error) {
 // extractVersionFromString extracts version satisfying the regex compile rule
 func extractVersionFromString(str string) (string, error) {
 	verexp := regexp.MustCompile(versionRegexpCompile)
-	matches := verexp.FindAllStringSubmatch(str, -1)
-	if len(matches) == 0 {
+	matchIndices := verexp.FindAllStringIndex(str, -1)
+	if len(matchIndices) == 0 {
 		return "", fmt.Errorf("no version of type vX.Y.Z found in the string")
 	}
+
+	// Filter out invalid matches (e.g., v1.2 from v1.2.a3)
+	var validMatches []string
+	for _, idx := range matchIndices {
+		start, end := idx[0], idx[1]
+		match := str[start:end]
+
+		// Check if the match is followed by a dot, which would indicate an invalid version
+		if end < len(str) && str[end] == '.' {
+			continue // Skip this match as it's part of an invalid version
+		}
+		validMatches = append(validMatches, match)
+	}
+
+	if len(validMatches) == 0 {
+		return "", fmt.Errorf("no version of type vX.Y.Z found in the string")
+	}
+
 	// pick the last match if there are multiple versions mentioned in the output.
 	// because warnings and errors are printed before the actual version output in most cases.
-	version := matches[len(matches)-1][0]
+	version := validMatches[len(validMatches)-1]
 	version = version[1:]
 
 	return version, nil

@@ -207,14 +207,16 @@ func preflightFuncsTestcases() {
 		Context("When kubernetes server version satisfy/not satisfy minimum version requirement", func() {
 
 			It("Should pass kubernetes server version check if minimum version provided is >= threshold minimum version", func() {
-				err := runOps.validateKubernetesVersion(testMinK8sVersion, testClient.ClientSet)
+				warning, err := runOps.validateKubernetesVersion(testMinK8sVersion, testClient.ClientSet)
 				Expect(err).To(BeNil())
+				Expect(warning).To(BeEmpty())
 			})
 
-			It("Should return error when kubernetes server version is less than the minimum required version", func() {
-				err := runOps.validateKubernetesVersion(invalidK8sVersion, testClient.ClientSet)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("kubernetes server version does not meet minimum requirements"))
+			It("Should return warning when kubernetes server version is less than the minimum required version", func() {
+				warning, err := runOps.validateKubernetesVersion(invalidK8sVersion, testClient.ClientSet)
+				Expect(err).To(BeNil())
+				Expect(warning).ToNot(BeEmpty())
+				Expect(warning).To(ContainSubstring("is below the recommended minimum version"))
 			})
 		})
 	})

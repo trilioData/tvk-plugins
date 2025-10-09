@@ -8,14 +8,12 @@ import (
 	"math/big"
 	goexec "os/exec"
 	"path/filepath"
-	"strings"
 
 	version "github.com/hashicorp/go-version"
 	snapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	log "github.com/sirupsen/logrus"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
-	storagev1 "k8s.io/api/storage/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -123,7 +121,6 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 	o.Logger.Infoln("Checking access to the default namespace of cluster")
 	err = o.validateClusterAccess(ctx, internal.DefaultNs, kubeClient.ClientSet)
 	if err != nil {
-		o.Logger.Errorf("%s Preflight check for cluster access failed :: %s\n", cross, err.Error())
 		preflightStatus = false
 	} else {
 		o.Logger.Infof("%s Preflight check for kubectl access is successful\n", check)
@@ -143,7 +140,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 
 	// kubernetes server version check
 	o.Logger.Infof("Checking for required kubernetes server version (>=%s)\n", minK8sVersion)
-	err = o.validateKubernetesVersion(minK8sVersion, kubeClient.ClientSet)
+	k8sVersionWarning, err := o.validateKubernetesVersion(minK8sVersion, kubeClient.ClientSet)
 	if err != nil {
 		o.Logger.Errorf("%s Preflight check for kubernetes version failed :: %s\n", cross, err.Error())
 		preflightStatus = false
@@ -175,6 +172,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		err = o.checkAndCreateVolumeSnapshotCRDs(ctx, serverVersion.String(), kubeClient.RuntimeClient)
 		if err != nil {
 			o.Logger.Errorf("Preflight check for VolumeSnapshot CRDs failed :: %s\n", err.Error())
+			o.Logger.Errorf("ACTION REQUIRED: Create VolumeSnapshotClass, VolumeSnapshotContent, VolumeSnapshot CRDs")
 			preflightStatus = false
 		} else {
 			o.Logger.Infof("%s Preflight check for VolumeSnapshot CRDs is successful\n", check)
@@ -198,7 +196,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		storageSnapshotSuccess = false
 		preflightStatus = false
 	} else {
-		o.logStorageClassDetails(sc)
+		o.warnIfLegacyNonSnapshotDriver(sc.Provisioner)
 	}
 
 	err = o.validateRequiredPodCapabilities(ctx, resNameSuffix, kubeClient)
@@ -224,7 +222,10 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 				kubeClient.ClientSet, kubeClient.RuntimeClient)
 			if err != nil {
 				o.Logger.Errorf("%s Preflight check for SnapshotClass failed :: %s\n", cross, err.Error())
-				o.logVolumeSnapshotTroubleshooting(ctx, kubeClient.ClientSet, kubeClient.RuntimeClient, sc.Provisioner)
+				o.Logger.Errorln("\nRecommendations:")
+				o.Logger.Errorf("1. Verify CSI driver supports snapshots")
+				o.Logger.Errorf("2. Check snapshot controller logs")
+				o.Logger.Errorf("4. Check CSI driver documentation for snapshot requirements")
 				storageSnapshotSuccess = false
 				preflightStatus = false
 			} else {
@@ -292,11 +293,15 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 	}
 	if !preflightStatus {
 		o.Logger.Warnln("Some preflight checks failed")
-		// Check for external controllers
-		o.Logger.Infoln("Checking for external controllers in the cluster")
-		o.checkVSphereController(ctx, kubeClient.ClientSet)
 	} else {
 		o.Logger.Infoln("All preflight checks succeeded!")
+	}
+
+	// Display kubernetes version warning at the end if present
+	if k8sVersionWarning != "" {
+		o.Logger.Warnln("========================================")
+		o.Logger.Warnf("⚠ WARNING: %s", k8sVersionWarning)
+		o.Logger.Warnln("========================================")
 	}
 	if preflightStatus || o.PerformCleanupOnFail {
 		err = co.CleanupPreflightResources(ctx)
@@ -312,56 +317,8 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 	return nil
 }
 
-// logStorageClassDetails logs detailed information about the storage class
-func (o *Run) logStorageClassDetails(sc *storagev1.StorageClass) {
-	o.Logger.Infof("StorageClass Details:")
-	o.Logger.Infof("  Name: %s", sc.Name)
-	o.Logger.Infof("  Provisioner: %s", sc.Provisioner)
-
-	if sc.ReclaimPolicy != nil {
-		o.Logger.Infof("  Reclaim Policy: %s", *sc.ReclaimPolicy)
-	} else {
-		o.Logger.Infof("  Reclaim Policy: <not set>")
-	}
-
-	if sc.VolumeBindingMode != nil {
-		o.Logger.Infof("  Volume Binding Mode: %s", *sc.VolumeBindingMode)
-	} else {
-		o.Logger.Infof("  Volume Binding Mode: <not set>")
-	}
-
-	o.Logger.Infof("  Allow Volume Expansion: %t", sc.AllowVolumeExpansion != nil && *sc.AllowVolumeExpansion)
-
-	if len(sc.Parameters) > 0 {
-		o.Logger.Infof("  Parameters:")
-		for key, value := range sc.Parameters {
-			o.Logger.Infof("    %s: %s", key, value)
-		}
-	}
-
-	// Check if this is a known CSI driver that supports snapshots
-	o.checkCSIDriverSnapshotSupport(sc.Provisioner)
-}
-
-// checkCSIDriverSnapshotSupport checks if the CSI driver supports snapshots
-func (o *Run) checkCSIDriverSnapshotSupport(provisioner string) {
-	knownSnapshotSupportedDrivers := map[string]bool{
-		"ebs.csi.aws.com":               true,
-		"disk.csi.azure.com":            true,
-		"pd.csi.storage.gke.io":         true,
-		"csi.vsphere.vmware.com":        true,
-		"cinder.csi.openstack.org":      true,
-		"csi.trident.netapp.io":         true,
-		"csi-hostpath":                  true,
-		"rook-ceph.rbd.csi.ceph.com":    true,
-		"rook-ceph.cephfs.csi.ceph.com": true,
-		"csi.longhorn.io":               true,
-		"csi.hpe.com":                   true,
-		"csi.purestorage.com":           true,
-		"csi.dell.com":                  true,
-		"csi.nutanix.com":               true,
-	}
-
+// warnIfLegacyNonSnapshotDriver checks if the CSI driver does not support snapshots
+func (o *Run) warnIfLegacyNonSnapshotDriver(provisioner string) {
 	knownNonSnapshotDrivers := map[string]bool{
 		"kubernetes.io/aws-ebs":        true,
 		"kubernetes.io/azure-disk":     true,
@@ -371,168 +328,9 @@ func (o *Run) checkCSIDriverSnapshotSupport(provisioner string) {
 		"kubernetes.io/host-path":      true,
 		"kubernetes.io/no-provisioner": true,
 	}
-
-	if knownSnapshotSupportedDrivers[provisioner] {
-		o.Logger.Infof("  ✓ Provisioner '%s' is known to support volume snapshots", provisioner)
-	} else if knownNonSnapshotDrivers[provisioner] {
-		o.Logger.Warnf("  ⚠ Provisioner '%s' is a legacy driver that may not support snapshots. Consider migrating to CSI driver.", provisioner)
-	} else {
-		o.Logger.Warnf("  ? Provisioner '%s' snapshot support is unknown. Please verify with your storage provider.", provisioner)
+	if knownNonSnapshotDrivers[provisioner] {
+		o.Logger.Errorf("  ⚠ Provisioner '%s' is a legacy driver that does not support snapshots. Consider migrating to CSI driver.", provisioner)
 	}
-}
-
-// checkVSphereController checks for VSphere CSI controller
-func (o *Run) checkVSphereController(ctx context.Context, clientSet *kubernetes.Clientset) {
-	// Check for VSphere CSI driver deployment
-	deployments, err := clientSet.AppsV1().Deployments("").List(ctx, metav1.ListOptions{})
-	if err != nil {
-		o.Logger.Debugf("Failed to list deployments: %s", err.Error())
-		return
-	}
-
-	for idx := range deployments.Items {
-		deployment := deployments.Items[idx]
-		if strings.Contains(deployment.Name, "vsphere-csi") ||
-			strings.Contains(deployment.Name, "csi-vsphere") {
-			o.Logger.Infof("  ✓ Found VSphere CSI controller: %s in namespace %s",
-				deployment.Name, deployment.Namespace)
-
-			// Check if it's healthy
-			if deployment.Status.ReadyReplicas == deployment.Status.Replicas {
-				o.Logger.Infof("    Status: Healthy (%d/%d replicas ready)",
-					deployment.Status.ReadyReplicas, deployment.Status.Replicas)
-			} else {
-				o.Logger.Warnf("    Status: Unhealthy (%d/%d replicas ready)",
-					deployment.Status.ReadyReplicas, deployment.Status.Replicas)
-			}
-		}
-	}
-
-	// Check for VSphere storage class
-	storageClasses, err := clientSet.StorageV1().StorageClasses().List(ctx, metav1.ListOptions{})
-	if err != nil {
-		o.Logger.Debugf("Failed to list storage classes: %s", err.Error())
-		return
-	}
-
-	for idx := range storageClasses.Items {
-		sc := &storageClasses.Items[idx]
-		if sc.Provisioner == "csi.vsphere.vmware.com" {
-			o.Logger.Infof("  ✓ Found VSphere storage class: %s", sc.Name)
-		}
-	}
-}
-
-// logVolumeSnapshotTroubleshooting provides detailed troubleshooting for volume snapshot issues
-func (o *Run) logVolumeSnapshotTroubleshooting(ctx context.Context, clientSet *kubernetes.Clientset,
-	runtimeClient client.Client, provisioner string) {
-	o.Logger.Warnln("====VOLUME SNAPSHOT TROUBLESHOOTING====")
-
-	// Check VolumeSnapshot CRDs
-	o.Logger.Warnln("Checking VolumeSnapshot CRDs:")
-	for idx := range VolumeSnapshotCRDs {
-		crdName := VolumeSnapshotCRDs[idx]
-		var crdObj = &apiextensions.CustomResourceDefinition{}
-		err := runtimeClient.Get(ctx, client.ObjectKey{Name: crdName}, crdObj)
-		if err != nil {
-			if k8serrors.IsNotFound(err) {
-				o.Logger.Warnf("  ✗ CRD %s not found", crdName)
-			} else {
-				o.Logger.Warnf("  ? CRD %s check failed: %s", crdName, err.Error())
-			}
-		} else {
-			o.Logger.Warnf("  ✓ CRD %s found (version: %s)", crdName, crdObj.Spec.Versions[0].Name)
-		}
-	}
-
-	// Check VolumeSnapshotClasses
-	o.Logger.Warnln("\nChecking VolumeSnapshotClasses:")
-	prefVersion, err := GetServerPreferredVersionForGroup(StorageSnapshotGroup, clientSet)
-	if err != nil {
-		o.Logger.Warnf("  Failed to get preferred version: %s", err.Error())
-	} else {
-		vsscList := unstructured.UnstructuredList{}
-		vsscList.SetGroupVersionKind(schema.GroupVersionKind{
-			Group:   StorageSnapshotGroup,
-			Version: prefVersion,
-			Kind:    internal.VolumeSnapshotClassKind,
-		})
-		err = runtimeClient.List(ctx, &vsscList)
-		if err != nil {
-			o.Logger.Warnf("  Failed to list VolumeSnapshotClasses: %s", err.Error())
-		} else if len(vsscList.Items) == 0 {
-			o.Logger.Warnf("  ✗ No VolumeSnapshotClasses found")
-		} else {
-			o.Logger.Warnf("  Found %d VolumeSnapshotClass(es):", len(vsscList.Items))
-			for idx := range vsscList.Items {
-				vsc := &vsscList.Items[idx]
-				driver, _, _ := unstructured.NestedString(vsc.Object, "driver")
-				o.Logger.Warnf("    - %s (driver: %s)", vsc.GetName(), driver)
-				if driver == provisioner {
-					o.Logger.Warnf("      ✓ Matches StorageClass provisioner")
-				}
-			}
-		}
-	}
-
-	// Check CSI driver pods
-	o.Logger.Warnln("\nChecking CSI driver pods:")
-	pods, err := clientSet.CoreV1().Pods("").List(ctx, metav1.ListOptions{})
-	if err != nil {
-		o.Logger.Warnf("  Failed to list pods: %s", err.Error())
-	} else {
-		csiPods := 0
-		for idx := range pods.Items {
-			pod := pods.Items[idx]
-			if strings.Contains(pod.Name, "csi") &&
-				(strings.Contains(pod.Name, "controller") || strings.Contains(pod.Name, "snapshotter")) {
-				csiPods++
-				var status string
-				if pod.Status.Phase == corev1.PodRunning {
-					status = "Running"
-				} else {
-					status = string(pod.Status.Phase)
-				}
-				o.Logger.Warnf("  - %s/%s: %s", pod.Namespace, pod.Name, status)
-			}
-		}
-		if csiPods == 0 {
-			o.Logger.Warnf("  ✗ No CSI controller or snapshotter pods found")
-		}
-	}
-
-	// Check snapshot controller
-	o.Logger.Warnln("\nChecking snapshot controller:")
-	deployments, err := clientSet.AppsV1().Deployments("").List(ctx, metav1.ListOptions{})
-	if err != nil {
-		o.Logger.Warnf("  Failed to list deployments: %s", err.Error())
-	} else {
-		found := false
-		for idx := range deployments.Items {
-			deployment := deployments.Items[idx]
-			if strings.Contains(deployment.Name, "snapshot-controller") {
-				found = true
-				o.Logger.Warnf("  ✓ Found snapshot controller: %s/%s", deployment.Namespace, deployment.Name)
-				if deployment.Status.ReadyReplicas == deployment.Status.Replicas {
-					o.Logger.Warnf("    Status: Healthy (%d/%d replicas ready)",
-						deployment.Status.ReadyReplicas, deployment.Status.Replicas)
-				} else {
-					o.Logger.Warnf("    Status: Unhealthy (%d/%d replicas ready)",
-						deployment.Status.ReadyReplicas, deployment.Status.Replicas)
-				}
-			}
-		}
-		if !found {
-			o.Logger.Warnf("  ✗ Snapshot controller not found")
-		}
-	}
-
-	o.Logger.Warnln("\nRecommendations:")
-	o.Logger.Warnf("1. Verify CSI driver supports snapshots: kubectl describe csidriver")
-	o.Logger.Warnf("2. Check snapshot controller logs: kubectl logs -n kube-system deployment/snapshot-controller")
-	o.Logger.Warnf("3. Verify storage backend supports snapshots")
-	o.Logger.Warnf("4. Check CSI driver documentation for snapshot requirements")
-	o.Logger.Warnln("====END VOLUME SNAPSHOT TROUBLESHOOTING====")
 }
 
 // validateKubectl checks whether kubectl utility is installed.
@@ -550,6 +348,20 @@ func (o *Run) validateKubectl(binaryName string) error {
 func (o *Run) validateClusterAccess(ctx context.Context, namespace string, kubeClient *kubernetes.Clientset) error {
 	_, err := kubeClient.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			o.Logger.Errorf("Namespace '%s' not found in cluster", namespace)
+			return fmt.Errorf("namespace '%s' not found :: %s", namespace, err.Error())
+		}
+		if k8serrors.IsForbidden(err) {
+			o.Logger.Errorf("Access denied to namespace '%s' - insufficient permissions", namespace)
+			return fmt.Errorf("forbidden: unable to access namespace '%s' :: %s", namespace, err.Error())
+		}
+		if k8serrors.IsUnauthorized(err) {
+			o.Logger.Errorf("Unauthorized: authentication failed when accessing namespace '%s'", namespace)
+			return fmt.Errorf("unauthorized: unable to access namespace '%s' :: %s", namespace, err.Error())
+		}
+		o.Logger.Errorf("%s Preflight check for cluster access failed :: %s\n", cross, err.Error())
+		o.Logger.Info("Action Item: Provide service account OR kubeconfig file user with privilege to access namespace resource.")
 		return fmt.Errorf("unable to access default namespace of cluster :: %s", err.Error())
 	}
 
@@ -668,25 +480,29 @@ func (o *Run) validateHelmBinary(binaryName string) error {
 }
 
 // validateKubernetesVersion checks whether minimum k8s version requirement is met
-func (o *Run) validateKubernetesVersion(minVersion string, cl *kubernetes.Clientset) error {
+// Returns a warning message if version is below minimum, but does not fail the check
+func (o *Run) validateKubernetesVersion(minVersion string, cl *kubernetes.Clientset) (string, error) {
 	serverVer, err := cl.ServerVersion()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	v1, err := version.NewVersion(minVersion)
 	if err != nil {
-		return err
+		return "", err
 	}
 	v2, err := version.NewVersion(serverVer.GitVersion)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if v2.LessThan(v1) {
-		return fmt.Errorf("kubernetes server version does not meet minimum requirements")
+		warningMsg := fmt.Sprintf("Kubernetes server version %s is below the recommended minimum version %s. "+
+			"Please consider upgrading your cluster for optimal compatibility.",
+			serverVer.GitVersion, minVersion)
+		return warningMsg, nil
 	}
 
-	return nil
+	return "", nil
 }
 
 // validateKubernetesRBAC fetches the apiVersions present on k8s server.
@@ -1482,6 +1298,8 @@ func (o *Run) validateRequiredPodCapabilities(ctx context.Context, podNameSuffix
 		o.Logger.Infof("Checking pod capability validation case %d/3", index+1)
 		err := o.validatePodCapability(ctx, fmt.Sprintf("%d-%s", index, podNameSuffix), clients, validationCase)
 		if err != nil {
+			o.Logger.Errorf("Pod capability validation case %d/3 failed (userID: %d, privileged: %t, allowPrivilegeEscalation: %t) :: %s",
+				index+1, validationCase.userID, validationCase.privileged, validationCase.allowPrivilegeEscalation, err.Error())
 			return err
 		}
 	}
