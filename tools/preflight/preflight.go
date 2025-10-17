@@ -121,7 +121,6 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 	o.Logger.Infoln("Checking access to the default namespace of cluster")
 	err = o.validateClusterAccess(ctx, internal.DefaultNs, kubeClient.ClientSet)
 	if err != nil {
-		o.Logger.Errorf("%s Preflight check for cluster access failed :: %s\n", cross, err.Error())
 		preflightStatus = false
 	} else {
 		o.Logger.Infof("%s Preflight check for kubectl access is successful\n", check)
@@ -141,7 +140,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 
 	// kubernetes server version check
 	o.Logger.Infof("Checking for required kubernetes server version (>=%s)\n", minK8sVersion)
-	err = o.validateKubernetesVersion(minK8sVersion, kubeClient.ClientSet)
+	k8sVersionWarning, err := o.validateKubernetesVersion(minK8sVersion, kubeClient.ClientSet)
 	if err != nil {
 		o.Logger.Errorf("%s Preflight check for kubernetes version failed :: %s\n", cross, err.Error())
 		preflightStatus = false
@@ -173,6 +172,7 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		err = o.checkAndCreateVolumeSnapshotCRDs(ctx, serverVersion.String(), kubeClient.RuntimeClient)
 		if err != nil {
 			o.Logger.Errorf("Preflight check for VolumeSnapshot CRDs failed :: %s\n", err.Error())
+			o.Logger.Errorf("ACTION REQUIRED: Create VolumeSnapshotClass, VolumeSnapshotContent, VolumeSnapshot CRDs")
 			preflightStatus = false
 		} else {
 			o.Logger.Infof("%s Preflight check for VolumeSnapshot CRDs is successful\n", check)
@@ -195,6 +195,8 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 		skipSnapshotClassCheck = true
 		storageSnapshotSuccess = false
 		preflightStatus = false
+	} else {
+		o.warnIfLegacyNonSnapshotDriver(sc.Provisioner)
 	}
 
 	err = o.validateRequiredPodCapabilities(ctx, resNameSuffix, kubeClient)
@@ -220,6 +222,10 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 				kubeClient.ClientSet, kubeClient.RuntimeClient)
 			if err != nil {
 				o.Logger.Errorf("%s Preflight check for SnapshotClass failed :: %s\n", cross, err.Error())
+				o.Logger.Errorln("\nRecommendations:")
+				o.Logger.Errorf("1. Verify CSI driver supports snapshots")
+				o.Logger.Errorf("2. Check snapshot controller logs")
+				o.Logger.Errorf("4. Check CSI driver documentation for snapshot requirements")
 				storageSnapshotSuccess = false
 				preflightStatus = false
 			} else {
@@ -290,6 +296,13 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 	} else {
 		o.Logger.Infoln("All preflight checks succeeded!")
 	}
+
+	// Display kubernetes version warning at the end if present
+	if k8sVersionWarning != "" {
+		o.Logger.Warnln("========================================")
+		o.Logger.Warnf("⚠ WARNING: %s", k8sVersionWarning)
+		o.Logger.Warnln("========================================")
+	}
 	if preflightStatus || o.PerformCleanupOnFail {
 		err = co.CleanupPreflightResources(ctx)
 		if err != nil {
@@ -302,6 +315,22 @@ func (o *Run) PerformPreflightChecks(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// warnIfLegacyNonSnapshotDriver checks if the CSI driver does not support snapshots
+func (o *Run) warnIfLegacyNonSnapshotDriver(provisioner string) {
+	knownNonSnapshotDrivers := map[string]bool{
+		"kubernetes.io/aws-ebs":        true,
+		"kubernetes.io/azure-disk":     true,
+		"kubernetes.io/gce-pd":         true,
+		"kubernetes.io/vsphere-volume": true,
+		"kubernetes.io/cinder":         true,
+		"kubernetes.io/host-path":      true,
+		"kubernetes.io/no-provisioner": true,
+	}
+	if knownNonSnapshotDrivers[provisioner] {
+		o.Logger.Errorf("  ⚠ Provisioner '%s' is a legacy driver that does not support snapshots. Consider migrating to CSI driver.", provisioner)
+	}
 }
 
 // validateKubectl checks whether kubectl utility is installed.
@@ -319,6 +348,20 @@ func (o *Run) validateKubectl(binaryName string) error {
 func (o *Run) validateClusterAccess(ctx context.Context, namespace string, kubeClient *kubernetes.Clientset) error {
 	_, err := kubeClient.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			o.Logger.Errorf("Namespace '%s' not found in cluster", namespace)
+			return fmt.Errorf("namespace '%s' not found :: %s", namespace, err.Error())
+		}
+		if k8serrors.IsForbidden(err) {
+			o.Logger.Errorf("Access denied to namespace '%s' - insufficient permissions", namespace)
+			return fmt.Errorf("forbidden: unable to access namespace '%s' :: %s", namespace, err.Error())
+		}
+		if k8serrors.IsUnauthorized(err) {
+			o.Logger.Errorf("Unauthorized: authentication failed when accessing namespace '%s'", namespace)
+			return fmt.Errorf("unauthorized: unable to access namespace '%s' :: %s", namespace, err.Error())
+		}
+		o.Logger.Errorf("%s Preflight check for cluster access failed :: %s\n", cross, err.Error())
+		o.Logger.Info("Action Item: Provide service account OR kubeconfig file user with privilege to access namespace resource.")
 		return fmt.Errorf("unable to access default namespace of cluster :: %s", err.Error())
 	}
 
@@ -437,25 +480,29 @@ func (o *Run) validateHelmBinary(binaryName string) error {
 }
 
 // validateKubernetesVersion checks whether minimum k8s version requirement is met
-func (o *Run) validateKubernetesVersion(minVersion string, cl *kubernetes.Clientset) error {
+// Returns a warning message if version is below minimum, but does not fail the check
+func (o *Run) validateKubernetesVersion(minVersion string, cl *kubernetes.Clientset) (string, error) {
 	serverVer, err := cl.ServerVersion()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	v1, err := version.NewVersion(minVersion)
 	if err != nil {
-		return err
+		return "", err
 	}
 	v2, err := version.NewVersion(serverVer.GitVersion)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if v2.LessThan(v1) {
-		return fmt.Errorf("kubernetes server version does not meet minimum requirements")
+		warningMsg := fmt.Sprintf("Kubernetes server version %s is below the recommended minimum version %s. "+
+			"Please consider upgrading your cluster for optimal compatibility.",
+			serverVer.GitVersion, minVersion)
+		return warningMsg, nil
 	}
 
-	return nil
+	return "", nil
 }
 
 // validateKubernetesRBAC fetches the apiVersions present on k8s server.
@@ -549,7 +596,8 @@ func (o *Run) checkAndCreateSnapshotClassForProvisioner(ctx context.Context, pre
 	}
 
 	sscName := ""
-	for _, vssc := range vsscList.Items {
+	for idx := range vsscList.Items {
+		vssc := &vsscList.Items[idx]
 		if vssc.Object["driver"] == provisioner {
 			if v, ok, err := unstructured.NestedString(
 				vssc.Object, "metadata", "annotations", SnapshotClassIsDefaultAnnotation); err == nil && ok && v == "true" {
@@ -1250,6 +1298,8 @@ func (o *Run) validateRequiredPodCapabilities(ctx context.Context, podNameSuffix
 		o.Logger.Infof("Checking pod capability validation case %d/3", index+1)
 		err := o.validatePodCapability(ctx, fmt.Sprintf("%d-%s", index, podNameSuffix), clients, validationCase)
 		if err != nil {
+			o.Logger.Errorf("Pod capability validation case %d/3 failed (userID: %d, privileged: %t, allowPrivilegeEscalation: %t) :: %s",
+				index+1, validationCase.userID, validationCase.privileged, validationCase.allowPrivilegeEscalation, err.Error())
 			return err
 		}
 	}
