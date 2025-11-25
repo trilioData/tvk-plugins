@@ -30,6 +30,7 @@ const (
 	OCPIngress                = "cluster"
 	OCPConfig                 = "default"
 	OCPConfigNs               = "openshift-ingress-operator"
+	DefaultNamespace          = "default"
 
 	CoreGv                = "v1"
 	Events                = "events"
@@ -82,7 +83,7 @@ func aggregateEvents(eventObjects unstructured.UnstructuredList,
 			return nil, nErr
 		}
 		if namespace == "" {
-			namespace = "default"
+			namespace = DefaultNamespace
 		}
 
 		kind, _, gErr := unstructured.NestedString(eve.Object, "involvedObject", "kind")
@@ -327,7 +328,7 @@ func getPVCsUsedByPods(pods []unstructured.Unstructured) map[types.NamespacedNam
 
 			podNs := pod.GetNamespace()
 			if podNs == "" {
-				podNs = "default"
+				podNs = DefaultNamespace
 			}
 
 			pvcSet[types.NamespacedName{Name: claimName, Namespace: podNs}] = true

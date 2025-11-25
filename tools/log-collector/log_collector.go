@@ -463,7 +463,7 @@ func (l *LogCollector) filterResourceObjects(resourcePath string,
 
 	if resource.Name == PersistentVolumeClaim {
 		log.Infof("Filtering '%s' Resource", resource.Kind)
-		return l.filterApplicationPVCs(resourcePath, resource)
+		return l.filterApplicationPVCs(resourcePath, resource), nil
 	}
 
 	if ((!nonLabeledResources.Has(resource.Kind) && resource.Namespaced) ||
@@ -476,7 +476,7 @@ func (l *LogCollector) filterResourceObjects(resourcePath string,
 }
 
 // filterApplicationPVCs filters PVCs that are used by application pods or have TVK labels
-func (l *LogCollector) filterApplicationPVCs(resourcePath string, resource *apiv1.APIResource) (unstructured.UnstructuredList, error) {
+func (l *LogCollector) filterApplicationPVCs(resourcePath string, resource *apiv1.APIResource) unstructured.UnstructuredList {
 	var allObjects unstructured.UnstructuredList
 
 	// Get all PVCs
@@ -497,7 +497,7 @@ func (l *LogCollector) filterApplicationPVCs(resourcePath string, resource *apiv
 	}
 
 	allObjects.Items = append(allObjects.Items, filteredPVCs.Items...)
-	return allObjects, nil
+	return allObjects
 }
 
 // collectApplicationPVCsFromPods collects PVCs that are used by collected pods
@@ -691,7 +691,7 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 				for _, pvc := range resObjects.Items {
 					pvcNs := pvc.GetNamespace()
 					if pvcNs == "" {
-						pvcNs = "default"
+						pvcNs = DefaultNamespace
 					}
 					l.collectedPVCs[types.NamespacedName{Name: pvc.GetName(), Namespace: pvcNs}] = true
 				}
