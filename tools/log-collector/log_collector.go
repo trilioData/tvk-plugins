@@ -52,19 +52,20 @@ var (
 )
 
 type LogCollector struct {
-	OutputDir         string                     `json:"outputDirectory"`
-	CleanOutput       bool                       `json:"keep-source-folder"`
-	Clustered         bool                       `json:"clustered"`
-	Namespaces        []string                   `json:"namespaces"`
-	InstallNamespace  string                     `json:"installNamespace"`
-	Loglevel          string                     `json:"logLevel"`
-	K8sClient         client.Client              `json:"-"`
-	DisClient         *discovery.DiscoveryClient `json:"-"`
-	K8sClientSet      *kubernetes.Clientset      `json:"-"`
-	KubeConfig        string                     `json:"kubeConfig"`
-	LabelSelectors    []apiv1.LabelSelector      `json:"labels,omitempty"`
-	GroupVersionKinds []GroupVersionKind         `json:"gvks"`
-	RestConfig        *restclient.Config         `json:"-"`
+	OutputDir         string                        `json:"outputDirectory"`
+	CleanOutput       bool                          `json:"keep-source-folder"`
+	Clustered         bool                          `json:"clustered"`
+	Namespaces        []string                      `json:"namespaces"`
+	InstallNamespace  string                        `json:"installNamespace"`
+	Loglevel          string                        `json:"logLevel"`
+	K8sClient         client.Client                 `json:"-"`
+	DisClient         *discovery.DiscoveryClient    `json:"-"`
+	K8sClientSet      *kubernetes.Clientset         `json:"-"`
+	KubeConfig        string                        `json:"kubeConfig"`
+	LabelSelectors    []apiv1.LabelSelector         `json:"labels,omitempty"`
+	GroupVersionKinds []GroupVersionKind            `json:"gvks"`
+	RestConfig        *restclient.Config            `json:"-"`
+	collectedPVCs     map[types.NamespacedName]bool `json:"-"` // Track collected PVCs to find their PVs
 }
 
 const (
@@ -233,6 +234,13 @@ func (l *LogCollector) writeYaml(resourceDir string, obj unstructured.Unstructur
 		log.Errorf("Unable to create the directory : %s", err.Error())
 		return err
 	}
+
+	// Sanitize NFS PVs before writing
+	if obj.GetKind() == PersistentVolume && isNFSPV(obj) {
+		obj = sanitizeNFSPV(obj)
+		log.Infof("Sanitized NFS credentials from PV %s", objName)
+	}
+
 	objFilepath := filepath.Join(resourcePath, objName)
 	fp, fErr := os.Create(objFilepath + ".yaml")
 	if fErr != nil {
@@ -453,6 +461,11 @@ func (l *LogCollector) filterResourceObjects(resourcePath string,
 		return filterTvkCSV(l.getResourceObjects(resourcePath, resource)), nil
 	}
 
+	if resource.Name == PersistentVolumeClaim {
+		log.Infof("Filtering '%s' Resource", resource.Kind)
+		return l.filterApplicationPVCs(resourcePath, resource)
+	}
+
 	if ((!nonLabeledResources.Has(resource.Kind) && resource.Namespaced) ||
 		(l.Clustered && !resource.Namespaced)) && !excludeResources.Has(resource.Kind) {
 		log.Infof("Filtering '%s' Resource", resource.Kind)
@@ -460,6 +473,144 @@ func (l *LogCollector) filterResourceObjects(resourcePath string,
 		l.filterTvkResourcesByLabel(&allObjects)
 	}
 	return allObjects, nil
+}
+
+// filterApplicationPVCs filters PVCs that are used by application pods or have TVK labels
+func (l *LogCollector) filterApplicationPVCs(resourcePath string, resource *apiv1.APIResource) (unstructured.UnstructuredList, error) {
+	var allObjects unstructured.UnstructuredList
+
+	// Get all PVCs
+	allPVCs := l.getResourceObjects(resourcePath, resource)
+
+	// Filter PVCs with TVK labels
+	var filteredPVCs unstructured.UnstructuredList
+	for _, pvc := range allPVCs.Items {
+		pvcLabels := pvc.GetLabels()
+		if len(pvcLabels) != 0 {
+			if checkLabelExist(K8STrilioVaultLabel, pvcLabels) ||
+				checkLabelExist(K8STrilioVaultOpLabel, pvcLabels) ||
+				checkLabelExist(K8STrilioVaultConsolePluginLabel, pvcLabels) ||
+				(len(l.LabelSelectors) != 0 && MatchLabelSelectors(pvcLabels, l.LabelSelectors)) {
+				filteredPVCs.Items = append(filteredPVCs.Items, pvc)
+			}
+		}
+	}
+
+	allObjects.Items = append(allObjects.Items, filteredPVCs.Items...)
+	return allObjects, nil
+}
+
+// collectApplicationPVCsFromPods collects PVCs that are used by collected pods
+func (l *LogCollector) collectApplicationPVCsFromPods(pods []unstructured.Unstructured) error {
+	if len(pods) == 0 {
+		return nil
+	}
+
+	pvcSet := getPVCsUsedByPods(pods)
+	if len(pvcSet) == 0 {
+		return nil
+	}
+
+	log.Infof("Collecting application PVCs used by pods")
+
+	pvcResourcePath := getAPIGroupVersionResourcePath(CoreGv)
+
+	var pvcObjects unstructured.UnstructuredList
+	for pvcNsName := range pvcSet {
+		if l.collectedPVCs[pvcNsName] {
+			continue
+		}
+
+		listPath := fmt.Sprintf("%s/namespaces/%s/%s/%s", pvcResourcePath, pvcNsName.Namespace, PersistentVolumeClaim, pvcNsName.Name)
+		var pvc unstructured.Unstructured
+		err := l.DisClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&pvc)
+		if err != nil {
+			if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
+				log.Warnf("PVC %s/%s not found or forbidden: %s", pvcNsName.Namespace, pvcNsName.Name, err.Error())
+				continue
+			}
+			log.Warnf("Error getting PVC %s/%s: %s", pvcNsName.Namespace, pvcNsName.Name, err.Error())
+			continue
+		}
+
+		pvcObjects.Items = append(pvcObjects.Items, pvc)
+		l.collectedPVCs[pvcNsName] = true
+	}
+
+	if len(pvcObjects.Items) > 0 {
+		_, err := l.writeObjectsAndLogs(pvcObjects, "PersistentVolumeClaim")
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// collectPVsForPVCs collects PVs that are bound to collected PVCs
+func (l *LogCollector) collectPVsForPVCs() error {
+	if len(l.collectedPVCs) == 0 {
+		return nil
+	}
+
+	log.Infof("Collecting PVs bound to application PVCs")
+
+	pvcResourcePath := getAPIGroupVersionResourcePath(CoreGv)
+	pvNames := make(map[string]bool)
+
+	for pvcNsName := range l.collectedPVCs {
+		listPath := fmt.Sprintf("%s/namespaces/%s/%s/%s", pvcResourcePath, pvcNsName.Namespace, PersistentVolumeClaim, pvcNsName.Name)
+		var pvc unstructured.Unstructured
+		err := l.DisClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&pvc)
+		if err != nil {
+			if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
+				continue
+			}
+			log.Warnf("Error getting PVC %s/%s: %s", pvcNsName.Namespace, pvcNsName.Name, err.Error())
+			continue
+		}
+
+		pvName := getPVNameFromPVC(pvc)
+		if pvName != "" {
+			pvNames[pvName] = true
+		}
+	}
+
+	if len(pvNames) == 0 {
+		return nil
+	}
+
+	pvResourcePath := getAPIGroupVersionResourcePath(CoreGv)
+	var allPVs unstructured.UnstructuredList
+	listPath := fmt.Sprintf("%s/%s", pvResourcePath, "persistentvolumes")
+	err := l.DisClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&allPVs)
+	if err != nil {
+		if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
+			log.Warnf("PVs not found or forbidden: %s", err.Error())
+			return nil
+		}
+		return err
+	}
+
+	var filteredPVs unstructured.UnstructuredList
+	for _, pv := range allPVs.Items {
+		pvName := pv.GetName()
+		if pvNames[pvName] {
+			if isNFSPV(pv) {
+				pv = sanitizeNFSPV(pv)
+			}
+			filteredPVs.Items = append(filteredPVs.Items, pv)
+		}
+	}
+
+	if len(filteredPVs.Items) > 0 {
+		_, err = l.writeObjectsAndLogs(filteredPVs, PersistentVolume)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIResource) error {
@@ -477,6 +628,8 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 
 	resourceMapList := make(map[string][]types.NamespacedName)
 	var eventResource apiv1.APIResource
+	l.collectedPVCs = make(map[types.NamespacedName]bool)
+	var collectedPods []unstructured.Unstructured
 
 	for groupVersion, resources := range resourceGroup {
 
@@ -530,13 +683,37 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 				return err
 			}
 
+			if resources[index].Kind == Pod {
+				collectedPods = append(collectedPods, resObjects.Items...)
+			}
+
+			if resources[index].Name == PersistentVolumeClaim {
+				for _, pvc := range resObjects.Items {
+					pvcNs := pvc.GetNamespace()
+					if pvcNs == "" {
+						pvcNs = "default"
+					}
+					l.collectedPVCs[types.NamespacedName{Name: pvc.GetName(), Namespace: pvcNs}] = true
+				}
+			}
+
 			for kind, NsName := range resourceMap {
 				resourceMapList[kind] = NsName
 			}
 		}
 	}
 
-	err := l.getResourceEvents(&eventResource, resourceMapList)
+	err := l.collectApplicationPVCsFromPods(collectedPods)
+	if err != nil {
+		return err
+	}
+
+	err = l.collectPVsForPVCs()
+	if err != nil {
+		return err
+	}
+
+	err = l.getResourceEvents(&eventResource, resourceMapList)
 	if err != nil {
 		return err
 	}
