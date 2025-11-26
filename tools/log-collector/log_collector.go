@@ -475,24 +475,44 @@ func (l *LogCollector) filterResourceObjects(resourcePath string,
 	return allObjects, nil
 }
 
-// filterApplicationPVCs filters PVCs that are used by application pods or have TVK labels
+// filterApplicationPVCs filters application PVCs based on namespaces and label selectors
+// It collects:
+// 1. All PVCs in specified namespaces (if --namespaces flag is provided)
+// 2. All PVCs matching label selectors (if --labels flag is provided)
+// 3. All PVCs with TVK labels (always collected)
+// 4. All PVCs in cluster if clustered mode (no namespace specified)
 func (l *LogCollector) filterApplicationPVCs(resourcePath string, resource *apiv1.APIResource) unstructured.UnstructuredList {
 	var allObjects unstructured.UnstructuredList
 
-	// Get all PVCs
 	allPVCs := l.getResourceObjects(resourcePath, resource)
 
-	// Filter PVCs with TVK labels
+	if len(l.LabelSelectors) == 0 && !l.Clustered {
+		return allPVCs
+	}
+
 	var filteredPVCs unstructured.UnstructuredList
 	for _, pvc := range allPVCs.Items {
 		pvcLabels := pvc.GetLabels()
+
+		// Always include PVCs with TVK labels
 		if len(pvcLabels) != 0 {
 			if checkLabelExist(K8STrilioVaultLabel, pvcLabels) ||
 				checkLabelExist(K8STrilioVaultOpLabel, pvcLabels) ||
-				checkLabelExist(K8STrilioVaultConsolePluginLabel, pvcLabels) ||
-				(len(l.LabelSelectors) != 0 && MatchLabelSelectors(pvcLabels, l.LabelSelectors)) {
+				checkLabelExist(K8STrilioVaultConsolePluginLabel, pvcLabels) {
 				filteredPVCs.Items = append(filteredPVCs.Items, pvc)
+				continue
 			}
+		}
+
+		if len(l.LabelSelectors) != 0 {
+			if len(pvcLabels) != 0 && MatchLabelSelectors(pvcLabels, l.LabelSelectors) {
+				filteredPVCs.Items = append(filteredPVCs.Items, pvc)
+				continue
+			}
+		}
+
+		if l.Clustered && len(l.LabelSelectors) == 0 {
+			filteredPVCs.Items = append(filteredPVCs.Items, pvc)
 		}
 	}
 
