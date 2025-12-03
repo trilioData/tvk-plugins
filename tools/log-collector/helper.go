@@ -324,7 +324,10 @@ func getPVCsUsedByPods(pods []unstructured.Unstructured) map[types.NamespacedNam
 			}
 
 			claimName, found, err := unstructured.NestedString(pvc, "claimName")
-			if !found || err != nil {
+			if !found {
+				continue
+			}
+			if err != nil {
 				log.Errorf("Unable to get the claimName of Object : %s", err.Error())
 				continue
 			}
