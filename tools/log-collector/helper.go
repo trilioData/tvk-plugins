@@ -32,15 +32,17 @@ const (
 	OCPConfigNs               = "openshift-ingress-operator"
 	DefaultNamespace          = "default"
 
-	CoreGv                = "v1"
-	Events                = "events"
-	CRD                   = "customresourcedefinitions"
-	Namespaces            = "namespaces"
-	Pod                   = "Pod"
-	SubscriptionKind      = "Subscription"
-	InstallPlanKind       = "InstallPlan"
-	PersistentVolumeClaim = "persistentvolumeclaims"
-	PersistentVolume      = "PersistentVolume"
+	CoreGv                    = "v1"
+	Events                    = "events"
+	CRD                       = "customresourcedefinitions"
+	Namespaces                = "namespaces"
+	Pod                       = "Pod"
+	SubscriptionKind          = "Subscription"
+	InstallPlanKind           = "InstallPlan"
+	PersistentVolumeClaim     = "persistentvolumeclaims" // API resource name
+	PersistentVolume          = "persistentvolumes"      // API resource name
+	PersistentVolumeClaimKind = "PersistentVolumeClaim"  // Kind
+	PersistentVolumeKind      = "PersistentVolume"       // Kind
 
 	LicenseKind = "License"
 	Verblist    = "list"
@@ -323,6 +325,7 @@ func getPVCsUsedByPods(pods []unstructured.Unstructured) map[types.NamespacedNam
 
 			claimName, found, err := unstructured.NestedString(pvc, "claimName")
 			if !found || err != nil {
+				log.Errorf("Unable to get the claimName of Object : %s", err.Error())
 				continue
 			}
 

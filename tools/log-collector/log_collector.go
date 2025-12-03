@@ -236,7 +236,7 @@ func (l *LogCollector) writeYaml(resourceDir string, obj unstructured.Unstructur
 	}
 
 	// Sanitize NFS PVs before writing
-	if obj.GetKind() == PersistentVolume && isNFSPV(obj) {
+	if obj.GetKind() == PersistentVolumeKind && isNFSPV(obj) {
 		obj = sanitizeNFSPV(obj)
 		log.Infof("Sanitized NFS credentials from PV %s", objName)
 	}
@@ -557,8 +557,25 @@ func (l *LogCollector) collectApplicationPVCsFromPods(pods []unstructured.Unstru
 		l.collectedPVCs[pvcNsName] = true
 	}
 
+	// Collect PVs bound to the PVCs we just collected (to avoid duplicate GET calls)
+	pvNames := make(map[string]bool)
+	for _, pvc := range pvcObjects.Items {
+		pvName := getPVNameFromPVC(pvc)
+		if pvName != "" {
+			pvNames[pvName] = true
+		}
+	}
+
 	if len(pvcObjects.Items) > 0 {
-		_, err := l.writeObjectsAndLogs(pvcObjects, "PersistentVolumeClaim")
+		_, err := l.writeObjectsAndLogs(pvcObjects, PersistentVolumeClaimKind)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Collect and write PVs if we found any bound PVs
+	if len(pvNames) > 0 {
+		err := l.collectAndWritePVs(pvNames)
 		if err != nil {
 			return err
 		}
@@ -567,42 +584,11 @@ func (l *LogCollector) collectApplicationPVCsFromPods(pods []unstructured.Unstru
 	return nil
 }
 
-// collectPVsForPVCs collects PVs that are bound to collected PVCs
-func (l *LogCollector) collectPVsForPVCs() error {
-	if len(l.collectedPVCs) == 0 {
-		return nil
-	}
-
-	log.Infof("Collecting PVs bound to application PVCs")
-
-	pvcResourcePath := getAPIGroupVersionResourcePath(CoreGv)
-	pvNames := make(map[string]bool)
-
-	for pvcNsName := range l.collectedPVCs {
-		listPath := fmt.Sprintf("%s/namespaces/%s/%s/%s", pvcResourcePath, pvcNsName.Namespace, PersistentVolumeClaim, pvcNsName.Name)
-		var pvc unstructured.Unstructured
-		err := l.DisClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&pvc)
-		if err != nil {
-			if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
-				continue
-			}
-			log.Warnf("Error getting PVC %s/%s: %s", pvcNsName.Namespace, pvcNsName.Name, err.Error())
-			continue
-		}
-
-		pvName := getPVNameFromPVC(pvc)
-		if pvName != "" {
-			pvNames[pvName] = true
-		}
-	}
-
-	if len(pvNames) == 0 {
-		return nil
-	}
-
+// collectAndWritePVs collects and writes PVs for the given PV names
+func (l *LogCollector) collectAndWritePVs(pvNames map[string]bool) error {
 	pvResourcePath := getAPIGroupVersionResourcePath(CoreGv)
 	var allPVs unstructured.UnstructuredList
-	listPath := fmt.Sprintf("%s/%s", pvResourcePath, "persistentvolumes")
+	listPath := fmt.Sprintf("%s/%s", pvResourcePath, PersistentVolume)
 	err := l.DisClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&allPVs)
 	if err != nil {
 		if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
@@ -624,7 +610,7 @@ func (l *LogCollector) collectPVsForPVCs() error {
 	}
 
 	if len(filteredPVs.Items) > 0 {
-		_, err = l.writeObjectsAndLogs(filteredPVs, PersistentVolume)
+		_, err = l.writeObjectsAndLogs(filteredPVs, PersistentVolumeKind)
 		if err != nil {
 			return err
 		}
@@ -708,12 +694,29 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 			}
 
 			if resources[index].Name == PersistentVolumeClaim {
+				// Extract PV names from PVCs while we have the objects (avoid duplicate GET calls)
+				pvNames := make(map[string]bool)
 				for _, pvc := range resObjects.Items {
 					pvcNs := pvc.GetNamespace()
 					if pvcNs == "" {
 						pvcNs = DefaultNamespace
 					}
-					l.collectedPVCs[types.NamespacedName{Name: pvc.GetName(), Namespace: pvcNs}] = true
+					pvcNsName := types.NamespacedName{Name: pvc.GetName(), Namespace: pvcNs}
+					l.collectedPVCs[pvcNsName] = true
+
+					// Extract PV name from PVC to avoid re-fetching later
+					pvName := getPVNameFromPVC(pvc)
+					if pvName != "" {
+						pvNames[pvName] = true
+					}
+				}
+
+				// Collect and write PVs for PVCs collected via filterApplicationPVCs
+				if len(pvNames) > 0 {
+					err := l.collectAndWritePVs(pvNames)
+					if err != nil {
+						log.Warnf("Error collecting PVs for PVCs: %s", err.Error())
+					}
 				}
 			}
 
@@ -724,11 +727,6 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 	}
 
 	err := l.collectApplicationPVCsFromPods(collectedPods)
-	if err != nil {
-		return err
-	}
-
-	err = l.collectPVsForPVCs()
 	if err != nil {
 		return err
 	}
