@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.23.8-alpine AS base
+FROM golang:1.24.9-alpine AS base
 # Copy in the go src
 WORKDIR /go/src/github.com/trilioData/tvk-plugins
 
@@ -14,7 +14,7 @@ COPY vendor/ vendor/
 
 RUN CGO_ENABLED=0 GOOS=linux GOFLAGS=-mod=vendor go build -a -o preflight github.com/trilioData/tvk-plugins/cmd/preflight
 
-FROM registry.access.redhat.com/ubi8/ubi:latest AS final
+FROM registry.access.redhat.com/ubi9/ubi:latest AS final
 LABEL name=tvk-plugins-preflight
 LABEL summary=TVK\ Plugins\ Preflight
 LABEL description=TVK\ Plugins\ Preflight
