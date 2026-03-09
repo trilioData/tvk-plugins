@@ -18,6 +18,9 @@ on:
       - 'hack/update-cleanup-manifest.sh'
       - '.github/workflows/plugin-manifests.yml'
 
+permissions:
+  contents: read
+
 env:
   GKE_CLUSTER: ci-cluster
   GKE_REGION: us-east1
@@ -39,13 +42,13 @@ jobs:
     steps:
       - name: Checkout
         if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5  # v2
         with:
           fetch-depth: 0
 
       - name: Checkout
         if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5  # v2
 
       - name: Fecth latest release sha
         id: get_sha
@@ -56,10 +59,10 @@ jobs:
           echo "Previous Release: $tag"
           sha=`git show-ref --tags | grep $tag | awk '{print $1;}'`
           echo "SHA: $sha"
-          echo "::set-output name=sha::$sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
       - name: Run yamllint
-        uses: reviewdog/action-yamllint@v1
+        uses: reviewdog/action-yamllint@b1a8e58c959b83e9efa14a721d209bc2ba34b9d6  # v1
         with:
           fail_on_error: true
           reporter: local
@@ -77,7 +80,7 @@ jobs:
         run: make verify-code-patterns
 
       - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1  # v0.35.0
         with:
           scan-type: 'fs'
           ignore-unfixed: true
@@ -86,7 +89,7 @@ jobs:
           exit-code: '1'
 
       - name: Detect File Changes
-        uses: dorny/paths-filter@v2
+        uses: dorny/paths-filter@7267a8516b6f92bdb098633497bad573efdbf271  # v2.12.0
         id: filter
         with:
           filters: |
@@ -127,7 +130,7 @@ jobs:
               - 'tools/log-collector/**'
 
       - name: Detect File Changes from last release
-        uses: dorny/paths-filter@v2
+        uses: dorny/paths-filter@7267a8516b6f92bdb098633497bad573efdbf271  # v2.12.0
         if: startsWith(github.ref, 'refs/tags/')
         id: releasediff
         with:
@@ -175,10 +178,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5  # v2
 
     - name: Setup Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492  # v2
       with:
         go-version: '1.23'
 
@@ -188,24 +191,24 @@ jobs:
         sed -i '/binary: log-collector/a \ \ skip: true' .goreleaser.yml
 
     - name: Build Preflight Packages
-      uses: goreleaser/goreleaser-action@v2
+      uses: goreleaser/goreleaser-action@b9169ea22c1ccccedd39ec5d5898be710305f8eb  # v2
       with:
         version: latest
         args: release --snapshot --skip publish --clean
 
     - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v1
+      uses: google-github-actions/auth@955352c3b43196640b567e4646256d2fbb4aa1c7  # v1
       with:
         credentials_json: ${{ secrets.GKE_SA_KEY }}
 
     - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v1
+      uses: google-github-actions/setup-gcloud@e30db14379863a8c79331b04a9969f4c1e225e0b  # v1
       with:
         project_id: ${{ secrets.GCS_PROJECT_ID }}
         install_components: 'gke-gcloud-auth-plugin'
 
     - name: Connect to GKE cluster
-      uses: google-github-actions/get-gke-credentials@v1
+      uses: google-github-actions/get-gke-credentials@35ab0d2b2d48792c19f09325413bd185c8d44394  # v1
       with:
         cluster_name: ${{ env.GKE_CLUSTER }}
         location: ${{ env.GKE_REGION }}
@@ -228,7 +231,7 @@ jobs:
 
     - name: Publish Preflight Tests Report
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
       with:
         name: preflight-junit
         path: junit-report.xml
@@ -253,25 +256,25 @@ jobs:
 
       # check out the repository
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5  # v2
 
       # provide emulated environments for building on architecture other than the host arch
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7  # v2
         with:
           platforms: linux/amd64,linux/arm64,linux/ppc64le
 
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@885d1462b80bc1c1c7f0b00334ad271f09369c55  # v2
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@955352c3b43196640b567e4646256d2fbb4aa1c7  # v1
         with:
           credentials_json: ${{ secrets.GKE_SA_KEY }}
 
       # Setup gcloud CLI
-      - uses: google-github-actions/setup-gcloud@v1
+      - uses: google-github-actions/setup-gcloud@e30db14379863a8c79331b04a9969f4c1e225e0b  # v1
         with:
           project_id: ${{ secrets.GCS_PROJECT_ID }}
 
@@ -292,7 +295,7 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@b2391d37b4157fa4aa2e118d643f417910ff3242  # v3
         with:
           images: ${{env.DOCKER_REGISTRY}}/${{env.GCR_PROJECT}}/${{env.IMAGE_NAME}}
           tags: |
@@ -302,7 +305,7 @@ jobs:
             type=raw,value=latest,enable=${{startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'rc') && !contains(github.ref, 'alpha') && !contains(github.ref, 'beta')}}
 
       - name: Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6  # v3
         with:
           context: .
           file: docker-images/preflight/Dockerfile
@@ -312,7 +315,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Trivy image scan
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1  # v0.35.0
         with:
           image-ref: ${{env.DOCKER_REGISTRY}}/${{env.GCR_PROJECT}}/${{env.IMAGE_NAME}}:${{ github.sha }}
           ignore-unfixed: true
@@ -322,7 +325,7 @@ jobs:
 
       - name: Configure AWS Credentials
         if: (needs.pre-build.outputs.releasePreflight == 'true') && startsWith(github.ref, 'refs/tags/')
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@6a64f289c4a4b67a1e2c44cc4bd9d6f7bc59b156  # v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -331,7 +334,7 @@ jobs:
       - name: Login to Amazon ECR Private
         id: login-ecr
         if: (needs.pre-build.outputs.releasePreflight == 'true') && startsWith(github.ref, 'refs/tags/')
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@2fc7aceee09e9e4a7105c0d060c656fad0b4f63d  # v1
         with:
           registries: ${{ secrets.AWS_ACCOUNT_ID }}
 
@@ -363,7 +366,7 @@ jobs:
     if: (needs.pre-build.outputs.cleanup == 'true') || startsWith(github.ref, 'refs/tags/')
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5  # v2
 
     - name: Build Cleanup Package
       run: make build-cleanup
@@ -396,7 +399,7 @@ jobs:
       run: make test-cleanup-plugin-locally
 
     - name: Upload Cleanup Plugin Packges to github artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
       if: startsWith(github.ref, 'refs/tags/')
       with:
         name: cleanup
@@ -411,10 +414,10 @@ jobs:
     # added condition 'startsWith(github.ref, 'refs/tags/')'
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5  # v2
 
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492  # v2
         with:
           go-version: '1.23'
 
@@ -424,7 +427,7 @@ jobs:
           sed -i '/binary: preflight/a \ \ skip: true' .goreleaser.yml
 
       - name: Build Log-Collector Packages
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@b9169ea22c1ccccedd39ec5d5898be710305f8eb  # v2
         with:
           version: latest
           args: release --snapshot --skip publish --clean
@@ -436,18 +439,18 @@ jobs:
         run: make test-log-collector-plugin-locally
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@955352c3b43196640b567e4646256d2fbb4aa1c7  # v1
         with:
           credentials_json: ${{ secrets.GKE_SA_KEY }}
 
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@e30db14379863a8c79331b04a9969f4c1e225e0b  # v1
         with:
           project_id: ${{ secrets.GCS_PROJECT_ID }}
           install_components: 'gke-gcloud-auth-plugin'
 
       - name: Connect to GKE cluster
-        uses: google-github-actions/get-gke-credentials@v1
+        uses: google-github-actions/get-gke-credentials@35ab0d2b2d48792c19f09325413bd185c8d44394  # v1
         with:
           cluster_name: ${{ env.GKE_CLUSTER }}
           location: ${{ env.GKE_REGION }}
@@ -460,7 +463,7 @@ jobs:
           build_id: lc-${{ github.run_id }}
 
       - name: Set up GCS
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@e30db14379863a8c79331b04a9969f4c1e225e0b  # v1
         with:
           project_id: ${{ secrets.GCS_PROJECT_ID }}
           service_account_key: ${{ secrets.GCS_ARTIFACTS_CREDENTIALS }}
@@ -468,7 +471,9 @@ jobs:
 
       - name: Upload Log-Collector binary to GCS artifact
         if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
-        run: gsutil cp dist/log-collector_linux_amd64_v1/log-collector gs://trilio-artifacts/tvk-plugins/log-collector/${{ startsWith(github.ref, 'refs/heads/') && github.ref_name || github.head_ref }}/log-collector
+        env:
+          UPLOAD_PATH: ${{ startsWith(github.ref, 'refs/heads/') && github.ref_name || github.head_ref }}
+        run: gsutil cp dist/log-collector_linux_amd64_v1/log-collector "gs://trilio-artifacts/tvk-plugins/log-collector/${UPLOAD_PATH}/log-collector"
 
   # pre-release job determines whether to create release or not and sets job variables which will be used to decide
   # what packages(preflight, cleanup, log-collector) should be included in release
@@ -483,7 +488,7 @@ jobs:
       release_log_collector: ${{ steps.detect_changes.outputs.release_log_collector }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5  # v2
         with:
           fetch-depth: 0
 
@@ -494,14 +499,16 @@ jobs:
   # release job creates and uploads release on github. Also, decides which package to include in release based on conditional constructs
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     needs: pre-release
     if: needs.pre-release.outputs.create_release == 'true' && startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5  # v2
 
       - name: Download All Plugin Packages from Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         if: (needs.pre-release.outputs.release_cleanup == 'true')
         with:
           path: build
@@ -514,12 +521,12 @@ jobs:
           release_log_collector: ${{needs.pre-release.outputs.release_log_collector}}
 
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492  # v2
         with:
           go-version: '1.23'
 
       - name: Release with GoReleaser
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@b9169ea22c1ccccedd39ec5d5898be710305f8eb  # v2
         with:
           version: latest
           args: release --clean --skip=validate
