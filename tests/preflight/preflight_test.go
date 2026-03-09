@@ -206,9 +206,9 @@ var _ = Describe("Preflight Tests", func() {
 				tLog.Infof("Preflight binary run execution output: %s", string(output))
 
 				Expect(string(output)).To(ContainSubstring("Preflight check for DNS resolution failed :: " +
-					"an empty namespace may not be set during creation"))
+					"the server does not allow this method on the requested resource"))
 				Expect(string(output)).To(ContainSubstring(fmt.Sprintf("Preflight check for %s scope volume snapshot and restore failed :: "+
-					"an empty namespace may not be set during creation", internal.NamespaceScope)))
+					"the server does not allow this method on the requested resource", internal.NamespaceScope)))
 			})
 		})
 

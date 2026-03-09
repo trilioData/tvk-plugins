@@ -30,14 +30,19 @@ const (
 	OCPIngress                = "cluster"
 	OCPConfig                 = "default"
 	OCPConfigNs               = "openshift-ingress-operator"
+	DefaultNamespace          = "default"
 
-	CoreGv           = "v1"
-	Events           = "events"
-	CRD              = "customresourcedefinitions"
-	Namespaces       = "namespaces"
-	Pod              = "Pod"
-	SubscriptionKind = "Subscription"
-	InstallPlanKind  = "InstallPlan"
+	CoreGv                    = "v1"
+	Events                    = "events"
+	CRD                       = "customresourcedefinitions"
+	Namespaces                = "namespaces"
+	Pod                       = "Pod"
+	SubscriptionKind          = "Subscription"
+	InstallPlanKind           = "InstallPlan"
+	PersistentVolumeClaim     = "persistentvolumeclaims" // API resource name
+	PersistentVolume          = "persistentvolumes"      // API resource name
+	PersistentVolumeClaimKind = "PersistentVolumeClaim"  // Kind
+	PersistentVolumeKind      = "PersistentVolume"       // Kind
 
 	LicenseKind = "License"
 	Verblist    = "list"
@@ -80,7 +85,7 @@ func aggregateEvents(eventObjects unstructured.UnstructuredList,
 			return nil, nErr
 		}
 		if namespace == "" {
-			namespace = "default"
+			namespace = DefaultNamespace
 		}
 
 		kind, _, gErr := unstructured.NestedString(eve.Object, "involvedObject", "kind")
@@ -295,4 +300,102 @@ func MatchExpressions(objLabels map[string]string, matchExpr []apiv1.LabelSelect
 		}
 	}
 	return true
+}
+
+// getPVCsUsedByPods returns a set of PVC namespaced names used by the given pods
+func getPVCsUsedByPods(pods []unstructured.Unstructured) map[types.NamespacedName]bool {
+	pvcSet := make(map[types.NamespacedName]bool)
+
+	for _, pod := range pods {
+		volumes, found, err := unstructured.NestedSlice(pod.Object, "spec", "volumes")
+		if !found || err != nil {
+			continue
+		}
+
+		for _, vol := range volumes {
+			volMap, ok := vol.(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			pvc, found, err := unstructured.NestedMap(volMap, "persistentVolumeClaim")
+			if !found || err != nil {
+				continue
+			}
+
+			claimName, found, err := unstructured.NestedString(pvc, "claimName")
+			if !found {
+				continue
+			}
+			if err != nil {
+				log.Errorf("Unable to get the claimName of Object : %s", err.Error())
+				continue
+			}
+
+			podNs := pod.GetNamespace()
+			if podNs == "" {
+				podNs = DefaultNamespace
+			}
+
+			pvcSet[types.NamespacedName{Name: claimName, Namespace: podNs}] = true
+		}
+	}
+
+	return pvcSet
+}
+
+// getPVNameFromPVC returns the PV name bound to the given PVC
+func getPVNameFromPVC(pvc unstructured.Unstructured) string {
+	spec, found, err := unstructured.NestedMap(pvc.Object, "spec")
+	if !found || err != nil {
+		return ""
+	}
+
+	volumeName, found, err := unstructured.NestedString(spec, "volumeName")
+	if !found || err != nil {
+		return ""
+	}
+
+	return volumeName
+}
+
+// isNFSPV checks if a PV uses NFS storage
+func isNFSPV(pv unstructured.Unstructured) bool {
+	spec, found, err := unstructured.NestedMap(pv.Object, "spec")
+	if !found || err != nil {
+		return false
+	}
+
+	_, found, err = unstructured.NestedMap(spec, "nfs")
+	return found && err == nil
+}
+
+// sanitizeNFSPV removes NFS credentials from PV spec while keeping the PV
+func sanitizeNFSPV(pv unstructured.Unstructured) unstructured.Unstructured {
+	spec, found, err := unstructured.NestedMap(pv.Object, "spec")
+	if !found || err != nil {
+		return pv
+	}
+
+	nfs, found, err := unstructured.NestedMap(spec, "nfs")
+	if !found || err != nil {
+		return pv
+	}
+
+	unstructured.RemoveNestedField(nfs, "server")
+	unstructured.RemoveNestedField(nfs, "path")
+	unstructured.RemoveNestedField(nfs, "readOnly")
+
+	_ = unstructured.SetNestedMap(spec, nfs, "nfs")
+	_ = unstructured.SetNestedMap(pv.Object, spec, "spec")
+
+	// Add annotation to indicate NFS credentials were removed
+	annotations := pv.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	annotations["log-collector.trilio.io/nfs-credentials-removed"] = "true"
+	pv.SetAnnotations(annotations)
+
+	return pv
 }

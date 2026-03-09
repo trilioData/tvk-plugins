@@ -75,7 +75,11 @@ func NewAccessor(kubeConfig string, restConfig *rest.Config, scheme *runtime.Sch
 	}
 
 	mapper, err := func(c *rest.Config) (meta.RESTMapper, error) {
-		return apiutil.NewDynamicRESTMapper(c)
+		httpClient, err := rest.HTTPClientFor(c)
+		if err != nil {
+			return nil, err
+		}
+		return apiutil.NewDynamicRESTMapper(c, httpClient)
 	}(restConfig)
 	if err != nil {
 		return nil, err

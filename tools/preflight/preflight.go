@@ -1079,7 +1079,7 @@ func (o *Run) createPVCFromSnapshot(ctx context.Context,
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes:      sourcePVCSpec.AccessModes,
 			StorageClassName: sourcePVCSpec.StorageClassName,
-			Resources: corev1.ResourceRequirements{
+			Resources: corev1.VolumeResourceRequirements{
 				Requests: corev1.ResourceList{corev1.ResourceStorage: sourcePVCSpec.Resources.Requests[corev1.ResourceStorage]},
 			},
 			DataSource: &corev1.TypedLocalObjectReference{
