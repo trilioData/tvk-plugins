@@ -194,7 +194,7 @@ var _ = Describe("Preflight Tests", func() {
 						" namespaces \"%s\" not found", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
 			})
 
-			It("Should fail preflight check if namespace flag is provided with zero value", func() {
+			It("Should not run preflight checks if namespace flag is provided with zero value", func() {
 				var output []byte
 				args := []string{"run", storageClassFlag, internal.DefaultTestStorageClass,
 					namespaceFlag, "", kubeconfigFlag, kubeConfPath,
@@ -204,11 +204,7 @@ var _ = Describe("Preflight Tests", func() {
 				output, err = cmd.CombinedOutput()
 				Expect(err).ToNot(BeNil())
 				tLog.Infof("Preflight binary run execution output: %s", string(output))
-
-				Expect(string(output)).To(ContainSubstring("Preflight check for DNS resolution failed :: " +
-					"the server does not allow this method on the requested resource"))
-				Expect(string(output)).To(ContainSubstring(fmt.Sprintf("Preflight check for %s scope volume snapshot and restore failed :: "+
-					"the server does not allow this method on the requested resource", internal.NamespaceScope)))
+				Expect(string(output)).To(ContainSubstring("namespace is required, cannot be empty"))
 			})
 		})
 

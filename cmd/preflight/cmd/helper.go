@@ -240,6 +240,9 @@ func manageCleanupInputs(cmd *cobra.Command) (err error) {
 }
 
 func validateRunOptions() error {
+	if cmdOps.Run.Namespace == "" {
+		return fmt.Errorf("namespace is required, cannot be empty")
+	}
 	if cmdOps.Run.StorageClass == "" {
 		return fmt.Errorf("storage-class is required, cannot be empty")
 	}
@@ -263,6 +266,9 @@ func validateRunOptions() error {
 }
 
 func validateCleanupFields() error {
+	if cmdOps.Cleanup.Namespace == "" {
+		return fmt.Errorf("namespace is required, cannot be empty")
+	}
 	if cmdOps.Cleanup.UID != "" && len(cmdOps.Cleanup.UID) != preflightUIDLength {
 		return fmt.Errorf("valid 6-length preflight UID must be specified")
 	}
