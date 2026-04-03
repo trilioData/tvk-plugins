@@ -484,7 +484,7 @@ var _ = Describe("Preflight Tests", func() {
 					}
 				})
 				// TODO: shiwam, long running test, either add timeout if possible or remove from IT and put in UT
-				FIt("Should not be able to schedule DNS and source pod on cluster when pod affinity required rules do not satisfy", func() {
+				It("Should not be able to schedule DNS and source pod on cluster when pod affinity required rules do not satisfy", func() {
 					yamlFilePath := filepath.Join(testDataDirRelPath, nodeAffinityInputFile)
 					inputFlags := make(map[string]string)
 					copyMap(flagsMap, inputFlags)
