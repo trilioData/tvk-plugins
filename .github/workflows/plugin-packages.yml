@@ -451,7 +451,7 @@ jobs:
       - name: Build Log-Collector Packages
         uses: goreleaser/goreleaser-action@b9169ea22c1ccccedd39ec5d5898be710305f8eb  # v2
         with:
-          version: latest
+          version: v2.14.3
           args: release --snapshot --skip publish --clean
 
       - name: Ensure Required Utilities Installed for Plugin Testing
@@ -550,7 +550,7 @@ jobs:
       - name: Release with GoReleaser
         uses: goreleaser/goreleaser-action@b9169ea22c1ccccedd39ec5d5898be710305f8eb  # v2
         with:
-          version: latest
+          version: v2.14.3
           args: release --clean --skip=validate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
