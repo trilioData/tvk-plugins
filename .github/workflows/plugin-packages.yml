@@ -193,7 +193,7 @@ jobs:
     - name: Build Preflight Packages
       uses: goreleaser/goreleaser-action@b9169ea22c1ccccedd39ec5d5898be710305f8eb  # v2
       with:
-        version: latest
+        version: v2.14.3
         args: release --snapshot --skip publish --clean
 
     - name: Authenticate to Google Cloud
