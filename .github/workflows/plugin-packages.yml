@@ -183,7 +183,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492  # v2
       with:
-        go-version: '1.24'
+        go-version: '1.25'
 
     - name: Update '.goreleaser.yaml' for Building Preflight Packages only
       run: |
@@ -193,7 +193,7 @@ jobs:
     - name: Build Preflight Packages
       uses: goreleaser/goreleaser-action@b9169ea22c1ccccedd39ec5d5898be710305f8eb  # v2
       with:
-        version: latest
+        version: v2.14.3
         args: release --snapshot --skip publish --clean
 
     - name: Authenticate to Google Cloud
@@ -451,7 +451,7 @@ jobs:
       - name: Build Log-Collector Packages
         uses: goreleaser/goreleaser-action@b9169ea22c1ccccedd39ec5d5898be710305f8eb  # v2
         with:
-          version: latest
+          version: v2.14.3
           args: release --snapshot --skip publish --clean
 
       - name: Ensure Required Utilities Installed for Plugin Testing
@@ -545,12 +545,12 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492  # v2
         with:
-          go-version: '1.24'
+          go-version: '1.25'
 
       - name: Release with GoReleaser
         uses: goreleaser/goreleaser-action@b9169ea22c1ccccedd39ec5d5898be710305f8eb  # v2
         with:
-          version: latest
+          version: v2.14.3
           args: release --clean --skip=validate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

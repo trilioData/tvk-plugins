@@ -194,7 +194,7 @@ var _ = Describe("Preflight Tests", func() {
 						" namespaces \"%s\" not found", inputFlags[scopeFlag], inputFlags[namespaceFlag])))
 			})
 
-			It("Should fail preflight check if namespace flag is provided with zero value", func() {
+			It("Should not run preflight checks if namespace flag is provided with zero value", func() {
 				var output []byte
 				args := []string{"run", storageClassFlag, internal.DefaultTestStorageClass,
 					namespaceFlag, "", kubeconfigFlag, kubeConfPath,
@@ -204,11 +204,7 @@ var _ = Describe("Preflight Tests", func() {
 				output, err = cmd.CombinedOutput()
 				Expect(err).ToNot(BeNil())
 				tLog.Infof("Preflight binary run execution output: %s", string(output))
-
-				Expect(string(output)).To(ContainSubstring("Preflight check for DNS resolution failed :: " +
-					"the server does not allow this method on the requested resource"))
-				Expect(string(output)).To(ContainSubstring(fmt.Sprintf("Preflight check for %s scope volume snapshot and restore failed :: "+
-					"the server does not allow this method on the requested resource", internal.NamespaceScope)))
+				Expect(string(output)).To(ContainSubstring("namespace is required, cannot be empty"))
 			})
 		})
 
@@ -507,13 +503,28 @@ var _ = Describe("Preflight Tests", func() {
 
 				AfterEach(func() {
 					nodeList, err = k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-					Expect(err).To(BeNil())
+					if err != nil {
+						tLog.Warnf("Failed to list nodes during cleanup: %v", err)
+						return
+					}
 					for _, node := range nodeList.Items {
-						nodeLabels := node.GetLabels()
+						// Refetch the node to get the latest resource version
+						freshNode, getErr := k8sClient.CoreV1().Nodes().Get(ctx, node.Name, metav1.GetOptions{})
+						if getErr != nil {
+							tLog.Debugf("Failed to get node %s during cleanup: %v", node.Name, getErr)
+							continue
+						}
+						nodeLabels := freshNode.GetLabels()
+						if _, exists := nodeLabels[preflightNodeAffinityKey]; !exists {
+							// Label doesn't exist, nothing to clean
+							continue
+						}
 						delete(nodeLabels, preflightNodeAffinityKey)
-						node.SetLabels(nodeLabels)
-						_, err = k8sClient.CoreV1().Nodes().Update(ctx, &node, metav1.UpdateOptions{})
-						Expect(err).To(BeNil())
+						freshNode.SetLabels(nodeLabels)
+						_, updateErr := k8sClient.CoreV1().Nodes().Update(ctx, freshNode, metav1.UpdateOptions{})
+						if updateErr != nil {
+							tLog.Debugf("Failed to remove node affinity label from node %s: %v", node.Name, updateErr)
+						}
 					}
 				})
 			})

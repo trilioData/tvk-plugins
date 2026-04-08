@@ -296,6 +296,9 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 						},
 					},
 				},
+				CommonOptions: preflight.CommonOptions{
+					Namespace: internal.DefaultNs,
+				},
 			}
 		})
 
@@ -340,6 +343,9 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 			cmdOps.Cleanup = preflight.Cleanup{
 				CleanupOptions: preflight.CleanupOptions{
 					UID: validPreflightUID,
+				},
+				CommonOptions: preflight.CommonOptions{
+					Namespace: internal.DefaultNs,
 				},
 			}
 		})
