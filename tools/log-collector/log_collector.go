@@ -148,7 +148,7 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 			err := l.DisClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&obj)
 			if err != nil {
 				if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
-					log.Warnf("api error : %s", err.Error())
+					log.WithError(err).Debug("list request skipped for namespaced resource")
 					continue
 				}
 				/* TODO() Currently error is ignore here, as we do not want to halt the log-collection utility because of
@@ -169,7 +169,7 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 	err := l.DisClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&objects)
 	if err != nil {
 		if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
-			log.Warnf("%s", err.Error())
+			log.WithError(err).Debug("list request skipped for cluster-scoped resource")
 			return objects
 		}
 		/* TODO() Currently error is ignore here, as we do not want to halt the log-collection utility because of
@@ -179,7 +179,7 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 			log.Errorf("%s", err.Error())
 			return objects, nil
 		} */
-		log.Warnf("%s", err.Error())
+		log.WithError(err).Warn("list request failed for cluster-scoped resource; skipping")
 		return unstructured.UnstructuredList{}
 	}
 	return objects
@@ -261,6 +261,19 @@ func (l *LogCollector) writeYaml(resourceDir string, obj unstructured.Unstructur
 	return nil
 }
 
+// isBenignPodLogStreamError identifies common Kubernetes conditions where log collection
+// skips a stream without indicating a tooling failure.
+func isBenignPodLogStreamError(err error) bool {
+	if err == nil {
+		return false
+	}
+	s := strings.ToLower(err.Error())
+	return strings.Contains(s, "is terminated") ||
+		strings.Contains(s, "waiting") ||
+		strings.Contains(s, "not found") ||
+		strings.Contains(s, "container not found")
+}
+
 // writeLogs creates log for given pod object
 func (l *LogCollector) writeLogs(resourceDir string, obj unstructured.Unstructured) error {
 
@@ -335,7 +348,17 @@ func (l *LogCollector) writeLog(resourceDir, objNs, objName, container string, i
 	req := l.K8sClientSet.CoreV1().Pods(objNs).GetLogs(objName, &logOption)
 	podLogs, err := req.Stream(context.TODO())
 	if err != nil {
-		log.Errorf("Unable to get Logs for container %s : %s", container, err.Error())
+		fields := log.Fields{
+			"namespace": objNs,
+			"pod":       objName,
+			"container": container,
+			"previous":  isPrevious,
+		}
+		if isBenignPodLogStreamError(err) {
+			log.WithFields(fields).Debug(err.Error())
+		} else {
+			log.WithFields(fields).WithError(err).Warn("could not open pod log stream; skipping container logs")
+		}
 		return nil
 	}
 	defer podLogs.Close()
@@ -381,19 +404,21 @@ func (l *LogCollector) writeLog(resourceDir, objNs, objName, container string, i
 func (l *LogCollector) zipDir() error {
 
 	file, err := os.Create(l.OutputDir + ".zip")
-	log.Infof("Creating Zip : %s.zip\n", l.OutputDir)
+	log.Infof("Creating Zip : %s.zip", l.OutputDir)
 
 	if err != nil {
-		log.Errorf("Error Creating zip File : %s", err.Error())
+		log.WithError(err).WithField("path", l.OutputDir+".zip").Error("cannot create archive file")
 		return err
 	}
 	defer file.Close()
+
+	log.WithField("Archive", l.OutputDir+".zip").Info("Writing support bundle archive")
 
 	w := zip.NewWriter(file)
 	defer w.Close()
 
 	walker := func(path string, info os.FileInfo, err error) error {
-		log.Debugf("Crawling: %#v\n", path)
+		log.WithField("path", path).Debug("adding file to archive")
 		if err != nil {
 			return err
 		}
@@ -420,7 +445,7 @@ func (l *LogCollector) zipDir() error {
 	}
 	err = filepath.Walk(l.OutputDir, walker)
 	if err != nil {
-		log.Errorf("Unable to walk thorugh directory : %s", err.Error())
+		log.WithError(err).WithField("dir", l.OutputDir).Error("cannot walk output directory for zipping")
 		return err
 	}
 	if !l.CleanOutput {
@@ -433,17 +458,31 @@ func (l *LogCollector) zipDir() error {
 	return nil
 }
 
+// logResourceCollection emits a single debug line per API list operation so different
+// apiVersion values are visible (avoids “duplicate” lines that only differ by group).
+func logResourceCollection(groupVersion string, resource *apiv1.APIResource) {
+	if !log.IsLevelEnabled(log.DebugLevel) {
+		return
+	}
+	log.WithFields(log.Fields{
+		"apiVersion": groupVersion,
+		"resource":   resource.Name,
+		"kind":       resource.Kind,
+	}).Info("collecting API resource")
+}
+
 // filterResourceObjects filter objects on the basis of resource Type.
-func (l *LogCollector) filterResourceObjects(resourcePath string,
+func (l *LogCollector) filterResourceObjects(groupVersion string,
 	resource *apiv1.APIResource) (allObjects unstructured.UnstructuredList, err error) {
+	resourcePath := getAPIGroupVersionResourcePath(groupVersion)
 
 	if nonLabeledResources.Has(resource.Kind) {
-		log.Infof("Filtering '%s' Resource", resource.Kind)
+		logResourceCollection(groupVersion, resource)
 		return l.getResourceObjects(resourcePath, resource), nil
 	}
 
 	if resource.Name == CRD {
-		log.Infof("Filtering '%s' Resource", resource.Kind)
+		logResourceCollection(groupVersion, resource)
 		allObjects, err = filterTvkSnapshotAndCSICRD(l.getResourceObjects(resourcePath, resource))
 		if err != nil {
 			return allObjects, err
@@ -452,23 +491,23 @@ func (l *LogCollector) filterResourceObjects(resourcePath string,
 	}
 
 	if resource.Name == Namespaces {
-		log.Infof("Filtering '%s' Resource", resource.Kind)
+		logResourceCollection(groupVersion, resource)
 		return l.filterInputNS(l.getResourceObjects(resourcePath, resource)), nil
 	}
 
 	if resource.Name == ClusterServiceVersion {
-		log.Infof("Filtering '%s' Resource", resource.Kind)
+		logResourceCollection(groupVersion, resource)
 		return filterTvkCSV(l.getResourceObjects(resourcePath, resource)), nil
 	}
 
 	if resource.Name == PersistentVolumeClaim {
-		log.Infof("Filtering '%s' Resource", resource.Kind)
+		logResourceCollection(groupVersion, resource)
 		return l.filterApplicationPVCs(resourcePath, resource), nil
 	}
 
 	if ((!nonLabeledResources.Has(resource.Kind) && resource.Namespaced) ||
 		(l.Clustered && !resource.Namespaced)) && !excludeResources.Has(resource.Kind) {
-		log.Infof("Filtering '%s' Resource", resource.Kind)
+		logResourceCollection(groupVersion, resource)
 		allObjects = l.getResourceObjects(resourcePath, resource)
 		l.filterTvkResourcesByLabel(&allObjects)
 	}
@@ -630,12 +669,15 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 	// 5. Collecting list of all resource objects and printing their YAML's in their respective resource folder under
 	//    their respective namespaces. In case of pods, logs are also collected
 
-	log.Info("Filtering Resources")
-
+	log.Info("Collecting API objects and pod logs")
 	resourceMapList := make(map[string][]types.NamespacedName)
 	var eventResource apiv1.APIResource
 	l.collectedPVCs = make(map[types.NamespacedName]bool)
 	var collectedPods []unstructured.Unstructured
+
+	// One discovery call per run; previously this ran inside the per-resource loop and
+	// could trigger hundreds of identical ServerResourcesForGroupVersion requests.
+	isOpenShift := internal.CheckIsOpenshift(l.DisClient, internal.OcpAPIVersion)
 
 	for groupVersion, resources := range resourceGroup {
 
@@ -655,7 +697,7 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 			}
 
 			var resObjects unstructured.UnstructuredList
-			resObject, err := l.filterResourceObjects(getAPIGroupVersionResourcePath(groupVersion), &resources[index])
+			resObject, err := l.filterResourceObjects(groupVersion, &resources[index])
 			if err != nil {
 				return err
 			}
@@ -666,7 +708,7 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 				resObjects.Items = append(resObjects.Items, gvkObjs.Items...)
 			}
 
-			if internal.CheckIsOpenshift(l.DisClient, internal.OcpAPIVersion) {
+			if isOpenShift {
 				ocpObj, oErr := l.getOcpRelatedResources(getAPIGroupVersionResourcePath(groupVersion),
 					&resources[index], groupVersion)
 				if oErr != nil {
@@ -771,7 +813,7 @@ func (l *LogCollector) writeObjectsAndLogs(objects unstructured.UnstructuredList
 
 // getTrilioGroupResources collects all the resources related to trilio and writes the YAML
 func (l *LogCollector) getTrilioGroupResources(trilioGVResources []apiv1.APIResource, groupVersion string) error {
-	log.Info("Checking Trilio Group")
+	log.Info("Collecting TrilioVault API group objects")
 	for index := range trilioGVResources {
 		objectList := l.getResourceObjects(getAPIGroupVersionResourcePath(groupVersion), &trilioGVResources[index])
 		// nolint:gocritic // Creating a file path
@@ -818,11 +860,11 @@ func (l *LogCollector) getAPIResourceList() (map[string][]apiv1.APIResource, err
 	resourceList, err := l.DisClient.ServerPreferredResources()
 	if err != nil {
 		if !discovery.IsGroupDiscoveryFailedError(err) {
-			log.Error(err, "Error while getting the resource list from discovery client")
+			log.WithError(err).Error("failed to fetch server preferred resources")
 			return resourceMapList, err
 		}
-		log.Warnf("The Kubernetes server has an orphaned API service. Server reports: %s", err.Error())
-		log.Warn("To fix this, kubectl delete apiservice <service-name>")
+		log.WithError(err).Warn("cluster has a failing aggregated API discovery (orphaned APIService); continuing with partial resource list")
+		log.Warn("hint: remove stale APIServices with `kubectl get apiservice` and `kubectl delete apiservice <name>`")
 	}
 
 	for _, resources := range resourceList {
@@ -909,7 +951,7 @@ func (l *LogCollector) getOcpRelatedResources(resourcePath string,
 // checkIfNamespacesExist take all given namespaces from user and checks the same in cluster if it exist
 func (l *LogCollector) checkIfNamespacesExist() (err error) {
 
-	log.Info("Checking if given namespaces are valid")
+	log.Info("validating namespace list against the cluster")
 	set := make(sets.String)
 	var nonExistNs []string
 

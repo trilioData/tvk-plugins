@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -55,6 +56,7 @@ func Execute() {
 
 // preRun runs just before the run for any pre checks and setting up vars
 func preRun(*cobra.Command, []string) error {
+	configureLogger()
 
 	// manage values file inputs
 	iErr := manageFileInputs()
@@ -70,7 +72,7 @@ func preRun(*cobra.Command, []string) error {
 	log.SetLevel(level)
 
 	if len(logCollector.Namespaces) != 0 && logCollector.Clustered {
-		log.Fatalf("Cannot use flag %s and %s scope at the same time", namespacesFlag, clusteredFlag)
+		log.Fatalf("cannot use --%s together with %s scope in config", namespacesFlag, clusteredFlag)
 	}
 
 	t := time.Now()
@@ -80,4 +82,15 @@ func preRun(*cobra.Command, []string) error {
 	logCollector.OutputDir = "triliovault-" + formatted
 
 	return nil
+}
+
+// configureLogger applies a stable, human-readable format suitable for CLI use (timestamps on stderr).
+func configureLogger() {
+	log.SetOutput(os.Stderr)
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp:          true,
+		TimestampFormat:        time.RFC3339,
+		PadLevelText:           true,
+		DisableLevelTruncation: true,
+	})
 }

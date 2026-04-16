@@ -148,15 +148,26 @@ func deDuplicateAndFixGVKs(gvks []logcollector.GroupVersionKind) ([]logcollector
 	var uniquegvks []logcollector.GroupVersionKind
 	gvkSet := sets.NewString()
 
-	groupList, err := logCollector.DisClient.ServerGroups()
-
-	if err != nil {
-		if !discovery.IsGroupDiscoveryFailedError(err) {
-			log.Error(err, "Error while getting the resource list from discovery client")
-			return gvks, err
+	needsPreferredVersion := false
+	for idx := range gvks {
+		if gvks[idx].Version == "" {
+			needsPreferredVersion = true
+			break
 		}
-		log.Warnf("The Kubernetes server has an orphaned API service. Server reports: %s", err.Error())
-		log.Warn("To fix this, kubectl delete apiservice <service-name>")
+	}
+
+	var groupList *apiv1.APIGroupList
+	if needsPreferredVersion {
+		var err error
+		groupList, err = logCollector.DisClient.ServerGroups()
+		if err != nil {
+			if !discovery.IsGroupDiscoveryFailedError(err) {
+				log.WithError(err).Error("failed to list API groups from cluster")
+				return gvks, err
+			}
+			log.WithError(err).Warn("cluster has a failing aggregated API discovery (orphaned APIService); continuing with partial group list")
+			log.Warn("hint: remove stale APIServices with `kubectl get apiservice` and `kubectl delete apiservice <name>`")
+		}
 	}
 
 	for idx := range gvks {
@@ -168,7 +179,7 @@ func deDuplicateAndFixGVKs(gvks []logcollector.GroupVersionKind) ([]logcollector
 		if gvks[idx].Kind == "" {
 			return gvks, errors.New("kind cannot be empty in gvks, check your config file")
 		}
-		if gvks[idx].Version == "" {
+		if gvks[idx].Version == "" && groupList != nil {
 			for index := range groupList.Groups {
 				if strings.EqualFold(groupList.Groups[index].Name, gvks[idx].Group) {
 					gvks[idx].Version = groupList.Groups[index].PreferredVersion.Version

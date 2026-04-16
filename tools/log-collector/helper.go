@@ -183,7 +183,7 @@ func getContainerStatusValue(containerStatus *corev1.ContainerStatus) (conStatOb
 			conStatObj.prev = true
 		}
 	} else {
-		log.Errorf("Container %s Previous State is in Waiting", containerStatus.Name)
+		log.WithField("container", containerStatus.Name).Debug("previous container state is Waiting; previous logs may be unavailable")
 	}
 
 	if currentState.Waiting == nil {
@@ -191,7 +191,7 @@ func getContainerStatusValue(containerStatus *corev1.ContainerStatus) (conStatOb
 			conStatObj.curr = true
 		}
 	} else {
-		log.Errorf("Container %s Current State is in Waiting", containerStatus.Name)
+		log.WithField("container", containerStatus.Name).Debug("container is Waiting; current logs not available yet")
 	}
 
 	return conStatObj
@@ -244,6 +244,7 @@ func checkLabelExist(givenLabel, toCheckInLabel map[string]string) (exist bool) 
 // filterTvkResourcesByLabel filter objects on the basis of Labels
 func (l *LogCollector) filterTvkResourcesByLabel(allObjects *unstructured.UnstructuredList) {
 	var objects unstructured.UnstructuredList
+	byKind := make(map[string]int)
 
 	for _, object := range allObjects.Items {
 		objectLabel := object.GetLabels()
@@ -252,10 +253,22 @@ func (l *LogCollector) filterTvkResourcesByLabel(allObjects *unstructured.Unstru
 				checkLabelExist(K8STrilioVaultOpLabel, objectLabel) ||
 				checkLabelExist(K8STrilioVaultConsolePluginLabel, objectLabel) ||
 				(len(l.LabelSelectors) != 0 && MatchLabelSelectors(objectLabel, l.LabelSelectors)) {
-				log.Infof(" Label Matched %s", object.GetKind())
+				byKind[object.GetKind()]++
 				objects.Items = append(objects.Items, object)
 			}
 		}
+	}
+	if len(objects.Items) > 0 {
+		kind := objects.Items[0].GetKind()
+		// One line per resource type (avoids repeating "Label Matched <Kind>" once per object).
+		// Use fmt.Sprintf: log.Info with multiple args does not apply printf verbs (only log.Infof does).
+		log.Info(fmt.Sprintf("Label Matched %d %s object(s)", len(objects.Items), kind))
+	}
+	if log.IsLevelEnabled(log.DebugLevel) && len(objects.Items) > 0 {
+		log.WithFields(log.Fields{
+			"total_matched": len(objects.Items),
+			"by_kind":       byKind,
+		}).Debug("label filter retained objects (TVK default labels and/or user selectors)")
 	}
 	allObjects.Items = objects.Items
 }
@@ -293,7 +306,7 @@ func MatchExpressions(objLabels map[string]string, matchExpr []apiv1.LabelSelect
 		expr := matchExpr[i]
 		matchReq, err := labels.NewRequirement(expr.Key, matchExpressionOperator[expr.Operator], expr.Values)
 		if err != nil {
-			log.Errorf("failed to create requirement")
+			log.WithError(err).Error("invalid label selector requirement")
 		}
 		if !matchReq.Matches(labels.Set(objLabels)) {
 			return false
