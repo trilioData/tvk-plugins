@@ -1,152 +1,113 @@
-linters-settings:
-  govet:
-    check-shadowing: true
-    settings:
-      printf:
-        funcs:
-        - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
-        - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
-        - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
-        - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
-  golint:
-    min-confidence: 0 # default value
-  gofmt:
-    simplify: true
-  gocyclo:
-    min-complexity: 25
-  maligned:
-    suggest-new: true
-  dupl:
-    threshold: 100
-  goconst:
-    min-len: 2
-    min-occurrences: 2
-  depguard:
-    list-type: blacklist
-    include-go-root: false
-    packages:
-    # logging is allowed only by logutils.Log, logrus
-    # is allowed to use only in logutils package
-    - github.com/sirupsen/logrus
-    packages-with-error-messages:
-      github.com/sirupsen/logrus: logging is allowed only by logutils.Log
-  misspell:
-    locale: US
-  lll:
-    line-length: 140
-    tab-width: 1
-    unused:
-      check-exported: false
-    unparam:
-      check-exported: true
-    nakedret:
-      max-func-lines: 30
-    prealloc:
-      simple: true
-      range-loops: true
-      for-loops: false
-  goimports:
-    local-prefixes: github.com/golangci/golangci-lint
-  gocritic:
-    enabled-tags:
-    - diagnostic
-    - opinionated
-    - performance
-    - style
-    disabled-checks:
-    - wrapperFunc
-    - ifElseChain
-    - octalLiteral
-    - regexpMust
-    settings:
-      captLocal:
-        paramsOnly: true
-      rangeValCopy:
-        sizeThreshold: 64
-
-linters:
-  # please, do not use `enable-all`: it's deprecated and will be removed soon.
-  # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
-  disable-all: true
-  enable:
-  - deadcode
-  - dupl
-  - errcheck
-  - goconst
-  - gocritic
-  - gocyclo
-  - gofmt
-  - goimports
-  - revive
-  - gosec
-  - gosimple
-  - govet
-  - ineffassign
-  - lll
-  - misspell
-  - nakedret
-  - exportloopref
-  - staticcheck
-  - structcheck
-  - stylecheck
-  - typecheck
-  - unconvert
-  - unparam
-  - unused
-  - varcheck
-
-#   don't enable:
-#   - gochecknoglobals
-#   - gocognit
-#   - godox
-#   - maligned
-#   - prealloc
-#   - gochecknoinits
-#   - depguard
-
+version: "2"
 run:
   concurrency: 4
-
-  deadline: 30m
-
   issues-exit-code: 1
-
   tests: true
-
-  skip-dirs:
-  - src/external_libs
-  - vendor
-
-# output configuration options
 output:
-  format: colored-line-number
-
-  print-issued-lines: true
-
-  print-linter-name: true
-
-issues:
-  exclude-rules:
-  - path: _test\.go
-    linters:
-    - gocyclo
-    - errcheck
+  formats:
+    text:
+      path: stdout
+      print-linter-name: true
+      print-issued-lines: true
+linters:
+  default: none
+  enable:
+    - copyloopvar
     - dupl
-    - gosec
+    - errcheck
+    - goconst
     - gocritic
-
-  - linters:
-    - golint
-    source: ^type .*List struct \{
-
-  exclude-use-default: true
-
+    - gocyclo
+    - gosec
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - revive
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+  settings:
+    dupl:
+      threshold: 100
+    goconst:
+      min-len: 2
+      min-occurrences: 2
+    gocritic:
+      disabled-checks:
+        - wrapperFunc
+        - ifElseChain
+        - octalLiteral
+        - regexpMust
+      enabled-tags:
+        - diagnostic
+        - opinionated
+        - performance
+        - style
+      settings:
+        captLocal:
+          paramsOnly: true
+        rangeValCopy:
+          sizeThreshold: 64
+    gocyclo:
+      min-complexity: 25
+    govet:
+      settings:
+        printf:
+          funcs:
+            - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
+            - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
+            - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
+            - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
+    lll:
+      line-length: 140
+      tab-width: 1
+    misspell:
+      locale: US
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - dupl
+          - errcheck
+          - gocritic
+          - gocyclo
+          - gosec
+        path: _test\.go
+      - linters:
+          - golint
+        source: ^type .*List struct \{
+    paths:
+      - src/external_libs
+      - vendor
+      - third_party$
+      - builtin$
+      - examples$
+issues:
   max-issues-per-linter: 0
-
   max-same-issues: 0
-
-# golangci.com configuration
-# https://github.com/golangci/golangci/wiki/Configuration
-service:
-  golangci-lint-version: 1.42.x
-  project-path: github.com/trilioData/tvk-plugins
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      simplify: true
+    goimports:
+      local-prefixes:
+        - github.com/golangci/golangci-lint
+  exclusions:
+    generated: lax
+    paths:
+      - src/external_libs
+      - vendor
+      - third_party$
+      - builtin$
+      - examples$
