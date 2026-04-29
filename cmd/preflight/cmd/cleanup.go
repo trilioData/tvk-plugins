@@ -29,7 +29,7 @@ If uid flag is not specified then all preflight resources created till date are 
   # cleanup preflight resources with a particular kubeconfig file
   kubectl tvk-preflight cleanup --uid <preflight run uid> --namespace <namespace> --kubeconfig <kubeconfig-file-path>
 `,
-	RunE: func(cmd *cobra.Command, args []string) (err error) {
+	RunE: func(cmd *cobra.Command, _ []string) (err error) {
 		var cleanupLogFilename string
 		err = manageCleanupInputs(cmd)
 		if err != nil {

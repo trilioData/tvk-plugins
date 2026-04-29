@@ -1,5 +1,7 @@
 package preflight
 
+//revive:disable:dot-imports // Ginkgo/Gomega DSL
+
 import (
 	"context"
 	"os"

@@ -952,7 +952,7 @@ func (l *LogCollector) getOcpRelatedResources(resourcePath string,
 func (l *LogCollector) checkIfNamespacesExist() (err error) {
 
 	log.Info("validating namespace list against the cluster")
-	set := make(sets.String)
+	set := sets.New[string]()
 	var nonExistNs []string
 
 	var namespaces corev1.NamespaceList
@@ -1158,6 +1158,13 @@ func (l *LogCollector) CopyDirFromPod(namespace, podName, containerName, srcDir,
 	return l.extractTarFile(tarFile.Name(), destDir)
 }
 
+func tarHeaderFileMode(mode int64) (os.FileMode, error) {
+	if mode < 0 || mode > int64(^uint32(0)) {
+		return 0, fmt.Errorf("invalid tar file mode: %d", mode)
+	}
+	return os.FileMode(uint32(mode)), nil
+}
+
 // extractTarFile extracts a tar file to the destination directory
 func (l *LogCollector) extractTarFile(tarPath, destDir string) error {
 	in, err := os.Open(tarPath)
@@ -1182,9 +1189,14 @@ func (l *LogCollector) extractTarFile(tarPath, destDir string) error {
 			return err
 		}
 
+		fileMode, fmErr := tarHeaderFileMode(hdr.Mode)
+		if fmErr != nil {
+			return fmt.Errorf("%s: %w", hdr.Name, fmErr)
+		}
+
 		switch hdr.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(targetPath, os.FileMode(hdr.Mode)); err != nil {
+			if err := os.MkdirAll(targetPath, fileMode); err != nil {
 				return err
 			}
 		case tar.TypeReg:
@@ -1197,7 +1209,7 @@ func (l *LogCollector) extractTarFile(tarPath, destDir string) error {
 			if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
 				return err
 			}
-			outFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(hdr.Mode))
+			outFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, fileMode)
 			if err != nil {
 				return err
 			}

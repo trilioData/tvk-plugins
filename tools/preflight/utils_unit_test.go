@@ -1,5 +1,7 @@
 package preflight
 
+//revive:disable:dot-imports // Gomega DSL
+
 import (
 	. "github.com/onsi/gomega"
 	"github.com/trilioData/tvk-plugins/internal"

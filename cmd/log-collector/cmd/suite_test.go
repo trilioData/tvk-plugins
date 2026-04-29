@@ -1,5 +1,7 @@
 package cmd
 
+//revive:disable:dot-imports // Ginkgo/Gomega DSL
+
 import (
 	"os"
 	"path/filepath"

@@ -25,7 +25,7 @@ import (
 	k8swait "k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -71,7 +71,7 @@ func CreateResourceNameSuffix() (string, error) {
 
 func (o *Run) logPreflightOptions() {
 	o.Logger.Infof("====PREFLIGHT RUN OPTIONS====")
-	o.CommonOptions.logCommonOptions()
+	o.logCommonOptions()
 	o.Logger.Infof("STORAGE-CLASS=\"%s\"", o.StorageClass)
 	o.Logger.Infof("VOLUME-SNAPSHOT-CLASS=\"%s\"", o.SnapshotClass)
 	o.Logger.Infof("LOCAL-REGISTRY=\"%s\"", o.LocalRegistry)
@@ -722,6 +722,7 @@ func (o *Run) validateDNSResolution(ctx context.Context, execCommand []string, p
 	}
 
 	op := exec.Options{
+		Ctx:           ctx,
 		Namespace:     o.Namespace,
 		Command:       execCommand,
 		PodName:       pod.GetName(),
@@ -871,6 +872,7 @@ func (o *Run) validateClusterScopeVolumeSnapshot(ctx context.Context, nameSuffix
 
 	// execInPod to verify data in cloned pvc
 	execOp = exec.Options{
+		Ctx:           ctx,
 		Namespace:     readerPod.GetNamespace(),
 		Command:       execDataCheckCommand,
 		PodName:       readerPod.GetName(),
@@ -955,6 +957,7 @@ func (o *Run) validateNamespaceScopeVolumeSnapshot(ctx context.Context, nameSuff
 
 	// execInPod to verify data in cloned pvc
 	execOp = exec.Options{
+		Ctx:           ctx,
 		Namespace:     readerPod.GetNamespace(),
 		Command:       execDataCheckCommand,
 		PodName:       readerPod.GetName(),
@@ -1083,7 +1086,7 @@ func (o *Run) createPVCFromSnapshot(ctx context.Context,
 				Requests: corev1.ResourceList{corev1.ResourceStorage: sourcePVCSpec.Resources.Requests[corev1.ResourceStorage]},
 			},
 			DataSource: &corev1.TypedLocalObjectReference{
-				APIGroup: pointer.StringPtr(snapshotv1.GroupName),
+				APIGroup: ptr.To(snapshotv1.GroupName),
 				Kind:     internal.VolumeSnapshotKind,
 				Name:     sourceSnapshotName,
 			},
@@ -1200,7 +1203,7 @@ func (o *Run) createSnapshotFromPVC(ctx context.Context, volSnapNameNs types.Nam
 	o.Logger.Infof("Waiting for volume snapshot - %s created from pvc to become 'readyToUse:true'", volSnapNameNs.String())
 	err := waitUntilVolSnapReadyToUse(volSnap, snapshotVer, getDefaultRetryBackoffParams(), clients.RuntimeClient)
 	if err != nil {
-		if err == k8swait.ErrWaitTimeout {
+		if k8swait.Interrupted(err) {
 			volSnapYAML, yErr := objToYAML(volSnap)
 			if yErr != nil {
 				o.Logger.Errorf("error converting object to yaml :: %s", yErr.Error())

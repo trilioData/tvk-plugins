@@ -26,7 +26,7 @@ type Cleanup struct {
 
 func (co *Cleanup) logCleanupOptions() {
 	co.Logger.Infoln("====PREFLIGHT CLEANUP OPTIONS====")
-	co.CommonOptions.logCommonOptions()
+	co.logCommonOptions()
 	co.Logger.Infof("UID=\"%s\"", co.UID)
 	co.Logger.Infoln("====PREFLIGHT CLEANUP OPTIONS END====")
 }
@@ -65,7 +65,6 @@ func (co *Cleanup) CleanupPreflightResources(ctx context.Context) error {
 			continue
 		}
 		for _, res := range resList.Items {
-			res := res
 			co.Logger.Infof("Cleaning %s - %s", res.GetKind(), res.GetName())
 			err = deleteK8sResource(ctx, &res, kubeClient.RuntimeClient)
 			if err != nil {

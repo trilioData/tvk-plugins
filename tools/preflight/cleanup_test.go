@@ -1,5 +1,7 @@
 package preflight
 
+//revive:disable:dot-imports // Ginkgo/Gomega DSL
+
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

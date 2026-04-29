@@ -1,5 +1,7 @@
 package cmd
 
+//revive:disable:dot-imports // Ginkgo/Gomega DSL
+
 import (
 	"fmt"
 	"os"
@@ -356,14 +358,14 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 		})
 
 		It("Should not return error when preflight uid is empty", func() {
-			cmdOps.Cleanup.CleanupOptions.UID = ""
+			cmdOps.Cleanup.UID = ""
 			terr := validateCleanupFields()
 			Expect(terr).To(BeNil())
 		})
 
 		It(fmt.Sprintf("Should return error when preflight uid length is less than default uid length(%d)",
 			preflightUIDLength), func() {
-			cmdOps.Cleanup.CleanupOptions.UID = invalidShortPreflightUID
+			cmdOps.Cleanup.UID = invalidShortPreflightUID
 			terr := validateCleanupFields()
 			Expect(terr).ToNot(BeNil())
 			Expect(terr.Error()).To(ContainSubstring("valid 6-length preflight UID must be specified"))
@@ -371,7 +373,7 @@ var _ = Describe("Preflight cmd helper unit tests", func() {
 
 		It(fmt.Sprintf("Should return error when preflight uid length is greater than default uid length(%d)",
 			preflightUIDLength), func() {
-			cmdOps.Cleanup.CleanupOptions.UID = invalidLongPreflightUID
+			cmdOps.Cleanup.UID = invalidLongPreflightUID
 			terr := validateCleanupFields()
 			Expect(terr).ToNot(BeNil())
 			Expect(terr.Error()).To(ContainSubstring("valid 6-length preflight UID must be specified"))
