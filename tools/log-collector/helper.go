@@ -2,6 +2,7 @@ package logcollector
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
@@ -411,4 +412,24 @@ func sanitizeNFSPV(pv unstructured.Unstructured) unstructured.Unstructured {
 	pv.SetAnnotations(annotations)
 
 	return pv
+}
+
+// logResourceCollection emits a single debug line per API list operation so different
+// apiVersion values are visible (avoids “duplicate” lines that only differ by group).
+func logResourceCollection(groupVersion string, resource *apiv1.APIResource) {
+	if !log.IsLevelEnabled(log.DebugLevel) {
+		return
+	}
+	log.WithFields(log.Fields{
+		"apiVersion": groupVersion,
+		"resource":   resource.Name,
+		"kind":       resource.Kind,
+	}).Debug("collecting API resource")
+}
+
+func tarHeaderFileMode(mode int64) (os.FileMode, error) {
+	if mode < 0 || mode > int64(^uint32(0)) {
+		return 0, fmt.Errorf("invalid tar file mode: %d", mode)
+	}
+	return os.FileMode(uint32(mode)), nil
 }

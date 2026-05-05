@@ -1,7 +1,5 @@
 package preflight
 
-//revive:disable:dot-imports // Ginkgo/Gomega DSL
-
 import (
 	"fmt"
 	"os"

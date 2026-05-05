@@ -1,7 +1,5 @@
 package cmd
 
-//revive:disable:dot-imports // Ginkgo/Gomega DSL
-
 import (
 	"archive/tar"
 	"compress/gzip"

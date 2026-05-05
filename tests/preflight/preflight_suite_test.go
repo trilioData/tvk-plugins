@@ -1,7 +1,5 @@
 package preflighttest
 
-//revive:disable:dot-imports // Ginkgo/Gomega DSL
-
 import (
 	"context"
 	"fmt"

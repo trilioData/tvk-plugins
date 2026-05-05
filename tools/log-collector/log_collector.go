@@ -202,23 +202,32 @@ func (l *LogCollector) writeEventsToFile(events map[string][]map[string]interfac
 			for key, value := range obj {
 				key = strings.Replace(key, "/", ".", 1)
 				objectFilePath := filepath.Join(resourceDir, key)
-				fp, err := os.Create(objectFilePath + ".yaml")
-				if err != nil {
-					log.Errorf("Unable to create the file : %s", err.Error())
-					return err
-				}
-				buf, bErr := yaml.Marshal(value)
-				if bErr != nil {
-					log.Errorf("Unable to marshal the content : %s", bErr.Error())
-					return bErr
-				}
-				_, fErr := fp.Write(buf)
-				if fErr != nil {
-					log.Errorf("Unable to write the contents : %s", fErr.Error())
-					return fErr
+				if wErr := writeEventObjectToFile(objectFilePath, value); wErr != nil {
+					return wErr
 				}
 			}
 		}
+	}
+	return nil
+}
+
+// writeEventObjectToFile writes one event value to objectFilePath + ".yaml" and always closes the file handle.
+func writeEventObjectToFile(objectFilePath string, value interface{}) error {
+	fp, err := os.Create(objectFilePath + ".yaml")
+	if err != nil {
+		log.Errorf("Unable to create the file : %s", err.Error())
+		return err
+	}
+	defer fp.Close()
+
+	buf, err := yaml.Marshal(value)
+	if err != nil {
+		log.Errorf("Unable to marshal the content : %s", err.Error())
+		return err
+	}
+	if _, err := fp.Write(buf); err != nil {
+		log.Errorf("Unable to write the contents : %s", err.Error())
+		return err
 	}
 	return nil
 }
@@ -458,19 +467,6 @@ func (l *LogCollector) zipDir() error {
 	return nil
 }
 
-// logResourceCollection emits a single debug line per API list operation so different
-// apiVersion values are visible (avoids “duplicate” lines that only differ by group).
-func logResourceCollection(groupVersion string, resource *apiv1.APIResource) {
-	if !log.IsLevelEnabled(log.DebugLevel) {
-		return
-	}
-	log.WithFields(log.Fields{
-		"apiVersion": groupVersion,
-		"resource":   resource.Name,
-		"kind":       resource.Kind,
-	}).Info("collecting API resource")
-}
-
 // filterResourceObjects filter objects on the basis of resource Type.
 func (l *LogCollector) filterResourceObjects(groupVersion string,
 	resource *apiv1.APIResource) (allObjects unstructured.UnstructuredList, err error) {
@@ -626,30 +622,30 @@ func (l *LogCollector) collectApplicationPVCsFromPods(pods []unstructured.Unstru
 // collectAndWritePVs collects and writes PVs for the given PV names
 func (l *LogCollector) collectAndWritePVs(pvNames map[string]bool) error {
 	pvResourcePath := getAPIGroupVersionResourcePath(CoreGv)
-	var allPVs unstructured.UnstructuredList
-	listPath := fmt.Sprintf("%s/%s", pvResourcePath, PersistentVolume)
-	err := l.DisClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&allPVs)
-	if err != nil {
-		if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
-			log.Warnf("PVs not found or forbidden: %s", err.Error())
-			return nil
-		}
-		return err
-	}
-
 	var filteredPVs unstructured.UnstructuredList
-	for _, pv := range allPVs.Items {
-		pvName := pv.GetName()
-		if pvNames[pvName] {
-			if isNFSPV(pv) {
-				pv = sanitizeNFSPV(pv)
-			}
-			filteredPVs.Items = append(filteredPVs.Items, pv)
+
+	for pvName, want := range pvNames {
+		if !want {
+			continue
 		}
+		getPath := fmt.Sprintf("%s/%s/%s", pvResourcePath, PersistentVolume, pvName)
+		var pv unstructured.Unstructured
+		err := l.DisClient.RESTClient().Get().AbsPath(getPath).Do(context.TODO()).Into(&pv)
+		if err != nil {
+			if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
+				log.Warnf("PV %s not found or forbidden: %s", pvName, err.Error())
+				continue
+			}
+			return err
+		}
+		if isNFSPV(pv) {
+			pv = sanitizeNFSPV(pv)
+		}
+		filteredPVs.Items = append(filteredPVs.Items, pv)
 	}
 
 	if len(filteredPVs.Items) > 0 {
-		_, err = l.writeObjectsAndLogs(filteredPVs, PersistentVolumeKind)
+		_, err := l.writeObjectsAndLogs(filteredPVs, PersistentVolumeKind)
 		if err != nil {
 			return err
 		}
@@ -1156,13 +1152,6 @@ func (l *LogCollector) CopyDirFromPod(namespace, podName, containerName, srcDir,
 	}
 
 	return l.extractTarFile(tarFile.Name(), destDir)
-}
-
-func tarHeaderFileMode(mode int64) (os.FileMode, error) {
-	if mode < 0 || mode > int64(^uint32(0)) {
-		return 0, fmt.Errorf("invalid tar file mode: %d", mode)
-	}
-	return os.FileMode(uint32(mode)), nil
 }
 
 // extractTarFile extracts a tar file to the destination directory

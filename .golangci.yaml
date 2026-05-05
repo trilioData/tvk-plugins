@@ -66,6 +66,15 @@ linters:
       tab-width: 1
     misspell:
       locale: US
+    revive:
+      # Keep revive defaults while allowing idiomatic Ginkgo/Gomega dot-imports.
+      enable-default-rules: true
+      rules:
+        - name: dot-imports
+          arguments:
+            - allowed-packages:
+                - github.com/onsi/ginkgo/v2
+                - github.com/onsi/gomega
   exclusions:
     generated: lax
     presets:
