@@ -67,8 +67,6 @@ linters:
     misspell:
       locale: US
     revive:
-      # Keep revive defaults while allowing idiomatic Ginkgo/Gomega dot-imports.
-      enable-default-rules: true
       rules:
         - name: dot-imports
           arguments:
