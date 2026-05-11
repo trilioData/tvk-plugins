@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.25.8-alpine AS base
+FROM golang:1.25.9-alpine AS base
 # Copy in the go src
 WORKDIR /go/src/github.com/trilioData/tvk-plugins
 
