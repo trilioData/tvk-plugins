@@ -127,7 +127,7 @@ github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1b
 # github.com/mitchellh/go-homedir v1.1.0
 ## explicit
 github.com/mitchellh/go-homedir
-# github.com/moby/spdystream v0.5.1
+# github.com/moby/spdystream v0.5.0
 ## explicit; go 1.13
 github.com/moby/spdystream
 github.com/moby/spdystream/spdy
@@ -796,6 +796,7 @@ k8s.io/utils/internal/third_party/forked/golang/golang-lru
 k8s.io/utils/internal/third_party/forked/golang/net
 k8s.io/utils/lru
 k8s.io/utils/net
+k8s.io/utils/pointer
 k8s.io/utils/ptr
 k8s.io/utils/trace
 # sigs.k8s.io/controller-runtime v0.22.4
