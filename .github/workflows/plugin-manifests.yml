@@ -25,7 +25,7 @@ jobs:
     - name: Run yaml lint
       uses: reviewdog/action-yamllint@b1a8e58c959b83e9efa14a721d209bc2ba34b9d6  # v1
       with:
-        fail_on_error: true
+        fail_level: error
         reporter: local
         filter_mode: nofilter
 
