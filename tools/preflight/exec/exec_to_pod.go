@@ -2,6 +2,7 @@ package exec
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/url"
@@ -28,6 +29,9 @@ type Response struct {
 
 // Options passed to ExecWithOptions
 type Options struct {
+	// Ctx is used for remote exec streaming; if nil, context.Background() is used.
+	Ctx context.Context
+
 	Command []string
 
 	Namespace     string
@@ -41,19 +45,20 @@ type Options struct {
 
 // RemoteExecutor defines the interface accepted by the Exec command - provided for test stubbing
 type RemoteExecutor interface {
-	execute(method string, url *url.URL, config *restclient.Config, stdout, stderr io.Writer, tty bool) error
+	execute(ctx context.Context, method string, url *url.URL, config *restclient.Config, stdout, stderr io.Writer, tty bool) error
 }
 
 // DefaultRemoteExecutor is the standard implementation of remote command execution
 type DefaultRemoteExecutor struct{}
 
-func (*DefaultRemoteExecutor) execute(method string, reqURL *url.URL, config *restclient.Config, stdout, stderr io.Writer, tty bool) error {
+func (*DefaultRemoteExecutor) execute(ctx context.Context, method string,
+	reqURL *url.URL, config *restclient.Config, stdout, stderr io.Writer, tty bool) error {
 	exec, err := remotecommand.NewSPDYExecutor(config, method, reqURL)
 	if err != nil {
 		return err
 	}
 
-	return exec.Stream(remotecommand.StreamOptions{
+	return exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 		Stdin:  nil,
 		Stdout: stdout,
 		Stderr: stderr,
@@ -91,7 +96,11 @@ func (op *Options) ExecInContainer(execChan chan *Response) {
 
 	var stdout, stderr bytes.Buffer
 
-	err = op.Executor.execute(POSTMethod, req.URL(), op.Config, &stdout, &stderr, tty)
+	streamCtx := op.Ctx
+	if streamCtx == nil {
+		streamCtx = context.Background()
+	}
+	err = op.Executor.execute(streamCtx, POSTMethod, req.URL(), op.Config, &stdout, &stderr, tty)
 
 	cmdOut = stdout.String()
 	errStr = stderr.String()

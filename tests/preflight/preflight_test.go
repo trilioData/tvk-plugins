@@ -2,7 +2,6 @@ package preflighttest
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -220,9 +219,9 @@ var _ = Describe("Preflight Tests", func() {
 					err = os.Remove(preflightKubeConf)
 					Expect(err).To(BeNil())
 				}()
-				byteData, err = ioutil.ReadFile(kubeConfPath)
+				byteData, err = os.ReadFile(kubeConfPath)
 				Expect(err).To(BeNil())
-				err = ioutil.WriteFile(preflightKubeConf, byteData, filePermission)
+				err = os.WriteFile(preflightKubeConf, byteData, filePermission)
 				Expect(err).To(BeNil())
 
 				inputFlags[kubeconfigFlag] = path.Join(".", preflightKubeConf)
@@ -237,7 +236,7 @@ var _ = Describe("Preflight Tests", func() {
 			It("Should fail preflight execution if invalid kubeconfig file is provided", func() {
 				_, err = os.Create(invalidKubeConfFilename)
 				Expect(err).To(BeNil())
-				err = ioutil.WriteFile(invalidKubeConfFilename, []byte(invalidKubeConfFileData), filePermission)
+				err = os.WriteFile(invalidKubeConfFilename, []byte(invalidKubeConfFileData), filePermission)
 				Expect(err).To(BeNil())
 				inputFlags := make(map[string]string)
 				copyMap(flagsMap, inputFlags)

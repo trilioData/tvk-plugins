@@ -2,7 +2,7 @@ package preflight
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -792,7 +792,7 @@ func installVolumeSnapshotCRD(version string, volumeSnapshotCRDToInstall map[str
 			dirVersion, err := getPrefSnapshotClassVersion(version)
 			Expect(err).To(BeNil())
 
-			fileBytes, readErr := ioutil.ReadFile(filepath.Join(volumeSnapshotCRDYamlDir, dirVersion, VolumeSnapshotCRDs[i]+".yaml"))
+			fileBytes, readErr := os.ReadFile(filepath.Join(volumeSnapshotCRDYamlDir, dirVersion, VolumeSnapshotCRDs[i]+".yaml"))
 			Expect(readErr).To(BeNil())
 
 			Expect(yaml.Unmarshal(fileBytes, crdObj)).To(BeNil())

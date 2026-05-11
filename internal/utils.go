@@ -3,8 +3,6 @@ package internal
 import (
 	cryptorand "crypto/rand"
 	"math/big"
-	"math/rand"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -55,7 +53,6 @@ func CheckIsOpenshift(disClient *discovery.DiscoveryClient, groupVersion string)
 func GenerateRandomString(n int, isOnlyAlphabetic bool) string {
 	letters := "abcdefghijklmnopqrstuvwxyz"
 	numbers := "1234567890"
-	rand.Seed(time.Now().UnixNano())
 	letterRunes := []rune(letters)
 	if !isOnlyAlphabetic {
 		letterRunes = []rune(letters + numbers)

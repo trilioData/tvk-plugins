@@ -3,8 +3,6 @@ package preflighttest
 import (
 	"context"
 	"fmt"
-	"io/fs"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -290,8 +288,7 @@ var _ = AfterSuite(func() {
 
 // Deletes all the log files generated at the end of suite
 func cleanDirForFiles(filePrefix string) {
-	var names []fs.FileInfo
-	names, err = ioutil.ReadDir(preflightBinaryDir)
+	names, err := os.ReadDir(preflightBinaryDir)
 	Expect(err).To(BeNil())
 	for _, entry := range names {
 		if strings.HasPrefix(entry.Name(), filePrefix) {
