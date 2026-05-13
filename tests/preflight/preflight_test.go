@@ -12,6 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 	tLog "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -474,12 +475,31 @@ var _ = Describe("Preflight Tests", func() {
 				BeforeEach(func() {
 					nodeList, err = k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 					Expect(err).To(BeNil())
-					for _, node := range nodeList.Items {
-						nodeLabels := node.GetLabels()
-						nodeLabels[preflightNodeAffinityKey] = lowAffinity
-						node.SetLabels(nodeLabels)
-						_, err = k8sClient.CoreV1().Nodes().Update(ctx, &node, metav1.UpdateOptions{})
-						Expect(err).To(BeNil())
+					const maxRetries = 5
+					for _, n := range nodeList.Items {
+						node := n
+						for i := 0; i < maxRetries; i++ {
+							nodeLabels := node.GetLabels()
+							if nodeLabels == nil {
+								nodeLabels = make(map[string]string)
+							}
+							nodeLabels[preflightNodeAffinityKey] = lowAffinity
+							node.SetLabels(nodeLabels)
+							_, err = k8sClient.CoreV1().Nodes().Update(ctx, &node, metav1.UpdateOptions{})
+							if err == nil {
+								break
+							}
+							if k8serrors.IsConflict(err) && i < maxRetries-1 {
+								freshNode, getErr := k8sClient.CoreV1().Nodes().Get(ctx, node.Name, metav1.GetOptions{})
+								if getErr != nil {
+									tLog.Debugf("Failed to refetch node %s: %v", node.Name, getErr)
+									Expect(getErr).To(BeNil())
+								}
+								node = *freshNode
+								continue
+							}
+							Expect(err).To(BeNil())
+						}
 					}
 				})
 				// TODO: shiwam, long running test, either add timeout if possible or remove from IT and put in UT

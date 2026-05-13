@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -485,13 +486,38 @@ func createNamespace(namespace string, labels map[string]string) {
 			Labels: labels,
 		},
 	}
-	_, err = k8sClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
-	Expect(err).To(BeNil())
+	// Namespace deletion is asynchronous; Ginkgo flake retries can otherwise hit
+	// AlreadyExists while the namespace is still Terminating. Retry until Create
+	// succeeds or an existing namespace is Active.
+	Eventually(func(g Gomega) {
+		_, createErr := k8sClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
+		if createErr == nil {
+			return
+		}
+		if k8serrors.IsAlreadyExists(createErr) {
+			existing, getErr := k8sClient.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
+			g.Expect(getErr).To(BeNil())
+			if existing.Status.Phase == corev1.NamespaceActive {
+				return
+			}
+			g.Expect(existing.Status.Phase).To(Equal(corev1.NamespaceActive),
+				"waiting for namespace to finish deleting or become Active")
+			return
+		}
+		g.Expect(createErr).To(BeNil())
+	}).WithTimeout(timeout).WithPolling(interval).Should(Succeed())
 }
 
 func deleteNamespace(namespace string) {
 	err = k8sClient.CoreV1().Namespaces().Delete(ctx, namespace, metav1.DeleteOptions{})
-	Expect(err).To(BeNil())
+	if err != nil && !k8serrors.IsNotFound(err) {
+		Expect(err).To(BeNil())
+		return
+	}
+	Eventually(func(g Gomega) {
+		_, getErr := k8sClient.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
+		g.Expect(k8serrors.IsNotFound(getErr)).To(BeTrue(), "namespace should be removed from the API")
+	}).WithTimeout(timeout).WithPolling(interval).Should(Succeed())
 }
 
 // copy map 'from' to 'to' key-by-key and value-by-value

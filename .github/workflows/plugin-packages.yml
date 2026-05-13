@@ -64,7 +64,7 @@ jobs:
       - name: Run yamllint
         uses: reviewdog/action-yamllint@b1a8e58c959b83e9efa14a721d209bc2ba34b9d6  # v1
         with:
-          fail_on_error: true
+          fail_level: error
           reporter: local
           filter_mode: nofilter
 
@@ -80,13 +80,17 @@ jobs:
         run: make verify-code-patterns
 
       - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1  # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # v0.36.0
+        env:
+          TRIVY_SKIP_VERSION_CHECK: 'true'
         with:
           scan-type: 'fs'
           ignore-unfixed: true
           format: 'table'
           severity: 'HIGH,CRITICAL'
           exit-code: '1'
+          version: v0.70.0
+          trivyignores: .trivyignore
 
       - name: Detect File Changes
         uses: dorny/paths-filter@7267a8516b6f92bdb098633497bad573efdbf271  # v2.12.0
@@ -183,7 +187,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492  # v2
       with:
-        go-version: '1.25'
+        go-version: '1.25.9'
 
     - name: Update '.goreleaser.yaml' for Building Preflight Packages only
       run: |
@@ -315,13 +319,17 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Trivy image scan
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1  # v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # v0.36.0
+        env:
+          TRIVY_SKIP_VERSION_CHECK: 'true'
         with:
           image-ref: ${{env.DOCKER_REGISTRY}}/${{env.GCR_PROJECT}}/${{env.IMAGE_NAME}}:${{ github.sha }}
           ignore-unfixed: true
           format: 'table'
           severity: 'HIGH,CRITICAL'
           exit-code: '1'
+          version: v0.70.0
+          trivyignores: .trivyignore
 
       - name: Configure AWS Credentials
         if: (needs.pre-build.outputs.releasePreflight == 'true') && startsWith(github.ref, 'refs/tags/')
@@ -441,7 +449,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492  # v2
         with:
-          go-version: '1.24'
+          go-version: '1.25.9'
 
       - name: Update '.goreleaser.yaml' for Building Log-Collector Packages only
         run: |
@@ -545,7 +553,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492  # v2
         with:
-          go-version: '1.25'
+          go-version: '1.25.9'
 
       - name: Release with GoReleaser
         uses: goreleaser/goreleaser-action@b9169ea22c1ccccedd39ec5d5898be710305f8eb  # v2
