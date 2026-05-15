@@ -123,7 +123,7 @@ func (l *LogCollector) WriteVersionFile() error {
 		return err
 	}
 	versionPath := filepath.Join(l.OutputDir, "version.txt")
-	return os.WriteFile(versionPath, []byte(version.Display()+"\n"), 0644)
+	return os.WriteFile(versionPath, []byte(version.Display()+"\n"), 0600)
 }
 
 // CollectLogsAndDump collects call all the related resources of triliovault
