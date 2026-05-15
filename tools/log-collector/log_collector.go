@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/trilioData/tvk-plugins/internal"
+	"github.com/trilioData/tvk-plugins/internal/version"
 )
 
 type GroupVersionKind struct {
@@ -66,6 +67,7 @@ type LogCollector struct {
 	GroupVersionKinds []GroupVersionKind            `json:"gvks"`
 	RestConfig        *restclient.Config            `json:"-"`
 	collectedPVCs     map[types.NamespacedName]bool `json:"-"` // Track collected PVCs to find their PVs
+	collectedPVs      map[string]bool               `json:"-"` // Track collected PVs to avoid duplicate writes
 }
 
 const (
@@ -104,8 +106,39 @@ func (l *LogCollector) InitializeKubeClients() error {
 	return nil
 }
 
+// NormalizeNamespaces trims whitespace from namespace names, drops empty entries,
+// and falls back to clustered mode if namespace input was provided but none remain valid.
+func (l *LogCollector) NormalizeNamespaces() {
+	hadNamespaceInput := len(l.Namespaces) > 0
+	var trimmed []string
+	for _, ns := range l.Namespaces {
+		if ns = strings.TrimSpace(ns); ns != "" {
+			trimmed = append(trimmed, ns)
+		}
+	}
+	if hadNamespaceInput && len(trimmed) == 0 {
+		log.Warnf("all provided namespaces were empty after normalization; falling back to clustered mode")
+		l.Clustered = true
+	}
+	l.Namespaces = trimmed
+}
+
+// WriteVersionFile writes the log-collector version to version.txt in the output directory.
+func (l *LogCollector) WriteVersionFile() error {
+	if err := os.MkdirAll(l.OutputDir, 0755); err != nil {
+		return err
+	}
+	versionPath := filepath.Join(l.OutputDir, "version.txt")
+	return os.WriteFile(versionPath, []byte(version.Display()+"\n"), 0600)
+}
+
 // CollectLogsAndDump collects call all the related resources of triliovault
 func (l *LogCollector) CollectLogsAndDump() error {
+	l.NormalizeNamespaces()
+
+	if err := l.WriteVersionFile(); err != nil {
+		return err
+	}
 
 	nsErr := l.checkIfNamespacesExist()
 	if nsErr != nil {
@@ -148,7 +181,7 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 			err := l.DisClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&obj)
 			if err != nil {
 				if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
-					log.WithError(err).Debug("list request skipped for namespaced resource")
+					log.Warnf("api error : %s", err.Error())
 					continue
 				}
 				/* TODO() Currently error is ignore here, as we do not want to halt the log-collection utility because of
@@ -169,7 +202,7 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 	err := l.DisClient.RESTClient().Get().AbsPath(listPath).Do(context.TODO()).Into(&objects)
 	if err != nil {
 		if apierrors.IsNotFound(err) || apierrors.IsForbidden(err) {
-			log.WithError(err).Debug("list request skipped for cluster-scoped resource")
+			log.Warnf("%s", err.Error())
 			return objects
 		}
 		/* TODO() Currently error is ignore here, as we do not want to halt the log-collection utility because of
@@ -179,7 +212,7 @@ func (l *LogCollector) getResourceObjects(resourcePath string, resource *apiv1.A
 			log.Errorf("%s", err.Error())
 			return objects, nil
 		} */
-		log.WithError(err).Warn("list request failed for cluster-scoped resource; skipping")
+		log.Warnf("%s", err.Error())
 		return unstructured.UnstructuredList{}
 	}
 	return objects
@@ -245,9 +278,14 @@ func (l *LogCollector) writeYaml(resourceDir string, obj unstructured.Unstructur
 	}
 
 	// Sanitize NFS PVs before writing
-	if obj.GetKind() == PersistentVolumeKind && isNFSPV(obj) {
-		obj = sanitizeNFSPV(obj)
-		log.Infof("Sanitized NFS credentials from PV %s", objName)
+	if obj.GetKind() == PersistentVolumeKind {
+		if l.collectedPVs != nil && l.collectedPVs[objName] {
+			return nil
+		}
+		if isNFSPV(obj) {
+			obj = sanitizeNFSPV(obj)
+			log.Infof("Sanitized NFS credentials from PV %s", objName)
+		}
 	}
 
 	objFilepath := filepath.Join(resourcePath, objName)
@@ -266,6 +304,9 @@ func (l *LogCollector) writeYaml(resourceDir string, obj unstructured.Unstructur
 	if bErr != nil {
 		log.Errorf("Unable to write the content : %s", bErr.Error())
 		return bErr
+	}
+	if obj.GetKind() == PersistentVolumeKind && l.collectedPVs != nil {
+		l.collectedPVs[objName] = true
 	}
 	return nil
 }
@@ -625,7 +666,7 @@ func (l *LogCollector) collectAndWritePVs(pvNames map[string]bool) error {
 	var filteredPVs unstructured.UnstructuredList
 
 	for pvName, want := range pvNames {
-		if !want {
+		if !want || l.collectedPVs[pvName] {
 			continue
 		}
 		getPath := fmt.Sprintf("%s/%s/%s", pvResourcePath, PersistentVolume, pvName)
@@ -637,9 +678,6 @@ func (l *LogCollector) collectAndWritePVs(pvNames map[string]bool) error {
 				continue
 			}
 			return err
-		}
-		if isNFSPV(pv) {
-			pv = sanitizeNFSPV(pv)
 		}
 		filteredPVs.Items = append(filteredPVs.Items, pv)
 	}
@@ -669,6 +707,7 @@ func (l *LogCollector) filteringResources(resourceGroup map[string][]apiv1.APIRe
 	resourceMapList := make(map[string][]types.NamespacedName)
 	var eventResource apiv1.APIResource
 	l.collectedPVCs = make(map[types.NamespacedName]bool)
+	l.collectedPVs = make(map[string]bool)
 	var collectedPods []unstructured.Unstructured
 
 	// One discovery call per run; previously this ran inside the per-resource loop and
@@ -968,7 +1007,6 @@ func (l *LogCollector) checkIfNamespacesExist() (err error) {
 	}
 
 	for _, ns := range l.Namespaces {
-		ns = strings.Trim(ns, " ")
 		if !set.Has(ns) {
 			nonExistNs = append(nonExistNs, ns)
 		}

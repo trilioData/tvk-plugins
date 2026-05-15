@@ -187,7 +187,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492  # v2
       with:
-        go-version: '1.25.9'
+        go-version: '1.25.10'
 
     - name: Update '.goreleaser.yaml' for Building Preflight Packages only
       run: |
@@ -449,7 +449,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492  # v2
         with:
-          go-version: '1.25.9'
+          go-version: '1.25.10'
 
       - name: Update '.goreleaser.yaml' for Building Log-Collector Packages only
         run: |
@@ -553,7 +553,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492  # v2
         with:
-          go-version: '1.25.9'
+          go-version: '1.25.10'
 
       - name: Release with GoReleaser
         uses: goreleaser/goreleaser-action@b9169ea22c1ccccedd39ec5d5898be710305f8eb  # v2

@@ -57,6 +57,7 @@ func overrideFileInputsFromCLI() error {
 	if cmd.Flags().Changed(namespacesFlag) || !logCollector.Clustered {
 		logCollector.Namespaces = namespaces
 	}
+	logCollector.NormalizeNamespaces()
 
 	if cmd.Flags().Changed(keepSourceFlag) {
 		logCollector.CleanOutput = keepSource

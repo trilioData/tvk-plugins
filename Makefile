@@ -1,5 +1,7 @@
 BUILD_DIR ?= build
 DIST_DIR ?= dist
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+LOG_COLLECTOR_LDFLAGS = -ldflags "-s -w -X github.com/trilioData/tvk-plugins/internal/version.Version=$(VERSION)"
 
 clean:
 	go clean
@@ -45,6 +47,9 @@ build-log-collector:
 	find . -name .goreleaser.yml -exec sed -i '/binary: preflight/a \ \ skip: true' {} +
 	goreleaser release --snapshot --skip publish --clean
 	find . -name .goreleaser.yml -exec sed -i '/skip: true/d' {} +
+
+run-log-collector:
+	go build $(LOG_COLLECTOR_LDFLAGS) -o log-collector ./cmd/log-collector/
 
 build: build-preflight build-cleanup
 	goreleaser release --snapshot --skip publish --clean

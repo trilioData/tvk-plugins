@@ -4,6 +4,9 @@ builds:
 - id: log-collector
   main: ./cmd/log-collector/
   binary: log-collector
+  ldflags:
+    - -s -w
+    - -X github.com/trilioData/tvk-plugins/internal/version.Version={{.Tag}}
   env:
   - CGO_ENABLED=0
   goos:

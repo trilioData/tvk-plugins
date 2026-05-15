@@ -1,5 +1,5 @@
-# Build the manager binary
-FROM golang:1.25.9-alpine AS base
+# Build the manager binary (Go 1.25.10+ includes fixes for CVE-2026-39820, CVE-2026-39836, CVE-2026-42499 in stdlib)
+FROM golang:1.25.10-alpine AS base
 # Copy in the go src
 WORKDIR /go/src/github.com/trilioData/tvk-plugins
 
@@ -18,6 +18,9 @@ FROM registry.access.redhat.com/ubi9/ubi:latest AS final
 LABEL name=tvk-plugins-preflight
 LABEL summary=TVK\ Plugins\ Preflight
 LABEL description=TVK\ Plugins\ Preflight
+
+# Apply OS security updates for Trivy / distro CVEs
+RUN dnf -y upgrade --refresh && dnf clean all
 
 # RUN addgroup -S usergroup && adduser -DH -g "" -u 1001 -S docker -G usergroup
 # USER docker
