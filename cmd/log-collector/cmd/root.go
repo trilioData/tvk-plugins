@@ -24,6 +24,7 @@ func logCollectorCommand() *cobra.Command {
 		RunE:              runLogCollector,
 		PersistentPreRunE: preRun,
 	}
+	cmd.SetVersionTemplate("version {{.Version}}\n")
 	cmd.Flags().StringSliceVarP(&namespaces, namespacesFlag, namespacesShort, namespacesDefault, namespacesUsage)
 	cmd.Flags().StringVarP(&kubeConfig, internal.KubeconfigFlag,
 		internal.KubeconfigShorthandFlag, internal.GetKubeconfigPath(true), internal.KubeconfigUsage)

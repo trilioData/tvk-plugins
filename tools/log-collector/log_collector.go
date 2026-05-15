@@ -106,13 +106,19 @@ func (l *LogCollector) InitializeKubeClients() error {
 	return nil
 }
 
-// NormalizeNamespaces trims whitespace from namespace names and drops empty entries.
+// NormalizeNamespaces trims whitespace from namespace names, drops empty entries,
+// and falls back to clustered mode if namespace input was provided but none remain valid.
 func (l *LogCollector) NormalizeNamespaces() {
+	hadNamespaceInput := len(l.Namespaces) > 0
 	var trimmed []string
 	for _, ns := range l.Namespaces {
 		if ns = strings.TrimSpace(ns); ns != "" {
 			trimmed = append(trimmed, ns)
 		}
+	}
+	if hadNamespaceInput && len(trimmed) == 0 {
+		log.Warnf("all provided namespaces were empty after normalization; falling back to clustered mode")
+		l.Clustered = true
 	}
 	l.Namespaces = trimmed
 }

@@ -73,7 +73,7 @@ Verify installation with `kubectl tvk-log-collector --help` or check the install
 
 ```bash
 kubectl tvk-log-collector --version
-# log-collector version v1.3.7
+# version v1.3.7
 ```
 
 ##### Windows
@@ -168,7 +168,7 @@ curl https://github.com/trilioData/tvk-plugins/tree/main/docs/log-collector/samp
 ## Output
 This command will create `triliovault-<date-time>.zip` zip file containing cluster debugging information.
 
-The support bundle includes a `version.txt` file at the top level of the archive with the log-collector release version used for that run (same value as `kubectl tvk-log-collector --version`, for example `v1.3.7`). Use it when sharing bundles with support so the collector build is identified without re-running the binary.
+The support bundle includes a `version.txt` file at the top level of the archive with the log-collector release version used for that run (same semver as shown by `kubectl tvk-log-collector --version`, for example `v1.3.7` in `version.txt`). Use it when sharing bundles with support so the collector build is identified without re-running the binary.
 
 ## Resources Considered for Log Collection:
 ```  

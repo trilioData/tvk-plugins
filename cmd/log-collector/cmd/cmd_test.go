@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"context"
 	"fmt"
@@ -115,6 +116,24 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 			content, err := os.ReadFile(filepath.Join(outputDir, "version.txt"))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(strings.TrimSpace(string(content))).To(Equal(version.Display()))
+		})
+
+		It("Should print version with --version without pre-run", func() {
+			Expect(os.Unsetenv(internal.KubeconfigEnv)).To(Succeed())
+
+			logCollector = logcollector.LogCollector{}
+
+			command := logCollectorCommand()
+			var out bytes.Buffer
+			command.SetOut(&out)
+			command.SetErr(&out)
+			command.SetArgs([]string{"--version"})
+
+			Expect(command.Execute()).To(Succeed())
+			Expect(strings.TrimSpace(out.String())).To(Equal("version " + version.Display()))
+			Expect(logCollector.OutputDir).To(BeEmpty())
+			Expect(logCollector.K8sClient).To(BeNil())
+			Expect(logCollector.DisClient).To(BeNil())
 		})
 
 		It("Should initialize log collector objects when valid kubeconfig file path is provided", func() {
