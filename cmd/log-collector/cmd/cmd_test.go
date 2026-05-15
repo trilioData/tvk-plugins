@@ -119,6 +119,14 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 		})
 
 		It("Should print version with --version without pre-run", func() {
+			prevKube, hadKube := os.LookupEnv(internal.KubeconfigEnv)
+			DeferCleanup(func() {
+				if hadKube {
+					Expect(os.Setenv(internal.KubeconfigEnv, prevKube)).To(Succeed())
+				} else {
+					Expect(os.Unsetenv(internal.KubeconfigEnv)).To(Succeed())
+				}
+			})
 			Expect(os.Unsetenv(internal.KubeconfigEnv)).To(Succeed())
 
 			logCollector = logcollector.LogCollector{}
