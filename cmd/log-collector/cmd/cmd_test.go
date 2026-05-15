@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/trilioData/tvk-plugins/internal"
+	"github.com/trilioData/tvk-plugins/internal/version"
 	logcollector "github.com/trilioData/tvk-plugins/tools/log-collector"
 )
 
@@ -86,6 +87,34 @@ var _ = Describe("log collector cmd helper unit tests", func() {
 
 		BeforeEach(func() {
 			internal.KubeConfigDefault = os.Getenv(internal.KubeconfigEnv)
+		})
+
+		It("Should trim whitespace from namespaces provided via CLI flag", func() {
+			command := logCollectorCommand()
+			Expect(command.ParseFlags([]string{"--namespaces", "trilio-system, nexus-app"})).To(Succeed())
+			Expect(command.PersistentPreRunE(command, []string{})).To(Succeed())
+			Expect(logCollector.Namespaces).To(Equal([]string{"trilio-system", "nexus-app"}))
+		})
+
+		It("Should trim leading and trailing whitespace from namespace names", func() {
+			lc := &logcollector.LogCollector{
+				Namespaces: []string{"trilio-system", " nexus-app", "kube-system ", "  ", ""},
+			}
+
+			lc.NormalizeNamespaces()
+
+			Expect(lc.Namespaces).To(Equal([]string{"trilio-system", "nexus-app", "kube-system"}))
+		})
+
+		It("Should write log collector version to version.txt in the output directory", func() {
+			outputDir := GinkgoT().TempDir()
+			lc := &logcollector.LogCollector{OutputDir: outputDir}
+
+			Expect(lc.WriteVersionFile()).To(Succeed())
+
+			content, err := os.ReadFile(filepath.Join(outputDir, "version.txt"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(strings.TrimSpace(string(content))).To(Equal(version.Display()))
 		})
 
 		It("Should initialize log collector objects when valid kubeconfig file path is provided", func() {
