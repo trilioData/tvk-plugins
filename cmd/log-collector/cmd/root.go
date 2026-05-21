@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/trilioData/tvk-plugins/internal"
+	"github.com/trilioData/tvk-plugins/internal/version"
 )
 
 func init() {
@@ -19,9 +20,11 @@ func logCollectorCommand() *cobra.Command {
 		Use:               binaryName,
 		Short:             shortUsage,
 		Long:              longUsage,
+		Version:           version.Display(),
 		RunE:              runLogCollector,
 		PersistentPreRunE: preRun,
 	}
+	cmd.SetVersionTemplate("version {{.Version}}\n")
 	cmd.Flags().StringSliceVarP(&namespaces, namespacesFlag, namespacesShort, namespacesDefault, namespacesUsage)
 	cmd.Flags().StringVarP(&kubeConfig, internal.KubeconfigFlag,
 		internal.KubeconfigShorthandFlag, internal.GetKubeconfigPath(true), internal.KubeconfigUsage)

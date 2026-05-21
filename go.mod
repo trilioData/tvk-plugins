@@ -2,7 +2,7 @@ module github.com/trilioData/tvk-plugins
 
 go 1.25.0
 
-toolchain go1.25.9
+toolchain go1.25.10
 
 require (
 	github.com/google/go-cmp v0.7.0

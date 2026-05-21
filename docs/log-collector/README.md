@@ -69,7 +69,12 @@ tvk-log-collector collects the logs, config and events of resources. Pod Logs ca
   tar zxvf ${package_name} && sudo mv log-collector /usr/local/bin/kubectl-tvk_log_collector
 )
 ```
-Verify installation with `kubectl tvk-log-collector --help`
+Verify installation with `kubectl tvk-log-collector --help` or check the installed binary version:
+
+```bash
+kubectl tvk-log-collector --version
+# version v1.3.7
+```
 
 ##### Windows
 
@@ -85,7 +90,8 @@ Verify installation with `kubectl tvk-log-collector --help`
 
 | Parameter                 | Default       | Description   |    
 | :------------------------ |:-------------:| :-------------|  
-| --namespaces          | []           |list of namespaces to look for resources separated by commas
+| --version                 |               | print the log-collector release version (e.g. `v1.3.7`) and exit |
+| --namespaces          | []           | list of namespaces to look for resources separated by commas (leading/trailing spaces on each name are trimmed) |
 | --kubeconfig            |   ~/.kube/config             |path to the kubernetes config
 | --keep-source-folder            | false            | Keep source directory and Zip both
 | --log-level                | INFO             | log level for debugging ( INFO ERROR DEBUG WARNING DEBUG )
@@ -94,6 +100,10 @@ Verify installation with `kubectl tvk-log-collector --help`
 | --label-selector | | json string to give list of all label selector for resources to be collected other than log collector collects
 
 ## Examples
+
+- To print the installed log-collector version:
+
+        kubectl tvk-log-collector --version
 
 - To collect logs & YAML from multiple namespaces (separated by commas in double quotes):
 
@@ -157,6 +167,8 @@ curl https://github.com/trilioData/tvk-plugins/tree/main/docs/log-collector/samp
 
 ## Output
 This command will create `triliovault-<date-time>.zip` zip file containing cluster debugging information.
+
+The support bundle includes a `version.txt` file at the top level of the archive with the log-collector release version used for that run (same semver as shown by `kubectl tvk-log-collector --version`, for example `v1.3.7` in `version.txt`). Use it when sharing bundles with support so the collector build is identified without re-running the binary.
 
 ## Resources Considered for Log Collection:
 ```  
