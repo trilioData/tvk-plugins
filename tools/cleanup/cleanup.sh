@@ -240,9 +240,9 @@ while test $# -gt 0; do
   -r | --resources)
     shift
     if [[ "$*" == -* || $# -eq 0 ]]; then
-      export TVK_resources="ClusterRestore ClusterBackup ClusterBackupPlan Restore Backup Backupplan Hook Target Policy License"
+      export TVK_resources="ClusterRestore ClusterBackup ClusterBackupPlan Restore Backup Backupplan Hook ClusterHook Target ClusterTarget Policy ClusterPolicy License"
       echo "No resources specified, will be deleting all resources listed below"
-      echo "ClusterRestore ClusterBackup ClusterBackupPlan Restore Backup Backupplan Hook Target Policy License"
+      echo "ClusterRestore ClusterBackup ClusterBackupPlan Restore Backup Backupplan Hook ClusterHook Target ClusterTarget Policy ClusterPolicy License"
       echo
       continue
     else
