@@ -49,6 +49,7 @@ handle_delete_with_finalizer_fallback() {
   echo "Failed deleting ${resource} ${name}${ns:+ in namespace ${ns}}"
   echo "Patching ${resource} ${name}${ns:+ in ${ns}}"
   kubectl patch "${resource}" "${name}" -p '{"metadata":{"finalizers":[]}}' --type=merge "${patch_args[@]}"
+  kubectl wait --for=delete "${resource}/${name}" "${patch_args[@]}" --timeout=10s 2>/dev/null
   if (kubectl get "${resource}" "${name}" "${patch_args[@]}" 2>/dev/null); then
     echo "Failed deleting ${resource} ${name}${ns:+ in ${ns}}"
     eval "${exit_status_var}=1"
@@ -80,6 +81,14 @@ delete_tvk_res() {
         for name in $(kubectl get "${res}" -n "${ns}" --no-headers 2>/dev/null | awk '{print $1}' | uniq); do
           # Delete
           echo "Deleting ${res} ${name} in namespace ${ns} "
+          if [ "${res}" == "FileRecoveryVM" ]; then
+            kubectl patch "${res}" "${name}" -p '{"metadata":{"annotations":{"triliovault.trilio.io/request-for-delete":"true"}}}' --type=merge -n "${ns}"
+            retValue=$?
+            if [ "${retValue}" -ne 0 ]; then
+              echo "Failed to patch FileRecoveryVM ${name} in namespace ${ns}"
+              exit_status=1
+            fi
+          fi
           kubectl delete "${res}" "${name}" --force --grace-period=0 --timeout=5s -n "${ns}"
           retValue=$?
           if [ "${retValue}" -ne 0 ]; then
@@ -261,9 +270,9 @@ while test $# -gt 0; do
   -r | --resources)
     shift
     if [[ "$*" == -* || $# -eq 0 ]]; then
-      export TVK_resources="ClusterRestore ClusterBackup ClusterBackupPlan Restore Backup Backupplan Hook ClusterHook Target ClusterTarget Policy ClusterPolicy License"
+      export TVK_resources="ClusterRestore ClusterBackup ClusterSnapshot Restore Backup Snapshot ClusterBackupPlan Backupplan ContinuousRestorePlan ConsistentSet FileRecoveryVM Hook ClusterHook Policy ClusterPolicy License Target ClusterTarget"
       echo "No resources specified, will be deleting all resources listed below"
-      echo "ClusterRestore ClusterBackup ClusterBackupPlan Restore Backup Backupplan Hook ClusterHook Target ClusterTarget Policy ClusterPolicy License"
+      echo ${TVK_resources}
       echo
       continue
     else
