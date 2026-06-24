@@ -7,6 +7,57 @@
 
 CLEANUP_RUN_SUCCESS=true
 
+check_cluster_connectivity() {
+  local output
+  output=$(kubectl cluster-info --request-timeout=10s 2>&1)
+  local ret=$?
+  if [ "${ret}" -ne 0 ]; then
+    echo "Cluster connectivity check failed: ${output}"
+    return 1
+  fi
+  echo "Cluster connectivity check passed"
+  return 0
+}
+
+check_helm_connectivity() {
+  local output
+  if ! command -v helm >/dev/null 2>&1; then
+    echo "helm is not installed but is required for TVM/operator cleanup (-t flag)"
+    return 1
+  fi
+  output=$(helm list -A 2>&1)
+  local ret=$?
+  if [ "${ret}" -ne 0 ]; then
+    echo "Helm connectivity check failed: ${output}"
+    return 1
+  fi
+  echo "Helm connectivity check passed"
+  return 0
+}
+
+handle_delete_with_finalizer_fallback() {
+  local resource=$1
+  local name=$2
+  local ns=$3
+  local exit_status_var=$4
+  local patch_args=()
+
+  if [ -n "${ns}" ]; then
+    patch_args=(-n "${ns}")
+  fi
+
+  echo "Failed deleting ${resource} ${name}${ns:+ in namespace ${ns}}"
+  echo "Patching ${resource} ${name}${ns:+ in ${ns}}"
+  kubectl patch "${resource}" "${name}" -p '{"metadata":{"finalizers":[]}}' --type=merge "${patch_args[@]}"
+  kubectl wait --for=delete "${resource}/${name}" "${patch_args[@]}" --timeout=10s 2>/dev/null
+  if (kubectl get "${resource}" "${name}" "${patch_args[@]}" 2>/dev/null); then
+    echo "Failed deleting ${resource} ${name}${ns:+ in ${ns}}"
+    eval "${exit_status_var}=1"
+  else
+    echo "Deleted ${resource} ${name}${ns:+ in ${ns}}"
+  fi
+}
+
 check_if_ocp() {
   # Check if the k8s cluster is upstream or OCP
   local is_ocp="False"
@@ -20,6 +71,8 @@ delete_tvk_res() {
   # Same for OCP & Upstream
   # Check all the namespaces for restores, delete the restores
   local exit_status=0
+  local retValue
+
   for res in ${TVK_resources}; do
     if (kubectl get "${res}" -A --no-headers 2>/dev/null); then
       # Fetch non-deuplicate namespace for the given resource
@@ -28,18 +81,18 @@ delete_tvk_res() {
         for name in $(kubectl get "${res}" -n "${ns}" --no-headers 2>/dev/null | awk '{print $1}' | uniq); do
           # Delete
           echo "Deleting ${res} ${name} in namespace ${ns} "
+          if [ "${res}" == "FileRecoveryVM" ]; then
+            kubectl patch "${res}" "${name}" -p '{"metadata":{"annotations":{"triliovault.trilio.io/request-for-delete":"true"}}}' --type=merge -n "${ns}"
+            retValue=$?
+            if [ "${retValue}" -ne 0 ]; then
+              echo "Failed to patch FileRecoveryVM ${name} in namespace ${ns}"
+              exit_status=1
+            fi
+          fi
           kubectl delete "${res}" "${name}" --force --grace-period=0 --timeout=5s -n "${ns}"
           retValue=$?
           if [ "${retValue}" -ne 0 ]; then
-            echo "Failed deleting ${res} ${name} in namespace ${ns}"
-            echo "Patching ${res} ${name} in ${ns}"
-            kubectl patch "${res}" "${name}" -p '{"metadata":{"finalizers":[]}}' --type=merge -n "${ns}"
-            if (kubectl get "${res}" "${name}" -n "${ns}" 2>/dev/null); then
-              echo "Failed deleting ${res} ${name} in ${ns}"
-              exit_status=1
-            else
-              echo "Deleted ${res} ${name} in ${ns}"
-            fi
+            handle_delete_with_finalizer_fallback "${res}" "${name}" "${ns}" exit_status
           fi
         done
       done
@@ -54,6 +107,9 @@ delete_tvk_res() {
 delete_tvk_op() {
   # Check if the k8s cluster is upstream or OCP
   local exit_status=0
+  local retValue
+  local tvkcsversion
+
   if [[ $(check_if_ocp) == "True" ]]; then
     echo "This is OCP Cluster"
     # Delete k8s-triliovault operator
@@ -62,15 +118,7 @@ delete_tvk_op() {
       kubectl delete subscription k8s-triliovault --force --grace-period=0 --timeout=5s -n openshift-operators
       retValue=$?
       if [ "${retValue}" -ne 0 ]; then
-        echo "Failed deleting k8s-triliovault operator"
-        echo "Patching k8s-triliovault operator"
-        kubectl patch subscription k8s-triliovault -p '{"metadata":{"finalizers":[]}}' --type=merge -n openshift-operators
-        if (kubectl get subscription k8s-triliovault -n openshift-operators >/dev/null 2>&1); then
-          echo "Failed deleting k8s-triliovault operator"
-          exit_status=1
-        else
-          echo "Deleted k8s-triliovault clusterserviceversion ${tvkcsversion}"
-        fi
+        handle_delete_with_finalizer_fallback "subscription" "k8s-triliovault" "openshift-operators" exit_status
       fi
     fi
 
@@ -81,15 +129,7 @@ delete_tvk_op() {
       kubectl delete clusterserviceversion "${tvkcsversion}" --force --grace-period=0 --timeout=5s -n openshift-operators
       retValue=$?
       if [ "${retValue}" -ne 0 ]; then
-        echo "Failed deleting k8s-triliovault clusterserviceversion"
-        echo "Patching k8s-triliovault clusterserviceversion ${tvkcsversion}"
-        kubectl patch clusterserviceversion "${tvkcsversion}" -p '{"metadata":{"finalizers":[]}}' --type=merge -n openshift-operators
-        if (kubectl get clusterserviceversion "${tvkcsversion}" -n openshift-operators 2>/dev/null); then
-          echo "Failed deleting k8s-triliovault clusterserviceversion"
-          exit_status=1
-        else
-          echo "Deleted k8s-triliovault clusterserviceversion ${tvkcsversion}"
-        fi
+        handle_delete_with_finalizer_fallback "clusterserviceversion" "${tvkcsversion}" "openshift-operators" exit_status
       fi
     fi
 
@@ -98,23 +138,23 @@ delete_tvk_op() {
   # For Upstream OR in case if TVK installed on OCP using "helm"
   # Delete Triliovault-manager and Triliovault-operator using helm/label
   # Fetch non-deuplicate namespace
+  local tvm_ns
   tvm_ns=$(helm list -A | grep -v REVISION | grep 'triliovault' | awk '{print $2}' | uniq)
   if [ -n "${tvm_ns}" ]; then
     for ns in ${tvm_ns}; do
+      local tvm_name
+      local tvm
+      local tvo
+      local tvkcron
+
       # Deleting Trilivault-manager CR
-      tvm_name=$(kubectl get triliovaultmanager --no-headers -n "${ns}" | awk '{print $1}')
-      echo "Deleting triliovaultmanager CR ${tvm_name} in namespace ${ns}"
-      kubectl delete triliovaultmanager "${tvm_name}" --force --grace-period=0 --timeout=5s -n "${ns}"
-      retValue=$?
-      if [ "${retValue}" -ne 0 ]; then
-        echo "Failed deleting triliovaultmanager CR ${tvm_name} in namespace ${ns}"
-        echo "Patching triliovaultmanager CR ${tvm_name} in namespace ${ns}"
-        kubectl patch triliovaultmanager "${tvm_name}" -p '{"metadata":{"finalizers":[]}}' --type=merge -n "${ns}"
-        if (kubectl get triliovaultmanager "${tvm_name}" -n "${ns}" 2>/dev/null); then
-          echo "Failed deleting triliovaultmanager CR ${tvm_name} in namespace ${ns} even after patching, check manually..."
-          exit_status=1
-        else
-          echo "Deleted triliovaultmanager CR ${tvm_name} in namespace ${ns}"
+      tvm_name=$(kubectl get triliovaultmanager --no-headers -n "${ns}" 2>/dev/null | awk '{print $1}')
+      if [ -n "${tvm_name}" ]; then
+        echo "Deleting triliovaultmanager CR ${tvm_name} in namespace ${ns}"
+        kubectl delete triliovaultmanager "${tvm_name}" --force --grace-period=0 --timeout=5s -n "${ns}"
+        retValue=$?
+        if [ "${retValue}" -ne 0 ]; then
+          handle_delete_with_finalizer_fallback "triliovaultmanager" "${tvm_name}" "${ns}" exit_status
         fi
       fi
 
@@ -147,15 +187,7 @@ delete_tvk_op() {
         kubectl delete cronjob "${tvkcron}" --force --grace-period=0 --timeout=5s -n "${ns}"
         retValue=$?
         if [ "${retValue}" -ne 0 ]; then
-          echo "Failed deleting k8s-triliovault-resource-cleaner cronjob in namespace ${ns}"
-          echo "Patching k8s-triliovault-resource-cleaner cronjob in namespace ${ns}"
-          kubectl patch cronjob "${tvkcron}" -p '{"metadata":{"finalizers":[]}}' --type=merge -n "${ns}"
-          if (kubectl get cronjob "${tvkcron}" -n "${ns}" 2>/dev/null); then
-            echo "Failed deleting k8s-triliovault-resource-cleaner cronjob in namespace ${ns}"
-            exit_status=1
-          else
-            echo "Deleted k8s-triliovault-resource-cleaner cronjob in namespace ${ns}"
-          fi
+          handle_delete_with_finalizer_fallback "cronjob" "${tvkcron}" "${ns}" exit_status
         fi
       fi
     done
@@ -166,9 +198,9 @@ delete_tvk_op() {
 
 delete_tvk_crd() {
   # Same for OCP & Upstream
-  # Check all the namespaces for restores, delete the restores
   # Delete Triliovault CRDs
   local exit_status=0
+  local retValue
 
   for tvkcrd in $(kubectl get crd --no-headers 2>/dev/null | grep triliovault | awk '{print $1}'); do
     # Delete
@@ -176,15 +208,7 @@ delete_tvk_crd() {
     kubectl delete crd "${tvkcrd}" --force --grace-period=0 --timeout=5s
     retValue=$?
     if [ "${retValue}" -ne 0 ]; then
-      echo "Failed deleting crd ${tvkcrd}"
-      echo "Patching crd ${tvkcrd}"
-      kubectl patch crd "${tvkcrd}" -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null
-      if (kubectl get crd "${tvkcrd}" 2>/dev/null); then
-        echo "Failed deleting crd ${tvkcrd}"
-        exit_status=1
-      else
-        echo "Deleted crd ${tvkcrd}"
-      fi
+      handle_delete_with_finalizer_fallback "crd" "${tvkcrd}" "" exit_status
     fi
   done
   return ${exit_status}
@@ -208,6 +232,12 @@ Options:
 --------------------------------------------------------------
 "
 }
+
+for arg in "$@"; do
+  if [[ "${arg}" == "--source-only" ]]; then
+    return 0 2>/dev/null || exit 0
+  fi
+done
 
 # Main script starts here
 # Check the options provided
@@ -240,9 +270,9 @@ while test $# -gt 0; do
   -r | --resources)
     shift
     if [[ "$*" == -* || $# -eq 0 ]]; then
-      export TVK_resources="ClusterRestore ClusterBackup ClusterBackupPlan Restore Backup Backupplan Hook Target Policy License"
+      export TVK_resources="ClusterRestore ClusterBackup ClusterSnapshot Restore Backup Snapshot ClusterBackupPlan Backupplan ContinuousRestorePlan ConsistentSet FileRecoveryVM Hook ClusterHook Policy ClusterPolicy License Target ClusterTarget"
       echo "No resources specified, will be deleting all resources listed below"
-      echo "ClusterRestore ClusterBackup ClusterBackupPlan Restore Backup Backupplan Hook Target Policy License"
+      echo ${TVK_resources}
       echo
       continue
     else
@@ -283,6 +313,22 @@ if [[ -z "${TVK_resources}" && -z "${Delete_TVM}" && -z "${Delete_CRD}" ]]; then
   echo "No resources selected for cleanup, please check usage below"
   print_usage
   exit
+fi
+
+echo "Checking cluster connectivity..."
+if ! check_cluster_connectivity; then
+  echo "Aborting cleanup due to cluster connectivity failure"
+  exit 1
+fi
+echo
+
+if [ "${Delete_TVM}" ]; then
+  echo "Checking helm connectivity..."
+  if ! check_helm_connectivity; then
+    echo "Aborting cleanup due to helm connectivity failure"
+    exit 1
+  fi
+  echo
 fi
 
 echo "Starting Cleanup..............................."
