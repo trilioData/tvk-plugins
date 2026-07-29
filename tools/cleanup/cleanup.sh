@@ -49,6 +49,8 @@ handle_delete_with_finalizer_fallback() {
   echo "Failed deleting ${resource} ${name}${ns:+ in namespace ${ns}}"
   echo "Patching ${resource} ${name}${ns:+ in ${ns}}"
   kubectl patch "${resource}" "${name}" -p '{"metadata":{"finalizers":[]}}' --type=merge "${patch_args[@]}"
+  # If delete was previously denied, clearing finalizers alone is not enough — delete again.
+  kubectl delete "${resource}" "${name}" --force --grace-period=0 --timeout=5s "${patch_args[@]}" 2>/dev/null
   kubectl wait --for=delete "${resource}/${name}" "${patch_args[@]}" --timeout=10s 2>/dev/null
   if (kubectl get "${resource}" "${name}" "${patch_args[@]}" 2>/dev/null); then
     echo "Failed deleting ${resource} ${name}${ns:+ in ${ns}}"
@@ -56,6 +58,23 @@ handle_delete_with_finalizer_fallback() {
   else
     echo "Deleted ${resource} ${name}${ns:+ in ${ns}}"
   fi
+}
+
+# Returns 0 if kind is cluster-scoped (no namespace).
+is_cluster_scoped_resource() {
+  local res=$1
+  local namespaced
+
+  namespaced=$(kubectl api-resources --api-group=triliovault.trilio.io --no-headers 2>/dev/null |
+    awk -v kind="${res}" 'BEGIN{IGNORECASE=1} tolower($NF)==tolower(kind){print $(NF-1); exit}')
+
+  if [ -n "${namespaced}" ]; then
+    [ "${namespaced}" = "false" ]
+    return $?
+  fi
+
+  # Fallback when api-resources lookup fails (e.g. CRD already gone)
+  [[ "${res}" == *Cluster* || "${res}" == "ContinuousRestorePlan" || "${res}" == "ConsistentSet" ]]
 }
 
 check_if_ocp() {
@@ -74,31 +93,48 @@ delete_tvk_res() {
   local retValue
 
   for res in ${TVK_resources}; do
-    if (kubectl get "${res}" -A --no-headers 2>/dev/null); then
-      # Fetch non-deuplicate namespace for the given resource
-      for ns in $(kubectl get "${res}" -A --no-headers 2>/dev/null | awk '{print $1}' | uniq); do
-        # Fetch given resource name
-        for name in $(kubectl get "${res}" -n "${ns}" --no-headers 2>/dev/null | awk '{print $1}' | uniq); do
-          # Delete
-          echo "Deleting ${res} ${name} in namespace ${ns} "
-          if [ "${res}" == "FileRecoveryVM" ]; then
-            kubectl patch "${res}" "${name}" -p '{"metadata":{"annotations":{"triliovault.trilio.io/request-for-delete":"true"}}}' --type=merge -n "${ns}"
-            retValue=$?
-            if [ "${retValue}" -ne 0 ]; then
-              echo "Failed to patch FileRecoveryVM ${name} in namespace ${ns}"
-              exit_status=1
-            fi
-          fi
-          kubectl delete "${res}" "${name}" --force --grace-period=0 --timeout=5s -n "${ns}"
+    if is_cluster_scoped_resource "${res}"; then
+      # Cluster-scoped resources have no namespace
+      if (kubectl get "${res}" --no-headers 2>/dev/null); then
+        for name in $(kubectl get "${res}" --no-headers 2>/dev/null | awk '{print $1}' | uniq); do
+          echo "Deleting cluster-scoped ${res} ${name}"
+          kubectl delete "${res}" "${name}" --force --grace-period=0 --timeout=5s
           retValue=$?
           if [ "${retValue}" -ne 0 ]; then
-            handle_delete_with_finalizer_fallback "${res}" "${name}" "${ns}" exit_status
+            handle_delete_with_finalizer_fallback "${res}" "${name}" "" exit_status
           fi
         done
-      done
+      else
+        echo "Resource ${res} does not exist on the cluster"
+        echo
+      fi
     else
-      echo "Resource ${res} does not exist on the cluster"
-      echo
+      # Namespaced resources
+      if (kubectl get "${res}" -A --no-headers 2>/dev/null); then
+        # Fetch non-duplicate namespace for the given resource
+        for ns in $(kubectl get "${res}" -A --no-headers 2>/dev/null | awk '{print $1}' | uniq); do
+          # Fetch given resource name
+          for name in $(kubectl get "${res}" -n "${ns}" --no-headers 2>/dev/null | awk '{print $1}' | uniq); do
+            echo "Deleting ${res} ${name} in namespace ${ns} "
+            if [ "${res}" == "FileRecoveryVM" ]; then
+              kubectl patch "${res}" "${name}" -p '{"metadata":{"annotations":{"triliovault.trilio.io/request-for-delete":"true"}}}' --type=merge -n "${ns}"
+              retValue=$?
+              if [ "${retValue}" -ne 0 ]; then
+                echo "Failed to patch FileRecoveryVM ${name} in namespace ${ns}"
+                exit_status=1
+              fi
+            fi
+            kubectl delete "${res}" "${name}" --force --grace-period=0 --timeout=5s -n "${ns}"
+            retValue=$?
+            if [ "${retValue}" -ne 0 ]; then
+              handle_delete_with_finalizer_fallback "${res}" "${name}" "${ns}" exit_status
+            fi
+          done
+        done
+      else
+        echo "Resource ${res} does not exist on the cluster"
+        echo
+      fi
     fi
   done
   return ${exit_status}
@@ -270,7 +306,7 @@ while test $# -gt 0; do
   -r | --resources)
     shift
     if [[ "$*" == -* || $# -eq 0 ]]; then
-      export TVK_resources="ClusterRestore ClusterBackup ClusterSnapshot Restore Backup Snapshot ClusterBackupPlan Backupplan ContinuousRestorePlan ConsistentSet FileRecoveryVM Hook ClusterHook Policy ClusterPolicy License Target ClusterTarget"
+      export TVK_resources="ClusterRestore ClusterBackup ClusterSnapshot ClusterBackupPlan Restore Backup Snapshot Backupplan ConsistentSet ContinuousRestorePlan FileRecoveryVM Hook ClusterHook Policy ClusterPolicy License Target ClusterTarget"
       echo "No resources specified, will be deleting all resources listed below"
       echo ${TVK_resources}
       echo
