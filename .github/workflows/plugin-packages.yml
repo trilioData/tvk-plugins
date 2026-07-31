@@ -62,7 +62,7 @@ jobs:
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
       - name: Run yamllint
-        uses: reviewdog/action-yamllint@b1a8e58c959b83e9efa14a721d209bc2ba34b9d6  # v1
+        uses: reviewdog/action-yamllint@f01d8a48fd8d89f89895499fca2cff09f9e9e8c0  # v1.21
         with:
           fail_level: error
           reporter: local
