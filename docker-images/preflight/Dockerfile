@@ -21,7 +21,6 @@ LABEL description=TVK\ Plugins\ Preflight
 
 # Apply OS security updates for Trivy / distro CVEs
 RUN dnf -y upgrade --refresh && dnf clean all
-RUN dnf -y upgrade ca-certificates-2026.2.92_v9.0.319-90.3.el9_8 && dnf clean all
 
 # RUN addgroup -S usergroup && adduser -DH -g "" -u 1001 -S docker -G usergroup
 # USER docker
